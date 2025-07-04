@@ -1,0 +1,17 @@
+C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344\tools\arm-none-eabi\include\c++\13.3.1\arm-none-eabi\thumb\v8-m.main+fp\hard\bits\gthr-default.h:229:1:int __gthread_key_delete(__gthread_key_t)	16	static
+../Pheripheral/Src/communicate.cpp:28:9:uint8_t Communicate_TerminalRecv()	16	static
+../Pheripheral/Src/communicate.cpp:36:6:void Communicate_RxPushData()	8	static
+../Pheripheral/Src/communicate.cpp:51:9:uint8_t Communicate_RxPopData()	16	static,ignoring_inline_asm
+../Pheripheral/Src/communicate.cpp:83:6:void Communicate_TxPushData(int8_t)	16	static,ignoring_inline_asm
+../Pheripheral/Src/communicate.cpp:124:6:void Communicate_TxPopData()	8	static
+../Pheripheral/Src/communicate.cpp:146:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	16	static
+../Pheripheral/Src/communicate.cpp:153:6:void HAL_UART_TxCpltCallback(UART_HandleTypeDef*)	16	static
+../Pheripheral/Src/communicate.cpp:163:6:void Communicate_Initialize()	8	static
+../Pheripheral/Src/communicate.cpp:177:12:int __io_putchar(int)	16	static
+../Pheripheral/Src/communicate.cpp:191:12:int __io_getchar()	8	static
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/queue.h:22:3:ring_queue<SIZE, T>::ring_queue() [with unsigned int SIZE = 128; T = volatile unsigned char]	16	static
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/queue.h:41:7:int ring_queue<SIZE, T>::queue_length() [with unsigned int SIZE = 128; T = volatile unsigned char]	16	static
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/queue.h:35:8:void ring_queue<SIZE, T>::push(T) [with unsigned int SIZE = 128; T = volatile unsigned char]	16	static
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/queue.h:28:5:T ring_queue<SIZE, T>::pop() [with unsigned int SIZE = 128; T = volatile unsigned char]	24	static
+../Pheripheral/Src/communicate.cpp:196:1:void __static_initialization_and_destruction_0()	8	static
+../Pheripheral/Src/communicate.cpp:196:1:cpp)	8	static
