@@ -29,17 +29,17 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  12 .debug_rnglists 00001388  00000000  00000000  0002c6b0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_macro  000314c7  00000000  00000000  0002da38  2**0
+ 13 .debug_macro  00030256  00000000  00000000  0002da38  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_line   00021a39  00000000  00000000  0005eeff  2**0
+ 14 .debug_line   00021afc  00000000  00000000  0005dc8e  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_str    0013cf47  00000000  00000000  00080938  2**0
+ 15 .debug_str    0013d29a  00000000  00000000  0007f78a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .comment      00000043  00000000  00000000  001bd87f  2**0
+ 16 .comment      00000043  00000000  00000000  001bca24  2**0
                   CONTENTS, READONLY
- 17 .debug_frame  00006bd0  00000000  00000000  001bd8c4  2**2
+ 17 .debug_frame  00006bd0  00000000  00000000  001bca68  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_line_str 0000006b  00000000  00000000  001c4494  2**0
+ 18 .debug_line_str 0000006b  00000000  00000000  001c3638  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -22815,7 +22815,7 @@ void Sensor_Initialize()
 	  nodeConf2.DstAddress = (uint32_t)(&(GPIOA->BSRR));
  8008b1e:	4b34      	ldr	r3, [pc, #208]	@ (8008bf0 <Sensor_Initialize+0x108>)
  8008b20:	667b      	str	r3, [r7, #100]	@ 0x64
-	  nodeConf2.DataSize   = 4*NUM_ADC	;
+	  nodeConf2.DataSize   = 4*NUM_ADC;
  8008b22:	2328      	movs	r3, #40	@ 0x28
  8008b24:	66bb      	str	r3, [r7, #104]	@ 0x68
 
@@ -22840,7 +22840,7 @@ void Sensor_Initialize()
  8008b4a:	d001      	beq.n	8008b50 <Sensor_Initialize+0x68>
 	      Error_Handler();
  8008b4c:	f7f8 f824 	bl	8000b98 <Error_Handler>
-	  // ★ Circularモードに
+	  //Circularモードに
 	  if (HAL_DMAEx_List_SetCircularMode(&List_GPDMA1_Channel0) != HAL_OK)
  8008b50:	4829      	ldr	r0, [pc, #164]	@ (8008bf8 <Sensor_Initialize+0x110>)
  8008b52:	f7fa fff4 	bl	8003b3e <HAL_DMAEx_List_SetCircularMode>

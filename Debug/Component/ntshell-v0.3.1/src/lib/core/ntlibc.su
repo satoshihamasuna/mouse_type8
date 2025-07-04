@@ -1,0 +1,14 @@
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:35:5:ntlibc_strlen	24	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:46:7:ntlibc_strcpy	24	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:59:7:ntlibc_strcat	24	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:75:5:ntlibc_strcmp	24	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:93:5:ntlibc_stricmp	32	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:111:5:ntlibc_strncmp	40	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:130:5:ntlibc_isdigit	16	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:138:5:ntlibc_isalpha	16	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:149:5:ntlibc_iscntrl	16	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:164:5:ntlibc_toupper	24	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:173:5:ntlibc_tolower	24	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:182:5:ntlibc_atoi	40	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:222:7:ntlibc_strchr	24	static
+../Component/ntshell-v0.3.1/src/lib/core/ntlibc.c:234:7:ntlibc_utoa	40	static

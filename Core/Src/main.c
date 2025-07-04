@@ -30,6 +30,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "core/ntshell.h"
+#include "core/ntlibc.h"
+
 
 /* USER CODE END Includes */
 

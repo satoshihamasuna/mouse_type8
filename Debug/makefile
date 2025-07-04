@@ -13,6 +13,10 @@ RM := rm -rf
 -include Drivers/STM32U5xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
+-include Component/ntshell-v0.3.1/src/lib/util/subdir.mk
+-include Component/ntshell-v0.3.1/src/lib/core/subdir.mk
+-include Component/codegen/subdir.mk
+-include Component/Src/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)

@@ -1,0 +1,6 @@
+../Component/ntshell-v0.3.1/src/lib/core/text_history.c:41:6:text_history_init	2
+../Component/ntshell-v0.3.1/src/lib/core/text_history.c:57:5:text_history_write	3
+../Component/ntshell-v0.3.1/src/lib/core/text_history.c:81:5:text_history_read	3
+../Component/ntshell-v0.3.1/src/lib/core/text_history.c:103:5:text_history_read_point_next	2
+../Component/ntshell-v0.3.1/src/lib/core/text_history.c:118:5:text_history_read_point_prev	4
+../Component/ntshell-v0.3.1/src/lib/core/text_history.c:143:5:text_history_find	6

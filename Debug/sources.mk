@@ -38,6 +38,10 @@ CPP_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+Component/Src \
+Component/codegen \
+Component/ntshell-v0.3.1/src/lib/core \
+Component/ntshell-v0.3.1/src/lib/util \
 Core/Src \
 Core/Startup \
 Drivers/STM32U5xx_HAL_Driver/Src \

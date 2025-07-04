@@ -1,0 +1,17 @@
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:137:13:actfunc_history_prev	3
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:162:13:actfunc_history_next	3
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:187:13:actfunc_cursor_left	2
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:204:13:actfunc_cursor_right	2
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:221:13:actfunc_enter	1
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:246:13:actfunc_cancel	1
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:264:13:actfunc_insert	4
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:301:13:actfunc_backspace	4
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:333:13:actfunc_delete	4
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:364:13:actfunc_suggest	5
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:446:13:actfunc_cursor_head	1
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:463:13:actfunc_cursor_tail	1
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:537:6:vtrecv_callback	5
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:578:6:ntshell_init	1
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:617:6:ntshell_execute	2
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:643:6:ntshell_set_prompt	2
+../Component/ntshell-v0.3.1/src/lib/core/ntshell.c:662:6:ntshell_version	1

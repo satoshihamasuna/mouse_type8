@@ -15,7 +15,7 @@
 #include "spi.h"
 #include "tim.h"
 #include "gpio.h"
-#include <ir_sensor.h>
+#include "ir_sensor.h"
 
 
 #define NUM_ADC				(10)

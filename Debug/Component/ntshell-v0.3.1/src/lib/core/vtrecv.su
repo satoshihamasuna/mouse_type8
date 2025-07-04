@@ -1,0 +1,7 @@
+../Component/ntshell-v0.3.1/src/lib/core/vtrecv.c:2660:16:GET_STATE_TABLE	32	static
+../Component/ntshell-v0.3.1/src/lib/core/vtrecv.c:2689:17:GET_ENTRY_ACTIONS	16	static
+../Component/ntshell-v0.3.1/src/lib/core/vtrecv.c:2694:17:GET_EXIT_ACTIONS	16	static
+../Component/ntshell-v0.3.1/src/lib/core/vtrecv.c:2699:6:vtrecv_init	16	static
+../Component/ntshell-v0.3.1/src/lib/core/vtrecv.c:2708:13:do_action	24	static
+../Component/ntshell-v0.3.1/src/lib/core/vtrecv.c:2778:13:do_state_change	24	static
+../Component/ntshell-v0.3.1/src/lib/core/vtrecv.c:2814:6:vtrecv_execute	32	static

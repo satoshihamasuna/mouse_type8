@@ -1,0 +1,17 @@
+../Component/codegen/rtwhalf.cpp:18:10:uint16_T getBitfieldFromHalf(real16_T)	1
+../Component/codegen/rtwhalf.cpp:23:10:real16_T getHalfFromBitfield(uint16_T)	1
+../Component/codegen/rtwhalf.cpp:30:10:uint32_T getBitfieldFromFloat(float)	1
+../Component/codegen/rtwhalf.cpp:37:7:float getFloatFromBitfield(uint32_T)	1
+../Component/codegen/rtwhalf.cpp:45:7:float halfToFloat(real16_T)	2
+../Component/codegen/rtwhalf.cpp:71:10:real16_T floatToHalf(float)	10
+../Component/codegen/rtwhalf.cpp:138:8:double halfToDouble(real16_T)	1
+../Component/codegen/rtwhalf.cpp:145:10:real16_T doubleToHalf(double)	16
+../Component/codegen/rtwhalf.cpp:228:10:real16_T sin_half(real16_T)	1
+../Component/codegen/rtwhalf.cpp:233:10:real16_T cos_half(real16_T)	1
+../Component/codegen/rtwhalf.cpp:238:10:real16_T ceil_half(real16_T)	1
+../Component/codegen/rtwhalf.cpp:243:10:real16_T fix_half(real16_T)	2
+../Component/codegen/rtwhalf.cpp:253:10:real16_T floor_half(real16_T)	1
+../Component/codegen/rtwhalf.cpp:258:10:real16_T exp_half(real16_T)	1
+../Component/codegen/rtwhalf.cpp:263:10:real16_T log_half(real16_T)	1
+../Component/codegen/rtwhalf.cpp:268:10:real16_T log10_half(real16_T)	1
+../Component/codegen/rtwhalf.cpp:273:10:real16_T sqrt_half(real16_T)	1

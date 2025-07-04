@@ -1,0 +1,12 @@
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:40:6:text_editor_init	16	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:53:5:text_editor_insert	32	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:80:5:text_editor_backspace	32	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:105:5:text_editor_delete	32	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:129:5:text_editor_cursor_get_position	16	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:139:5:text_editor_cursor_head	16	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:153:5:text_editor_cursor_tail	16	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:167:5:text_editor_cursor_left	16	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:181:5:text_editor_cursor_right	16	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:196:5:text_editor_set_text	32	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:223:5:text_editor_get_text	40	static
+../Component/ntshell-v0.3.1/src/lib/core/text_editor.c:244:6:text_editor_clear	16	static

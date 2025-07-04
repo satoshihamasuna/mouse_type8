@@ -1,0 +1,2 @@
+../Component/Src/half_float.cpp:13:7:float half_to_float(half_float)	1
+../Component/Src/half_float.cpp:18:12:half_float float_to_half(float)	1
