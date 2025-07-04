@@ -1,0 +1,4 @@
+../Pheripheral/Src/ir_sensor.c:33:6:Sensor_TurnOffLED	16	static
+../Pheripheral/Src/ir_sensor.c:41:6:Sensor_TurnOnLED	8	static
+../Pheripheral/Src/ir_sensor.c:50:6:Sensor_Initialize	224	static
+../Pheripheral/Src/ir_sensor.c:107:6:Sensor_StopADC	8	static
