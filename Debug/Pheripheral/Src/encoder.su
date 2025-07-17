@@ -1,0 +1,12 @@
+../Pheripheral/Src/encoder.c:32:6:set_ms_dt	16	static
+../Pheripheral/Src/encoder.c:37:6:Encoder_Initialize	8	static
+../Pheripheral/Src/encoder.c:44:6:Encoder_ResetPosition_Left	4	static
+../Pheripheral/Src/encoder.c:48:6:Encoder_ResetPosition_Right	4	static
+../Pheripheral/Src/encoder.c:52:10:Encoder_Counts_Left	4	static
+../Pheripheral/Src/encoder.c:56:10:Encoder_Counts_Right	4	static
+../Pheripheral/Src/encoder.c:60:9:Encoder_GetPosition_Right	4	static
+../Pheripheral/Src/encoder.c:64:9:Encoder_GetPosition_Left	4	static
+../Pheripheral/Src/encoder.c:68:6:Encoder_SetSpeed_Right	8	static
+../Pheripheral/Src/encoder.c:87:6:Encoder_SetSpeed_Left	8	static
+../Pheripheral/Src/encoder.c:105:11:Encoder_GetProperty_Right	16	static
+../Pheripheral/Src/encoder.c:109:11:Encoder_GetProperty_Left	16	static

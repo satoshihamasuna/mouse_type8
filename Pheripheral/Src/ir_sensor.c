@@ -28,7 +28,7 @@ static uint32_t		led_on_pattern[NUM_ADC]  	= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};				
 static uint32_t		led_off_pattern[NUM_ADC] = {0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 										 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
 
-//static uint16_t		adc_value[NUM_ADC];		// AD変換値
+static uint16_t		adc_value[NUM_ADC];		// AD変換値
 
 void Sensor_TurnOffLED()
 {
@@ -41,10 +41,10 @@ void Sensor_TurnOffLED()
 void Sensor_TurnOnLED()
 {
 	Sensor_TurnOffLED();
-	led_on_pattern[LED_SL_ON] = IR1_Pin;
+	led_on_pattern[LED_FR_ON] = IR1_Pin;
 	led_on_pattern[LED_SR_ON] = IR2_Pin;
-	led_on_pattern[LED_FL_ON] = IR3_Pin;
-	led_on_pattern[LED_FR_ON] = IR4_Pin;
+	led_on_pattern[LED_SL_ON] = IR3_Pin;
+	led_on_pattern[LED_FL_ON] = IR4_Pin;
 }
 
 void Sensor_Initialize()
@@ -80,6 +80,7 @@ void Sensor_Initialize()
 	  if (HAL_DMAEx_List_SetCircularMode(&List_GPDMA1_Channel1) != HAL_OK)
 	        Error_Handler();
 
+	  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) adc_value, NUM_ADC);
 
 	  if (HAL_DMAEx_List_Start_IT(&handle_GPDMA1_Channel0) != HAL_OK)
 	  {
@@ -109,8 +110,10 @@ void Sensor_StopADC()
 	HAL_LPTIM_IC_Stop(&hlptim1, LPTIM_CHANNEL_1);
 	HAL_LPTIM_IC_Stop(&hlptim1, LPTIM_CHANNEL_2);
 	HAL_GPIO_WritePin(GPIOA, SENSOR_ALL_PATTERN, GPIO_PIN_RESET);
+	HAL_ADC_Stop_DMA(&hadc1);
 }
-/*
+
+
 int16_t ADC_get_value(int num)
 {
 	return adc_value[num];
@@ -139,4 +142,4 @@ int16_t Sensor_GetValue(t_sensor_dir dir)
 int16_t Sensor_GetBatteryValue(){
 	return (adc_value[8] + adc_value[9])/2 ;
 }
-*/
+

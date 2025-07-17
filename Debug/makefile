@@ -89,8 +89,8 @@ all: main-build
 main-build: type8.elf secondary-outputs
 
 # Tool invocations
-type8.elf type8.map: $(OBJS) $(USER_OBJS) C:\Users\sato1\Documents\Git\STM32\program_mouse_type8\type8\STM32U535CETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "type8.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"C:\Users\sato1\Documents\Git\STM32\program_mouse_type8\type8\STM32U535CETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="type8.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+type8.elf type8.map: $(OBJS) $(USER_OBJS) D:\mouse8\mouse_program\mouse_type8\STM32U535CETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "type8.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"D:\mouse8\mouse_program\mouse_type8\STM32U535CETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="type8.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

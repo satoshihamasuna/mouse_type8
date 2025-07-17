@@ -32,6 +32,13 @@
 /* USER CODE BEGIN Includes */
 #include "core/ntshell.h"
 #include "core/ntlibc.h"
+#include "interface.h"
+#include "ir_sensor.h"
+#include "communicate.h"
+#include "imu.h"
+#include "lsm6dsr_reg.h"
+#include "encoder.h"
+#include <stdio.h>
 
 
 /* USER CODE END Includes */
@@ -110,6 +117,9 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   Sensor_Initialize();
+  IMU_initialize();
+  Communicate_Initialize();
+  Encoder_Initialize();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -119,6 +129,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  Indicate_LED(0xff);
+	  HAL_Delay(200);
+	  Indicate_LED(0x0);
+	  HAL_Delay(200);
+	  printf("hello\n");
+	  printf("who->%d\n",read_byte(WHO_AM_I));
+	  printf("%d,%d,%d,%d,",ADC_get_value(0),ADC_get_value(1),ADC_get_value(2),ADC_get_value(3));
+	  printf("%d,%d,%d,%d,",ADC_get_value(4),ADC_get_value(5),ADC_get_value(6),ADC_get_value(7));
+	  printf("%d,%d\n",ADC_get_value(8),ADC_get_value(9));
+	  printf("encoder->%ld,%ld",ENC_CNT_L,ENC_CNT_R);
   }
   /* USER CODE END 3 */
 }

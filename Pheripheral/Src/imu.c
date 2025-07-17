@@ -20,27 +20,27 @@ uint8_t read_byte(uint8_t reg){
 	uint8_t dammy = 0x00;
 	reg = reg | 0x80; //mask
 
-	//HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&hspi2, &reg, 1 , 100);
 	HAL_SPI_TransmitReceive(&hspi2, &dammy, &val, 1, 100);
 
-	//HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
 
 	return val;
 }
 
 void write_byte(uint8_t reg, uint8_t data){
 	reg = reg & 0x7F;
-	//HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&hspi2, &reg, 1 , 100);
 	HAL_SPI_Transmit(&hspi2, &data, 1 , 100);
-	//HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
 }
 
 void IMU_initialize()
 {
 	  HAL_Delay(50);
-	  //HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
+	  HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
 	  HAL_Delay(50);
 	  read_byte(WHO_AM_I);
 	  HAL_Delay(50);
@@ -57,12 +57,12 @@ void IMU_initialize()
 
 
 void IMU_read_DMA_Start(){
-	//HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive_DMA(&hspi2, &imu_address, imu_value, sizeof(imu_value)/sizeof(uint8_t));
 }
 
 void IMU_read_DMA_Stop(){
-	//HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_RESET);
 	HAL_SPI_DMAStop(&hspi2);
 }
 

@@ -13,12 +13,12 @@ extern "C" {
 #endif
 
 typedef  enum {
-	LED_FL_ON 	= 2,
-	LED_FL_OFF 	= 3,
-	LED_SL_ON 	= 6,
-	LED_SL_OFF 	= 7,
-	LED_SR_ON 	= 4,
-	LED_SR_OFF 	= 5,
+	LED_FL_ON 	= 6,
+	LED_FL_OFF 	= 7,
+	LED_SL_ON 	= 4,
+	LED_SL_OFF 	= 5,
+	LED_SR_ON 	= 2,
+	LED_SR_OFF 	= 3,
 	LED_FR_ON 	= 0,
 	LED_FR_OFF 	= 1,
 }t_sensor_mode;
@@ -31,6 +31,15 @@ typedef enum{
 }t_sensor_dir;
 
 void Sensor_Initialize();
+
+void Sensor_StopADC();
+
+int16_t ADC_get_value(int num);
+
+int16_t Sensor_GetValue(t_sensor_dir dir);
+
+int16_t Sensor_GetBatteryValue();
+
 #ifdef __cplusplus
 }
 #endif

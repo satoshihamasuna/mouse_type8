@@ -1,5 +1,5 @@
 Pheripheral/Src/communicate.o: ../Pheripheral/Src/communicate.cpp \
- C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Pheripheral/Inc/communicate.h \
+ D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/communicate.h \
  ../Core/Inc/main.h ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h \
  ../Core/Inc/stm32u5xx_hal_conf.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_rcc.h \
@@ -37,8 +37,8 @@ Pheripheral/Src/communicate.o: ../Pheripheral/Src/communicate.cpp \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h \
  ../Core/Inc/usart.h ../Core/Inc/main.h \
- C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/queue.h
-C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Pheripheral/Inc/communicate.h:
+ D:/mouse8/mouse_program/mouse_type8/Component/Inc/queue.h
+D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/communicate.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h:
 ../Core/Inc/stm32u5xx_hal_conf.h:
@@ -78,4 +78,4 @@ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Pheripheral/Inc/com
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/main.h:
-C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/queue.h:
+D:/mouse8/mouse_program/mouse_type8/Component/Inc/queue.h:

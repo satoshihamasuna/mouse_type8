@@ -1,6 +1,5 @@
-Pheripheral/Src/interface.o: ../Pheripheral/Src/interface.c \
- ../Core/Inc/gpio.h ../Core/Inc/main.h \
- ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h \
+Pheripheral/Src/encoder.o: ../Pheripheral/Src/encoder.c \
+ ../Core/Inc/main.h ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h \
  ../Core/Inc/stm32u5xx_hal_conf.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_rcc.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_def.h \
@@ -36,9 +35,13 @@ Pheripheral/Src/interface.o: ../Pheripheral/Src/interface.c \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h \
- D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/interface.h \
- ../Core/Inc/main.h
-../Core/Inc/gpio.h:
+ ../Core/Inc/adc.h ../Core/Inc/main.h ../Core/Inc/gpdma.h \
+ ../Core/Inc/icache.h ../Core/Inc/lptim.h ../Core/Inc/memorymap.h \
+ ../Core/Inc/spi.h ../Core/Inc/tim.h ../Core/Inc/gpio.h \
+ D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/ir_sensor.h \
+ D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/encoder.h \
+ D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/ir_sensor.h \
+ D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/encoder.h
 ../Core/Inc/main.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h:
 ../Core/Inc/stm32u5xx_hal_conf.h:
@@ -76,5 +79,16 @@ Pheripheral/Src/interface.o: ../Pheripheral/Src/interface.c \
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h:
-D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/interface.h:
+../Core/Inc/adc.h:
 ../Core/Inc/main.h:
+../Core/Inc/gpdma.h:
+../Core/Inc/icache.h:
+../Core/Inc/lptim.h:
+../Core/Inc/memorymap.h:
+../Core/Inc/spi.h:
+../Core/Inc/tim.h:
+../Core/Inc/gpio.h:
+D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/ir_sensor.h:
+D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/encoder.h:
+D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/ir_sensor.h:
+D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/encoder.h:

@@ -35,9 +35,9 @@ Pheripheral/Src/imu.o: ../Pheripheral/Src/imu.c ../Core/Inc/spi.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h \
- C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Pheripheral/Inc/imu.h \
+ D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/imu.h \
  ../Core/Inc/main.h \
- C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Pheripheral/Inc/lsm6dsr_reg.h
+ D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/lsm6dsr_reg.h
 ../Core/Inc/spi.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h:
@@ -76,6 +76,6 @@ Pheripheral/Src/imu.o: ../Pheripheral/Src/imu.c ../Core/Inc/spi.h \
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h:
-C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Pheripheral/Inc/imu.h:
+D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/imu.h:
 ../Core/Inc/main.h:
-C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Pheripheral/Inc/lsm6dsr_reg.h:
+D:/mouse8/mouse_program/mouse_type8/Pheripheral/Inc/lsm6dsr_reg.h:
