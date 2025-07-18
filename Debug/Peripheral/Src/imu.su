@@ -1,0 +1,12 @@
+../Peripheral/Src/imu.c:18:9:read_byte	32	static
+../Peripheral/Src/imu.c:32:6:write_byte	16	static
+../Peripheral/Src/imu.c:40:6:IMU_initialize	8	static
+../Peripheral/Src/imu.c:59:6:IMU_read_DMA_Start	8	static
+../Peripheral/Src/imu.c:64:6:IMU_read_DMA_Stop	8	static
+../Peripheral/Src/imu.c:70:6:HAL_SPI_TxRxCpltCallback	16	static
+../Peripheral/Src/imu.c:83:7:read_gyro_x_axis	4	static
+../Peripheral/Src/imu.c:87:7:read_gyro_y_axis	4	static
+../Peripheral/Src/imu.c:91:7:read_gyro_z_axis	4	static
+../Peripheral/Src/imu.c:95:7:read_accel_x_axis	8	static
+../Peripheral/Src/imu.c:99:7:read_accel_y_axis	8	static
+../Peripheral/Src/imu.c:103:7:read_accel_z_axis	8	static

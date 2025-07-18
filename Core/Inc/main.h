@@ -75,6 +75,8 @@ void Error_Handler(void);
 #define IR3_GPIO_Port GPIOA
 #define IR4_Pin GPIO_PIN_3
 #define IR4_GPIO_Port GPIOA
+#define fn1_Pin GPIO_PIN_2
+#define fn1_GPIO_Port GPIOB
 #define LED1_Pin GPIO_PIN_10
 #define LED1_GPIO_Port GPIOB
 #define NSS_Pin GPIO_PIN_12

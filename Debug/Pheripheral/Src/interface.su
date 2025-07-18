@@ -1,3 +1,0 @@
-../Pheripheral/Src/interface.c:11:6:Indicate_LED	16	static
-../Pheripheral/Src/interface.c:21:9:Return_LED_Status	16	static
-../Pheripheral/Src/interface.c:33:15:Button_Status	8	static

@@ -46,8 +46,12 @@ MEMORY
 {
   RAM	(xrw)	: ORIGIN = 0x20000000,	LENGTH = 256K
   SRAM4	(xrw)	: ORIGIN = 0x28000000,	LENGTH = 16K
-  FLASH	(rx)	: ORIGIN = 0x08000000,	LENGTH = 512K
+  FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 504K
+  USER_FLASH (rx) : ORIGIN = 0x0807E000, LENGTH = 8K
+
 }
+
+
 
 /* Sections */
 SECTIONS
@@ -113,6 +117,7 @@ SECTIONS
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
+
 
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);

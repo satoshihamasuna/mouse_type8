@@ -1,0 +1,6 @@
+../Peripheral/Src/flash_util.c:22:6:eraseFlash	32	static
+../Peripheral/Src/flash_util.c:35:6:writeFlash	32	static
+../Peripheral/Src/flash_util.c:46:10:Flash_Load	8	static
+../Peripheral/Src/flash_util.c:51:9:Flash_Save	24	static
+../Peripheral/Src/flash_util.c:75:6:work_ram_set	16	static
+../Peripheral/Src/flash_util.c:81:9:work_ram_read	16	static

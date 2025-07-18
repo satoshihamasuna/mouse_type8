@@ -1,0 +1,7 @@
+../Peripheral/Src/ir_sensor.c:33:6:Sensor_TurnOffLED	2
+../Peripheral/Src/ir_sensor.c:41:6:Sensor_TurnOnLED	1
+../Peripheral/Src/ir_sensor.c:50:6:Sensor_Initialize	11
+../Peripheral/Src/ir_sensor.c:108:6:Sensor_StopADC	1
+../Peripheral/Src/ir_sensor.c:117:9:ADC_get_value	1
+../Peripheral/Src/ir_sensor.c:122:9:Sensor_GetValue	5
+../Peripheral/Src/ir_sensor.c:142:9:Sensor_GetBatteryValue	1

@@ -45,5 +45,5 @@ Component/ntshell-v0.3.1/src/lib/util \
 Core/Src \
 Core/Startup \
 Drivers/STM32U5xx_HAL_Driver/Src \
-Pheripheral/Src \
+Peripheral/Src \
 

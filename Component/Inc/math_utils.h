@@ -77,7 +77,5 @@
 #define MAP_MAX_VALUE 1024
 
 
-#endif
-
 
 #endif /* INC_MATH_UTILS_H_ */

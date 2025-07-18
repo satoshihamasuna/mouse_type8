@@ -38,8 +38,9 @@
 #include "imu.h"
 #include "lsm6dsr_reg.h"
 #include "encoder.h"
+#include "motor.h"
 #include <stdio.h>
-
+#include "flash_util.h"
 
 /* USER CODE END Includes */
 
@@ -115,11 +116,29 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM8_Init();
   MX_USART1_UART_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+  /*
+  for(uint32_t i = 0; i < 8*1000;i++)
+  {
+	  work_ram_set(i, (uint8_t)(i%255));
+  }
+
+  Flash_Save();
+
+  for(uint32_t i = 0; i < 8*1024;i++)
+   {
+ 	  work_ram_set(i, 0);
+   }
+  Flash_Load();
+*/
+
   Sensor_Initialize();
   IMU_initialize();
   Communicate_Initialize();
   Encoder_Initialize();
+  Motor_Initialize();
+  FAN_Motor_Initialize();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -130,6 +149,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  Indicate_LED(0xff);
+	  IMU_read_DMA_Start();
 	  HAL_Delay(200);
 	  Indicate_LED(0x0);
 	  HAL_Delay(200);
@@ -139,6 +159,8 @@ int main(void)
 	  printf("%d,%d,%d,%d,",ADC_get_value(4),ADC_get_value(5),ADC_get_value(6),ADC_get_value(7));
 	  printf("%d,%d\n",ADC_get_value(8),ADC_get_value(9));
 	  printf("encoder->%ld,%ld",ENC_CNT_L,ENC_CNT_R);
+	  printf("gyro->%lf\n",read_gyro_z_axis());
+	  printf("%d,%d\n",work_ram_read(2048),work_ram_read(6000));
   }
   /* USER CODE END 3 */
 }
