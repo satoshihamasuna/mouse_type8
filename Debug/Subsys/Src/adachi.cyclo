@@ -1,0 +1,6 @@
+C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344\tools\arm-none-eabi\include\c++\13.3.1\arm-none-eabi\thumb\v8-m.main+fp\hard\bits\gthr-default.h:229:1:int __gthread_key_delete(__gthread_key_t)	1
+../Subsys/Src/adachi.cpp:13:12:t_position pos_set(uint8_t, uint8_t, t_direction)	1
+../Subsys/Src/adachi.cpp:22:5:int adachi::get_priority(t_position, t_position)	4
+../Subsys/Src/adachi.cpp:43:5:int adachi::get_priority2(t_position, t_position, t_position)	4
+../Subsys/Src/adachi.cpp:68:5:int adachi::get_next_dir(t_position, int, t_position*)	17
+../Subsys/Src/adachi.cpp:193:5:int adachi::get_next_dir2(t_position, t_position, int, t_position*)	17

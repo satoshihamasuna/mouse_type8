@@ -15,23 +15,23 @@
 
 #define ACC_BUFF_SIZE (30)
 
-#define ENC_RESOLUTION	(200)
+#define ENC_RESOLUTION	(172)
 
-#define TIRE_DIAMETER	(13.95f)							//mm
+#define TIRE_DIAMETER	(14.5f)							//mm
 #define TIRE_RADIUS		(TIRE_DIAMETER/2.0f)			//mm
 #define MMPP			(TIRE_DIAMETER*PI/ENC_RESOLUTION)	//mm
 #define TREAD_WIDTH		((18.0-2.0)*2)
 
 #define WEIGHT			(18.0)					//g
-#define MOTOR_K_ER		(0.074)					//mV/rpm
-#define MOTOR_K_TR		(0.707)	//0.4//0.594				//mNm/A
-#define MOTOR_R			(5.0)//6.0
-#define GEAR_N			(40.0/9.0)
-#define MOUSE_INERTIA	(0.0023f*1.5)//0.001f//0.003,0.0022				//g・m^2
+#define MOTOR_K_ER		(0.08)					//mV/rpm
+#define MOTOR_K_TR		(0.764)	//0.4//0.594				//mNm/A
+#define MOTOR_R			(2.5)//6.0
+#define GEAR_N			(52.0/8.0)
+#define MOUSE_INERTIA	((0.1/1000.0))//0.001f//0.003,0.0022				//g・m^2
 #define RAD_2_RPM		60.0/(2.0*3.141592)
 #define TIRE_RADIUS_M	(TIRE_RADIUS/1000.0)		//m
 #define TREAD_WIDTH_M	((18.0-2.0)*2.0/1000.0)
-#define MOTOR_BR		(1.0/100000.0)			//mNm/rpm
+#define MOTOR_BR		(0.25/100000.0)			//mNm/rpm
 #define L_BAR_DT		(20.0/1000.0)
 
 

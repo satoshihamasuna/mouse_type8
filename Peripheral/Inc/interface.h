@@ -11,6 +11,7 @@
 //uint8_t led_state = 0;
 #include <stdio.h>
 #include "main.h"
+#include "typedef.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,7 +19,7 @@ extern "C" {
 
 void Indicate_LED(uint8_t led_num);
 uint8_t Return_LED_Status();
-GPIO_PinState Button_Status();
+t_bool Button_Status();
 
 #ifdef __cplusplus
 }

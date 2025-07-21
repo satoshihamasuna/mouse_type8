@@ -16,17 +16,16 @@ int16_t accel_data[3];
 int16_t gyro_data[3];
 
 uint8_t read_byte(uint8_t reg){
-	uint8_t val = 0x00;
-	uint8_t dammy = 0x00;
 	reg = reg | 0x80; //mask
 
-	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi2, &reg, 1 , 100);
-	HAL_SPI_TransmitReceive(&hspi2, &dammy, &val, 1, 100);
+	uint8_t value_imu[2] 	= {0x00,0x00};
+	uint8_t register_imu[2] = {reg,0x00};
 
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(&hspi2, register_imu, value_imu, 2, 100);
 	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
 
-	return val;
+	return value_imu[1];
 }
 
 void write_byte(uint8_t reg, uint8_t data){

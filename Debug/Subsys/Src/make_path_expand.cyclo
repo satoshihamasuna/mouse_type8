@@ -1,0 +1,21 @@
+C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344\tools\arm-none-eabi\include\c++\13.3.1\arm-none-eabi\thumb\v8-m.main+fp\hard\bits\gthr-default.h:229:1:int __gthread_key_delete(__gthread_key_t)	1
+../Subsys/Src/make_path_expand.cpp:33:15:t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(t_posDijkstra, t_direction, t_local_dir, t_local_dir)	58
+../Subsys/Src/make_path_expand.cpp:106:15:t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_WPos(t_posDijkstra, t_direction, t_local_dir)	87
+../Subsys/Src/make_path_expand.cpp:518:12:t_element* Dijkstra::get_closure_inf(t_posDijkstra)	5
+../Subsys/Src/make_path_expand.cpp:532:9:uint8_t Dijkstra::get_wall_inf(t_posDijkstra)	11
+../Subsys/Src/make_path_expand.cpp:565:6:void Dijkstra::straight_expand(t_posDijkstra, t_direction)	5
+../Subsys/Src/make_path_expand.cpp:594:6:void Dijkstra::diagonal_expand(t_posDijkstra, t_direction)	7
+../Subsys/Src/make_path_expand.cpp:624:6:void Dijkstra::turn_inR45_expand(t_posDijkstra, t_direction)	8
+../Subsys/Src/make_path_expand.cpp:646:6:void Dijkstra::turn_inL45_expand(t_posDijkstra, t_direction)	8
+../Subsys/Src/make_path_expand.cpp:667:6:void Dijkstra::turn_outR45_expand(t_posDijkstra, t_direction)	13
+../Subsys/Src/make_path_expand.cpp:714:6:void Dijkstra::turn_outL45_expand(t_posDijkstra, t_direction)	13
+../Subsys/Src/make_path_expand.cpp:762:6:void Dijkstra::turn_inR135_expand(t_posDijkstra, t_direction)	9
+../Subsys/Src/make_path_expand.cpp:800:6:void Dijkstra::turn_inL135_expand(t_posDijkstra, t_direction)	9
+../Subsys/Src/make_path_expand.cpp:822:6:void Dijkstra::turn_outR135_expand(t_posDijkstra, t_direction)	15
+../Subsys/Src/make_path_expand.cpp:872:6:void Dijkstra::turn_outL135_expand(t_posDijkstra, t_direction)	15
+../Subsys/Src/make_path_expand.cpp:921:6:void Dijkstra::longturn_R90_expand(t_posDijkstra, t_direction)	7
+../Subsys/Src/make_path_expand.cpp:943:6:void Dijkstra::longturn_L90_expand(t_posDijkstra, t_direction)	7
+../Subsys/Src/make_path_expand.cpp:965:6:void Dijkstra::longturn_R180_expand(t_posDijkstra, t_direction)	8
+../Subsys/Src/make_path_expand.cpp:988:6:void Dijkstra::longturn_L180_expand(t_posDijkstra, t_direction)	8
+../Subsys/Src/make_path_expand.cpp:1010:6:void Dijkstra::turn_vR90_expand(t_posDijkstra, t_direction)	12
+../Subsys/Src/make_path_expand.cpp:1047:6:void Dijkstra::turn_vL90_expand(t_posDijkstra, t_direction)	12

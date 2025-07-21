@@ -9,6 +9,7 @@
 #define INC_QUEUE_H_
 
 #include <iostream>
+#include <cstdint>
 
 template<std::size_t SIZE,typename T>
 class ring_queue{

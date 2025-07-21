@@ -36,8 +36,9 @@ Peripheral/Src/interface.o: ../Peripheral/Src/interface.c \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h \
- C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/interface.h \
- ../Core/Inc/main.h
+ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/interface.h \
+ ../Core/Inc/main.h \
+ D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h
 ../Core/Inc/gpio.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h:
@@ -76,5 +77,6 @@ Peripheral/Src/interface.o: ../Peripheral/Src/interface.c \
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h:
-C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/interface.h:
+D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/interface.h:
 ../Core/Inc/main.h:
+D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:

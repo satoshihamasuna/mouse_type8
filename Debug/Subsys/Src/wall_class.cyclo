@@ -1,0 +1,9 @@
+../Subsys/Src/../Inc/wall_class.h:30:8:void wall_histry_class::histry_init()	2
+../Subsys/Src/../Inc/wall_class.h:45:11:int16_t wall_histry_class::get_histry_cnt()	1
+../Subsys/Src/../Inc/wall_class.h:55:8:void wall_histry_class::histry_set(int, int, t_wall)	2
+../Subsys/Src/wall_class.cpp:15:6:void wall_class::init_maze()	5
+../Subsys/Src/wall_class.cpp:41:8:t_bool wall_class::is_unknown(uint16_t, uint16_t)	5
+../Subsys/Src/wall_class.cpp:53:6:void wall_class::set_wall(t_position)	18
+../Subsys/Src/wall_class.cpp:178:14:t_wall_state wall_class::get_WallState(t_position)	5
+../Subsys/Src/wall_class.cpp:196:6:void wall_class::histry2wall_append()	10
+../Subsys/Src/wall_class.cpp:239:6:void wall_class::indicate_wall()	9

@@ -45,10 +45,18 @@ void Motor_Initialize()
 }
 
 void Motor_Stop(){
+
 	HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_3);
 	HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
+	/*
+	MOT_SET_COMPARE_L_FORWARD( 1000-1 );
+	MOT_SET_COMPARE_L_REVERSE( 1000-1 );
+	MOT_SET_COMPARE_R_FORWARD( 1000-1 );
+	MOT_SET_COMPARE_R_REVERSE( 1000-1 );
+	*/
+	HAL_Delay(200);
 	//FAN_Motor_Stop();
 }
 

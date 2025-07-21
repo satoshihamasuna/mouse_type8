@@ -9,7 +9,11 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include Task/Src/subdir.mk
+-include System/Src/subdir.mk
+-include Subsys/Src/subdir.mk
 -include Peripheral/Src/subdir.mk
+-include Module/Src/subdir.mk
 -include Drivers/STM32U5xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
@@ -89,8 +93,8 @@ all: main-build
 main-build: type8.elf secondary-outputs
 
 # Tool invocations
-type8.elf type8.map: $(OBJS) $(USER_OBJS) C:\Users\sato1\Documents\Git\STM32\program_mouse_type8\type8\STM32U535CETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "type8.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"C:\Users\sato1\Documents\Git\STM32\program_mouse_type8\type8\STM32U535CETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="type8.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+type8.elf type8.map: $(OBJS) $(USER_OBJS) D:\mouse8\mouse_program\mouse_type8\STM32U535CETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "type8.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"D:\mouse8\mouse_program\mouse_type8\STM32U535CETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="type8.map" -Wl,--gc-sections -static -Wl,-Map=type8.map --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

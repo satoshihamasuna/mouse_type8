@@ -25,10 +25,9 @@ extern "C" {
 	uint8_t Communicate_RecieveDMA( void );
 
 
+
 #ifdef __cplusplus
 }
 #endif
-
-
 
 #endif /* INC_COMMUNICATE_H_ */

@@ -1,0 +1,2 @@
+../Peripheral/Src/battery.c:15:7:Battery_GetVoltage	8	static
+../Peripheral/Src/battery.c:19:6:Battery_LimiterVoltage	16	static

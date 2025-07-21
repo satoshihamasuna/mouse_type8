@@ -41,6 +41,7 @@
 #include "motor.h"
 #include <stdio.h>
 #include "flash_util.h"
+#include "system_util.h"
 
 /* USER CODE END Includes */
 
@@ -117,6 +118,7 @@ int main(void)
   MX_TIM8_Init();
   MX_USART1_UART_Init();
   MX_TIM1_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
   /*
   for(uint32_t i = 0; i < 8*1000;i++)
@@ -133,12 +135,8 @@ int main(void)
   Flash_Load();
 */
 
-  Sensor_Initialize();
-  IMU_initialize();
-  Communicate_Initialize();
-  Encoder_Initialize();
-  Motor_Initialize();
-  FAN_Motor_Initialize();
+  CPP_Main();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */

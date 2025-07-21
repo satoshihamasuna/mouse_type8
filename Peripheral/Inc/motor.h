@@ -12,6 +12,9 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
+#include "main.h"
+
 //motor
 void Motor_Initialize();
 void Motor_Stop();

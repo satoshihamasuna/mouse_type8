@@ -1,0 +1,2 @@
+../System/Src/system_util.cpp:13:6:void Module_Initialize()	8	static
+../System/Src/system_util.cpp:26:6:void CPP_Main()	16	static
