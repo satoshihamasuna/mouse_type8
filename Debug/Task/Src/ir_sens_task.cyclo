@@ -7,10 +7,10 @@
 ../Task/Src/ir_sens_task.cpp:61:7:float IrSensTask::IrSensor_SensingCurrent(int16_t)	1
 ../Task/Src/ir_sens_task.cpp:66:7:float IrSensTask::IrSensor_RelativeCurrent(int16_t)	1
 ../Task/Src/ir_sens_task.cpp:71:7:float IrSensTask::IrSensor_Irradiance(int16_t)	2
-../Task/Src/ir_sens_task.cpp:81:7:float IrSensTask::Sensor_CalcDistance(t_sensor_dir, int16_t)	29
-../Task/Src/ir_sens_task.cpp:198:6:void IrSensTask::IrSensorDistanceSet()	2
-../Task/Src/ir_sens_task.cpp:241:6:void IrSensTask::IrSensorWallSet()	50
-../Task/Src/ir_sens_task.cpp:365:6:void IrSensTask::IrSensorReferenceSet(float)	1
-../Task/Src/ir_sens_task.cpp:370:7:float IrSensTask::IrSensorMaxValueFromLog(t_sensor_dir)	13
-../Task/Src/ir_sens_task.cpp:419:6:void IrSensTask::SetWallControl_RadVelo(Vehicle*, float)	9
-../Task/Src/ir_sens_task.cpp:483:9:int16_t IrSensTask::IrSensor_Avg()	1
+../Task/Src/ir_sens_task.cpp:81:7:float IrSensTask::Sensor_CalcDistance(t_sensor_dir, int16_t)	33
+../Task/Src/ir_sens_task.cpp:200:6:void IrSensTask::IrSensorDistanceSet()	2
+../Task/Src/ir_sens_task.cpp:243:6:void IrSensTask::IrSensorWallSet()	50
+../Task/Src/ir_sens_task.cpp:367:6:void IrSensTask::IrSensorReferenceSet(float)	1
+../Task/Src/ir_sens_task.cpp:372:7:float IrSensTask::IrSensorMaxValueFromLog(t_sensor_dir)	13
+../Task/Src/ir_sens_task.cpp:421:6:void IrSensTask::SetWallControl_RadVelo(Vehicle*, float)	9
+../Task/Src/ir_sens_task.cpp:485:9:int16_t IrSensTask::IrSensor_Avg()	1

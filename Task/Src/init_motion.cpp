@@ -290,6 +290,11 @@ void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,floa
 	motion_plan.length_accel.set 	(1000*(max_sp*max_sp-motion_plan.velo.get()*motion_plan.velo.get())/(2.0*ABS(motion_plan.accel.get())));
 	motion_plan.length_deccel.set	(1000*(max_sp*max_sp-end_sp*end_sp)/(2.0*ABS(motion_plan.deccel.get())));
 
+	if(max_sp == end_sp)
+	{
+		motion_plan.deccel.set			(0.0f);
+	}
+
 	motion_plan.rad_accel.init		();
 	motion_plan.rad_deccel.init		();
 	motion_plan.rad_max_velo.init	();

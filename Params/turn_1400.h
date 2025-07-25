@@ -12,7 +12,7 @@
 
 //k = 250
 const static t_pid_gain sp_gain_turn90_1400 = {10.0, 0.05, 0.00};
-const static t_pid_gain om_gain_turn90_1400 = {0.4, 0.02, 0.0};
+const static t_pid_gain om_gain_turn90_1400 = {0.1, 0.005, 0.0};
 //const static t_turn_param_table slalom_L90_1400_table = {1.40f, 50.0f,22.01,38.31, 90.0f,Turn_L};
 //const static t_turn_param_table slalom_R90_1400_table = {1.40f,-50.0f,22.01,38.31,-90.0f,Turn_R};
 const static t_turn_param_table slalom_L90_1400_table = {1.40f, 50.0f,18.88,34.03, 90.0f,Turn_L};

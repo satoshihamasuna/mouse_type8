@@ -14,11 +14,12 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../Module/Src/../../Task/Inc/ctrl_task.h:158:3:Motion::Motion(Vehicle*, IrSensTask*, int)	1
 ../Module/Src/../../Task/Inc/ctrl_task.h:331:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	1
 ../Module/Src/../../Task/Inc/ctrl_task.h:349:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	1
-../Module/Src/interrupt.cpp:27:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	2
-../Module/Src/interrupt.cpp:45:6:void Interrupt_Initialize()	1
-../Module/Src/interrupt.cpp:97:6:void Interrupt::preprocess()	3
-../Module/Src/interrupt.cpp:176:6:void Interrupt::main()	1
-../Module/Src/interrupt.cpp:188:6:void Interrupt::postprocess()	1
+../Module/Src/interrupt.cpp:28:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	1
+../Module/Src/interrupt.cpp:40:6:void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef*)	1
+../Module/Src/interrupt.cpp:48:6:void Interrupt_Initialize()	1
+../Module/Src/interrupt.cpp:100:6:void Interrupt::preprocess()	3
+../Module/Src/interrupt.cpp:179:6:void Interrupt::main()	1
+../Module/Src/interrupt.cpp:191:6:void Interrupt::postprocess()	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:19:7:constexpr PID_Controller::PID_Controller()	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:37:7:constexpr mouse_Controller::mouse_Controller()	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:60:7:Vehicle::Vehicle()	1

@@ -391,7 +391,7 @@ void  Motion::SetIdeal_search_turn()
 
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*straight_motion_param.sp_gain);
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*straight_motion_param.om_gain);
-			vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
+			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
 	}
@@ -455,8 +455,13 @@ void Motion::SetIdeal_straight()
 
 		}
 
-		//if(ABS(motion_plan.length_deccel.get()+offset) - ( motion_plan.end_length.get() - vehicle->ego.length.get()) < 5.0)
-			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
+
+		if(ABS((motion_plan.length_deccel.get()+offset) - ( motion_plan.end_length.get() - vehicle->ego.length.get())) < motion_plan.max_velo.get()*2)
+		{
+			if(motion_plan.deccel.get() < 0.0 && motion_plan.max_velo.get() > 1.0)
+				vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
+		}
+
 	}
 	else if(vehicle->ego.length.get() < motion_plan.end_length.get())
 	{
@@ -518,7 +523,7 @@ void Motion::SetIdeal_straight()
 			vehicle->ideal.turn_x.set(0.0f);
 			vehicle->ideal.turn_y.set(0.0f);
 
-			vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
+			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 			motion_pattern_set(Run_Pause);
 			motion_state_set(STRAIGHT_STATE);
@@ -1288,7 +1293,7 @@ void Motion::SetIdeal_long_turn		( )
 			float acc = -vehicle->ideal.horizon_velo.get()*(vehicle->ideal.rad_velo.get()+vehicle->ideal.turn_slip_dot.get())
 						+vehicle->turn_slip_k.get()*(alpha_r*alpha_r + alpha_l *alpha_l)/2;
 			//if( ABS(turn_motion_param.param->degree) == 180.0)
-				vehicle->ideal.accel.set(acc);
+				//vehicle->ideal.accel.set(acc);
 		}
 		else
 		{
@@ -2028,7 +2033,7 @@ void Motion::SetIdeal_suction_start		( )
 	{
 		ir_sens->EnableIrSens();
 		ir_sens->SetWallControl_RadVelo(vehicle, deltaT_ms);
-		vehicle->V_suction.set(vehicle->V_suction.get() + 0.05);
+		vehicle->V_suction.set(vehicle->V_suction.get() + 0.01);
 		if(vehicle->V_suction.get() >= motion_plan.suction_value.get())
 		{
 			vehicle->V_suction.set(motion_plan.suction_value.get());

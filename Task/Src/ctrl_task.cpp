@@ -126,10 +126,10 @@ void CtrlTask::motion_control()
 			//calc motor induce ampere
 			float motor_r_ampere = 1.0f/(MOTOR_K_TR*GEAR_N)*(WEIGHT*(vehicle->ideal.accel.get()+friction*0.0)/1000.0f*(TIRE_RADIUS)/2.0f)
 								 + 1.0f/(MOTOR_K_TR*GEAR_N)*(MOUSE_INERTIA*vehicle->ideal.rad_accel.get()*TIRE_RADIUS/(TREAD_WIDTH/2.0f))
-								 + MOTOR_BR*motor_r_rpm/MOTOR_K_TR*0.0;
+								 + MOTOR_BR*motor_r_rpm /MOTOR_K_TR*1.0;
 			float motor_l_ampere = 1.0f/(MOTOR_K_TR*GEAR_N)*(WEIGHT*(vehicle->ideal.accel.get()+friction*0.0)/1000.0f*(TIRE_RADIUS)/2.0f)
 								 - 1.0f/(MOTOR_K_TR*GEAR_N)*(MOUSE_INERTIA*vehicle->ideal.rad_accel.get()*TIRE_RADIUS/(TREAD_WIDTH/2.0f))
-								 + MOTOR_BR*motor_l_rpm/MOTOR_K_TR*0.0;
+								 + MOTOR_BR*motor_l_rpm /MOTOR_K_TR*1.0;
 
 			//calc motor induce voltage
 			float sp_FF_control_r =  MOTOR_R*motor_r_ampere + MOTOR_K_ER*motor_r_rpm/1000;
@@ -256,7 +256,7 @@ void CtrlTask::motion_post_control()
 				{
 					if(ABS((vehicle->ego.velo.get() - vehicle->ideal.velo.get()))/vehicle->ideal.velo.get() >= 0.80f )
 					{
-						error_counter_set(error_counter_get() + 50);
+						error_counter_set(error_counter_get() + 20);
 					}
 				}
 
@@ -294,6 +294,7 @@ void CtrlTask::motion_post_control()
 				}
 			}
 
+			//error_counter_reset();
 		}
 		else
 		{

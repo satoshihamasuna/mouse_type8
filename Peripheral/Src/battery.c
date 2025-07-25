@@ -6,14 +6,14 @@
  */
 
 #define BATTRY_REFERENCE	(3.25f)
-#define BATTERY_LIMIT		(3.0f)
+#define BATTERY_LIMIT		(3.2f)
 
 #include "ir_sensor.h"
 #include "battery.h"
 #include "interface.h"
 
 float Battery_GetVoltage(){
-	return (BATTRY_REFERENCE * (140.0f+10.0f)/(10.0f) * (float)Sensor_GetBatteryValue())/4096.f;
+	return (BATTRY_REFERENCE * (143.0f+10.0f)/(10.0f) * (float)Sensor_GetBatteryValue())/(4096.f);
 }
 
 void Battery_LimiterVoltage()
@@ -27,14 +27,28 @@ void Battery_LimiterVoltage()
 	}
 	battery_voltage_average /= 10;
 
-	if( battery_voltage_average < BATTERY_LIMIT ) {
+	int battery_cell = 2;
+
+	/*
+	if( battery_voltage_average > 8.40 )
+	{
+		battery_cell = 3;
+	}
+	else if( battery_voltage_average > 4.20 )
+	{
+		battery_cell = 2;
+	}
+	else ;
+*/
+
+	if( battery_voltage_average < BATTERY_LIMIT*battery_cell ) {
 		while( 1 ) {
 			Indicate_LED(0x01);
 			HAL_Delay(200);
 			Indicate_LED(0x00);
 			HAL_Delay(200);
 		}
-	} else;
+	}
 }
 
 

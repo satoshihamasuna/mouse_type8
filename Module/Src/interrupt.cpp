@@ -20,30 +20,33 @@
 #include "../../Component/Inc/half_float.h"
 
 
+#define GYRO_OFFSET (0.0f)
 
 float lambda_slip;
 
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+	/*
     if (htim == &htim5){
-    	Interrupt::getInstance().preprocess();
-    	Interrupt::getInstance().main();
-    	Interrupt::getInstance().postprocess();
+    	//Interrupt::getInstance().preprocess();
+    	//Interrupt::getInstance().main();
+    	//Interrupt::getInstance().postprocess();
     }
+    */
 }
 
-/*
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 	Interrupt::getInstance().preprocess();
 	Interrupt::getInstance().main();
 	Interrupt::getInstance().postprocess();
 }
-*/
+
 
 void Interrupt_Initialize(){
-	HAL_TIM_Base_Start_IT(&htim5);
+	//HAL_TIM_Base_Start_IT(&htim5);
 }
 /*
 void Interrupt::preprocess(){
@@ -132,7 +135,7 @@ void Interrupt::preprocess()
 
 	Vehicle_type7::getInstance().ego.z_accel.set(z_acc_mean);
 
-	float rad_velo 		= (-1.0)*read_gyro_z_axis()*PI/180;// - GYRO_OFFSET;
+	float rad_velo 		= (-1.0)*read_gyro_z_axis()*PI/180 - GYRO_OFFSET;
 	float rad			= Vehicle_type7::getInstance().ego.radian.get() + rad_velo/1000.0f;
 
 	Vehicle_type7::getInstance().ego.rad_velo.set(rad_velo);

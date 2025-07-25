@@ -96,7 +96,6 @@ void Sensor_Initialize()
 	  {
 	      Error_Handler();
 	  }
-
 	  if (HAL_LPTIM_IC_Start(&hlptim1, LPTIM_CHANNEL_2) != HAL_OK)
 	  {
 	      Error_Handler();

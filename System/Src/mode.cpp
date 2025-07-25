@@ -71,7 +71,7 @@ namespace Mode
 		{
 			enable 	= Mode::Select(enable,0x01,Encoder_GetProperty_Left() );
 			mode = (enable == 0x00) ? Mode::Select(mode  ,0x03,Encoder_GetProperty_Right()):mode;
-			//Battery_LimiterVoltage();
+			Battery_LimiterVoltage();
 			Indicate_LED(mode << 4);
 			switch((enable << 4)|mode)
 			{
@@ -85,13 +85,13 @@ namespace Mode
 					enable = 0;
 					break;
 				case ENABLE|0x02:
-					Mode::Debug2(&st_param_700,mode_700,0);
-					Mode::Debug(&st_param_1200,mode_1200,380);
-				    Mode::Debug(&st_param_1400_acc2G,mode_1400,450);
-					Mode::Debug(&st_param_1500_acc2G,mode_1500,400);
-					Mode::Debug(&st_param_1600_acc2G,mode_1600,500);
-					Mode::Debug(&st_param_1800_acc3G,mode_1800,650);
-					Mode::Debug(&st_param_2000_acc3G,mode_2000,650);
+					//Mode::Debug2(&st_param_700,mode_700,0);
+					//Mode::Debug(&st_param_1200,mode_1200,400);
+				    //Mode::Debug(&st_param_1400_acc2G,mode_1400,500);
+					//Mode::Debug(&st_param_1500_acc2G,mode_1500,500);
+					Mode::Debug(&st_param_1600_acc2G,mode_1600,650);
+					Mode::Debug(&st_param_1800_acc3G,mode_1800,800);
+					Mode::Debug(&st_param_2000_acc3G,mode_2000,800);
 					enable = 0;
 					break;
 				case ENABLE|0x03:

@@ -118,7 +118,7 @@ int main(void)
   MX_TIM8_Init();
   MX_USART1_UART_Init();
   MX_TIM1_Init();
-  MX_TIM5_Init();
+  MX_LPTIM3_Init();
   /* USER CODE BEGIN 2 */
   /*
   for(uint32_t i = 0; i < 8*1000;i++)
@@ -181,12 +181,15 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_MSI
+                              |RCC_OSCILLATORTYPE_MSIK;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_0;
+  RCC_OscInitStruct.MSIKClockRange = RCC_MSIKRANGE_4;
+  RCC_OscInitStruct.MSIKState = RCC_MSIK_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLMBOOST = RCC_PLLMBOOST_DIV4;
@@ -217,6 +220,10 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
+  /** Enable the force of MSIK in stop mode
+  */
+  __HAL_RCC_MSIKSTOP_ENABLE();
 
   /** Enable the force of HSI in stop mode
   */

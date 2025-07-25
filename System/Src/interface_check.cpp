@@ -53,7 +53,7 @@ namespace Mode
 			enable = Mode::Select(enable,0x01,Encoder_GetProperty_Left());
 			param = (enable == 0x00) ? Mode::Select(param,0x0f,Encoder_GetProperty_Right()) : param;
 
-			//Battery_LimiterVoltage();
+			Battery_LimiterVoltage();
 			if(enable == 0x01)
 			{
 				if((Interrupt::getInstance().return_time_count() - time) > 400)
@@ -90,14 +90,16 @@ namespace Mode
 					HAL_Delay(10);
 					break;
 				case ENABLE|0x03:
-					while(1)
-					{
-						printf("length:%lf,",CtrlTask_type7::getInstance().return_vehicleObj()->ego.length.get());
-						printf("angle:%lf,",CtrlTask_type7::getInstance().return_vehicleObj()->ego.radian.get());
-						printf("battery:%lf\n",Battery_GetVoltage());
-						HAL_Delay(10);
-						if(Button_Status() == 1) break;
-					}
+						while(1)
+						{
+							printf("length:%lf,",CtrlTask_type7::getInstance().return_vehicleObj()->ego.length.get());
+							printf("angle:%lf,",CtrlTask_type7::getInstance().return_vehicleObj()->ego.radian.get());
+							printf("battery:%lf\n",Battery_GetVoltage());
+							HAL_Delay(10);
+							if(Button_Status() == 1) break;
+						}
+						  enable = 0x00;
+						  HAL_Delay(500);
 						break;
 				case ENABLE|0x04:
 					if(irsens->IrSensor_Avg() > 1500){
@@ -202,6 +204,14 @@ namespace Mode
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
 							  HAL_Delay(50);
 						  }
+						  float gyro_sum = 0.0f;
+						  for(int i = 0; i < 1000;i++)
+						  {
+							printf("gyro:%lf\n",(-1.0)*read_gyro_z_axis()*PI/180);
+							HAL_Delay(2);
+							gyro_sum += read_accel_z_axis();
+						  }
+						  printf("offset - >%f,%f",gyro_sum/1000.0f,DEG2RAD((-1.0)*gyro_sum/1000.0f));
 						  enable = 0x00;
 						  HAL_Delay(500);
 					}
