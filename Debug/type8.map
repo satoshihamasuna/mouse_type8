@@ -538,7 +538,7 @@ Discarded input sections
  .debug_macro   0x00000000       0x58 ./Component/ntshell-v0.3.1/src/lib/util/ntstdio.o
  .debug_macro   0x00000000       0x16 ./Component/ntshell-v0.3.1/src/lib/util/ntstdio.o
  .debug_line    0x00000000      0x4e4 ./Component/ntshell-v0.3.1/src/lib/util/ntstdio.o
- .debug_str     0x00000000     0x31bd ./Component/ntshell-v0.3.1/src/lib/util/ntstdio.o
+ .debug_str     0x00000000     0x31d6 ./Component/ntshell-v0.3.1/src/lib/util/ntstdio.o
  .comment       0x00000000       0x44 ./Component/ntshell-v0.3.1/src/lib/util/ntstdio.o
  .debug_frame   0x00000000      0x1b4 ./Component/ntshell-v0.3.1/src/lib/util/ntstdio.o
  .ARM.attributes
@@ -1515,7 +1515,7 @@ Discarded input sections
  .debug_macro   0x00000000      0x361 ./Core/Src/memorymap.o
  .debug_macro   0x00000000       0xa0 ./Core/Src/memorymap.o
  .debug_line    0x00000000      0x92c ./Core/Src/memorymap.o
- .debug_str     0x00000000   0x137a24 ./Core/Src/memorymap.o
+ .debug_str     0x00000000   0x137a3d ./Core/Src/memorymap.o
  .comment       0x00000000       0x44 ./Core/Src/memorymap.o
  .ARM.attributes
                 0x00000000       0x3a ./Core/Src/memorymap.o
@@ -3866,7 +3866,7 @@ Discarded input sections
  .debug_macro   0x00000000      0x1b8 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_exti.o
  .debug_macro   0x00000000      0x361 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_exti.o
  .debug_line    0x00000000      0xd85 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_exti.o
- .debug_str     0x00000000   0x137b80 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_exti.o
+ .debug_str     0x00000000   0x137b99 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_exti.o
  .comment       0x00000000       0x44 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_exti.o
  .debug_frame   0x00000000      0x1c4 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_exti.o
  .ARM.attributes
@@ -4507,7 +4507,7 @@ Discarded input sections
  .debug_macro   0x00000000      0x1b8 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gtzc.o
  .debug_macro   0x00000000      0x361 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gtzc.o
  .debug_line    0x00000000      0x934 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gtzc.o
- .debug_str     0x00000000   0x137818 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gtzc.o
+ .debug_str     0x00000000   0x137831 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gtzc.o
  .comment       0x00000000       0x44 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gtzc.o
  .ARM.attributes
                 0x00000000       0x3a ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gtzc.o
@@ -4656,7 +4656,7 @@ Discarded input sections
  .debug_macro   0x00000000      0x1b8 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c.o
  .debug_macro   0x00000000      0x361 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c.o
  .debug_line    0x00000000      0x933 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c.o
- .debug_str     0x00000000   0x137817 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c.o
+ .debug_str     0x00000000   0x137830 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c.o
  .comment       0x00000000       0x44 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c.o
  .ARM.attributes
                 0x00000000       0x3a ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c.o
@@ -4805,7 +4805,7 @@ Discarded input sections
  .debug_macro   0x00000000      0x1b8 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c_ex.o
  .debug_macro   0x00000000      0x361 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c_ex.o
  .debug_line    0x00000000      0x936 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c_ex.o
- .debug_str     0x00000000   0x13781a ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c_ex.o
+ .debug_str     0x00000000   0x137833 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c_ex.o
  .comment       0x00000000       0x44 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c_ex.o
  .ARM.attributes
                 0x00000000       0x3a ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c_ex.o
@@ -5434,7 +5434,7 @@ Discarded input sections
  .debug_macro   0x00000000      0x1b8 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr.o
  .debug_macro   0x00000000      0x361 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr.o
  .debug_line    0x00000000      0xbda ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr.o
- .debug_str     0x00000000   0x137d6c ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr.o
+ .debug_str     0x00000000   0x137d85 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr.o
  .comment       0x00000000       0x44 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr.o
  .debug_frame   0x00000000      0x2ac ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr.o
  .ARM.attributes
@@ -24613,7 +24613,7 @@ Discarded input sections
                 0x00000000      0x140 ./System/Src/debug2.o
  .debug_rnglists
                 0x00000000       0xec ./System/Src/debug2.o
- .debug_macro   0x00000000      0xaef ./System/Src/debug2.o
+ .debug_macro   0x00000000      0xaf5 ./System/Src/debug2.o
  .debug_macro   0x00000000      0xbb6 ./System/Src/debug2.o
  .debug_macro   0x00000000       0x22 ./System/Src/debug2.o
  .debug_macro   0x00000000       0x5b ./System/Src/debug2.o
@@ -24742,8 +24742,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x1c ./System/Src/debug2.o
  .debug_macro   0x00000000       0x40 ./System/Src/debug2.o
  .debug_macro   0x00000000       0x16 ./System/Src/debug2.o
- .debug_line    0x00000000     0x2fea ./System/Src/debug2.o
- .debug_str     0x00000000   0x145c66 ./System/Src/debug2.o
+ .debug_line    0x00000000     0x304e ./System/Src/debug2.o
+ .debug_str     0x00000000   0x145c93 ./System/Src/debug2.o
  .comment       0x00000000       0x44 ./System/Src/debug2.o
  .debug_frame   0x00000000      0x558 ./System/Src/debug2.o
  .ARM.attributes
@@ -26622,7 +26622,7 @@ Discarded input sections
                 0x00000000      0x100 ./System/Src/debug3.o
  .debug_rnglists
                 0x00000000       0xbc ./System/Src/debug3.o
- .debug_macro   0x00000000      0xaef ./System/Src/debug3.o
+ .debug_macro   0x00000000      0xaf5 ./System/Src/debug3.o
  .debug_macro   0x00000000      0xbb6 ./System/Src/debug3.o
  .debug_macro   0x00000000       0x22 ./System/Src/debug3.o
  .debug_macro   0x00000000       0x5b ./System/Src/debug3.o
@@ -26751,8 +26751,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x1c ./System/Src/debug3.o
  .debug_macro   0x00000000       0x40 ./System/Src/debug3.o
  .debug_macro   0x00000000       0x16 ./System/Src/debug3.o
- .debug_line    0x00000000     0x2833 ./System/Src/debug3.o
- .debug_str     0x00000000   0x145bf9 ./System/Src/debug3.o
+ .debug_line    0x00000000     0x2897 ./System/Src/debug3.o
+ .debug_str     0x00000000   0x145c26 ./System/Src/debug3.o
  .comment       0x00000000       0x44 ./System/Src/debug3.o
  .debug_frame   0x00000000      0x434 ./System/Src/debug3.o
  .ARM.attributes
@@ -52658,7 +52658,7 @@ LOAD C:/ST/STM32CubeIDE_1.18.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
  .debug_rnglists
                 0x00002d5d       0xf7 ./Task/Src/motion.o
 
-.debug_macro    0x00000000    0x46ffa
+.debug_macro    0x00000000    0x47066
  .debug_macro   0x00000000       0x24 ./Component/Src/controller.o
  .debug_macro   0x00000024      0xbb6 ./Component/Src/controller.o
  .debug_macro   0x00000bda      0x142 ./Component/Src/controller.o
@@ -52836,251 +52836,251 @@ LOAD C:/ST/STM32CubeIDE_1.18.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
  .debug_macro   0x00036d61      0x138 ./Module/Src/flash.o
  .debug_macro   0x00036e99     0x1685 ./Module/Src/flash.o
  .debug_macro   0x0003851e       0x2e ./Module/Src/flash.o
- .debug_macro   0x0003854c      0x5b5 ./Module/Src/interrupt.o
- .debug_macro   0x00038b01       0x16 ./Module/Src/interrupt.o
- .debug_macro   0x00038b17      0x5b7 ./Module/Src/log_data.o
- .debug_macro   0x000390ce      0x34a ./Peripheral/Src/battery.o
- .debug_macro   0x00039418       0x9e ./Peripheral/Src/battery.o
- .debug_macro   0x000394b6      0x112 ./Peripheral/Src/battery.o
- .debug_macro   0x000395c8      0x850 ./Peripheral/Src/communicate.o
- .debug_macro   0x00039e18       0x22 ./Peripheral/Src/communicate.o
- .debug_macro   0x00039e3a       0x43 ./Peripheral/Src/communicate.o
- .debug_macro   0x00039e7d       0x26 ./Peripheral/Src/communicate.o
- .debug_macro   0x00039ea3      0x173 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a016       0x1c ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a032       0x10 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a042       0x41 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a083       0x19 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a09c       0x11 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a0ad       0x10 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a0bd       0x5e ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a11b       0x16 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a131       0x52 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a183       0x5e ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a1e1       0x11 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a1f2       0x2f ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a221       0x16 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a237       0x2c ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a263       0x11 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a274       0x28 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a29c       0x2e ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a2ca       0x19 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a2e3       0x11 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a2f4       0x4f ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a343       0x18 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a35b       0x27 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a382       0x88 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a40a       0x19 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a423       0x1c ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a43f       0xf0 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a52f      0x11d ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a64c       0x17 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a663       0x19 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a67c       0x18 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a694       0x17 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a6ab       0x17 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a6c2       0x10 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a6d2       0x10 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a6e2       0x76 ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a758       0x1c ./Peripheral/Src/communicate.o
- .debug_macro   0x0003a774      0x3a0 ./Peripheral/Src/encoder.o
- .debug_macro   0x0003ab14      0x350 ./Peripheral/Src/flash_util.o
- .debug_macro   0x0003ae64       0x10 ./Peripheral/Src/flash_util.o
- .debug_macro   0x0003ae74       0xa6 ./Peripheral/Src/flash_util.o
- .debug_macro   0x0003af1a      0x337 ./Peripheral/Src/imu.o
- .debug_macro   0x0003b251      0x332 ./Peripheral/Src/interface.o
- .debug_macro   0x0003b583      0x380 ./Peripheral/Src/ir_sensor.o
- .debug_macro   0x0003b903      0x3b3 ./Peripheral/Src/motor.o
- .debug_macro   0x0003bcb6      0x977 ./Subsys/Src/adachi.o
- .debug_macro   0x0003c62d       0x10 ./Subsys/Src/adachi.o
- .debug_macro   0x0003c63d       0x1c ./Subsys/Src/adachi.o
- .debug_macro   0x0003c659       0xde ./Subsys/Src/adachi.o
- .debug_macro   0x0003c737      0x3cd ./Subsys/Src/adachi.o
- .debug_macro   0x0003cb04      0x5b7 ./Subsys/Src/calcRunTime.o
- .debug_macro   0x0003d0bb      0x95f ./Subsys/Src/make_map.o
- .debug_macro   0x0003da1a       0x1c ./Subsys/Src/make_map.o
- .debug_macro   0x0003da36       0x1c ./Subsys/Src/make_map.o
- .debug_macro   0x0003da52       0x33 ./Subsys/Src/make_map.o
- .debug_macro   0x0003da85       0x10 ./Subsys/Src/make_map.o
- .debug_macro   0x0003da95      0x131 ./Subsys/Src/make_map.o
- .debug_macro   0x0003dbc6      0x1d1 ./Subsys/Src/make_map.o
- .debug_macro   0x0003dd97      0x5df ./Subsys/Src/make_path.o
- .debug_macro   0x0003e376      0xa82 ./Subsys/Src/make_path_expand.o
- .debug_macro   0x0003edf8      0xa47 ./Subsys/Src/search.o
- .debug_macro   0x0003f83f      0x4f3 ./Subsys/Src/wall_class.o
- .debug_macro   0x0003fd32      0xaef ./System/Src/debug.o
- .debug_macro   0x00040821      0xaed ./System/Src/demo.o
- .debug_macro   0x0004130e      0xaed ./System/Src/demo2.o
- .debug_macro   0x00041dfb      0xaef ./System/Src/interface_check.o
- .debug_macro   0x000428ea      0xafa ./System/Src/mode.o
- .debug_macro   0x000433e4      0x61d ./System/Src/myshell.o
- .debug_macro   0x00043a01      0xaef ./System/Src/search_time_select.o
- .debug_macro   0x000444f0      0x521 ./System/Src/system_util.o
- .debug_macro   0x00044a11      0xaee ./System/Src/wall_histry_check.o
- .debug_macro   0x000454ff      0x589 ./Task/Src/ctrl_task.o
- .debug_macro   0x00045a88      0x57f ./Task/Src/init_motion.o
- .debug_macro   0x00046007      0x57f ./Task/Src/init_motion2.o
- .debug_macro   0x00046586      0x4f1 ./Task/Src/ir_sens_task.o
- .debug_macro   0x00046a77      0x583 ./Task/Src/motion.o
+ .debug_macro   0x0003854c      0x5bb ./Module/Src/interrupt.o
+ .debug_macro   0x00038b07       0x16 ./Module/Src/interrupt.o
+ .debug_macro   0x00038b1d      0x5bd ./Module/Src/log_data.o
+ .debug_macro   0x000390da      0x34a ./Peripheral/Src/battery.o
+ .debug_macro   0x00039424       0x9e ./Peripheral/Src/battery.o
+ .debug_macro   0x000394c2      0x112 ./Peripheral/Src/battery.o
+ .debug_macro   0x000395d4      0x850 ./Peripheral/Src/communicate.o
+ .debug_macro   0x00039e24       0x22 ./Peripheral/Src/communicate.o
+ .debug_macro   0x00039e46       0x43 ./Peripheral/Src/communicate.o
+ .debug_macro   0x00039e89       0x26 ./Peripheral/Src/communicate.o
+ .debug_macro   0x00039eaf      0x173 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a022       0x1c ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a03e       0x10 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a04e       0x41 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a08f       0x19 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a0a8       0x11 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a0b9       0x10 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a0c9       0x5e ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a127       0x16 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a13d       0x52 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a18f       0x5e ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a1ed       0x11 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a1fe       0x2f ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a22d       0x16 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a243       0x2c ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a26f       0x11 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a280       0x28 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a2a8       0x2e ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a2d6       0x19 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a2ef       0x11 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a300       0x4f ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a34f       0x18 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a367       0x27 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a38e       0x88 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a416       0x19 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a42f       0x1c ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a44b       0xf0 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a53b      0x11d ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a658       0x17 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a66f       0x19 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a688       0x18 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a6a0       0x17 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a6b7       0x17 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a6ce       0x10 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a6de       0x10 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a6ee       0x76 ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a764       0x1c ./Peripheral/Src/communicate.o
+ .debug_macro   0x0003a780      0x3a0 ./Peripheral/Src/encoder.o
+ .debug_macro   0x0003ab20      0x350 ./Peripheral/Src/flash_util.o
+ .debug_macro   0x0003ae70       0x10 ./Peripheral/Src/flash_util.o
+ .debug_macro   0x0003ae80       0xa6 ./Peripheral/Src/flash_util.o
+ .debug_macro   0x0003af26      0x337 ./Peripheral/Src/imu.o
+ .debug_macro   0x0003b25d      0x332 ./Peripheral/Src/interface.o
+ .debug_macro   0x0003b58f      0x380 ./Peripheral/Src/ir_sensor.o
+ .debug_macro   0x0003b90f      0x3b3 ./Peripheral/Src/motor.o
+ .debug_macro   0x0003bcc2      0x977 ./Subsys/Src/adachi.o
+ .debug_macro   0x0003c639       0x10 ./Subsys/Src/adachi.o
+ .debug_macro   0x0003c649       0x1c ./Subsys/Src/adachi.o
+ .debug_macro   0x0003c665       0xde ./Subsys/Src/adachi.o
+ .debug_macro   0x0003c743      0x3cd ./Subsys/Src/adachi.o
+ .debug_macro   0x0003cb10      0x5bd ./Subsys/Src/calcRunTime.o
+ .debug_macro   0x0003d0cd      0x95f ./Subsys/Src/make_map.o
+ .debug_macro   0x0003da2c       0x1c ./Subsys/Src/make_map.o
+ .debug_macro   0x0003da48       0x1c ./Subsys/Src/make_map.o
+ .debug_macro   0x0003da64       0x33 ./Subsys/Src/make_map.o
+ .debug_macro   0x0003da97       0x10 ./Subsys/Src/make_map.o
+ .debug_macro   0x0003daa7      0x131 ./Subsys/Src/make_map.o
+ .debug_macro   0x0003dbd8      0x1d1 ./Subsys/Src/make_map.o
+ .debug_macro   0x0003dda9      0x5e5 ./Subsys/Src/make_path.o
+ .debug_macro   0x0003e38e      0xa88 ./Subsys/Src/make_path_expand.o
+ .debug_macro   0x0003ee16      0xa4d ./Subsys/Src/search.o
+ .debug_macro   0x0003f863      0x4f3 ./Subsys/Src/wall_class.o
+ .debug_macro   0x0003fd56      0xaf5 ./System/Src/debug.o
+ .debug_macro   0x0004084b      0xaf3 ./System/Src/demo.o
+ .debug_macro   0x0004133e      0xaf3 ./System/Src/demo2.o
+ .debug_macro   0x00041e31      0xaf5 ./System/Src/interface_check.o
+ .debug_macro   0x00042926      0xb00 ./System/Src/mode.o
+ .debug_macro   0x00043426      0x623 ./System/Src/myshell.o
+ .debug_macro   0x00043a49      0xaf5 ./System/Src/search_time_select.o
+ .debug_macro   0x0004453e      0x521 ./System/Src/system_util.o
+ .debug_macro   0x00044a5f      0xaf4 ./System/Src/wall_histry_check.o
+ .debug_macro   0x00045553      0x58f ./Task/Src/ctrl_task.o
+ .debug_macro   0x00045ae2      0x585 ./Task/Src/init_motion.o
+ .debug_macro   0x00046067      0x585 ./Task/Src/init_motion2.o
+ .debug_macro   0x000465ec      0x4f1 ./Task/Src/ir_sens_task.o
+ .debug_macro   0x00046add      0x589 ./Task/Src/motion.o
 
-.debug_line     0x00000000    0x6f6bc
- .debug_line    0x00000000      0x256 ./Component/Src/controller.o
- .debug_line    0x00000256      0xb08 ./Component/Src/half_float.o
- .debug_line    0x00000d5e      0xeb0 ./Component/codegen/rtwhalf.o
- .debug_line    0x00001c0e      0x48f ./Component/ntshell-v0.3.1/src/lib/core/ntlibc.o
- .debug_line    0x0000209d      0x493 ./Component/ntshell-v0.3.1/src/lib/core/ntshell.o
- .debug_line    0x00002530      0x340 ./Component/ntshell-v0.3.1/src/lib/core/text_editor.o
- .debug_line    0x00002870      0x23b ./Component/ntshell-v0.3.1/src/lib/core/text_history.o
- .debug_line    0x00002aab      0x204 ./Component/ntshell-v0.3.1/src/lib/core/vtrecv.o
- .debug_line    0x00002caf      0x3eb ./Component/ntshell-v0.3.1/src/lib/core/vtsend.o
- .debug_line    0x0000309a      0x1fb ./Component/ntshell-v0.3.1/src/lib/util/ntopt.o
- .debug_line    0x00003295      0xc24 ./Core/Src/adc.o
- .debug_line    0x00003eb9      0xa4a ./Core/Src/gpdma.o
- .debug_line    0x00004903      0x981 ./Core/Src/gpio.o
- .debug_line    0x00005284      0x956 ./Core/Src/icache.o
- .debug_line    0x00005bda      0xa5c ./Core/Src/lptim.o
- .debug_line    0x00006636      0xd09 ./Core/Src/main.o
- .debug_line    0x0000733f      0xa96 ./Core/Src/spi.o
- .debug_line    0x00007dd5      0x93d ./Core/Src/stm32u5xx_hal_msp.o
- .debug_line    0x00008712      0xadc ./Core/Src/stm32u5xx_it.o
- .debug_line    0x000091ee      0x8ac ./Core/Src/syscalls.o
- .debug_line    0x00009a9a      0x588 ./Core/Src/sysmem.o
- .debug_line    0x0000a022      0xa41 ./Core/Src/system_stm32u5xx.o
- .debug_line    0x0000aa63      0xd0d ./Core/Src/tim.o
- .debug_line    0x0000b770      0xa85 ./Core/Src/usart.o
- .debug_line    0x0000c1f5       0x7b ./Core/Startup/startup_stm32u535cetx.o
- .debug_line    0x0000c270      0xde0 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal.o
- .debug_line    0x0000d050     0x2876 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_adc.o
- .debug_line    0x0000f8c6     0x1926 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_adc_ex.o
- .debug_line    0x000111ec      0xf90 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_cortex.o
- .debug_line    0x0001217c     0x13c2 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_dma.o
- .debug_line    0x0001353e     0x2849 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_dma_ex.o
- .debug_line    0x00015d87      0xca7 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.o
- .debug_line    0x00016a2e     0x10cb ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash_ex.o
- .debug_line    0x00017af9      0xedf ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gpio.o
- .debug_line    0x000189d8      0xc33 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_icache.o
- .debug_line    0x0001960b     0x1eb3 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_lptim.o
- .debug_line    0x0001b4be     0x1225 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr_ex.o
- .debug_line    0x0001c6e3     0x17cd ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc.o
- .debug_line    0x0001deb0     0x2339 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc_ex.o
- .debug_line    0x000201e9     0x261f ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi.o
- .debug_line    0x00022808      0xb20 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi_ex.o
- .debug_line    0x00023328     0x469a ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_tim.o
- .debug_line    0x000279c2     0x2355 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_tim_ex.o
- .debug_line    0x00029d17     0x37d0 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.o
- .debug_line    0x0002d4e7      0xf73 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart_ex.o
- .debug_line    0x0002e45a     0x14ad ./Module/Src/flash.o
- .debug_line    0x0002f907     0x1b45 ./Module/Src/interrupt.o
- .debug_line    0x0003144c     0x2226 ./Module/Src/log_data.o
- .debug_line    0x00033672      0xa62 ./Peripheral/Src/battery.o
- .debug_line    0x000340d4     0x1a03 ./Peripheral/Src/communicate.o
- .debug_line    0x00035ad7      0xc2c ./Peripheral/Src/encoder.o
- .debug_line    0x00036703      0xa9d ./Peripheral/Src/flash_util.o
- .debug_line    0x000371a0      0xb96 ./Peripheral/Src/imu.o
- .debug_line    0x00037d36      0xaa6 ./Peripheral/Src/interface.o
- .debug_line    0x000387dc      0xb65 ./Peripheral/Src/ir_sensor.o
- .debug_line    0x00039341      0xb4d ./Peripheral/Src/motor.o
- .debug_line    0x00039e8e     0x1f52 ./Subsys/Src/adachi.o
- .debug_line    0x0003bde0     0x2071 ./Subsys/Src/calcRunTime.o
- .debug_line    0x0003de51     0x23eb ./Subsys/Src/make_map.o
- .debug_line    0x0004023c     0x3849 ./Subsys/Src/make_path.o
- .debug_line    0x00043a85     0x34f8 ./Subsys/Src/make_path_expand.o
- .debug_line    0x00046f7d     0x282a ./Subsys/Src/search.o
- .debug_line    0x000497a7     0x17da ./Subsys/Src/wall_class.o
- .debug_line    0x0004af81     0x30c3 ./System/Src/debug.o
- .debug_line    0x0004e044     0x2e2d ./System/Src/demo.o
- .debug_line    0x00050e71     0x29e4 ./System/Src/demo2.o
- .debug_line    0x00053855     0x2a08 ./System/Src/interface_check.o
- .debug_line    0x0005625d     0x20ec ./System/Src/mode.o
- .debug_line    0x00058349     0x231d ./System/Src/myshell.o
- .debug_line    0x0005a666     0x28ff ./System/Src/search_time_select.o
- .debug_line    0x0005cf65     0x1422 ./System/Src/system_util.o
- .debug_line    0x0005e387     0x2ac5 ./System/Src/wall_histry_check.o
- .debug_line    0x00060e4c     0x1f68 ./Task/Src/ctrl_task.o
- .debug_line    0x00062db4     0x2b11 ./Task/Src/init_motion.o
- .debug_line    0x000658c5     0x1e9b ./Task/Src/init_motion2.o
- .debug_line    0x00067760     0x1ebd ./Task/Src/ir_sens_task.o
- .debug_line    0x0006961d     0x609f ./Task/Src/motion.o
+.debug_line     0x00000000    0x702f1
+ .debug_line    0x00000000      0x26f ./Component/Src/controller.o
+ .debug_line    0x0000026f      0xb3a ./Component/Src/half_float.o
+ .debug_line    0x00000da9      0xeb0 ./Component/codegen/rtwhalf.o
+ .debug_line    0x00001c59      0x48f ./Component/ntshell-v0.3.1/src/lib/core/ntlibc.o
+ .debug_line    0x000020e8      0x493 ./Component/ntshell-v0.3.1/src/lib/core/ntshell.o
+ .debug_line    0x0000257b      0x340 ./Component/ntshell-v0.3.1/src/lib/core/text_editor.o
+ .debug_line    0x000028bb      0x23b ./Component/ntshell-v0.3.1/src/lib/core/text_history.o
+ .debug_line    0x00002af6      0x204 ./Component/ntshell-v0.3.1/src/lib/core/vtrecv.o
+ .debug_line    0x00002cfa      0x3eb ./Component/ntshell-v0.3.1/src/lib/core/vtsend.o
+ .debug_line    0x000030e5      0x1fb ./Component/ntshell-v0.3.1/src/lib/util/ntopt.o
+ .debug_line    0x000032e0      0xc24 ./Core/Src/adc.o
+ .debug_line    0x00003f04      0xa4a ./Core/Src/gpdma.o
+ .debug_line    0x0000494e      0x981 ./Core/Src/gpio.o
+ .debug_line    0x000052cf      0x956 ./Core/Src/icache.o
+ .debug_line    0x00005c25      0xa5c ./Core/Src/lptim.o
+ .debug_line    0x00006681      0xd6d ./Core/Src/main.o
+ .debug_line    0x000073ee      0xa96 ./Core/Src/spi.o
+ .debug_line    0x00007e84      0x93d ./Core/Src/stm32u5xx_hal_msp.o
+ .debug_line    0x000087c1      0xadc ./Core/Src/stm32u5xx_it.o
+ .debug_line    0x0000929d      0x8ac ./Core/Src/syscalls.o
+ .debug_line    0x00009b49      0x588 ./Core/Src/sysmem.o
+ .debug_line    0x0000a0d1      0xa41 ./Core/Src/system_stm32u5xx.o
+ .debug_line    0x0000ab12      0xd0d ./Core/Src/tim.o
+ .debug_line    0x0000b81f      0xa85 ./Core/Src/usart.o
+ .debug_line    0x0000c2a4       0x7b ./Core/Startup/startup_stm32u535cetx.o
+ .debug_line    0x0000c31f      0xde0 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal.o
+ .debug_line    0x0000d0ff     0x2876 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_adc.o
+ .debug_line    0x0000f975     0x1926 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_adc_ex.o
+ .debug_line    0x0001129b      0xf90 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_cortex.o
+ .debug_line    0x0001222b     0x13c2 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_dma.o
+ .debug_line    0x000135ed     0x2849 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_dma_ex.o
+ .debug_line    0x00015e36      0xca7 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.o
+ .debug_line    0x00016add     0x10cb ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash_ex.o
+ .debug_line    0x00017ba8      0xedf ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gpio.o
+ .debug_line    0x00018a87      0xc33 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_icache.o
+ .debug_line    0x000196ba     0x1eb3 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_lptim.o
+ .debug_line    0x0001b56d     0x1225 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr_ex.o
+ .debug_line    0x0001c792     0x17cd ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc.o
+ .debug_line    0x0001df5f     0x2339 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc_ex.o
+ .debug_line    0x00020298     0x261f ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi.o
+ .debug_line    0x000228b7      0xb20 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi_ex.o
+ .debug_line    0x000233d7     0x469a ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_tim.o
+ .debug_line    0x00027a71     0x2355 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_tim_ex.o
+ .debug_line    0x00029dc6     0x37d0 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.o
+ .debug_line    0x0002d596      0xf73 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart_ex.o
+ .debug_line    0x0002e509     0x14df ./Module/Src/flash.o
+ .debug_line    0x0002f9e8     0x1b77 ./Module/Src/interrupt.o
+ .debug_line    0x0003155f     0x2271 ./Module/Src/log_data.o
+ .debug_line    0x000337d0      0xa94 ./Peripheral/Src/battery.o
+ .debug_line    0x00034264     0x1a35 ./Peripheral/Src/communicate.o
+ .debug_line    0x00035c99      0xc5e ./Peripheral/Src/encoder.o
+ .debug_line    0x000368f7      0xab6 ./Peripheral/Src/flash_util.o
+ .debug_line    0x000373ad      0xbaf ./Peripheral/Src/imu.o
+ .debug_line    0x00037f5c      0xad8 ./Peripheral/Src/interface.o
+ .debug_line    0x00038a34      0xb7e ./Peripheral/Src/ir_sensor.o
+ .debug_line    0x000395b2      0xb7f ./Peripheral/Src/motor.o
+ .debug_line    0x0003a131     0x201a ./Subsys/Src/adachi.o
+ .debug_line    0x0003c14b     0x20ee ./Subsys/Src/calcRunTime.o
+ .debug_line    0x0003e239     0x24b3 ./Subsys/Src/make_map.o
+ .debug_line    0x000406ec     0x387b ./Subsys/Src/make_path.o
+ .debug_line    0x00043f67     0x363d ./Subsys/Src/make_path_expand.o
+ .debug_line    0x000475a4     0x285c ./Subsys/Src/search.o
+ .debug_line    0x00049e00     0x180c ./Subsys/Src/wall_class.o
+ .debug_line    0x0004b60c     0x3127 ./System/Src/debug.o
+ .debug_line    0x0004e733     0x2e91 ./System/Src/demo.o
+ .debug_line    0x000515c4     0x2a48 ./System/Src/demo2.o
+ .debug_line    0x0005400c     0x2a6c ./System/Src/interface_check.o
+ .debug_line    0x00056a78     0x2169 ./System/Src/mode.o
+ .debug_line    0x00058be1     0x239a ./System/Src/myshell.o
+ .debug_line    0x0005af7b     0x2963 ./System/Src/search_time_select.o
+ .debug_line    0x0005d8de     0x1580 ./System/Src/system_util.o
+ .debug_line    0x0005ee5e     0x2b29 ./System/Src/wall_histry_check.o
+ .debug_line    0x00061987     0x1f9a ./Task/Src/ctrl_task.o
+ .debug_line    0x00063921     0x2b43 ./Task/Src/init_motion.o
+ .debug_line    0x00066464     0x1ecd ./Task/Src/init_motion2.o
+ .debug_line    0x00068331     0x1eef ./Task/Src/ir_sens_task.o
+ .debug_line    0x0006a220     0x60d1 ./Task/Src/motion.o
 
-.debug_str      0x00000000   0x158cd6
- .debug_str     0x00000000   0x158cd6 ./Component/Src/controller.o
-                               0x3978 (size before relaxing)
- .debug_str     0x00158cd6     0xaad0 ./Component/Src/half_float.o
- .debug_str     0x00158cd6     0xae20 ./Component/codegen/rtwhalf.o
- .debug_str     0x00158cd6     0x2fa7 ./Component/ntshell-v0.3.1/src/lib/core/ntlibc.o
- .debug_str     0x00158cd6     0x3df7 ./Component/ntshell-v0.3.1/src/lib/core/ntshell.o
- .debug_str     0x00158cd6     0x304f ./Component/ntshell-v0.3.1/src/lib/core/text_editor.o
- .debug_str     0x00158cd6     0x3065 ./Component/ntshell-v0.3.1/src/lib/core/text_history.o
- .debug_str     0x00158cd6     0x33d8 ./Component/ntshell-v0.3.1/src/lib/core/vtrecv.o
- .debug_str     0x00158cd6     0x3224 ./Component/ntshell-v0.3.1/src/lib/core/vtsend.o
- .debug_str     0x00158cd6     0x300d ./Component/ntshell-v0.3.1/src/lib/util/ntopt.o
- .debug_str     0x00158cd6   0x139190 ./Core/Src/adc.o
- .debug_str     0x00158cd6   0x138993 ./Core/Src/gpdma.o
- .debug_str     0x00158cd6   0x137d48 ./Core/Src/gpio.o
- .debug_str     0x00158cd6   0x137abc ./Core/Src/icache.o
- .debug_str     0x00158cd6   0x1386e6 ./Core/Src/lptim.o
- .debug_str     0x00158cd6   0x13915e ./Core/Src/main.o
- .debug_str     0x00158cd6   0x138ed8 ./Core/Src/spi.o
- .debug_str     0x00158cd6   0x137c8c ./Core/Src/stm32u5xx_hal_msp.o
- .debug_str     0x00158cd6   0x1388d7 ./Core/Src/stm32u5xx_it.o
- .debug_str     0x00158cd6     0x99f0 ./Core/Src/syscalls.o
- .debug_str     0x00158cd6     0x778e ./Core/Src/sysmem.o
- .debug_str     0x00158cd6   0x137bf6 ./Core/Src/system_stm32u5xx.o
- .debug_str     0x00158cd6   0x138835 ./Core/Src/tim.o
- .debug_str     0x00158cd6   0x138e45 ./Core/Src/usart.o
- .debug_str     0x00158cd6       0x6e ./Core/Startup/startup_stm32u535cetx.o
- .debug_str     0x00158cd6   0x13895b ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal.o
- .debug_str     0x00158cd6   0x138ef1 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_adc.o
- .debug_str     0x00158cd6   0x138a48 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_adc_ex.o
- .debug_str     0x00158cd6   0x1387ad ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_cortex.o
- .debug_str     0x00158cd6   0x137f8c ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_dma.o
- .debug_str     0x00158cd6   0x1385f8 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_dma_ex.o
- .debug_str     0x00158cd6   0x137c5b ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.o
- .debug_str     0x00158cd6   0x137ea8 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash_ex.o
- .debug_str     0x00158cd6   0x137c1b ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gpio.o
- .debug_str     0x00158cd6   0x137f2a ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_icache.o
- .debug_str     0x00158cd6   0x138710 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_lptim.o
- .debug_str     0x00158cd6   0x138296 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr_ex.o
- .debug_str     0x00158cd6   0x13925b ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc.o
- .debug_str     0x00158cd6   0x13a34b ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc_ex.o
- .debug_str     0x00158cd6   0x1384ea ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi.o
- .debug_str     0x00158cd6   0x13805a ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi_ex.o
- .debug_str     0x00158cd6   0x13904b ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_tim.o
- .debug_str     0x00158cd6   0x138ca2 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_tim_ex.o
- .debug_str     0x00158cd6   0x1388bd ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.o
- .debug_str     0x00158cd6   0x13836f ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart_ex.o
- .debug_str     0x00158cd6   0x13c078 ./Module/Src/flash.o
- .debug_str     0x00158cd6   0x1432ab ./Module/Src/interrupt.o
- .debug_str     0x00158cd6   0x14081b ./Module/Src/log_data.o
- .debug_str     0x00158cd6   0x138158 ./Peripheral/Src/battery.o
- .debug_str     0x00158cd6   0x13f142 ./Peripheral/Src/communicate.o
- .debug_str     0x00158cd6   0x138ef7 ./Peripheral/Src/encoder.o
- .debug_str     0x00158cd6   0x1382a7 ./Peripheral/Src/flash_util.o
- .debug_str     0x00158cd6   0x138a9f ./Peripheral/Src/imu.o
- .debug_str     0x00158cd6   0x138179 ./Peripheral/Src/interface.o
- .debug_str     0x00158cd6   0x139031 ./Peripheral/Src/ir_sensor.o
- .debug_str     0x00158cd6   0x138ffd ./Peripheral/Src/motor.o
- .debug_str     0x00158cd6   0x13f6a8 ./Subsys/Src/adachi.o
- .debug_str     0x00158cd6   0x13fb7b ./Subsys/Src/calcRunTime.o
- .debug_str     0x00158cd6   0x13f6d5 ./Subsys/Src/make_map.o
- .debug_str     0x00158cd6   0x143051 ./Subsys/Src/make_path.o
- .debug_str     0x00158cd6   0x146333 ./Subsys/Src/make_path_expand.o
- .debug_str     0x00158cd6   0x145def ./Subsys/Src/search.o
- .debug_str     0x00158cd6   0x13bde5 ./Subsys/Src/wall_class.o
- .debug_str     0x00158cd6   0x145ca2 ./System/Src/debug.o
- .debug_str     0x00158cd6   0x147dde ./System/Src/demo.o
- .debug_str     0x00158cd6   0x147c49 ./System/Src/demo2.o
- .debug_str     0x00158cd6   0x145ca1 ./System/Src/interface_check.o
- .debug_str     0x00158cd6   0x1430b2 ./System/Src/mode.o
- .debug_str     0x00158cd6   0x142d51 ./System/Src/myshell.o
- .debug_str     0x00158cd6   0x145a01 ./System/Src/search_time_select.o
- .debug_str     0x00158cd6   0x13ba15 ./System/Src/system_util.o
- .debug_str     0x00158cd6   0x145f3b ./System/Src/wall_histry_check.o
- .debug_str     0x00158cd6   0x141688 ./Task/Src/ctrl_task.o
- .debug_str     0x00158cd6   0x14175f ./Task/Src/init_motion.o
- .debug_str     0x00158cd6   0x1416e5 ./Task/Src/init_motion2.o
- .debug_str     0x00158cd6   0x13c18e ./Task/Src/ir_sens_task.o
- .debug_str     0x00158cd6   0x14197a ./Task/Src/motion.o
+.debug_str      0x00000000   0x158d03
+ .debug_str     0x00000000   0x158d03 ./Component/Src/controller.o
+                               0x3991 (size before relaxing)
+ .debug_str     0x00158d03     0xaae9 ./Component/Src/half_float.o
+ .debug_str     0x00158d03     0xae39 ./Component/codegen/rtwhalf.o
+ .debug_str     0x00158d03     0x2fc0 ./Component/ntshell-v0.3.1/src/lib/core/ntlibc.o
+ .debug_str     0x00158d03     0x3e10 ./Component/ntshell-v0.3.1/src/lib/core/ntshell.o
+ .debug_str     0x00158d03     0x3068 ./Component/ntshell-v0.3.1/src/lib/core/text_editor.o
+ .debug_str     0x00158d03     0x307e ./Component/ntshell-v0.3.1/src/lib/core/text_history.o
+ .debug_str     0x00158d03     0x33f1 ./Component/ntshell-v0.3.1/src/lib/core/vtrecv.o
+ .debug_str     0x00158d03     0x323d ./Component/ntshell-v0.3.1/src/lib/core/vtsend.o
+ .debug_str     0x00158d03     0x3026 ./Component/ntshell-v0.3.1/src/lib/util/ntopt.o
+ .debug_str     0x00158d03   0x1391a9 ./Core/Src/adc.o
+ .debug_str     0x00158d03   0x1389ac ./Core/Src/gpdma.o
+ .debug_str     0x00158d03   0x137d61 ./Core/Src/gpio.o
+ .debug_str     0x00158d03   0x137ad5 ./Core/Src/icache.o
+ .debug_str     0x00158d03   0x1386ff ./Core/Src/lptim.o
+ .debug_str     0x00158d03   0x139177 ./Core/Src/main.o
+ .debug_str     0x00158d03   0x138ef1 ./Core/Src/spi.o
+ .debug_str     0x00158d03   0x137ca5 ./Core/Src/stm32u5xx_hal_msp.o
+ .debug_str     0x00158d03   0x1388f0 ./Core/Src/stm32u5xx_it.o
+ .debug_str     0x00158d03     0x9a09 ./Core/Src/syscalls.o
+ .debug_str     0x00158d03     0x77a7 ./Core/Src/sysmem.o
+ .debug_str     0x00158d03   0x137c0f ./Core/Src/system_stm32u5xx.o
+ .debug_str     0x00158d03   0x13884e ./Core/Src/tim.o
+ .debug_str     0x00158d03   0x138e5e ./Core/Src/usart.o
+ .debug_str     0x00158d03       0x87 ./Core/Startup/startup_stm32u535cetx.o
+ .debug_str     0x00158d03   0x138974 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal.o
+ .debug_str     0x00158d03   0x138f0a ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_adc.o
+ .debug_str     0x00158d03   0x138a61 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_adc_ex.o
+ .debug_str     0x00158d03   0x1387c6 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_cortex.o
+ .debug_str     0x00158d03   0x137fa5 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_dma.o
+ .debug_str     0x00158d03   0x138611 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_dma_ex.o
+ .debug_str     0x00158d03   0x137c74 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.o
+ .debug_str     0x00158d03   0x137ec1 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash_ex.o
+ .debug_str     0x00158d03   0x137c34 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gpio.o
+ .debug_str     0x00158d03   0x137f43 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_icache.o
+ .debug_str     0x00158d03   0x138729 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_lptim.o
+ .debug_str     0x00158d03   0x1382af ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr_ex.o
+ .debug_str     0x00158d03   0x139274 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc.o
+ .debug_str     0x00158d03   0x13a364 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc_ex.o
+ .debug_str     0x00158d03   0x138503 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi.o
+ .debug_str     0x00158d03   0x138073 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi_ex.o
+ .debug_str     0x00158d03   0x139064 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_tim.o
+ .debug_str     0x00158d03   0x138cbb ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_tim_ex.o
+ .debug_str     0x00158d03   0x1388d6 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.o
+ .debug_str     0x00158d03   0x138388 ./Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart_ex.o
+ .debug_str     0x00158d03   0x13c091 ./Module/Src/flash.o
+ .debug_str     0x00158d03   0x1432d8 ./Module/Src/interrupt.o
+ .debug_str     0x00158d03   0x140848 ./Module/Src/log_data.o
+ .debug_str     0x00158d03   0x138171 ./Peripheral/Src/battery.o
+ .debug_str     0x00158d03   0x13f15b ./Peripheral/Src/communicate.o
+ .debug_str     0x00158d03   0x138f10 ./Peripheral/Src/encoder.o
+ .debug_str     0x00158d03   0x1382c0 ./Peripheral/Src/flash_util.o
+ .debug_str     0x00158d03   0x138ab8 ./Peripheral/Src/imu.o
+ .debug_str     0x00158d03   0x138192 ./Peripheral/Src/interface.o
+ .debug_str     0x00158d03   0x13904a ./Peripheral/Src/ir_sensor.o
+ .debug_str     0x00158d03   0x139016 ./Peripheral/Src/motor.o
+ .debug_str     0x00158d03   0x13f6c1 ./Subsys/Src/adachi.o
+ .debug_str     0x00158d03   0x13fba8 ./Subsys/Src/calcRunTime.o
+ .debug_str     0x00158d03   0x13f6ee ./Subsys/Src/make_map.o
+ .debug_str     0x00158d03   0x14307e ./Subsys/Src/make_path.o
+ .debug_str     0x00158d03   0x146360 ./Subsys/Src/make_path_expand.o
+ .debug_str     0x00158d03   0x145e1c ./Subsys/Src/search.o
+ .debug_str     0x00158d03   0x13bdfe ./Subsys/Src/wall_class.o
+ .debug_str     0x00158d03   0x145ccf ./System/Src/debug.o
+ .debug_str     0x00158d03   0x147e0b ./System/Src/demo.o
+ .debug_str     0x00158d03   0x147c76 ./System/Src/demo2.o
+ .debug_str     0x00158d03   0x145cce ./System/Src/interface_check.o
+ .debug_str     0x00158d03   0x1430df ./System/Src/mode.o
+ .debug_str     0x00158d03   0x142d7e ./System/Src/myshell.o
+ .debug_str     0x00158d03   0x145a2e ./System/Src/search_time_select.o
+ .debug_str     0x00158d03   0x13ba2e ./System/Src/system_util.o
+ .debug_str     0x00158d03   0x145f68 ./System/Src/wall_histry_check.o
+ .debug_str     0x00158d03   0x1416b5 ./Task/Src/ctrl_task.o
+ .debug_str     0x00158d03   0x14178c ./Task/Src/init_motion.o
+ .debug_str     0x00158d03   0x141712 ./Task/Src/init_motion2.o
+ .debug_str     0x00158d03   0x13c1a7 ./Task/Src/ir_sens_task.o
+ .debug_str     0x00158d03   0x1419a7 ./Task/Src/motion.o
 
 .comment        0x00000000       0x43
  .comment       0x00000000       0x43 ./Component/Src/controller.o
@@ -53327,6 +53327,6 @@ LOAD C:/ST/STM32CubeIDE_1.18.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
  .debug_frame   0x000118d8       0x38 C:/ST/STM32CubeIDE_1.18.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v8-m.main+fp/hard\libgcc.a(_udivmoddi4.o)
 
 .debug_line_str
-                0x00000000       0x52
+                0x00000000       0x6b
  .debug_line_str
-                0x00000000       0x52 ./Core/Startup/startup_stm32u535cetx.o
+                0x00000000       0x6b ./Core/Startup/startup_stm32u535cetx.o

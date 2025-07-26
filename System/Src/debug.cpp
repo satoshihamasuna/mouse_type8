@@ -132,7 +132,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 						  LogData::getInstance().data_count = 0;
 						  LogData::getInstance().log_enable = True;
@@ -161,7 +161,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 
 						  motion->exe_Motion_straight(SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
@@ -192,7 +192,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 						  LogData::getInstance().data_count = 0;
 						  LogData::getInstance().log_enable = True;
@@ -224,7 +224,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 
 						  motion->exe_Motion_straight(SECTION,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
@@ -255,7 +255,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
@@ -286,7 +286,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
@@ -318,7 +318,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
@@ -351,7 +351,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 						  motion->exe_Motion_diagonal(DIAG_SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
@@ -382,7 +382,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 
 						  motion->exe_Motion_straight(SECTION,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
@@ -414,7 +414,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.05) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
@@ -446,7 +446,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
@@ -478,7 +478,7 @@ namespace Mode
 
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
-						  int stay_time 	= (int)(suction_value/0.01) + 300;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);

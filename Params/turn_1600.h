@@ -41,7 +41,7 @@ const static t_param param_RV90_1600 = {&slalom_RV90_1600_table,&sp_gain_turnV90
 
 //k = 250
 const static t_pid_gain sp_gain_turnIn45_1600 = {4.0,0.05,0.00};
-const static t_pid_gain om_gain_turnIn45_1600 = {0.35, 0.005, 0.0};
+const static t_pid_gain om_gain_turnIn45_1600 = {0.35, 0.01, 0.0};
 //const static t_turn_param_table slalom_inL45_1600_table = {1.60f, 53.0f,9.84,41.94, 45.0f,Turn_L};
 //const static t_turn_param_table slalom_inR45_1600_table = {1.60f,-53.0f,9.84,41.94,-45.0f,Turn_R};
 const static t_turn_param_table slalom_inL45_1600_table = {1.60f, 55.0f,7.52,39.62, 45.0f,Turn_L};

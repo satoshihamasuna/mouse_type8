@@ -1953,7 +1953,7 @@ void Motion::SetIdeal_fix_wall		( )
 
 			float target_acc = (1.0 * sp_err - 100.0*vehicle->ideal.velo.get());
 			float target_velo = vehicle->ideal.velo.get() + target_acc/1000.0f;
-			float max_set_velo = 0.3;
+			float max_set_velo = 0.4;
 			if(target_velo >=  max_set_velo)
 			{
 				target_acc = 0.0;
@@ -2033,7 +2033,7 @@ void Motion::SetIdeal_suction_start		( )
 	{
 		ir_sens->EnableIrSens();
 		ir_sens->SetWallControl_RadVelo(vehicle, deltaT_ms);
-		vehicle->V_suction.set(vehicle->V_suction.get() + 0.01);
+		vehicle->V_suction.set(vehicle->V_suction.get() + SUCTION_ACC);
 		if(vehicle->V_suction.get() >= motion_plan.suction_value.get())
 		{
 			vehicle->V_suction.set(motion_plan.suction_value.get());

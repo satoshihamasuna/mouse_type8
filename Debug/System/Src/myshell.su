@@ -9,12 +9,12 @@
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:195:7:virtual void Vehicle_type7::suctionSetDuty(int)	16	static
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:202:7:virtual void Vehicle_type7::suctionStop()	16	static
 ../System/Src/../../Task/Inc/sensing_task.h:122:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
-../System/Src/../../Task/Inc/ctrl_task.h:158:3:Motion::Motion(Vehicle*, IrSensTask*, int)	24	static
-../System/Src/../../Task/Inc/ctrl_task.h:167:24:t_exeStatus Motion::motion_exeStatus_get()	16	static
-../System/Src/../../Task/Inc/ctrl_task.h:202:22:t_exeStatus Motion::execute_Motion()	16	static
-../System/Src/../../Task/Inc/ctrl_task.h:318:15:IrSensTask* Motion::return_irObj()	16	static
-../System/Src/../../Task/Inc/ctrl_task.h:331:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	24	static
-../System/Src/../../Task/Inc/ctrl_task.h:349:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	24	static
+../System/Src/../../Task/Inc/ctrl_task.h:160:3:Motion::Motion(Vehicle*, IrSensTask*, int)	24	static
+../System/Src/../../Task/Inc/ctrl_task.h:169:24:t_exeStatus Motion::motion_exeStatus_get()	16	static
+../System/Src/../../Task/Inc/ctrl_task.h:204:22:t_exeStatus Motion::execute_Motion()	16	static
+../System/Src/../../Task/Inc/ctrl_task.h:320:15:IrSensTask* Motion::return_irObj()	16	static
+../System/Src/../../Task/Inc/ctrl_task.h:333:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	24	static
+../System/Src/../../Task/Inc/ctrl_task.h:351:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	24	static
 ../System/Src/myshell.cpp:57:12:int usrcmd_help(int, char**)	24	static
 ../System/Src/myshell.cpp:70:12:int usrcmd_info(int, char**)	16	static
 ../System/Src/myshell.cpp:90:12:int usrcmd_disp(int, char**)	16	static

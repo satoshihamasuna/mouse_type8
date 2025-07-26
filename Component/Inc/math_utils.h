@@ -17,7 +17,7 @@
 
 #define ENC_RESOLUTION	(172)
 
-#define TIRE_DIAMETER	(15.10f)							//mm
+#define TIRE_DIAMETER	(14.98f)							//mm
 #define TIRE_RADIUS		(TIRE_DIAMETER/2.0f)			//mm
 #define MMPP			(TIRE_DIAMETER*PI/ENC_RESOLUTION)	//mm
 #define TREAD_WIDTH		((18.0-2.0)*2)

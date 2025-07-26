@@ -22,13 +22,13 @@
 #include "turn_1800.h"
 #include "turn_2000.h"
 
-const static t_pid_gain basic_sp_gain = {2.0,0.04,0.0};
+const static t_pid_gain basic_sp_gain = {2.0,0.08,0.005};
 const static t_pid_gain basic_om_gain = {0.07f,0.004f,0.00f};//{0.10f, 0.01f, 0.00f};
 
-const static t_pid_gain search_sp_gain = {2.0,0.04,0.0};
+const static t_pid_gain search_sp_gain = {2.0,0.08,0.005};
 const static t_pid_gain search_om_gain = {0.07f, 0.004f, 0.00f};
 
-const static t_pid_gain sp_gain_search_turn = {2.0,0.04,0.0};;//{2.0,0.04};
+const static t_pid_gain sp_gain_search_turn = {2.0,0.08,0.005};;//{2.0,0.04};
 const static t_pid_gain om_gain_search_turn = {0.07f, 0.005f, 0.00f};//{0.50f, 0.0005f, 0.001f};
 const static t_turn_param_table slalom_L90_table_320 = {0.32f, 26.00f,9.46,11.16, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_table_320 = {0.32f,-26.00f,9.46,11.16,-90.0f,Turn_R};

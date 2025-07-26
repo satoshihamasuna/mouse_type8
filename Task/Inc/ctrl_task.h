@@ -18,6 +18,8 @@
 #include "../../Module/Inc/vehicle.h"
 #include "run_typedef.h"
 
+#define SUCTION_ACC (0.008)
+
 struct motion_plan_params
 {
 		param_element velo;

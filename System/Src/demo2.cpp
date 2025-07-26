@@ -191,7 +191,7 @@ void Demo2()
 				}
 				break;
 			case ENABLE|0x07:
-				if(irsens->IrSensor_Avg() > 2000*4)
+				if(irsens->IrSensor_Avg() > 2000)
 				{
 					for(int i = 0;i < 11;i++)
 					{
@@ -203,7 +203,7 @@ void Demo2()
 				}
 				break;
 			case ENABLE|0x08:
-			   if(irsens->IrSensor_Avg() > 2000*4)
+			   if(irsens->IrSensor_Avg() > 2000)
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -227,7 +227,7 @@ void Demo2()
 				}
 				break;
 			case ENABLE|0x09:
-			   if(irsens->IrSensor_Avg() > 2000*4)
+			   if(irsens->IrSensor_Avg() > 2000)
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -278,7 +278,7 @@ void Demo2()
 			   }
 				break;
 			case ENABLE|0x0B:
-			   if(irsens->IrSensor_Avg() > 2000*4)
+			   if(irsens->IrSensor_Avg() > 2000)
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -302,7 +302,7 @@ void Demo2()
 				}
 				break;
 			case ENABLE|0x0C:
-			   if(irsens->IrSensor_Avg() > 2000*4)
+			   if(irsens->IrSensor_Avg() > 2000)
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -327,7 +327,7 @@ void Demo2()
 				}
 				break;
 			case ENABLE|0x0D:
-			   if(irsens->IrSensor_Avg() > 2000*4)
+			   if(irsens->IrSensor_Avg() > 2000)
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -351,7 +351,7 @@ void Demo2()
 				}
 				break;
 			case ENABLE|0x0E:
-			   if(irsens->IrSensor_Avg() > 2000*4)
+			   if(irsens->IrSensor_Avg() > 2000)
 			   {
 					for(int i = 0;i < 11;i++)
 					{

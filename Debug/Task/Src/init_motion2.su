@@ -7,13 +7,13 @@
 ../Task/Src/../Inc/sensing_task.h:80:8:void IrSensTask::EnableIrSensStraight()	16	static
 ../Task/Src/../Inc/sensing_task.h:81:8:void IrSensTask::EnableIrSensDiagonal()	16	static
 ../Task/Src/../Inc/sensing_task.h:111:8:void IrSensTask::Division_Wall_Correction_Reset()	16	static
-../Task/Src/../Inc/ctrl_task.h:126:15:void Motion::run_time_ms_reset()	16	static
-../Task/Src/../Inc/ctrl_task.h:131:15:void Motion::run_time_limit_ms_reset()	16	static
-../Task/Src/../Inc/ctrl_task.h:136:18:void Motion::motion_pattern_set(t_run_pattern)	16	static
-../Task/Src/../Inc/ctrl_task.h:139:18:void Motion::motion_state_set(t_runStatus)	16	static
-../Task/Src/../Inc/ctrl_task.h:142:18:void Motion::motion_exeStatus_set(t_exeStatus)	16	static
-../Task/Src/../Inc/ctrl_task.h:151:8:void Motion::error_counter_reset()	16	static
-../Task/Src/../Inc/ctrl_task.h:167:24:t_exeStatus Motion::motion_exeStatus_get()	16	static
+../Task/Src/../Inc/ctrl_task.h:128:15:void Motion::run_time_ms_reset()	16	static
+../Task/Src/../Inc/ctrl_task.h:133:15:void Motion::run_time_limit_ms_reset()	16	static
+../Task/Src/../Inc/ctrl_task.h:138:18:void Motion::motion_pattern_set(t_run_pattern)	16	static
+../Task/Src/../Inc/ctrl_task.h:141:18:void Motion::motion_state_set(t_runStatus)	16	static
+../Task/Src/../Inc/ctrl_task.h:144:18:void Motion::motion_exeStatus_set(t_exeStatus)	16	static
+../Task/Src/../Inc/ctrl_task.h:153:8:void Motion::error_counter_reset()	16	static
+../Task/Src/../Inc/ctrl_task.h:169:24:t_exeStatus Motion::motion_exeStatus_get()	16	static
 ../Task/Src/init_motion2.cpp:13:6:void Motion::Init_Motion_turn_in(const t_param*, t_run_pattern, float, float, const t_pid_gain*, const t_pid_gain*)	96	static
 ../Task/Src/init_motion2.cpp:124:6:void Motion::Init_Motion_turn_out(const t_param*, t_run_pattern, float, float, const t_pid_gain*, const t_pid_gain*)	96	static
 ../Task/Src/init_motion2.cpp:233:6:void Motion::Init_Motion_long_turn(const t_param*, t_run_pattern, float, float, const t_pid_gain*, const t_pid_gain*)	80	static
