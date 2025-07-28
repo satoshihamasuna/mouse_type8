@@ -21,7 +21,7 @@
 
 #define PCLK1			(50000000)//(HAL_RCC_GetPCLK1Freq())//25,000,000
 #define PCLK2			(50000000)//(HAL_RCC_GetPCLK2Freq())//50,000,000
-#define PWMFREQ			(100000)
+#define PWMFREQ			(80000)//(100000)
 #define FANPWMFREQ		(100000)
 #define MOT_DUTY_MIN	(50)
 #define MOT_DUTY_MAX	(980)
