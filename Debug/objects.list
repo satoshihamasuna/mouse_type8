@@ -55,6 +55,7 @@
 "./Module/Src/log_data.o"
 "./Peripheral/Src/battery.o"
 "./Peripheral/Src/communicate.o"
+"./Peripheral/Src/current_sens.o"
 "./Peripheral/Src/encoder.o"
 "./Peripheral/Src/flash_util.o"
 "./Peripheral/Src/imu.o"

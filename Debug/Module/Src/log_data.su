@@ -9,8 +9,8 @@
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:195:7:virtual void Vehicle_type7::suctionSetDuty(int)	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:202:7:virtual void Vehicle_type7::suctionStop()	16	static
 ../Module/Src/../../Task/Inc/sensing_task.h:122:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
-../Module/Src/log_data.cpp:22:6:void LogData::indicate_data()	72	static
-../Module/Src/log_data.cpp:179:6:void LogData::logging()	600	static
+../Module/Src/log_data.cpp:22:6:void LogData::indicate_data()	208	static
+../Module/Src/log_data.cpp:187:6:void LogData::logging()	312	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:19:7:constexpr PID_Controller::PID_Controller()	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:37:7:constexpr mouse_Controller::mouse_Controller()	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:60:7:Vehicle::Vehicle()	16	static

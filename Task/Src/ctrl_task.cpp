@@ -189,14 +189,14 @@ void CtrlTask::motion_control()
 			float duty_l = vehicle->V_l/vehicle->battery.get();
 
 			if(ABS(duty_r) > 1.0){
-				vehicle->motor_out_r = (int)(SIGN(duty_r) * 4.0f * 250.0f);
+				vehicle->motor_out_r = (int)(SIGN(duty_r) * 1000.0f);
 			}else{
 				vehicle->motor_out_r  = (int)(duty_r * 1000.0f);
 			}
 			vehicle->motorSetDuty_r(vehicle->motor_out_r);
 
 			if(ABS(duty_l) > 1.0){
-				vehicle->motor_out_l = (int)(SIGN(duty_l) * 4.0f * 250.0f);
+				vehicle->motor_out_l = (int)(SIGN(duty_l) * 1000.0f);
 			}else{
 				vehicle->motor_out_l = (int)(duty_l * 1000.0f);
 			}

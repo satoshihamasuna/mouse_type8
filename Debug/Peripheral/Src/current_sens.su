@@ -1,0 +1,2 @@
+../Peripheral/Src/current_sens.c:25:6:Fan_Motor_Current_Start	8	static
+../Peripheral/Src/current_sens.c:30:6:Fan_Motor_Current_Stop	8	static
