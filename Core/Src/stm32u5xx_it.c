@@ -58,6 +58,9 @@
 extern DMA_NodeTypeDef Node_GPDMA1_Channel4;
 extern DMA_QListTypeDef List_GPDMA1_Channel4;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel4;
+extern DMA_NodeTypeDef Node_GPDMA1_Channel7;
+extern DMA_QListTypeDef List_GPDMA1_Channel7;
+extern DMA_HandleTypeDef handle_GPDMA1_Channel7;
 extern ADC_HandleTypeDef hadc1;
 extern DMA_NodeTypeDef Node_GPDMA1_Channel1;
 extern DMA_QListTypeDef List_GPDMA1_Channel1;
@@ -309,6 +312,20 @@ void GPDMA1_Channel6_IRQHandler(void)
   /* USER CODE BEGIN GPDMA1_Channel6_IRQn 1 */
 
   /* USER CODE END GPDMA1_Channel6_IRQn 1 */
+}
+
+/**
+  * @brief This function handles GPDMA1 Channel 7 global interrupt.
+  */
+void GPDMA1_Channel7_IRQHandler(void)
+{
+  /* USER CODE BEGIN GPDMA1_Channel7_IRQn 0 */
+
+  /* USER CODE END GPDMA1_Channel7_IRQn 0 */
+  HAL_DMA_IRQHandler(&handle_GPDMA1_Channel7);
+  /* USER CODE BEGIN GPDMA1_Channel7_IRQn 1 */
+
+  /* USER CODE END GPDMA1_Channel7_IRQn 1 */
 }
 
 /**

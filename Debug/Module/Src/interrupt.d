@@ -52,6 +52,7 @@ Module/Src/interrupt.o: ../Module/Src/interrupt.cpp \
  C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/flash_util.h \
  C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/imu.h \
  C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/motor.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/current_sens.h \
  ../Module/Src/../Inc/log_data.h \
  ../Module/Src/../Inc/../../Component/Inc/half_float.h \
  ../Module/Src/../Inc/../../Component/Inc/../codegen/rtwhalf.h \
@@ -143,6 +144,7 @@ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/ir_s
 C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/flash_util.h:
 C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/imu.h:
 C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/motor.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/current_sens.h:
 ../Module/Src/../Inc/log_data.h:
 ../Module/Src/../Inc/../../Component/Inc/half_float.h:
 ../Module/Src/../Inc/../../Component/Inc/../codegen/rtwhalf.h:

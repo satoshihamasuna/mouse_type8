@@ -216,13 +216,27 @@ namespace Mode
 						  HAL_Delay(500);
 					}
 					break;
-				case ENABLE|0x0A:
-					if(irsens->IrSensor_Avg() > 2500){
+					case ENABLE|0x0A:
+					if(irsens->IrSensor_Avg() > 1500){
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
 							  HAL_Delay(50);
 						  }
+					      const static t_pid_gain sp_gain = {0.0,0.0,0.0};
+					      const static t_pid_gain om_gain = {0.0,0.0,0.0};
+						  motion->Motion_start();
+						  motion->Init_Motion_suction_start(6.0, 3000, &sp_gain, &om_gain);
+						  while(motion->motion_exeStatus_get() == execute){
+								printf("current->,");
+								for(int i = 0; i < 4 ; i++)
+								{
+									printf("%ld,",ADC4_get_value(i));
+								}
+								printf("%ld\n",Fan_Motor_Current_avg());
+								HAL_Delay(1);
+						  }
+						  motion->Motion_end();
 						  enable = 0x00;
 						  HAL_Delay(500);
 					}

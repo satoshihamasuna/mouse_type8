@@ -52,6 +52,7 @@ Task/Src/ir_sens_task.o: ../Task/Src/ir_sens_task.cpp \
  C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/flash_util.h \
  C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/imu.h \
  C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/motor.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/current_sens.h \
  ../Task/Src/../Inc/../../Module/Inc/../../Component/Inc/singleton.h \
  ../Task/Src/../Inc/../../Module/Inc/../../Component/Inc/controller.h \
  ../Task/Src/../Inc/../../Module/Inc/../../Task/Inc/run_typedef.h \
@@ -118,6 +119,7 @@ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/math_
 C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/flash_util.h:
 C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/imu.h:
 C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/motor.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/current_sens.h:
 ../Task/Src/../Inc/../../Module/Inc/../../Component/Inc/singleton.h:
 ../Task/Src/../Inc/../../Module/Inc/../../Component/Inc/controller.h:
 ../Task/Src/../Inc/../../Module/Inc/../../Task/Inc/run_typedef.h:

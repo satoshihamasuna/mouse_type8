@@ -19,6 +19,7 @@ extern "C" {
 #include "imu.h"
 #include "ir_sensor.h"
 #include "motor.h"
+#include "current_sens.h"
 
 #ifdef __cplusplus
 }

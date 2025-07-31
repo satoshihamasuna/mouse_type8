@@ -39,11 +39,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
+	if(hadc == &hadc1){
 	Interrupt::getInstance().preprocess();
 	Interrupt::getInstance().main();
 	Interrupt::getInstance().postprocess();
+	}
 }
-
 
 void Interrupt_Initialize(){
 	//HAL_TIM_Base_Start_IT(&htim5);

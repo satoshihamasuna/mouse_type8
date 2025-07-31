@@ -85,9 +85,9 @@ void MX_LPTIM3_Init(void)
   /* USER CODE END LPTIM3_Init 1 */
   hlptim3.Instance = LPTIM3;
   hlptim3.Init.Clock.Source = LPTIM_CLOCKSOURCE_APBCLOCK_LPOSC;
-  hlptim3.Init.Clock.Prescaler = LPTIM_PRESCALER_DIV16;
+  hlptim3.Init.Clock.Prescaler = LPTIM_PRESCALER_DIV4;
   hlptim3.Init.Trigger.Source = LPTIM_TRIGSOURCE_SOFTWARE;
-  hlptim3.Init.Period = 100;
+  hlptim3.Init.Period = 25;
   hlptim3.Init.UpdateMode = LPTIM_UPDATE_IMMEDIATE;
   hlptim3.Init.CounterSource = LPTIM_COUNTERSOURCE_INTERNAL;
   hlptim3.Init.Input1Source = LPTIM_INPUT1SOURCE_GPIO;
@@ -97,7 +97,7 @@ void MX_LPTIM3_Init(void)
   {
     Error_Handler();
   }
-  sConfig1.Pulse = 50;
+  sConfig1.Pulse = 5;
   sConfig1.OCPolarity = LPTIM_OCPOLARITY_LOW;
   if (HAL_LPTIM_OC_ConfigChannel(&hlptim3, &sConfig1, LPTIM_CHANNEL_2) != HAL_OK)
   {

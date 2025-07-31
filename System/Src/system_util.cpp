@@ -21,6 +21,7 @@ void Module_Initialize()
 	  Interrupt_Initialize();
 	  IMU_read_DMA_Start();
 	  Motor_Stop();
+	  Fan_Motor_Current_Start();
 }
 
 void CPP_Main()
