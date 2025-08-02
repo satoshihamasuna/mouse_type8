@@ -3,5 +3,5 @@
 ../Peripheral/Src/motor.c:64:6:Motor_SetDuty_Left	24	static
 ../Peripheral/Src/motor.c:88:6:Motor_SetDuty_Right	24	static
 ../Peripheral/Src/motor.c:113:6:FAN_Motor_Initialize	8	static
-../Peripheral/Src/motor.c:120:6:FAN_Motor_Stop	8	static
-../Peripheral/Src/motor.c:125:6:FAN_Motor_SetDuty	24	static
+../Peripheral/Src/motor.c:122:6:FAN_Motor_Stop	8	static
+../Peripheral/Src/motor.c:127:6:FAN_Motor_SetDuty	24	static

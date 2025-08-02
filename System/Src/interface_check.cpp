@@ -226,7 +226,7 @@ namespace Mode
 					      const static t_pid_gain sp_gain = {0.0,0.0,0.0};
 					      const static t_pid_gain om_gain = {0.0,0.0,0.0};
 						  motion->Motion_start();
-						  motion->Init_Motion_suction_start(6.0, 3000, &sp_gain, &om_gain);
+						  motion->Init_Motion_suction_start(4.0, 3000, &sp_gain, &om_gain);
 						  while(motion->motion_exeStatus_get() == execute){
 								printf("current->,");
 								for(int i = 0; i < 4 ; i++)

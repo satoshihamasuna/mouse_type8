@@ -112,9 +112,11 @@ void Motor_SetDuty_Right( int16_t duty_r )
 
 void FAN_Motor_Initialize()
 {
-	HAL_GPIO_WritePin(fn1_GPIO_Port, fn1_Pin, 1);
 	HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
+	HAL_GPIO_WritePin(fn1_GPIO_Port, fn1_Pin, 1);
 	HAL_Delay(200);
+	//HAL_GPIO_WritePin(fn1_GPIO_Port, fn1_Pin, 0);
+	//__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 495);
 }
 
 void FAN_Motor_Stop(){
@@ -128,15 +130,17 @@ void FAN_Motor_SetDuty(int16_t duty_f)
 
 
 	if( ABS(duty_f) > MOT_DUTY_MAX ) {
-		pulse_f = (uint32_t)((PCLK1) / PWMFREQ * MOT_DUTY_MAX / 1000) - 1;
+		pulse_f = (uint32_t)((PCLK1) / FANPWMFREQ * MOT_DUTY_MAX / 1000) - 1;
 	}else if(duty_f == 0){
-		pulse_f = 0;
+		pulse_f = (uint32_t)((PCLK1) / FANPWMFREQ * 10/ 1000) - 1;
 	}else if( ABS(duty_f) < MOT_DUTY_MIN ) {
-		pulse_f = (uint32_t)((PCLK1) / PWMFREQ * MOT_DUTY_MIN / 1000) - 1;
+		pulse_f = (uint32_t)((PCLK1) / FANPWMFREQ * 10/ 1000) - 1;
 	} else {
-		pulse_f = (uint32_t)((PCLK1) / PWMFREQ * ABS(duty_f) / 1000) - 1;
+		pulse_f = (uint32_t)((PCLK1) / FANPWMFREQ * ABS(duty_f) / 1000) - 1;
 	}
 
+	//HAL_GPIO_WritePin(fn1_GPIO_Port, fn1_Pin, 0);
 	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, pulse_f);
+
 }
 
