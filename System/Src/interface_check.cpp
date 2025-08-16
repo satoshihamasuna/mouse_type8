@@ -209,7 +209,7 @@ namespace Mode
 						  {
 							printf("gyro:%lf\n",(-1.0)*read_gyro_z_axis()*PI/180);
 							HAL_Delay(2);
-							gyro_sum += read_accel_z_axis();
+							gyro_sum += read_gyro_z_axis();
 						  }
 						  printf("offset - >%f,%f",gyro_sum/1000.0f,DEG2RAD((-1.0)*gyro_sum/1000.0f));
 						  enable = 0x00;

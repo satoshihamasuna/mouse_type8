@@ -29,7 +29,7 @@ const static t_param param_R180_2000 = {&slalom_R180_2000_table,&sp_gain_turn180
 //k = 300
 //not adjust
 const static t_pid_gain sp_gain_turnV90_2000 = {5.0,0.05,0.00};;
-const static t_pid_gain om_gain_turnV90_2000 = {0.6, 0.01, 0.0};
+const static t_pid_gain om_gain_turnV90_2000 = {0.3, 0.01, 0.0};
 const static t_turn_param_table slalom_LV90_2000_table = {2.00f, 38.0f,1.8,35, 90.0f,Turn_L};
 const static t_turn_param_table slalom_RV90_2000_table = {2.00f,-38.0f,1.8,35,-90.0f,Turn_R};
 const static t_param param_LV90_2000 = {&slalom_LV90_2000_table,&sp_gain_turnV90_2000,&om_gain_turnV90_2000};

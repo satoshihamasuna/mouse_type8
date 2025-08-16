@@ -33,7 +33,7 @@
 ../Subsys/Src/make_path.cpp:394:8:t_bool Dijkstra::check_DijkstraPath(t_position, t_direction, t_position, uint8_t)	40	static
 ../Subsys/Src/make_path.cpp:400:6:void Dijkstra::check_run_Dijkstra(t_position, t_direction, t_position, uint8_t)	72	static
 ../Subsys/Src/make_path.cpp:506:6:void Dijkstra::run_Dijkstra(t_position, t_direction, t_position, uint8_t, const t_straight_param* const*, uint16_t, const t_straight_param* const*, uint16_t, const t_param* const*, Motion*)	512	static
-../Subsys/Src/make_path.cpp:628:6:void Dijkstra::run_Dijkstra_suction(t_position, t_direction, t_position, uint8_t, int, const t_straight_param* const*, uint16_t, const t_straight_param* const*, uint16_t, const t_param* const*, Motion*)	552	static
-../Subsys/Src/make_path.cpp:765:6:void Dijkstra::run_Dijkstra_suction_acc(t_position, t_direction, t_position, uint8_t, int, const t_straight_param* const*, uint16_t, const t_straight_param* const*, uint16_t, const t_param* const* const*, uint16_t, Motion*)	1928	static
+../Subsys/Src/make_path.cpp:628:6:void Dijkstra::run_Dijkstra_suction(t_position, t_direction, t_position, uint8_t, int, const t_straight_param* const*, uint16_t, const t_straight_param* const*, uint16_t, const t_param* const*, Motion*)	576	static
+../Subsys/Src/make_path.cpp:765:6:void Dijkstra::run_Dijkstra_suction_acc(t_position, t_direction, t_position, uint8_t, int, const t_straight_param* const*, uint16_t, const t_straight_param* const*, uint16_t, const t_param* const* const*, uint16_t, Motion*)	1952	static
 ../Subsys/Src/../../Module/Inc/log_data.h:19:7:LogData::LogData()	16	static
 ../Subsys/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = LogData]	8	static,ignoring_inline_asm

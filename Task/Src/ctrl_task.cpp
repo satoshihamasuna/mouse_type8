@@ -256,7 +256,7 @@ void CtrlTask::motion_post_control()
 				{
 					if(ABS((vehicle->ego.velo.get() - vehicle->ideal.velo.get()))/vehicle->ideal.velo.get() >= 0.80f )
 					{
-						error_counter_set(error_counter_get() + 20);
+						error_counter_set(error_counter_get() + 50);
 					}
 				}
 

@@ -90,8 +90,8 @@ namespace Mode
 				    //Mode::Debug(&st_param_1400_acc2G,mode_1400,500);
 					//Mode::Debug(&st_param_1500_acc2G,mode_1500,500);
 					Mode::Debug(&st_param_1600_acc2G,mode_1600,650);
-					Mode::Debug(&st_param_1800_acc3G,mode_1800,800);
-					Mode::Debug(&st_param_2000_acc3G,mode_2000,800);
+					Mode::Debug(&st_param_1800_acc3G,mode_1800,650);
+					Mode::Debug(&st_param_2000_acc3G,mode_2000,700);
 					enable = 0;
 					break;
 				case ENABLE|0x03:

@@ -20,7 +20,7 @@
 #include "../../Component/Inc/half_float.h"
 
 
-#define GYRO_OFFSET (0.0f)
+#define GYRO_OFFSET (0.0)
 
 float lambda_slip;
 
