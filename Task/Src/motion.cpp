@@ -712,16 +712,9 @@ void Motion::SetIdeal_pivot_turn()
 	{
 		vehicle->ideal.rad_accel.set(motion_plan.rad_deccel.get());
 		vehicle->ideal.rad_velo.set(vehicle->ideal.rad_velo.get() + vehicle->ideal.rad_accel.get()*(float)deltaT_ms/1000.0f);
-		if(ABS(vehicle->ideal.rad_velo.get()) > ABS(motion_plan.rad_max_velo.get()))
+		if(ABS(vehicle->ideal.rad_velo.get()) <= 2.0)
 		{
-			if(vehicle->ideal.rad_velo.get() <= 0.0 && motion_plan.end_radian.get()> 0.0)
-			{
-				vehicle->ideal.rad_velo.set(0.0) ;
-			}
-			else if(vehicle->ideal.rad_velo.get() >= 0.0 && motion_plan.end_radian.get() < 0.0)
-			{
-				vehicle->ideal.rad_velo.set(0.0) ;
-			}
+			vehicle->ideal.rad_velo.set(SIGN(vehicle->ideal.rad_velo.get())*2.0) ;
 		}
 	}
 	else
@@ -873,7 +866,7 @@ void Motion::SetIdeal_turn_in		( )
 
 			ir_sens->Division_Wall_Correction_Reset();
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
 	}
 
@@ -1122,7 +1115,7 @@ void Motion::SetIdeal_turn_out		( ){
 
 			ir_sens->Division_Wall_Correction_Reset();
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
 	}
 
@@ -1270,7 +1263,7 @@ void Motion::SetIdeal_long_turn		( )
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*turn_motion_param.sp_gain);
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*turn_motion_param.om_gain);
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
 	}
 
@@ -1330,7 +1323,7 @@ void Motion::SetIdeal_long_turn		( )
 
 			ir_sens->Division_Wall_Correction_Reset();
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
 	}
 
@@ -1565,7 +1558,7 @@ void Motion::SetIdeal_turn_v90		( )
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*straight_motion_param.om_gain);
 			ir_sens->Division_Wall_Correction_Reset();
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
 	}
 
@@ -1796,7 +1789,7 @@ void Motion::SetIdeal_long_turn_v90		( )
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*straight_motion_param.sp_gain);
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*straight_motion_param.om_gain);
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
 	}
 

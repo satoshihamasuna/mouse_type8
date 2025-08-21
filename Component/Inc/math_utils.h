@@ -27,11 +27,11 @@
 #define MOTOR_K_TR		(0.764)	//0.4//0.594				//mNm/A
 #define MOTOR_R			(3.5)//6.0
 #define GEAR_N			(52.0/8.0)
-#define MOUSE_INERTIA	((0.2/1000.0))//0.001f//0.003,0.0022				//g・m^2
+#define MOUSE_INERTIA	((3.0/1000.0))//0.001f//0.003,0.0022				//g・m^2
 #define RAD_2_RPM		60.0/(2.0*3.141592)
 #define TIRE_RADIUS_M	(TIRE_RADIUS/1000.0)		//m
 #define TREAD_WIDTH_M	((18.0-2.0)*2.0/1000.0)
-#define MOTOR_BR		0.0//(0.2/100000.0)			//mNm/rpm
+#define MOTOR_BR		(0.1/100000.0)			//mNm/rpm
 #define L_BAR_DT		(20.0/1000.0)
 
 

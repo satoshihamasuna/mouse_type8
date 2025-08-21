@@ -138,7 +138,7 @@ void CtrlTask::motion_control()
 
 			//feedback controll
 			vehicle->sp_feedback.set(vehicle->Vehicle_controller.speed_ctrl.Control(vehicle->ideal.velo.get()		,vehicle->ego.velo.get()	, (float)ctr_deltaT_ms));
-			vehicle->om_feedback.set(vehicle->Vehicle_controller.omega_ctrl.Control(vehicle->ideal.rad_velo.get()	,vehicle->ego.rad_velo.get(), (float)ctr_deltaT_ms));
+			vehicle->om_feedback.set(vehicle->Vehicle_controller.omega_ctrl.Control(vehicle->ideal.rad_velo.get() - 0.0*(vehicle->ego.radian.get() - vehicle->ideal.radian.get() )	,vehicle->ego.rad_velo.get(), (float)ctr_deltaT_ms));
 
 			//feedforward controll
 			vehicle->sp_feedforward.set((sp_FF_control_r + sp_FF_control_l)/2.0);

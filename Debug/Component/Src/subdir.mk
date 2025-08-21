@@ -6,15 +6,18 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
 ../Component/Src/controller.cpp \
-../Component/Src/half_float.cpp 
+../Component/Src/half_float.cpp \
+../Component/Src/path_follow.cpp 
 
 OBJS += \
 ./Component/Src/controller.o \
-./Component/Src/half_float.o 
+./Component/Src/half_float.o \
+./Component/Src/path_follow.o 
 
 CPP_DEPS += \
 ./Component/Src/controller.d \
-./Component/Src/half_float.d 
+./Component/Src/half_float.d \
+./Component/Src/path_follow.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -24,7 +27,7 @@ Component/Src/%.o Component/Src/%.su Component/Src/%.cyclo: ../Component/Src/%.c
 clean: clean-Component-2f-Src
 
 clean-Component-2f-Src:
-	-$(RM) ./Component/Src/controller.cyclo ./Component/Src/controller.d ./Component/Src/controller.o ./Component/Src/controller.su ./Component/Src/half_float.cyclo ./Component/Src/half_float.d ./Component/Src/half_float.o ./Component/Src/half_float.su
+	-$(RM) ./Component/Src/controller.cyclo ./Component/Src/controller.d ./Component/Src/controller.o ./Component/Src/controller.su ./Component/Src/half_float.cyclo ./Component/Src/half_float.d ./Component/Src/half_float.o ./Component/Src/half_float.su ./Component/Src/path_follow.cyclo ./Component/Src/path_follow.d ./Component/Src/path_follow.o ./Component/Src/path_follow.su
 
 .PHONY: clean-Component-2f-Src
 

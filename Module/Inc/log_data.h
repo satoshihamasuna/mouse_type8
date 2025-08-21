@@ -14,7 +14,7 @@
 
 #define LOG_DATA_SIZE 1000
 #define LOG_DATA_NUM  40
-#define LOG_DATA_PRIOD 3
+#define LOG_DATA_PRIOD 1
 
 class LogData:public Singleton<LogData>
 {

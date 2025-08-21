@@ -830,6 +830,7 @@ void Motion::Init_Motion_long_turn	(const t_param *turn_param,t_run_pattern run_
 		}
 	}
 
+	/*
 	if(ABS(turn_param->param->degree) == 180.0f)
 	{
 		float diff = vehicle->ego.x_point.get();
@@ -885,6 +886,7 @@ void Motion::Init_Motion_long_turn	(const t_param *turn_param,t_run_pattern run_
 
 	}
 
+	 */
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
 	motion_state_set(STRAIGHT_STATE);
