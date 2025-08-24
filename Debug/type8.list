@@ -87975,7 +87975,7 @@ void Demo()
  80289e8:	49b8      	ldr	r1, [pc, #736]	@ (8028ccc <_ZN4Mode4DemoEv+0x1974>)
  80289ea:	4618      	mov	r0, r3
  80289ec:	f7ee fa3c 	bl	8016e68 <_ZN11calcRunTime13turn_time_setEPKPK7t_param>
-					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,650,
+					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,700,
  80289f0:	f607 2338 	addw	r3, r7, #2616	@ 0xa38
  80289f4:	f6a3 2324 	subw	r3, r3, #2596	@ 0xa24
  80289f8:	f607 2238 	addw	r2, r7, #2616	@ 0xa38
@@ -87996,7 +87996,7 @@ void Demo()
  8028a20:	9203      	str	r2, [sp, #12]
  8028a22:	4aac      	ldr	r2, [pc, #688]	@ (8028cd4 <_ZN4Mode4DemoEv+0x197c>)
  8028a24:	9202      	str	r2, [sp, #8]
- 8028a26:	f240 228a 	movw	r2, #650	@ 0x28a
+ 8028a26:	f44f 722f 	mov.w	r2, #700	@ 0x2bc
  8028a2a:	9201      	str	r2, [sp, #4]
  8028a2c:	2202      	movs	r2, #2
  8028a2e:	9200      	str	r2, [sp, #0]
@@ -88106,7 +88106,7 @@ void Demo()
  8028b10:	496e      	ldr	r1, [pc, #440]	@ (8028ccc <_ZN4Mode4DemoEv+0x1974>)
  8028b12:	4618      	mov	r0, r3
  8028b14:	f7ee f9a8 	bl	8016e68 <_ZN11calcRunTime13turn_time_setEPKPK7t_param>
-					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,650,
+					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,700,
  8028b18:	f607 2338 	addw	r3, r7, #2616	@ 0xa38
  8028b1c:	f6a3 2324 	subw	r3, r3, #2596	@ 0xa24
  8028b20:	f607 2238 	addw	r2, r7, #2616	@ 0xa38
@@ -88127,7 +88127,7 @@ void Demo()
  8028b48:	9203      	str	r2, [sp, #12]
  8028b4a:	4a63      	ldr	r2, [pc, #396]	@ (8028cd8 <_ZN4Mode4DemoEv+0x1980>)
  8028b4c:	9202      	str	r2, [sp, #8]
- 8028b4e:	f240 228a 	movw	r2, #650	@ 0x28a
+ 8028b4e:	f44f 722f 	mov.w	r2, #700	@ 0x2bc
  8028b52:	9201      	str	r2, [sp, #4]
  8028b54:	2202      	movs	r2, #2
  8028b56:	9200      	str	r2, [sp, #0]
@@ -88237,7 +88237,7 @@ void Demo()
  8028c38:	4924      	ldr	r1, [pc, #144]	@ (8028ccc <_ZN4Mode4DemoEv+0x1974>)
  8028c3a:	4618      	mov	r0, r3
  8028c3c:	f7ee f914 	bl	8016e68 <_ZN11calcRunTime13turn_time_setEPKPK7t_param>
-					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,650,
+					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,700,
  8028c40:	f607 2338 	addw	r3, r7, #2616	@ 0xa38
  8028c44:	f6a3 2324 	subw	r3, r3, #2596	@ 0xa24
  8028c48:	f607 2238 	addw	r2, r7, #2616	@ 0xa38
@@ -88260,7 +88260,7 @@ void Demo()
  8028c74:	9203      	str	r2, [sp, #12]
  8028c76:	4a18      	ldr	r2, [pc, #96]	@ (8028cd8 <_ZN4Mode4DemoEv+0x1980>)
  8028c78:	9202      	str	r2, [sp, #8]
- 8028c7a:	f240 228a 	movw	r2, #650	@ 0x28a
+ 8028c7a:	f44f 722f 	mov.w	r2, #700	@ 0x2bc
  8028c7e:	9201      	str	r2, [sp, #4]
  8028c80:	2202      	movs	r2, #2
  8028c82:	9200      	str	r2, [sp, #0]
@@ -88375,7 +88375,7 @@ void Demo()
  8028d78:	4964      	ldr	r1, [pc, #400]	@ (8028f0c <_ZN4Mode4DemoEv+0x1bb4>)
  8028d7a:	4618      	mov	r0, r3
  8028d7c:	f7ee f874 	bl	8016e68 <_ZN11calcRunTime13turn_time_setEPKPK7t_param>
-					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,700,
+					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,750,
  8028d80:	f607 2338 	addw	r3, r7, #2616	@ 0xa38
  8028d84:	f6a3 2324 	subw	r3, r3, #2596	@ 0xa24
  8028d88:	f607 2238 	addw	r2, r7, #2616	@ 0xa38
@@ -88398,7 +88398,7 @@ void Demo()
  8028db4:	9203      	str	r2, [sp, #12]
  8028db6:	4a58      	ldr	r2, [pc, #352]	@ (8028f18 <_ZN4Mode4DemoEv+0x1bc0>)
  8028db8:	9202      	str	r2, [sp, #8]
- 8028dba:	f44f 722f 	mov.w	r2, #700	@ 0x2bc
+ 8028dba:	f240 22ee 	movw	r2, #750	@ 0x2ee
  8028dbe:	9201      	str	r2, [sp, #4]
  8028dc0:	2202      	movs	r2, #2
  8028dc2:	9200      	str	r2, [sp, #0]
