@@ -611,6 +611,8 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 	vehicle->ideal.turn_slip_theta.init();
 	*/
 
+	/*
+
 	if(ABS(turn_param->param->degree) == 135.0f)
 	{
 		float diff = vehicle->ego.x_point.get();
@@ -644,7 +646,7 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 			}
 		}
 	}
-
+	*/
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
 	motion_state_set(STRAIGHT_STATE);
@@ -713,6 +715,7 @@ void Motion::Init_Motion_turn_out		(const t_param *turn_param,t_run_pattern run_
 	vehicle->ideal.turn_slip_theta.init();
 	*/
 
+	/*
 	if(ABS(turn_param->param->degree) == 135.0f)
 	{
 		float diff = vehicle->ego.x_point.get();
@@ -745,6 +748,7 @@ void Motion::Init_Motion_turn_out		(const t_param *turn_param,t_run_pattern run_
 			}
 		}
 	}
+	*/
 
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
@@ -955,6 +959,7 @@ void Motion::Init_Motion_turn_v90		(const t_param *turn_param,t_run_pattern run_
 	vehicle->ideal.turn_slip_theta.init();
 	*/
 
+
 	float diff = vehicle->ego.x_point.get();
 	if(ABS(diff) < 10.0)
 	{
@@ -969,6 +974,7 @@ void Motion::Init_Motion_turn_v90		(const t_param *turn_param,t_run_pattern run_
 			motion_plan.fix_post_run.set((-1.0)*diff*0.0);
 		}
 	}
+
 
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);

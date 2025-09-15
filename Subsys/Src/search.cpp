@@ -242,8 +242,8 @@ t_exeStatus Search::turn_rear_process (	t_position my_position,t_position tmp_my
 
 	if(_wall->get_WallState(r_pos) == WALL && _wall->get_WallState(l_pos) == WALL)
 	{
-		result = motion->exe_Motion_backward();
-		result = motion->exe_Motion_straight(45.0 + 15.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
+		//result = motion->exe_Motion_backward();
+		result = motion->exe_Motion_straight(45.0 + 0.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
 	else
 	{

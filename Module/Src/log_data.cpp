@@ -47,7 +47,11 @@ void LogData::indicate_data()
 		    "Encoder_GetProperty_Right().sp_pulse",
 		    "Encoder_GetProperty_Left().sp_pulse",
 
-			"Battery"
+			"Battery",
+
+		    "ideal.accel",
+		    "ego.accel"
+
 		};
 
 		for (size_t i = 0; i < sizeof(labels) / sizeof(labels[0]); ++i)  {
@@ -225,6 +229,9 @@ void LogData::logging()
 		data[30][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Encoder_GetProperty_Right().sp_pulse);
 		data[31][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Encoder_GetProperty_Left().sp_pulse);
 		data[32][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Vehicle_type7::getInstance().battery.get());
+		data[33][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Vehicle_type7::getInstance().ideal.accel.get());
+		data[34][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Vehicle_type7::getInstance().ego.accel.get());
+
 
 		data_count++;
 		if(data_count >= data_size*LOG_DATA_PRIOD) data_count = (data_size*LOG_DATA_PRIOD) - 1;

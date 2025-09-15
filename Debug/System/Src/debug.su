@@ -13,7 +13,6 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:169:24:t_exeStatus Motion::motion_exeStatus_get()	16	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:204:22:t_exeStatus Motion::execute_Motion()	16	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:216:22:t_exeStatus Motion::exe_Motion_straight(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	40	static
-../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:222:22:t_exeStatus Motion::exe_Motion_backward(const t_pid_gain*, const t_pid_gain*)	24	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:228:22:t_exeStatus Motion::exe_Motion_diagonal(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	40	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:249:22:t_exeStatus Motion::exe_Motion_suction_start(float, float, const t_pid_gain*, const t_pid_gain*)	32	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:255:22:t_exeStatus Motion::exe_Motion_turn_in(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	32	static
@@ -24,7 +23,7 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:333:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	24	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:351:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	24	static
 ../System/Src/../../Subsys/Inc/../../Module/Inc/interrupt.h:35:12:uint32_t Interrupt::return_time_count()	16	static
-../System/Src/debug.cpp:38:7:void Mode::Debug(const t_straight_param*, const t_param* const*, int)	640	static
+../System/Src/debug.cpp:38:7:void Mode::Debug(const t_straight_param*, const t_param* const*, int)	648	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:19:7:constexpr PID_Controller::PID_Controller()	16	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:37:7:constexpr mouse_Controller::mouse_Controller()	16	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/vehicle.h:60:7:Vehicle::Vehicle()	16	static

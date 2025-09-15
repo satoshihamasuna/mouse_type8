@@ -189,7 +189,7 @@ namespace Mode
 						  motion->Motion_start();
 						  LogData::getInstance().data_count = 0;
 						  LogData::getInstance().log_enable = True;
-						  motion->Init_Motion_straight(45.0*4, 4.0, 0.32f, 0.0f);
+						  motion->Init_Motion_straight(90.0*3, 4.0, 0.32f, 0.0f);
 						  motion->execute_Motion();
 						  LogData::getInstance().log_enable = False;
 						  motion->Motion_end();

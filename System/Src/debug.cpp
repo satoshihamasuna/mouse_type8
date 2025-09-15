@@ -70,31 +70,29 @@ namespace Mode
 			{
 				case ENABLE|0x00:
 				   if(irsens->IrSensor_Avg() > 2000){
-					      const static t_pid_gain debug_sp_gain = {16.0,0.1,0.2};
-					      const static t_pid_gain debug_om_gain = {0.60f, 0.01f, 0.00f};
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
 							  HAL_Delay(50);
 						  }
 
+
 						  motion->Motion_start();
-
-						  //float suction_value = 250.0/1000.0f*7.20;
-						  //int stay_time 	= (int)(suction_value/0.05) + 300;
-						  //motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
-
+						  float suction_value = suction/1000.0f*7.20;
+						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
+						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 						  LogData::getInstance().data_count = 0;
 						  LogData::getInstance().log_enable = True;
-						  //motion->Init_Motion_straight(90.0*7.0,6.0,0.4,0.0,&debug_sp_gain,&debug_om_gain);
-						  motion->exe_Motion_backward();
-						  //motion->execute_Motion();
-
-						  LogData::getInstance().log_enable = False;
+						  motion->exe_Motion_straight(SECTION*15,st_param->param->acc,st_param->param->max_velo,0.0,st_param->sp_gain,st_param->om_gain);
+						  //motion->exe_Motion_long_turn(turn_mode[Long_turnR180],Long_turnR180,st_param->sp_gain,st_param->om_gain);
+						  //motion->exe_Motion_long_turn(turn_mode[Long_turnL180],Long_turnL180,st_param->sp_gain,st_param->om_gain);
+						  //motion->exe_Motion_long_turn(turn_mode[Long_turnR180],Long_turnR180,st_param->sp_gain,st_param->om_gain);
+						  //motion->exe_Motion_straight(SECTION,st_param->param->acc,st_param->param->max_velo,0.0,st_param->sp_gain,st_param->om_gain);
 						  motion->Motion_end();
-
+						  HAL_Delay(200);
 						  FAN_Motor_SetDuty(0);;
 						  HAL_Delay(200);
+						  LogData::getInstance().log_enable = False;
 						  enable = 0x00;
 						  HAL_Delay(500);
 
@@ -133,7 +131,7 @@ namespace Mode
 						  motion->Motion_start();
 						  float suction_value = suction/1000.0f*7.20;
 						  int stay_time 	= (int)(suction_value/SUCTION_ACC) + 300;
-						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time,st_param->sp_gain,st_param->om_gain);
+						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 						  LogData::getInstance().data_count = 0;
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_straight(SECTION,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);

@@ -1889,9 +1889,10 @@ void Motion::SetIdeal_fix_wall		( )
 				//l_err = (ir_sens->sen_fl.distance - 45.0);
 			//}
 
-			float r_ref = 44.0;
+			float r_ref = 45.0;
 			float l_ref = 45.0;
 
+			/*
 			if((ir_sens->sen_fr.distance < r_ref)  )
 			{
 				float diff = ir_sens->sen_fr.avg_distance - ir_sens->sen_fr.distance;
@@ -1912,10 +1913,12 @@ void Motion::SetIdeal_fix_wall		( )
 			}
 			else
 			{
+			*/
 				r_err = (ir_sens->sen_fr.distance - r_ref);
-			}
+			//}
 
 
+			/*
 			if((ir_sens->sen_fl.distance < l_ref)  )
 			{
 				float diff = ir_sens->sen_fl.avg_distance - ir_sens->sen_fl.distance;
@@ -1937,14 +1940,15 @@ void Motion::SetIdeal_fix_wall		( )
 
 			else
 			{
+			*/
 				l_err = (ir_sens->sen_fl.distance - l_ref);
-			}
+			//}
 
 
 			sp_err = (r_err+ l_err)/2.0f;
 			om_err = (r_err- l_err)/2.0f;
 
-			float target_acc = (1.0 * sp_err - 100.0*vehicle->ideal.velo.get());
+			float target_acc = (2.0 * sp_err - 100.0*vehicle->ideal.velo.get());
 			float target_velo = vehicle->ideal.velo.get() + target_acc/1000.0f;
 			float max_set_velo = 0.4;
 			if(target_velo >=  max_set_velo)

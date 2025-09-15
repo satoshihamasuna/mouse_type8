@@ -124,16 +124,19 @@ void CtrlTask::motion_control()
 				friction = (ABS(vehicle->ideal.velo.get()) > 0.15) ? (float)(SIGN(vehicle->ideal.velo.get()))*0.05*9.8/(1+0.0*ABS(vehicle->ideal.accel.get())):0.0f;
 
 			//calc motor induce ampere
-			float motor_r_ampere = 1.0f/(MOTOR_K_TR*GEAR_N)*(WEIGHT*(vehicle->ideal.accel.get()+friction*0.0)/1000.0f*(TIRE_RADIUS)/2.0f)
+			float motor_r_ampere = 1.0f/(MOTOR_K_TR*GEAR_N)*(WEIGHT*((1.0)*vehicle->ideal.accel.get()+friction*0.0)/1000.0f*(TIRE_RADIUS)/2.0f)
 								 + 1.0f/(MOTOR_K_TR*GEAR_N)*(MOUSE_INERTIA*vehicle->ideal.rad_accel.get()*TIRE_RADIUS/(TREAD_WIDTH/2.0f))
 								 + MOTOR_BR*motor_r_rpm /MOTOR_K_TR*1.0;
-			float motor_l_ampere = 1.0f/(MOTOR_K_TR*GEAR_N)*(WEIGHT*(vehicle->ideal.accel.get()+friction*0.0)/1000.0f*(TIRE_RADIUS)/2.0f)
+			float motor_l_ampere = 1.0f/(MOTOR_K_TR*GEAR_N)*(WEIGHT*((1.0)*vehicle->ideal.accel.get()+friction*0.0)/1000.0f*(TIRE_RADIUS)/2.0f)
 								 - 1.0f/(MOTOR_K_TR*GEAR_N)*(MOUSE_INERTIA*vehicle->ideal.rad_accel.get()*TIRE_RADIUS/(TREAD_WIDTH/2.0f))
 								 + MOTOR_BR*motor_l_rpm /MOTOR_K_TR*1.0;
 
+			float motor_r_Idot = RAD_2_RPM*vehicle->ideal.accel.get()/(TIRE_RADIUS_M)*GEAR_N*MOTOR_BR/MOTOR_K_TR;
+			float motor_l_Idot = RAD_2_RPM*vehicle->ideal.accel.get()/(TIRE_RADIUS_M)*GEAR_N*MOTOR_BR/MOTOR_K_TR;
+
 			//calc motor induce voltage
-			float sp_FF_control_r =  MOTOR_R*motor_r_ampere + MOTOR_K_ER*motor_r_rpm/1000;
-			float sp_FF_control_l =  MOTOR_R*motor_l_ampere + MOTOR_K_ER*motor_l_rpm/1000;
+			float sp_FF_control_r =  MOTOR_R*motor_r_ampere + MOTOR_K_ER*motor_r_rpm/1000 + motor_r_Idot*L_BAR_DT;
+			float sp_FF_control_l =  MOTOR_R*motor_l_ampere + MOTOR_K_ER*motor_l_rpm/1000 + motor_l_Idot*L_BAR_DT ;
 
 
 			//feedback controll
@@ -252,11 +255,11 @@ void CtrlTask::motion_post_control()
 					error_counter_set(error_counter_get() + 50);
 				}
 
-				if(vehicle->ideal.velo.get() >= 0.120f)
+				if(vehicle->ideal.velo.get() >= 0.20f)
 				{
 					if(ABS((vehicle->ego.velo.get() - vehicle->ideal.velo.get()))/vehicle->ideal.velo.get() >= 0.80f )
 					{
-						error_counter_set(error_counter_get() + 50);
+						error_counter_set(error_counter_get() + 20);
 					}
 				}
 
@@ -275,7 +278,7 @@ void CtrlTask::motion_post_control()
 					//error_counter_set(error_counter_get() + 5);
 					if(ABS(vehicle->V_l) > vehicle->battery.get()*1.5)
 					{
-						error_counter_set(error_counter_get() + 5);
+						error_counter_set(error_counter_get() + 3);
 					}
 				}
 				if(ABS(vehicle->V_r) > vehicle->battery.get())
@@ -283,7 +286,7 @@ void CtrlTask::motion_post_control()
 					//error_counter_set(error_counter_get() + 5);
 					if(ABS(vehicle->V_r) > vehicle->battery.get()*1.5)
 					{
-						error_counter_set(error_counter_get() + 5);
+						error_counter_set(error_counter_get() + 3);
 					}
 				}
 

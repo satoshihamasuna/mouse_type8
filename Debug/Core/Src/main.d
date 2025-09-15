@@ -39,26 +39,26 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Inc/icache.h ../Core/Inc/lptim.h ../Core/Inc/memorymap.h \
  ../Core/Inc/spi.h ../Core/Inc/tim.h ../Core/Inc/usart.h \
  ../Core/Inc/gpio.h \
- D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/ntshell.h \
- D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/vtrecv.h \
- D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/vtsend.h \
- D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/text_editor.h \
- D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/ntconf.h \
- D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/text_history.h \
- D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/ntlibc.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/interface.h \
- D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/communicate.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/lsm6dsr_reg.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h \
- D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h \
- D:/mouse8/mouse_program/mouse_type8/System/Inc/system_util.h
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/ntshell.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/vtrecv.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/vtsend.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/text_editor.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/ntconf.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/text_history.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/ntlibc.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/interface.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/typedef.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/ir_sensor.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/communicate.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/imu.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/lsm6dsr_reg.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/encoder.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/ir_sensor.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/encoder.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/math_utils.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/motor.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/flash_util.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/System/Inc/system_util.h
 ../Core/Inc/main.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h:
 ../Core/Inc/stm32u5xx_hal_conf.h:
@@ -106,23 +106,23 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/tim.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/gpio.h:
-D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/ntshell.h:
-D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/vtrecv.h:
-D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/vtsend.h:
-D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/text_editor.h:
-D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/ntconf.h:
-D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/text_history.h:
-D:/mouse8/mouse_program/mouse_type8/Component/ntshell-v0.3.1/src/lib/core/ntlibc.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/interface.h:
-D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/communicate.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/lsm6dsr_reg.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
-D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h:
-D:/mouse8/mouse_program/mouse_type8/System/Inc/system_util.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/ntshell.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/vtrecv.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/vtsend.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/text_editor.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/ntconf.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/text_history.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/ntshell-v0.3.1/src/lib/core/ntlibc.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/interface.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/typedef.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/ir_sensor.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/communicate.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/imu.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/lsm6dsr_reg.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/encoder.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/ir_sensor.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/encoder.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/math_utils.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/motor.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/flash_util.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/System/Inc/system_util.h:

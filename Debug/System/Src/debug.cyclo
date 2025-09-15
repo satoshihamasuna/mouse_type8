@@ -13,7 +13,6 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:169:24:t_exeStatus Motion::motion_exeStatus_get()	1
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:204:22:t_exeStatus Motion::execute_Motion()	2
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:216:22:t_exeStatus Motion::exe_Motion_straight(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	1
-../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:222:22:t_exeStatus Motion::exe_Motion_backward(const t_pid_gain*, const t_pid_gain*)	1
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:228:22:t_exeStatus Motion::exe_Motion_diagonal(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	1
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:249:22:t_exeStatus Motion::exe_Motion_suction_start(float, float, const t_pid_gain*, const t_pid_gain*)	1
 ../System/Src/../../Subsys/Inc/../../Task/Inc/ctrl_task.h:255:22:t_exeStatus Motion::exe_Motion_turn_in(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	1

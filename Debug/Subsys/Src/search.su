@@ -7,7 +7,6 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../Subsys/Src/../Inc/../../Task/Inc/ctrl_task.h:169:24:t_exeStatus Motion::motion_exeStatus_get()	16	static
 ../Subsys/Src/../Inc/../../Task/Inc/ctrl_task.h:204:22:t_exeStatus Motion::execute_Motion()	16	static
 ../Subsys/Src/../Inc/../../Task/Inc/ctrl_task.h:216:22:t_exeStatus Motion::exe_Motion_straight(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	40	static
-../Subsys/Src/../Inc/../../Task/Inc/ctrl_task.h:222:22:t_exeStatus Motion::exe_Motion_backward(const t_pid_gain*, const t_pid_gain*)	24	static
 ../Subsys/Src/../Inc/../../Task/Inc/ctrl_task.h:236:22:t_exeStatus Motion::exe_Motion_pivot_turn(float, float, float, const t_pid_gain*, const t_pid_gain*)	32	static
 ../Subsys/Src/../Inc/../../Task/Inc/ctrl_task.h:243:22:t_exeStatus Motion::exe_Motion_fix_wall(float, const t_pid_gain*, const t_pid_gain*)	24	static
 ../Subsys/Src/../Inc/../../Task/Inc/ctrl_task.h:319:12:Vehicle* Motion::return_vehicleObj()	16	static

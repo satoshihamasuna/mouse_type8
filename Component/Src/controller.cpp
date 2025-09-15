@@ -11,6 +11,8 @@
 #include "controller.h"
 #include "math_utils.h"
 
+#define LOW_PASS_ALPHA 0.045
+
 void PID_Controller::Gain_Set(float _Kp,float _Ki,float _Kd)
 {
 	Kp = _Kp;
@@ -38,7 +40,8 @@ float PID_Controller::Control(float _target,float _output,float dt)
 	target = _target;
 	output = _output;
 	operation = Kp*(target - output) + Ki*(I_target - I_output) + Kd*(prev_target - prev_output)/dt;
-	prev_target = 	target;	prev_output 	= 	output;
+	prev_target = 	LOW_PASS_ALPHA*target + (1-LOW_PASS_ALPHA)*prev_target;
+	prev_output = 	LOW_PASS_ALPHA*output + (1-LOW_PASS_ALPHA)*prev_output;
 	I_target 	+= 	target;	I_output		+= 	output;
 
 	return operation;

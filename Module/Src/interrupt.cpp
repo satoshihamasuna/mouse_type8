@@ -21,6 +21,7 @@
 
 
 #define GYRO_OFFSET (0.062875)
+#define ACC_OFFSET (0.0f)
 
 float lambda_slip;
 
@@ -112,7 +113,7 @@ void Interrupt::preprocess()
 
 	//update accel information
 	acc_sum = acc_sum - acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE];
-	acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE] = (-1.0)*read_accel_y_axis();
+	acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE] = (-1.0)*read_accel_y_axis() - ACC_OFFSET;
 	acc_sum = acc_sum + acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE];
 
 	z_acc_sum = z_acc_sum - z_acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE];
