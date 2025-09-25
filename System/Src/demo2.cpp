@@ -213,7 +213,7 @@ void Demo2()
 
 
 			  		run_path.turn_time_set(mode_1800);
-					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,800,
+					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,700,
 														st_mode_1800_v1, (int)(sizeof(st_mode_1800_v1)/sizeof(t_straight_param *const)),
 														di_mode_1800_v1, (int)(sizeof(di_mode_1800_v1)/sizeof(t_straight_param *const)), mode_1800,motion);
 
@@ -237,7 +237,7 @@ void Demo2()
 
 
 			  		run_path.turn_time_set(mode_1800);
-					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,800,
+					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,700,
 														st_mode_1800_v1, (int)(sizeof(st_mode_1800_v1)/sizeof(t_straight_param *const))	,
 														di_mode_1800_v1, (int)(sizeof(di_mode_1800_v1)/sizeof(t_straight_param *const))	,
 														acc_mode_1800_v1,(int)(sizeof(acc_mode_1800_v1)/sizeof(t_param *const*const))	,motion);
@@ -337,7 +337,7 @@ void Demo2()
 
 
 			  		run_path.turn_time_set(mode_1600);
-					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,800,
+					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,700,
 														st_mode_1600_v2, (int)(sizeof(st_mode_1600_v2)/sizeof(t_straight_param *const))	,
 														di_mode_1600_v1, (int)(sizeof(di_mode_1600_v1)/sizeof(t_straight_param *const))	,
 														acc_mode_1600_v2,(int)(sizeof(acc_mode_1600_v2)/sizeof(t_param *const*const))	,motion);
@@ -361,7 +361,7 @@ void Demo2()
 
 
 			  		run_path.turn_time_set(mode_1600);
-					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,800,
+					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,700,
 														st_mode_1600_v2, (int)(sizeof(st_mode_1600_v2)/sizeof(t_straight_param *const))	,
 														di_mode_1600_v1, (int)(sizeof(di_mode_1600_v1)/sizeof(t_straight_param *const))	,
 														acc_mode_1600_v3,(int)(sizeof(acc_mode_1600_v3)/sizeof(t_param *const*const))	,motion);

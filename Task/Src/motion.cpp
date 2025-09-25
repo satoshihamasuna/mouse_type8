@@ -2167,3 +2167,57 @@ void Motion::SetIdeal_free_rotation_set	()
 	run_time_ms_update();
 
 }
+
+void Motion::SetIdeal_enkaigei	( )
+{
+	if(run_time_ms_get() <= run_time_limit_ms_get())
+	{
+		vehicle->ideal.accel.set(0.0f);
+		vehicle->ideal.velo.set(0.0f);
+		//vehicle->ideal.length.set(0.0f);
+
+		vehicle->ideal.rad_accel.set(0.0f);
+		vehicle->ideal.rad_velo.set(0.0f);
+		//vehicle->ideal.radian.set(0.0f);
+	}
+	else
+	{
+		vehicle->ideal.accel.set(0.0f);
+		vehicle->ideal.velo.set(0.0f);
+		vehicle->ideal.length.set(0.0f);
+
+		vehicle->ideal.rad_accel.set(0.0f);
+		vehicle->ideal.rad_velo.set(0.0f);
+		vehicle->ideal.radian.set(0.0f);
+		vehicle->ideal.turn_slip_theta.set(0.0f);
+
+		vehicle->ego.length.set(0.0f);
+		vehicle->ego.radian.set(0.0f);
+		vehicle->ego.turn_slip_theta.set(0.0f);
+
+		vehicle->ideal.turn_x_dash.set(0.0f);
+		vehicle->ideal.turn_y_dash.set(0.0f);
+		vehicle->ideal.turn_x.set(0.0f);
+		vehicle->ideal.turn_y.set(0.0f);
+		vehicle->ideal.x_point.set(0.0f);
+
+		vehicle->ego.turn_x_dash.set(0.0f);
+		vehicle->ego.turn_y_dash.set(0.0f);
+		vehicle->ego.turn_x.set(0.0f);
+		vehicle->ego.turn_y.set(0.0f);
+		vehicle->ego.x_point.set(0.0f);
+
+		vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
+		vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+		//Init_Motion_stop_brake(200);
+		motion_exeStatus_set(complete);
+		motion_state_set(NOP_STATE);
+		motion_pattern_set(No_run);
+
+		return;
+	}
+
+	run_time_ms_update();
+	vehicle->ideal.length.set(vehicle->ideal.length.get() + vehicle->ideal.velo.get()*(float)deltaT_ms);
+	vehicle->ideal.radian.set(vehicle->ideal.radian.get() + vehicle->ideal.rad_velo.get()*(float)deltaT_ms/1000.0f);
+}

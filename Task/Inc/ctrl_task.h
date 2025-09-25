@@ -116,6 +116,8 @@ class Motion
 		void SetIdeal_fix_wall		();
 		void SetIdeal_suction_start ();
 		void SetIdeal_stop_brake	();
+		void SetIdeal_enkaigei	();
+
 
 		void SetIdeal_free_rotation_set	( );
 
@@ -200,6 +202,7 @@ class Motion
 		void Init_Motion_fix_wall		(float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
 		void Init_Motion_suction_start	(float suction_voltage,float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
 		void Init_Motion_stop_brake		(float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
+		void Init_Motion_enkaigei		(float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
 
 		inline t_exeStatus execute_Motion()
 		{
@@ -243,6 +246,12 @@ class Motion
 		inline t_exeStatus exe_Motion_fix_wall		(float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain)
 		{
 			Init_Motion_fix_wall		(set_time,sp_gain,om_gain);
+			return execute_Motion();
+		}
+
+		inline t_exeStatus exe_Motion_enkaigei		(float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain)
+		{
+			Init_Motion_enkaigei		(set_time,sp_gain,om_gain);
 			return execute_Motion();
 		}
 

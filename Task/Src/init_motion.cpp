@@ -611,7 +611,7 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 	vehicle->ideal.turn_slip_theta.init();
 	*/
 
-	/*
+
 
 	if(ABS(turn_param->param->degree) == 135.0f)
 	{
@@ -646,7 +646,7 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 			}
 		}
 	}
-	*/
+
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
 	motion_state_set(STRAIGHT_STATE);
@@ -715,7 +715,7 @@ void Motion::Init_Motion_turn_out		(const t_param *turn_param,t_run_pattern run_
 	vehicle->ideal.turn_slip_theta.init();
 	*/
 
-	/*
+
 	if(ABS(turn_param->param->degree) == 135.0f)
 	{
 		float diff = vehicle->ego.x_point.get();
@@ -748,7 +748,7 @@ void Motion::Init_Motion_turn_out		(const t_param *turn_param,t_run_pattern run_
 			}
 		}
 	}
-	*/
+
 
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
@@ -834,7 +834,7 @@ void Motion::Init_Motion_long_turn	(const t_param *turn_param,t_run_pattern run_
 		}
 	}
 
-	/*
+
 	if(ABS(turn_param->param->degree) == 180.0f)
 	{
 		float diff = vehicle->ego.x_point.get();
@@ -890,7 +890,7 @@ void Motion::Init_Motion_long_turn	(const t_param *turn_param,t_run_pattern run_
 
 	}
 
-	 */
+
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
 	motion_state_set(STRAIGHT_STATE);
@@ -1257,6 +1257,70 @@ void Motion::Init_Motion_stop_brake	(float set_time,const t_pid_gain *sp_gain  ,
 	vehicle->ideal.turn_slip_theta.init();
 
 	motion_pattern_set(run_brake);
+	motion_exeStatus_set(execute);
+	motion_state_set(BRAKE_STATE);
+	run_time_ms_reset();
+	run_time_limit_ms_set(set_time);
+
+	ir_sens->EnableIrSensStraight();
+	ir_sens->Division_Wall_Correction_Reset();
+
+	error_counter_reset();
+}
+
+
+void Motion::Init_Motion_enkaigei	(float set_time,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
+{
+	if(motion_exeStatus_get() == error)
+	{
+		Motion_error_handling();
+		return;
+	}
+	motion_plan.velo.init();
+	motion_plan.max_velo.init();
+	motion_plan.end_velo.init();
+	motion_plan.accel.init();
+	motion_plan.deccel.init();
+	motion_plan.end_length.init();
+	motion_plan.length_accel.init();
+	motion_plan.length_deccel.init();
+
+	motion_plan.rad_accel.init();
+	motion_plan.rad_deccel.init();
+	motion_plan.rad_max_velo.init();
+	motion_plan.end_radian.init();
+	motion_plan.radian_accel.init();
+	motion_plan.radian_deccel.init();
+	motion_plan.turn_r_min.init();
+	motion_plan.turn_state.init();
+	motion_plan.turn_time_ms.init		();
+
+	//Set control gain & turn_param
+	straight_motion_param.sp_gain = sp_gain;
+	straight_motion_param.om_gain = om_gain;
+	turn_motion_param.sp_gain = sp_gain;
+	turn_motion_param.om_gain = om_gain;
+
+	vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*straight_motion_param.sp_gain);
+	vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*straight_motion_param.om_gain);
+	vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
+	vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+
+	vehicle->ego.length.init();
+	vehicle->ego.radian.init();
+	vehicle->ego.x_point.init();
+	vehicle->ego.turn_x.init();
+	vehicle->ego.turn_y.init();
+	vehicle->ego.turn_slip_theta.init();
+
+	vehicle->ideal.length.init();
+	vehicle->ideal.radian.init();
+	vehicle->ideal.x_point.init();
+	vehicle->ideal.turn_x.init();
+	vehicle->ideal.turn_y.init();
+	vehicle->ideal.turn_slip_theta.init();
+
+	motion_pattern_set(enkaigei);
 	motion_exeStatus_set(execute);
 	motion_state_set(BRAKE_STATE);
 	run_time_ms_reset();

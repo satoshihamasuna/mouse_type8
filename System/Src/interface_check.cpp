@@ -248,6 +248,15 @@ namespace Mode
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
 							  HAL_Delay(50);
 						  }
+
+							  motion->Motion_start();
+							  LogData::getInstance().data_count = 0;
+							  LogData::getInstance().log_enable = True;
+							  motion->exe_Motion_enkaigei(3000);
+							  LogData::getInstance().log_enable = False;
+							  motion->Motion_end();
+							  enable = 0x00;
+							  HAL_Delay(500);
 						  enable = 0x00;
 						  HAL_Delay(500);
 					}

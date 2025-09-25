@@ -83,7 +83,7 @@ namespace Mode
 						  motion->exe_Motion_suction_start(suction/1000.0f*7.20, stay_time);
 						  LogData::getInstance().data_count = 0;
 						  LogData::getInstance().log_enable = True;
-						  motion->exe_Motion_straight(SECTION*15,st_param->param->acc,st_param->param->max_velo,0.0,st_param->sp_gain,st_param->om_gain);
+						  motion->exe_Motion_straight(SECTION*8,st_param->param->acc,st_param->param->max_velo,0.0,st_param->sp_gain,st_param->om_gain);
 						  //motion->exe_Motion_long_turn(turn_mode[Long_turnR180],Long_turnR180,st_param->sp_gain,st_param->om_gain);
 						  //motion->exe_Motion_long_turn(turn_mode[Long_turnL180],Long_turnL180,st_param->sp_gain,st_param->om_gain);
 						  //motion->exe_Motion_long_turn(turn_mode[Long_turnR180],Long_turnR180,st_param->sp_gain,st_param->om_gain);

@@ -11,16 +11,16 @@
 ../Task/Src/../Inc/sensing_task.h:80:8:void IrSensTask::EnableIrSensStraight()	1
 ../Task/Src/../Inc/sensing_task.h:81:8:void IrSensTask::EnableIrSensDiagonal()	1
 ../Task/Src/../Inc/sensing_task.h:111:8:void IrSensTask::Division_Wall_Correction_Reset()	1
-../Task/Src/../Inc/ctrl_task.h:128:15:void Motion::run_time_ms_reset()	1
-../Task/Src/../Inc/ctrl_task.h:133:15:void Motion::run_time_limit_ms_reset()	1
-../Task/Src/../Inc/ctrl_task.h:134:15:void Motion::run_time_limit_ms_set(float)	1
-../Task/Src/../Inc/ctrl_task.h:138:18:void Motion::motion_pattern_set(t_run_pattern)	1
-../Task/Src/../Inc/ctrl_task.h:141:18:void Motion::motion_state_set(t_runStatus)	1
-../Task/Src/../Inc/ctrl_task.h:144:18:void Motion::motion_exeStatus_set(t_exeStatus)	1
-../Task/Src/../Inc/ctrl_task.h:147:17:void Motion::motion_enable_set()	1
-../Task/Src/../Inc/ctrl_task.h:148:17:void Motion::motion_disable_set()	1
-../Task/Src/../Inc/ctrl_task.h:153:8:void Motion::error_counter_reset()	1
-../Task/Src/../Inc/ctrl_task.h:169:24:t_exeStatus Motion::motion_exeStatus_get()	1
+../Task/Src/../Inc/ctrl_task.h:130:15:void Motion::run_time_ms_reset()	1
+../Task/Src/../Inc/ctrl_task.h:135:15:void Motion::run_time_limit_ms_reset()	1
+../Task/Src/../Inc/ctrl_task.h:136:15:void Motion::run_time_limit_ms_set(float)	1
+../Task/Src/../Inc/ctrl_task.h:140:18:void Motion::motion_pattern_set(t_run_pattern)	1
+../Task/Src/../Inc/ctrl_task.h:143:18:void Motion::motion_state_set(t_runStatus)	1
+../Task/Src/../Inc/ctrl_task.h:146:18:void Motion::motion_exeStatus_set(t_exeStatus)	1
+../Task/Src/../Inc/ctrl_task.h:149:17:void Motion::motion_enable_set()	1
+../Task/Src/../Inc/ctrl_task.h:150:17:void Motion::motion_disable_set()	1
+../Task/Src/../Inc/ctrl_task.h:155:8:void Motion::error_counter_reset()	1
+../Task/Src/../Inc/ctrl_task.h:171:24:t_exeStatus Motion::motion_exeStatus_get()	1
 ../Task/Src/init_motion.cpp:14:6:void Motion::Motion_start()	1
 ../Task/Src/init_motion.cpp:31:6:void Motion::Motion_end()	1
 ../Task/Src/init_motion.cpp:48:6:void Motion::Motion_error_handling()	1
@@ -31,11 +31,12 @@
 ../Task/Src/init_motion.cpp:352:6:void Motion::Init_Motion_backward(const t_pid_gain*, const t_pid_gain*)	4
 ../Task/Src/init_motion.cpp:423:6:void Motion::Init_Motion_diagonal(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	4
 ../Task/Src/init_motion.cpp:491:6:void Motion::Init_Motion_pivot_turn(float, float, float, const t_pid_gain*, const t_pid_gain*)	5
-../Task/Src/init_motion.cpp:559:6:void Motion::Init_Motion_turn_in(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	3
-../Task/Src/init_motion.cpp:663:6:void Motion::Init_Motion_turn_out(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	3
-../Task/Src/init_motion.cpp:767:6:void Motion::Init_Motion_long_turn(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	9
+../Task/Src/init_motion.cpp:559:6:void Motion::Init_Motion_turn_in(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	15
+../Task/Src/init_motion.cpp:663:6:void Motion::Init_Motion_turn_out(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	15
+../Task/Src/init_motion.cpp:767:6:void Motion::Init_Motion_long_turn(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	33
 ../Task/Src/init_motion.cpp:907:6:void Motion::Init_Motion_turn_v90(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	7
 ../Task/Src/init_motion.cpp:994:6:void Motion::Init_Motion_long_turn_v90(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	7
 ../Task/Src/init_motion.cpp:1077:6:void Motion::Init_Motion_fix_wall(float, const t_pid_gain*, const t_pid_gain*)	2
 ../Task/Src/init_motion.cpp:1140:6:void Motion::Init_Motion_suction_start(float, float, const t_pid_gain*, const t_pid_gain*)	2
 ../Task/Src/init_motion.cpp:1208:6:void Motion::Init_Motion_stop_brake(float, const t_pid_gain*, const t_pid_gain*)	2
+../Task/Src/init_motion.cpp:1272:6:void Motion::Init_Motion_enkaigei(float, const t_pid_gain*, const t_pid_gain*)	2

@@ -22,7 +22,7 @@
 #define MMPP			(TIRE_DIAMETER*PI/ENC_RESOLUTION)	//mm
 #define TREAD_WIDTH		((18.0-2.0)*2)
 
-#define WEIGHT			(22.0)					//g
+#define WEIGHT			(20.0)					//g
 #define MOTOR_K_ER		(0.1)					//mV/rpm
 #define MOTOR_K_TR		(0.764)	//0.4//0.594				//mNm/A
 #define MOTOR_R			(3.5)//6.0

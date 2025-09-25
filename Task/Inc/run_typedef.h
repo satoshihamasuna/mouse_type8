@@ -42,6 +42,7 @@ typedef enum{
 	Suction_start		= 28,
 	Backward			= 29,
 	Run_Pause			= 30,
+	enkaigei			= 31,
 }t_run_pattern;
 
 typedef enum{
