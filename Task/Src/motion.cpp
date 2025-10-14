@@ -154,7 +154,7 @@ void Motion::Adjust_wall_corner()
 				if(diff != 0.0f)
 				{
 
-					vehicle->ego.radian.set(-diff/DIAG_SECTION);
+					vehicle->ego.radian.set(-(diff/DIAG_SECTION)/2.0);
 					vehicle->ego.x_point.set(diff/2);
 					//ir_sens->Division_Wall_Correction_Reset();
 					Indicate_LED((0x0f)|Return_LED_Status());
@@ -163,21 +163,32 @@ void Motion::Adjust_wall_corner()
 
 			}
 
+
 			if(ir_sens->r_wall_corner == True && vehicle->ideal.velo.get() > 0.2)
 			{
 				float diff = ir_sens->IrSensorMaxValueFromLog(sensor_sr) - DIAG_SECTION/2.0f;
+				/*
 				vehicle->ego.radian.set(((diff/20.0) + vehicle->ego.radian.get())/2.0f);
 				vehicle->ego.x_point.set((diff+vehicle->ego.x_point.get())/2);
+				*/
+				vehicle->ego.radian.set(-(diff/DIAG_SECTION)/2.0);
+				vehicle->ego.x_point.set(diff/2);
+
 				Indicate_LED((0x0f)|Return_LED_Status());
 
 			}
 			if(ir_sens->l_wall_corner == True && vehicle->ideal.velo.get() > 0.2)
 			{
 				float diff = -(ir_sens->IrSensorMaxValueFromLog(sensor_sl) - DIAG_SECTION/2.0f);
+				/*
 				vehicle->ego.radian.set(((diff/20.0) + vehicle->ego.radian.get())/2.0f);
 				vehicle->ego.x_point.set((diff+vehicle->ego.x_point.get())/2);
+				*/
+				vehicle->ego.radian.set(-(diff/DIAG_SECTION)/2.0);
+				vehicle->ego.x_point.set(diff/2);
 				Indicate_LED((0x0f)|Return_LED_Status());
 			}
+
 		}
 
 
@@ -456,11 +467,13 @@ void Motion::SetIdeal_straight()
 		}
 
 
+		/*
 		if(ABS((motion_plan.length_deccel.get()+offset) - ( motion_plan.end_length.get() - vehicle->ego.length.get())) < motion_plan.max_velo.get()*2)
 		{
 			if(motion_plan.deccel.get() < 0.0 && motion_plan.max_velo.get() > 1.0)
 				vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 		}
+		*/
 
 	}
 	else if(vehicle->ego.length.get() < motion_plan.end_length.get())

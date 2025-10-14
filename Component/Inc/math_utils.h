@@ -31,7 +31,7 @@
 #define RAD_2_RPM		60.0/(2.0*3.141592)
 #define TIRE_RADIUS_M	(TIRE_RADIUS/1000.0)		//m
 #define TREAD_WIDTH_M	((18.0-2.0)*2.0/1000.0)
-#define MOTOR_BR		(10.0/1000000.0*1.0)			//mNm/rpm
+#define MOTOR_BR		(1.0/1000000.0*1.0)			//mNm/rpm
 #define L_BAR_DT		(20.0/1000.0)
 
 

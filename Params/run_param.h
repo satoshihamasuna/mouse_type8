@@ -45,27 +45,27 @@ const static t_turn_param_table slalom_R90_table_280 = {0.28f,-26.00f,9.49,11.16
 const static t_param param_L90_search_280 = {&slalom_L90_table_280 ,&sp_gain_search_turn,&om_gain_search_turn};
 const static t_param param_R90_search_280 = {&slalom_R90_table_280, &sp_gain_search_turn,&om_gain_search_turn};
 
-const static t_pid_gain sp_gain_280 = {3.0,0.08,0.1};
-const static t_pid_gain om_gain_280 = {0.08f, 0.01f, 0.001f};
+const static t_pid_gain sp_gain_280 = {3.0,0.02,0.01};
+const static t_pid_gain om_gain_280 = {0.10f, 0.005f, 0.00f};
 const static t_velo_param param_280 = {0.28f,4.0f};
 const static t_straight_param st_param_280 = {&param_280,&sp_gain_280,&om_gain_280};
 
-const static t_pid_gain sp_gain_300 = {3.0,0.08,0.1};
-const static t_pid_gain om_gain_300 = {0.08f,0.01f,0.001f};
+const static t_pid_gain sp_gain_300 = {3.0,0.02,0.01};
+const static t_pid_gain om_gain_300 = {0.10f,0.005,0.00f};
 const static t_velo_param param_300 = {0.30f,4.0f};
 const static t_straight_param st_param_300 = {&param_300,&sp_gain_300,&om_gain_300};
 
-const static t_pid_gain sp_gain_320 = {3.0,0.05,0.0};
-const static t_pid_gain om_gain_320 = {0.08f,0.005f,0.00f};
+const static t_pid_gain sp_gain_320 = {3.0,0.02,0.01};
+const static t_pid_gain om_gain_320 = {0.10f,0.005f,0.00f};
 const static t_velo_param param_320 = {0.32f,4.0f};
 const static t_straight_param st_param_320 = {&param_320,&sp_gain_320,&om_gain_320};
 
-const static t_pid_gain sp_gain_450 = {3.0,0.08,0.1};
+const static t_pid_gain sp_gain_450 = {3.0,0.02,0.01};
 const static t_pid_gain om_gain_450 = {0.10f,0.01f,0.0f};
 const static t_velo_param param_450 = {0.45f,6.0f};
 const static t_straight_param st_param_450 = {&param_450,&sp_gain_450,&om_gain_450};
 
-const static t_pid_gain sp_gain_500 = {3.0,0.05,0.0};
+const static t_pid_gain sp_gain_500 = {3.0,0.05,0.01};
 const static t_pid_gain om_gain_500 = {0.10f,0.01f,0.0f};
 const static t_velo_param param_500 = {0.50f,6.0f};
 const static t_straight_param st_param_500 = {&param_500,&sp_gain_500,&om_gain_500};

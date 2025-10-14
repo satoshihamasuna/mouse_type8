@@ -88,6 +88,9 @@ void CtrlTask::motion_ideal_param_set()
 		case Backward:
 			SetIdeal_backward();
 			break;
+		case enkaigei:
+			SetIdeal_enkaigei();
+			break;
 		case No_run:
 		case Run_Pause:
 			break;
