@@ -12,8 +12,9 @@
 
 void Module_Initialize()
 {
-	  Sensor_Initialize();
+
 	  IMU_initialize();
+	  Sensor_Initialize();
 	  Communicate_Initialize();
 	  Encoder_Initialize();
 	  Motor_Initialize();
