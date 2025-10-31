@@ -5,6 +5,7 @@
  *      Author: sato1
  */
 
+#include "interface.h"
 #include "imu.h"
 #include "spi.h"
 #include "lsm6dsr_reg.h"
@@ -52,6 +53,32 @@ void IMU_initialize()
 	  write_byte(0x15,0x00);
 	  HAL_Delay(50);
 
+}
+
+uint16_t IMU_Check()
+{
+    float first_value = read_gyro_z_axis();
+    uint16_t all_same = 0xff; // すべて同じかどうか（1=同じ, 0=違う）
+    HAL_Delay(2);
+    // ==== 100回分データ取得 ====
+    for (int i = 0; i < 100; i++) {
+    	float value = read_gyro_z_axis();
+
+        if (i == 0) first_value = value; // 1回目の値を記録
+    	if (value != first_value) all_same = 0; // 違う値が出たらフラグを落とす
+    	HAL_Delay(2);
+	}
+
+	if( all_same == 0xff ) {
+		while( 1 ) {
+			Indicate_LED(0x03);
+			HAL_Delay(200);
+			Indicate_LED(0x00);
+			HAL_Delay(200);
+		}
+	}
+
+    return all_same;
 }
 
 

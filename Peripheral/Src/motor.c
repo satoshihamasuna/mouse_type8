@@ -114,6 +114,7 @@ void FAN_Motor_Initialize()
 {
 	HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
 	HAL_GPIO_WritePin(fn1_GPIO_Port, fn1_Pin, 1);
+	HAL_GPIO_WritePin(fn2_GPIO_Port, fn2_Pin, 1);
 	HAL_Delay(200);
 	//HAL_GPIO_WritePin(fn1_GPIO_Port, fn1_Pin, 0);
 	//__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 495);
@@ -121,6 +122,7 @@ void FAN_Motor_Initialize()
 
 void FAN_Motor_Stop(){
 	HAL_GPIO_WritePin(fn1_GPIO_Port, fn1_Pin, 0);
+	HAL_GPIO_WritePin(fn2_GPIO_Port, fn2_Pin, 0);
 	HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
 }
 

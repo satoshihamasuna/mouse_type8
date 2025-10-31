@@ -13,6 +13,7 @@
 void Module_Initialize()
 {
 
+
 	  IMU_initialize();
 	  Sensor_Initialize();
 	  Communicate_Initialize();
@@ -23,6 +24,7 @@ void Module_Initialize()
 	  IMU_read_DMA_Start();
 	  Motor_Stop();
 	  Fan_Motor_Current_Start();
+	  IMU_Check();
 }
 
 void CPP_Main()

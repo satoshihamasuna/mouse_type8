@@ -25,6 +25,7 @@ typedef enum{
 uint8_t read_byte(uint8_t reg);
 void write_byte(uint8_t reg, uint8_t data);
 void IMU_initialize();
+uint16_t IMU_Check();
 void IMU_read_DMA_Start();
 float read_gyro_x_axis();
 float read_gyro_y_axis();

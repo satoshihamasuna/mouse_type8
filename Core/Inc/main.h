@@ -81,6 +81,8 @@ void Error_Handler(void);
 #define LED1_GPIO_Port GPIOB
 #define NSS_Pin GPIO_PIN_12
 #define NSS_GPIO_Port GPIOB
+#define fn2_Pin GPIO_PIN_11
+#define fn2_GPIO_Port GPIOA
 #define BUTTON_Pin GPIO_PIN_3
 #define BUTTON_GPIO_Port GPIOH
 
