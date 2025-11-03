@@ -8,11 +8,12 @@
 #ifndef INC_MATH_UTILS_H_
 #define INC_MATH_UTILS_H_
 
-
+#include "mouse_config.h"
 
 #define MASK_SEARCH	0x01
 #define MASK_SECOND	0x03
 
+/*
 #define ACC_BUFF_SIZE (30)
 
 #define ENC_RESOLUTION	(172)
@@ -33,7 +34,7 @@
 #define TREAD_WIDTH_M	((18.0-2.0)*2.0/1000.0)
 #define MOTOR_BR		(1.0/1000000.0*1.0)			//mNm/rpm
 #define L_BAR_DT		(20.0/1000.0)
-
+*/
 
 //#define DEBUG_MODE	0
 #define ENABLE_MODE1   0x10

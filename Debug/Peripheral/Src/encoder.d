@@ -39,6 +39,7 @@ Peripheral/Src/encoder.o: ../Peripheral/Src/encoder.c ../Core/Inc/main.h \
  ../Core/Inc/icache.h ../Core/Inc/lptim.h ../Core/Inc/memorymap.h \
  ../Core/Inc/spi.h ../Core/Inc/tim.h ../Core/Inc/gpio.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
@@ -90,6 +91,7 @@ Peripheral/Src/encoder.o: ../Peripheral/Src/encoder.c ../Core/Inc/main.h \
 ../Core/Inc/tim.h:
 ../Core/Inc/gpio.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:

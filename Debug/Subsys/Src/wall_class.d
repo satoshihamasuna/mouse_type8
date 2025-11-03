@@ -3,6 +3,7 @@ Subsys/Src/wall_class.o: ../Subsys/Src/wall_class.cpp \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  ../Subsys/Src/../Inc/../../Task/Inc/sensing_task.h \
  ../Subsys/Src/../Inc/../../Task/Inc/../../Module/Inc/vehicle.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/peripheral.h \
@@ -64,6 +65,7 @@ Subsys/Src/wall_class.o: ../Subsys/Src/wall_class.cpp \
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 ../Subsys/Src/../Inc/../../Task/Inc/sensing_task.h:
 ../Subsys/Src/../Inc/../../Task/Inc/../../Module/Inc/vehicle.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/peripheral.h:

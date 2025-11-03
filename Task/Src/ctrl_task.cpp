@@ -19,7 +19,6 @@
 #include "../Inc/ctrl_task.h"
 
 #include "../Inc/run_typedef.h"
-#include "../Inc/run_typedef.h"
 #include "../Inc/sensing_task.h"
 
 

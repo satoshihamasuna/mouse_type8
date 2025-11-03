@@ -3,6 +3,7 @@ Module/Src/flash.o: ../Module/Src/flash.cpp ../Module/Src/../Inc/flash.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  ../Module/Src/../Inc/../../Subsys/Inc/../../Task/Inc/sensing_task.h \
  ../Module/Src/../Inc/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/vehicle.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/peripheral.h \
@@ -67,6 +68,7 @@ Module/Src/flash.o: ../Module/Src/flash.cpp ../Module/Src/../Inc/flash.h \
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 ../Module/Src/../Inc/../../Subsys/Inc/../../Task/Inc/sensing_task.h:
 ../Module/Src/../Inc/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/vehicle.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/peripheral.h:

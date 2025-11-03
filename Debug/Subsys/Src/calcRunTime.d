@@ -3,6 +3,7 @@ Subsys/Src/calcRunTime.o: ../Subsys/Src/calcRunTime.cpp \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  ../Subsys/Src/../Inc/../../Task/Inc/sensing_task.h \
  ../Subsys/Src/../Inc/../../Task/Inc/../../Module/Inc/vehicle.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/peripheral.h \
@@ -63,6 +64,8 @@ Subsys/Src/calcRunTime.o: ../Subsys/Src/calcRunTime.cpp \
  ../Subsys/Src/../Inc/../../Component/Inc/singleton.h \
  ../Subsys/Src/../Inc/../../Component/Inc/controller.h \
  ../Subsys/Src/../Inc/../../Params/run_param.h \
+ ../Subsys/Src/../Inc/../../Params/mouse_config.h \
+ ../Subsys/Src/../Inc/../../Params/run_param_B.h \
  ../Subsys/Src/../Inc/../../Params/../Component/Inc/controller.h \
  ../Subsys/Src/../Inc/../../Params/../Module/Inc/vehicle.h \
  ../Subsys/Src/../Inc/../../Params/typedef_run_param.h \
@@ -89,6 +92,7 @@ Subsys/Src/calcRunTime.o: ../Subsys/Src/calcRunTime.cpp \
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 ../Subsys/Src/../Inc/../../Task/Inc/sensing_task.h:
 ../Subsys/Src/../Inc/../../Task/Inc/../../Module/Inc/vehicle.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/peripheral.h:
@@ -156,6 +160,8 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h:
 ../Subsys/Src/../Inc/../../Component/Inc/singleton.h:
 ../Subsys/Src/../Inc/../../Component/Inc/controller.h:
 ../Subsys/Src/../Inc/../../Params/run_param.h:
+../Subsys/Src/../Inc/../../Params/mouse_config.h:
+../Subsys/Src/../Inc/../../Params/run_param_B.h:
 ../Subsys/Src/../Inc/../../Params/../Component/Inc/controller.h:
 ../Subsys/Src/../Inc/../../Params/../Module/Inc/vehicle.h:
 ../Subsys/Src/../Inc/../../Params/typedef_run_param.h:

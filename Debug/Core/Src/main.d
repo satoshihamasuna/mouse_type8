@@ -56,6 +56,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h \
  D:/mouse8/mouse_program/mouse_type8/System/Inc/system_util.h
@@ -123,6 +124,7 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h:
 D:/mouse8/mouse_program/mouse_type8/System/Inc/system_util.h:

@@ -48,6 +48,7 @@ System/Src/system_util.o: ../System/Src/system_util.cpp \
  ../Core/Inc/tim.h ../Core/Inc/gpio.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h \
@@ -123,6 +124,7 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
 ../Core/Inc/gpio.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h:

@@ -49,6 +49,7 @@ Task/Src/ir_sens_task.o: ../Task/Src/ir_sens_task.cpp \
  ../Core/Inc/tim.h ../Core/Inc/gpio.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h \
@@ -58,7 +59,9 @@ Task/Src/ir_sens_task.o: ../Task/Src/ir_sens_task.cpp \
  ../Task/Src/../Inc/../../Module/Inc/../../Task/Inc/run_typedef.h \
  ../Task/Src/../Inc/../../Component/Inc/singleton.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h \
- ../Task/Src/../Inc/run_typedef.h ../Task/Src/../../Params/sens_table.h
+ ../Task/Src/../Inc/run_typedef.h ../Task/Src/../../Params/sens_table.h \
+ ../Task/Src/../../Params/mouse_config.h \
+ ../Task/Src/../../Params/sens_table_B.h
 ../Task/Src/../Inc/sensing_task.h:
 ../Task/Src/../Inc/../../Module/Inc/vehicle.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:
@@ -116,6 +119,7 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
 ../Core/Inc/gpio.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h:
@@ -127,3 +131,5 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 ../Task/Src/../Inc/run_typedef.h:
 ../Task/Src/../../Params/sens_table.h:
+../Task/Src/../../Params/mouse_config.h:
+../Task/Src/../../Params/sens_table_B.h:

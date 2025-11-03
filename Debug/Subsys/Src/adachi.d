@@ -3,6 +3,7 @@ Subsys/Src/adachi.o: ../Subsys/Src/adachi.cpp \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h \
  D:/mouse8/mouse_program/mouse_type8/Subsys/Inc/adachi_class.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  D:/mouse8/mouse_program/mouse_type8/Subsys/Inc/make_map_class.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/queue.h \
  D:/mouse8/mouse_program/mouse_type8/Subsys/Inc/wall_class.h \
@@ -67,6 +68,7 @@ D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 D:/mouse8/mouse_program/mouse_type8/Subsys/Inc/adachi_class.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 D:/mouse8/mouse_program/mouse_type8/Subsys/Inc/make_map_class.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/queue.h:
 D:/mouse8/mouse_program/mouse_type8/Subsys/Inc/wall_class.h:

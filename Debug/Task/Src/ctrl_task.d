@@ -47,6 +47,7 @@ Task/Src/ctrl_task.o: ../Task/Src/ctrl_task.cpp \
  ../Core/Inc/tim.h ../Core/Inc/gpio.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h \
@@ -58,6 +59,8 @@ Task/Src/ctrl_task.o: ../Task/Src/ctrl_task.cpp \
  ../Task/Src/../../Module/Inc/../../Component/Inc/controller.h \
  ../Task/Src/../../Module/Inc/../../Task/Inc/run_typedef.h \
  ../Task/Src/../../Params/run_param.h \
+ ../Task/Src/../../Params/mouse_config.h \
+ ../Task/Src/../../Params/run_param_B.h \
  ../Task/Src/../../Params/../Component/Inc/controller.h \
  ../Task/Src/../../Params/../Module/Inc/vehicle.h \
  ../Task/Src/../../Params/typedef_run_param.h \
@@ -132,6 +135,7 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
 ../Core/Inc/gpio.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h:
@@ -143,6 +147,8 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h:
 ../Task/Src/../../Module/Inc/../../Component/Inc/controller.h:
 ../Task/Src/../../Module/Inc/../../Task/Inc/run_typedef.h:
 ../Task/Src/../../Params/run_param.h:
+../Task/Src/../../Params/mouse_config.h:
+../Task/Src/../../Params/run_param_B.h:
 ../Task/Src/../../Params/../Component/Inc/controller.h:
 ../Task/Src/../../Params/../Module/Inc/vehicle.h:
 ../Task/Src/../../Params/typedef_run_param.h:

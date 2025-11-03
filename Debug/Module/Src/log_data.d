@@ -53,6 +53,7 @@ Module/Src/log_data.o: ../Module/Src/log_data.cpp \
  ../Core/Inc/tim.h ../Core/Inc/gpio.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h \
@@ -68,6 +69,8 @@ Module/Src/log_data.o: ../Module/Src/log_data.cpp \
  ../Module/Src/../../Task/Inc/ctrl_task.h \
  ../Module/Src/../../Task/Inc/sensing_task.h \
  ../Module/Src/../../Task/Inc/../../Params/run_param.h \
+ ../Module/Src/../../Task/Inc/../../Params/mouse_config.h \
+ ../Module/Src/../../Task/Inc/../../Params/run_param_B.h \
  ../Module/Src/../../Task/Inc/../../Params/../Component/Inc/controller.h \
  ../Module/Src/../../Task/Inc/../../Params/../Module/Inc/vehicle.h \
  ../Module/Src/../../Task/Inc/../../Params/typedef_run_param.h \
@@ -145,6 +148,7 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
 ../Core/Inc/gpio.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h:
@@ -160,6 +164,8 @@ D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 ../Module/Src/../../Task/Inc/ctrl_task.h:
 ../Module/Src/../../Task/Inc/sensing_task.h:
 ../Module/Src/../../Task/Inc/../../Params/run_param.h:
+../Module/Src/../../Task/Inc/../../Params/mouse_config.h:
+../Module/Src/../../Task/Inc/../../Params/run_param_B.h:
 ../Module/Src/../../Task/Inc/../../Params/../Component/Inc/controller.h:
 ../Module/Src/../../Task/Inc/../../Params/../Module/Inc/vehicle.h:
 ../Module/Src/../../Task/Inc/../../Params/typedef_run_param.h:

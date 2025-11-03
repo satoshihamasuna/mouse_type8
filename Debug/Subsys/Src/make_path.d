@@ -47,6 +47,7 @@ Subsys/Src/make_path.o: ../Subsys/Src/make_path.cpp \
  ../Core/Inc/tim.h ../Core/Inc/gpio.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h \
@@ -63,6 +64,8 @@ Subsys/Src/make_path.o: ../Subsys/Src/make_path.cpp \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h \
  ../Subsys/Src/../../Task/Inc/run_typedef.h \
  ../Subsys/Src/../../Task/Inc/../../Params/run_param.h \
+ ../Subsys/Src/../../Task/Inc/../../Params/mouse_config.h \
+ ../Subsys/Src/../../Task/Inc/../../Params/run_param_B.h \
  ../Subsys/Src/../../Task/Inc/../../Params/../Component/Inc/controller.h \
  ../Subsys/Src/../../Task/Inc/../../Params/../Module/Inc/vehicle.h \
  ../Subsys/Src/../../Task/Inc/../../Params/typedef_run_param.h \
@@ -144,6 +147,7 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
 ../Core/Inc/gpio.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h:
@@ -160,6 +164,8 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 ../Subsys/Src/../../Task/Inc/run_typedef.h:
 ../Subsys/Src/../../Task/Inc/../../Params/run_param.h:
+../Subsys/Src/../../Task/Inc/../../Params/mouse_config.h:
+../Subsys/Src/../../Task/Inc/../../Params/run_param_B.h:
 ../Subsys/Src/../../Task/Inc/../../Params/../Component/Inc/controller.h:
 ../Subsys/Src/../../Task/Inc/../../Params/../Module/Inc/vehicle.h:
 ../Subsys/Src/../../Task/Inc/../../Params/typedef_run_param.h:
