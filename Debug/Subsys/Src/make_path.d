@@ -65,20 +65,23 @@ Subsys/Src/make_path.o: ../Subsys/Src/make_path.cpp \
  ../Subsys/Src/../../Task/Inc/run_typedef.h \
  ../Subsys/Src/../../Task/Inc/../../Params/run_param.h \
  ../Subsys/Src/../../Task/Inc/../../Params/mouse_config.h \
- ../Subsys/Src/../../Task/Inc/../../Params/run_param_B.h \
+ ../Subsys/Src/../../Task/Inc/../../Params/run_param_A.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1000.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/typedef_run_param.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/../Component/Inc/controller.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/../Module/Inc/vehicle.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1200.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1400.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1500.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1600.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1800.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_2000.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_300.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_500.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_700.h \
  ../Subsys/Src/../../Task/Inc/../../Params/../Component/Inc/controller.h \
  ../Subsys/Src/../../Task/Inc/../../Params/../Module/Inc/vehicle.h \
  ../Subsys/Src/../../Task/Inc/../../Params/typedef_run_param.h \
- ../Subsys/Src/../../Task/Inc/../../Params/turn_300.h \
- ../Subsys/Src/../../Task/Inc/../../Params/turn_500.h \
- ../Subsys/Src/../../Task/Inc/../../Params/turn_700.h \
- ../Subsys/Src/../../Task/Inc/../../Params/turn_1000.h \
- ../Subsys/Src/../../Task/Inc/../../Params/turn_1200.h \
- ../Subsys/Src/../../Task/Inc/../../Params/turn_1400.h \
- ../Subsys/Src/../../Task/Inc/../../Params/turn_1500.h \
- ../Subsys/Src/../../Task/Inc/../../Params/turn_1600.h \
- ../Subsys/Src/../../Task/Inc/../../Params/turn_1800.h \
- ../Subsys/Src/../../Task/Inc/../../Params/turn_2000.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/controller.h \
  ../Subsys/Src/../../Module/Inc/log_data.h \
  ../Subsys/Src/../../Module/Inc/../../Component/Inc/half_float.h \
@@ -165,20 +168,23 @@ D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 ../Subsys/Src/../../Task/Inc/run_typedef.h:
 ../Subsys/Src/../../Task/Inc/../../Params/run_param.h:
 ../Subsys/Src/../../Task/Inc/../../Params/mouse_config.h:
-../Subsys/Src/../../Task/Inc/../../Params/run_param_B.h:
+../Subsys/Src/../../Task/Inc/../../Params/run_param_A.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1000.h:
+D:/mouse8/mouse_program/mouse_type8/Params/typedef_run_param.h:
+D:/mouse8/mouse_program/mouse_type8/Params/../Component/Inc/controller.h:
+D:/mouse8/mouse_program/mouse_type8/Params/../Module/Inc/vehicle.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1200.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1400.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1500.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1600.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1800.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_2000.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_300.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_500.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_700.h:
 ../Subsys/Src/../../Task/Inc/../../Params/../Component/Inc/controller.h:
 ../Subsys/Src/../../Task/Inc/../../Params/../Module/Inc/vehicle.h:
 ../Subsys/Src/../../Task/Inc/../../Params/typedef_run_param.h:
-../Subsys/Src/../../Task/Inc/../../Params/turn_300.h:
-../Subsys/Src/../../Task/Inc/../../Params/turn_500.h:
-../Subsys/Src/../../Task/Inc/../../Params/turn_700.h:
-../Subsys/Src/../../Task/Inc/../../Params/turn_1000.h:
-../Subsys/Src/../../Task/Inc/../../Params/turn_1200.h:
-../Subsys/Src/../../Task/Inc/../../Params/turn_1400.h:
-../Subsys/Src/../../Task/Inc/../../Params/turn_1500.h:
-../Subsys/Src/../../Task/Inc/../../Params/turn_1600.h:
-../Subsys/Src/../../Task/Inc/../../Params/turn_1800.h:
-../Subsys/Src/../../Task/Inc/../../Params/turn_2000.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/controller.h:
 ../Subsys/Src/../../Module/Inc/log_data.h:
 ../Subsys/Src/../../Module/Inc/../../Component/Inc/half_float.h:

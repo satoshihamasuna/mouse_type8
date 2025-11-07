@@ -62,20 +62,23 @@ Task/Src/motion.o: ../Task/Src/motion.cpp ../Task/Src/../Inc/ctrl_task.h \
  ../Task/Src/../Inc/run_typedef.h \
  ../Task/Src/../Inc/../../Params/run_param.h \
  ../Task/Src/../Inc/../../Params/mouse_config.h \
- ../Task/Src/../Inc/../../Params/run_param_B.h \
+ ../Task/Src/../Inc/../../Params/run_param_A.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1000.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/typedef_run_param.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/../Component/Inc/controller.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/../Module/Inc/vehicle.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1200.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1400.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1500.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1600.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1800.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_2000.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_300.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_500.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_700.h \
  ../Task/Src/../Inc/../../Params/../Component/Inc/controller.h \
  ../Task/Src/../Inc/../../Params/../Module/Inc/vehicle.h \
  ../Task/Src/../Inc/../../Params/typedef_run_param.h \
- ../Task/Src/../Inc/../../Params/turn_300.h \
- ../Task/Src/../Inc/../../Params/turn_500.h \
- ../Task/Src/../Inc/../../Params/turn_700.h \
- ../Task/Src/../Inc/../../Params/turn_1000.h \
- ../Task/Src/../Inc/../../Params/turn_1200.h \
- ../Task/Src/../Inc/../../Params/turn_1400.h \
- ../Task/Src/../Inc/../../Params/turn_1500.h \
- ../Task/Src/../Inc/../../Params/turn_1600.h \
- ../Task/Src/../Inc/../../Params/turn_1800.h \
- ../Task/Src/../Inc/../../Params/turn_2000.h \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/controller.h \
  ../Task/Src/../Inc/run_typedef.h ../Task/Src/../../Params/turn_table.h
 ../Task/Src/../Inc/ctrl_task.h:
@@ -149,20 +152,23 @@ D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 ../Task/Src/../Inc/run_typedef.h:
 ../Task/Src/../Inc/../../Params/run_param.h:
 ../Task/Src/../Inc/../../Params/mouse_config.h:
-../Task/Src/../Inc/../../Params/run_param_B.h:
+../Task/Src/../Inc/../../Params/run_param_A.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1000.h:
+D:/mouse8/mouse_program/mouse_type8/Params/typedef_run_param.h:
+D:/mouse8/mouse_program/mouse_type8/Params/../Component/Inc/controller.h:
+D:/mouse8/mouse_program/mouse_type8/Params/../Module/Inc/vehicle.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1200.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1400.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1500.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1600.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1800.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_2000.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_300.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_500.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_700.h:
 ../Task/Src/../Inc/../../Params/../Component/Inc/controller.h:
 ../Task/Src/../Inc/../../Params/../Module/Inc/vehicle.h:
 ../Task/Src/../Inc/../../Params/typedef_run_param.h:
-../Task/Src/../Inc/../../Params/turn_300.h:
-../Task/Src/../Inc/../../Params/turn_500.h:
-../Task/Src/../Inc/../../Params/turn_700.h:
-../Task/Src/../Inc/../../Params/turn_1000.h:
-../Task/Src/../Inc/../../Params/turn_1200.h:
-../Task/Src/../Inc/../../Params/turn_1400.h:
-../Task/Src/../Inc/../../Params/turn_1500.h:
-../Task/Src/../Inc/../../Params/turn_1600.h:
-../Task/Src/../Inc/../../Params/turn_1800.h:
-../Task/Src/../Inc/../../Params/turn_2000.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/controller.h:
 ../Task/Src/../Inc/run_typedef.h:
 ../Task/Src/../../Params/turn_table.h:

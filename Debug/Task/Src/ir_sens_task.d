@@ -61,7 +61,7 @@ Task/Src/ir_sens_task.o: ../Task/Src/ir_sens_task.cpp \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h \
  ../Task/Src/../Inc/run_typedef.h ../Task/Src/../../Params/sens_table.h \
  ../Task/Src/../../Params/mouse_config.h \
- ../Task/Src/../../Params/sens_table_B.h
+ ../Task/Src/../../Params/sens_table_A.h
 ../Task/Src/../Inc/sensing_task.h:
 ../Task/Src/../Inc/../../Module/Inc/vehicle.h:
 D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:
@@ -132,4 +132,4 @@ D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 ../Task/Src/../Inc/run_typedef.h:
 ../Task/Src/../../Params/sens_table.h:
 ../Task/Src/../../Params/mouse_config.h:
-../Task/Src/../../Params/sens_table_B.h:
+../Task/Src/../../Params/sens_table_A.h:
