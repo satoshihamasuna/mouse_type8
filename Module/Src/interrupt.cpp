@@ -174,7 +174,7 @@ void Interrupt::preprocess()
 
 	Vehicle_type7::getInstance().ego.x_point.set(Vehicle_type7::getInstance().ego.x_point.get() + turn_x_dot);
 
-	float battery_voltage = 0.95 * Vehicle_type7::getInstance().battery.get() + (0.05)*Battery_GetVoltage();
+	float battery_voltage = 0.98 * Vehicle_type7::getInstance().battery.get() + (0.02)*Battery_GetVoltage();
 	Vehicle_type7::getInstance().battery.set(battery_voltage);
 }
 

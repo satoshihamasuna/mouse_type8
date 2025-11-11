@@ -22,7 +22,7 @@
     #error "MOUSEA または MOUSEB のどちらかを定義してください。"
 #endif
 
-#define ACC_BUFF_SIZE (30)
+#define ACC_BUFF_SIZE (50)
 #define ENC_RESOLUTION	(172)
 
 
