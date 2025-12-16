@@ -85,6 +85,7 @@ namespace Mode
 					enable = 0;
 					break;
 				case ENABLE|0x02:
+					Mode::Debug(&st_param_500,mode_500,0);
 					Mode::Debug(&st_param_700,mode_700,0);
 					//Mode::Debug(&st_param_1200,mode_1200,400);
 				    //Mode::Debug(&st_param_1400_acc2G,mode_1400,500);

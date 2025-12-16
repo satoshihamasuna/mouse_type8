@@ -1,3 +1,4 @@
+../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:34:9:float PID_Controller::get_I_peration()	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:24:15:void param_element::set(float)	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:26:16:float param_element::get()	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:143:16:virtual void Vehicle::motorSetDuty_l(int)	16	static
@@ -10,9 +11,9 @@
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:202:7:virtual void Vehicle_type7::suctionStop()	16	static
 ../Module/Src/../../Task/Inc/sensing_task.h:122:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
 ../Module/Src/log_data.cpp:22:6:void LogData::indicate_data()	216	static
-../Module/Src/log_data.cpp:191:6:void LogData::logging()	472	static
+../Module/Src/log_data.cpp:191:6:void LogData::logging()	232	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:19:7:constexpr PID_Controller::PID_Controller()	16	static
-../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:37:7:constexpr mouse_Controller::mouse_Controller()	16	static
+../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:42:7:constexpr mouse_Controller::mouse_Controller()	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:60:7:Vehicle::Vehicle()	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:181:7:Vehicle_type7::Vehicle_type7()	16	static
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Vehicle_type7]	8	static,ignoring_inline_asm

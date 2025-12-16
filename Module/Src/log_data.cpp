@@ -233,6 +233,9 @@ void LogData::logging()
 		data[34][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Vehicle_type7::getInstance().ego.accel.get());
 
 
+		data[35][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Vehicle_type7::getInstance().Vehicle_controller.speed_ctrl.get_I_peration());
+		data[36][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Vehicle_type7::getInstance().Vehicle_controller.omega_ctrl.get_I_peration());
+
 		data_count++;
 		if(data_count >= data_size*LOG_DATA_PRIOD) data_count = (data_size*LOG_DATA_PRIOD) - 1;
 	}

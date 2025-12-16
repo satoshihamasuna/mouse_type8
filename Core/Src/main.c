@@ -135,6 +135,7 @@ int main(void)
   Flash_Load();
 */
 
+  HAL_Delay(100);
   CPP_Main();
 
   /* USER CODE END 2 */

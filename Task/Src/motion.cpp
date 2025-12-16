@@ -1336,7 +1336,7 @@ void Motion::SetIdeal_long_turn		( )
 
 			ir_sens->Division_Wall_Correction_Reset();
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
 	}
 
@@ -1402,6 +1402,7 @@ void Motion::SetIdeal_long_turn		( )
 			vehicle->ego.turn_y.set(0.0f);
 			vehicle->ideal.turn_x.set(0.0f);
 			vehicle->ideal.turn_y.set(0.0f);
+
 
 			motion_pattern_set(Run_Pause);
 			motion_exeStatus_set(complete);
@@ -2150,7 +2151,7 @@ void Motion::SetIdeal_free_rotation_set	()
 {
 	if(run_time_ms_get() <= run_time_limit_ms_get())
 	{
-		vehicle->motor_out_r = 800;		vehicle->motor_out_l = 800;
+		vehicle->motor_out_r = 150;		vehicle->motor_out_l = 150;
 	}
 	else
 	{

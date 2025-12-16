@@ -143,7 +143,7 @@ void CtrlTask::motion_control()
 
 			//feedback controll
 			vehicle->sp_feedback.set(vehicle->Vehicle_controller.speed_ctrl.Control(vehicle->ideal.velo.get()		,vehicle->ego.velo.get()	, (float)ctr_deltaT_ms));
-			vehicle->om_feedback.set(vehicle->Vehicle_controller.omega_ctrl.Control(vehicle->ideal.rad_velo.get() - 0.0*(vehicle->ego.radian.get() - vehicle->ideal.radian.get() )	,vehicle->ego.rad_velo.get(), (float)ctr_deltaT_ms));
+			vehicle->om_feedback.set(vehicle->Vehicle_controller.omega_ctrl.Control(vehicle->ideal.rad_velo.get() 	,vehicle->ego.rad_velo.get(), (float)ctr_deltaT_ms));
 
 			//feedforward controll
 			vehicle->sp_feedforward.set((sp_FF_control_r + sp_FF_control_l)/2.0);
@@ -152,6 +152,8 @@ void CtrlTask::motion_control()
 			//feedforward
 			float om_feedforward_corr_R = 0.0f;
 			float om_feedforward_corr_L = 0.0f;
+
+
 			if((vehicle->om_feedforward.get()+vehicle->om_feedback.get()) > vehicle->battery.get())
 			{
 				om_feedforward_corr_L = (vehicle->om_feedforward.get()+vehicle->om_feedback.get()) - vehicle->battery.get();
@@ -160,6 +162,7 @@ void CtrlTask::motion_control()
 			{
 				om_feedforward_corr_R =  vehicle->battery.get() + (vehicle->om_feedforward.get()+vehicle->om_feedback.get()) ;
 			}
+
 
 			//calc anti windup
 			float ctrl_battery = vehicle->battery.get();
@@ -187,11 +190,11 @@ void CtrlTask::motion_control()
 			//vehicle->om_feedback.set( om_antiwindup );
 
 			//set & supply voltage
-			vehicle->V_r =  vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get() + om_feedforward_corr_R-om_feedforward_corr_L)*1.0 + vehicle->sp_feedback.get() + vehicle->om_feedback.get();
-			vehicle->V_l = -vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get() + om_feedforward_corr_L-om_feedforward_corr_R)*1.0 - vehicle->sp_feedback.get() + vehicle->om_feedback.get();
+			vehicle->V_r =  vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get() )*1.0 + vehicle->sp_feedback.get() + vehicle->om_feedback.get();
+			vehicle->V_l = -vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get())*1.0 - vehicle->sp_feedback.get() + vehicle->om_feedback.get();
 
-			float duty_r = vehicle->V_r/vehicle->battery.get();
-			float duty_l = vehicle->V_l/vehicle->battery.get();
+			float duty_r = vehicle->V_r/ ctrl_battery;
+			float duty_l = vehicle->V_l/ ctrl_battery;
 
 			if(ABS(duty_r) > 1.0){
 				vehicle->motor_out_r = (int)(SIGN(duty_r) * 1000.0f);

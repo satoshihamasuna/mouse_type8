@@ -28,10 +28,10 @@
 ../Task/Src/motion.cpp:770:6:void Motion::SetIdeal_turn_in()	22
 ../Task/Src/motion.cpp:999:6:void Motion::SetIdeal_turn_out()	22
 ../Task/Src/motion.cpp:1223:6:void Motion::SetIdeal_long_turn()	21
-../Task/Src/motion.cpp:1433:6:void Motion::SetIdeal_turn_v90()	26
-../Task/Src/motion.cpp:1689:6:void Motion::SetIdeal_long_turn_v90()	19
-../Task/Src/motion.cpp:1891:6:void Motion::SetIdeal_fix_wall()	8
-../Task/Src/motion.cpp:2040:6:void Motion::SetIdeal_suction_start()	3
-../Task/Src/motion.cpp:2095:6:void Motion::SetIdeal_stop_brake()	2
-../Task/Src/motion.cpp:2149:6:void Motion::SetIdeal_free_rotation_set()	2
-../Task/Src/motion.cpp:2184:6:void Motion::SetIdeal_enkaigei()	2
+../Task/Src/motion.cpp:1434:6:void Motion::SetIdeal_turn_v90()	26
+../Task/Src/motion.cpp:1690:6:void Motion::SetIdeal_long_turn_v90()	19
+../Task/Src/motion.cpp:1892:6:void Motion::SetIdeal_fix_wall()	8
+../Task/Src/motion.cpp:2041:6:void Motion::SetIdeal_suction_start()	3
+../Task/Src/motion.cpp:2096:6:void Motion::SetIdeal_stop_brake()	2
+../Task/Src/motion.cpp:2150:6:void Motion::SetIdeal_free_rotation_set()	2
+../Task/Src/motion.cpp:2185:6:void Motion::SetIdeal_enkaigei()	2

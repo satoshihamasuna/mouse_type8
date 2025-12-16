@@ -23,7 +23,7 @@
 #define PCLK2			(50000000)//(HAL_RCC_GetPCLK2Freq())//50,000,000
 #define PWMFREQ			(100000)//(100000)
 #define FANPWMFREQ		(100000)
-#define MOT_DUTY_MIN	(30)
+#define MOT_DUTY_MIN	(80)
 #define MOT_DUTY_MAX	(980)
 
 #define MOT_SET_COMPARE_R_FORWARD(x)	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, x)
@@ -65,6 +65,20 @@ void Motor_SetDuty_Left( int16_t duty_l )
 {
 	uint32_t	pulse_l;
 
+	// duty_l: -1000 ～ +1000
+	float Din = (float)ABS(duty_l) / 1000.0f;  // 0.0 ～ 1.0 に正規化
+
+	// MOT_DUTY_MIN, MOT_DUTY_MAX: 0～1000（例: 100=10%, 900=90%）
+	float Dmin = MOT_DUTY_MIN / 1000.0f;       // 0.0～1.0
+	float Dmax = MOT_DUTY_MAX / 1000.0f;       // 0.0～1.0
+
+	// 線形マッピング（上限付き）
+	float Dout = Dmin + (Dmax - Dmin) * Din;
+
+	// PWMパルス幅計算
+	pulse_l = (uint32_t)((PCLK1 / PWMFREQ) * Dout) - 1;
+
+	/*
 	if( ABS(duty_l) > MOT_DUTY_MAX ) {
 		pulse_l = (uint32_t)((PCLK1) / PWMFREQ * MOT_DUTY_MAX / 1000) - 1;
 	} else if( ABS(duty_l) < MOT_DUTY_MIN ) {
@@ -72,6 +86,7 @@ void Motor_SetDuty_Left( int16_t duty_l )
 	} else {
 		pulse_l = (uint32_t)((PCLK1) / PWMFREQ * ABS(duty_l) / 1000) - 1;
 	}
+	*/
 
 	if( duty_l > 0 ) {
 		MOT_SET_COMPARE_L_FORWARD( pulse_l );
@@ -89,6 +104,19 @@ void Motor_SetDuty_Right( int16_t duty_r )
 {
 	uint32_t	pulse_r;
 
+	float Din = (float)ABS(duty_r) / 1000.0f;  // 0.0 ～ 1.0 に正規化
+
+	// MOT_DUTY_MIN, MOT_DUTY_MAX: 0～1000（例: 100=10%, 900=90%）
+	float Dmin = MOT_DUTY_MIN / 1000.0f;       // 0.0～1.0
+	float Dmax = MOT_DUTY_MAX / 1000.0f;       // 0.0～1.0
+
+	// 線形マッピング（上限付き）
+	float Dout = Dmin + (Dmax - Dmin) * Din;
+
+	// PWMパルス幅計算
+	pulse_r = (uint32_t)((PCLK1 / PWMFREQ) * Dout) - 1;
+
+	/*
 	if( ABS(duty_r) > MOT_DUTY_MAX ) {
 		pulse_r = (uint32_t)((PCLK1) / PWMFREQ * MOT_DUTY_MAX / 1000) - 1;
 	} else if( ABS(duty_r) < MOT_DUTY_MIN ) {
@@ -96,6 +124,7 @@ void Motor_SetDuty_Right( int16_t duty_r )
 	} else {
 		pulse_r = (uint32_t)((PCLK1) / PWMFREQ * ABS(duty_r) / 1000) - 1;
 	}
+	*/
 
 	if( duty_r > 0 ) {
 		MOT_SET_COMPARE_R_FORWARD( pulse_r );

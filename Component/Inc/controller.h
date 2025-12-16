@@ -30,6 +30,11 @@ class PID_Controller
 		float Control(float _target,float _output,float dt);
 		float Anti_windup_1(float operation,float limit);
 		float Anti_windup_2(float operation,float limit);
+
+		float get_I_peration()
+		{
+			return  Ki*(I_target - I_output);
+		}
 		//PID_Controller()I
 };
 
