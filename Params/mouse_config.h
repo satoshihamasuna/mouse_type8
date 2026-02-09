@@ -48,7 +48,7 @@
 	#define L_BAR_DT		(20.0/1000.0*0.0)
 
 
-	#define DUTY_MIN		(50)
+	#define DUTY_MIN		(100)
 
 	#define GYRO_COR_RATE	(-1.0f)
 

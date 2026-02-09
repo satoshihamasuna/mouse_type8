@@ -33,15 +33,15 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  14 .debug_macro  00047a37  00000000  00000000  0014d223  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_line   00071552  00000000  00000000  00194c5a  2**0
+ 15 .debug_line   000728f3  00000000  00000000  00194c5a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_str    0015a636  00000000  00000000  002061ac  2**0
+ 16 .debug_str    0015a650  00000000  00000000  0020754d  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .comment      00000043  00000000  00000000  003607e2  2**0
+ 17 .comment      00000043  00000000  00000000  00361b9d  2**0
                   CONTENTS, READONLY
- 18 .debug_frame  00011a58  00000000  00000000  00360828  2**2
+ 18 .debug_frame  00011a58  00000000  00000000  00361be0  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_line_str 00000052  00000000  00000000  00372280  2**0
+ 19 .debug_line_str 0000006b  00000000  00000000  00373638  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -52698,13 +52698,13 @@ void IMU_initialize_lsm6dsv16x()
  8015226:	f7ef fe5f 	bl	8004ee8 <HAL_Delay>
 
 	write_byte(LSM6DSV16X_CTRL9_C,
- 801522a:	2100      	movs	r1, #0
+ 801522a:	2108      	movs	r1, #8
  801522c:	2018      	movs	r0, #24
  801522e:	f7ff ff9f 	bl	8015170 <write_byte>
 				LSM6DSV16X_XL_HP_REF_MODE_XL_DIS |
 				LSM6DSV16X_XL_HP_SLOPE_XL_DIS  |
 				LSM6DSV16X_XL_FASTSETTL_MODE_DIS |
-				LSM6DSV16X_XL_LPF2_XL_DIS );
+				LSM6DSV16X_XL_LPF2_XL_EN );
 
 	HAL_Delay(5);
  8015232:	2005      	movs	r0, #5
@@ -52722,10 +52722,10 @@ void IMU_initialize_lsm6dsv16x()
  8015242:	f7ef fe51 	bl	8004ee8 <HAL_Delay>
 
 	write_byte(LSM6DSV16X_CTRL6_G,
- 8015246:	216c      	movs	r1, #108	@ 0x6c
+ 8015246:	210c      	movs	r1, #12
  8015248:	2015      	movs	r0, #21
  801524a:	f7ff ff91 	bl	8015170 <write_byte>
-				LSM6DSV16X_GY_LPF1_FTYPE_6 |
+				LSM6DSV16X_GY_LPF1_FTYPE_0 |
 				LSM6DSV16X_GY_FS_4000DPS);
 	HAL_Delay(5);
  801524e:	2005      	movs	r0, #5
@@ -53858,7 +53858,7 @@ void Motor_SetDuty_Left( int16_t duty_l )
  8015a68:	4770      	bx	lr
  8015a6a:	bf00      	nop
  8015a6c:	447a0000 	.word	0x447a0000
- 8015a70:	3d4ccccd 	.word	0x3d4ccccd
+ 8015a70:	3dcccccd 	.word	0x3dcccccd
  8015a74:	3f7ae148 	.word	0x3f7ae148
  8015a78:	43fa0000 	.word	0x43fa0000
  8015a7c:	200009d8 	.word	0x200009d8
@@ -53978,7 +53978,7 @@ void Motor_SetDuty_Right( int16_t duty_r )
  8015b48:	4770      	bx	lr
  8015b4a:	bf00      	nop
  8015b4c:	447a0000 	.word	0x447a0000
- 8015b50:	3d4ccccd 	.word	0x3d4ccccd
+ 8015b50:	3dcccccd 	.word	0x3dcccccd
  8015b54:	3f7ae148 	.word	0x3f7ae148
  8015b58:	43fa0000 	.word	0x43fa0000
  8015b5c:	200009d8 	.word	0x200009d8
@@ -54057,7 +54057,7 @@ void FAN_Motor_SetDuty(int16_t duty_f)
  8015bd0:	bfb8      	it	lt
  8015bd2:	425b      	neglt	r3, r3
  8015bd4:	b29b      	uxth	r3, r3
- 8015bd6:	2b31      	cmp	r3, #49	@ 0x31
+ 8015bd6:	2b63      	cmp	r3, #99	@ 0x63
  8015bd8:	d802      	bhi.n	8015be0 <FAN_Motor_SetDuty+0x48>
 		pulse_f = (uint32_t)((PCLK1) / FANPWMFREQ * 10/ 1000) - 1;
  8015bda:	2304      	movs	r3, #4
@@ -90322,10 +90322,10 @@ namespace Mode
  8029d18:	0802a22d 	.word	0x0802a22d
  8029d1c:	0802a349 	.word	0x0802a349
  8029d20:	0802a411 	.word	0x0802a411
- 8029d24:	0802a5a7 	.word	0x0802a5a7
- 8029d28:	0802a6a1 	.word	0x0802a6a1
- 8029d2c:	0802a763 	.word	0x0802a763
- 8029d30:	0802a7d9 	.word	0x0802a7d9
+ 8029d24:	0802a5a3 	.word	0x0802a5a3
+ 8029d28:	0802a69d 	.word	0x0802a69d
+ 8029d2c:	0802a75f 	.word	0x0802a75f
+ 8029d30:	0802a7d5 	.word	0x0802a7d5
  8029d34:	0802a88b 	.word	0x0802a88b
  8029d38:	0802a903 	.word	0x0802a903
 			{
@@ -90727,12 +90727,12 @@ namespace Mode
  802a138:	4603      	mov	r3, r0
  802a13a:	2201      	movs	r2, #1
  802a13c:	701a      	strb	r2, [r3, #0]
-								  motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 60.0*PI, 4.0*PI);
+								  motion->exe_Motion_pivot_turn(DEG2RAD(90.0f*8.0), 60.0*PI, 4.0*PI);
  802a13e:	4ad2      	ldr	r2, [pc, #840]	@ (802a488 <_ZN4Mode15Interface_CheckEv+0x900>)
  802a140:	49d2      	ldr	r1, [pc, #840]	@ (802a48c <_ZN4Mode15Interface_CheckEv+0x904>)
  802a142:	ed9f 1ad3 	vldr	s2, [pc, #844]	@ 802a490 <_ZN4Mode15Interface_CheckEv+0x908>
  802a146:	eddf 0ad3 	vldr	s1, [pc, #844]	@ 802a494 <_ZN4Mode15Interface_CheckEv+0x90c>
- 802a14a:	ed9f 0ad3 	vldr	s0, [pc, #844]	@ 802a498 <_ZN4Mode15Interface_CheckEv+0x910>
+ 802a14a:	ed9f 0ad1 	vldr	s0, [pc, #836]	@ 802a490 <_ZN4Mode15Interface_CheckEv+0x908>
  802a14e:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
  802a152:	f7f7 ff0c 	bl	8021f6e <_ZN6Motion21exe_Motion_pivot_turnEfffPK10t_pid_gainS2_>
 								  LogData::getInstance().log_enable = False;
@@ -90814,7 +90814,7 @@ namespace Mode
 							  motion->exe_Motion_fix_wall(3000);
  802a1fa:	4aa3      	ldr	r2, [pc, #652]	@ (802a488 <_ZN4Mode15Interface_CheckEv+0x900>)
  802a1fc:	49a3      	ldr	r1, [pc, #652]	@ (802a48c <_ZN4Mode15Interface_CheckEv+0x904>)
- 802a1fe:	ed9f 0aa7 	vldr	s0, [pc, #668]	@ 802a49c <_ZN4Mode15Interface_CheckEv+0x914>
+ 802a1fe:	ed9f 0aa6 	vldr	s0, [pc, #664]	@ 802a498 <_ZN4Mode15Interface_CheckEv+0x910>
  802a202:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
  802a206:	f7f7 fed1 	bl	8021fac <_ZN6Motion19exe_Motion_fix_wallEfPK10t_pid_gainS2_>
 							  LogData::getInstance().log_enable = False;
@@ -90894,10 +90894,10 @@ namespace Mode
 						  motion->Init_Motion_straight(45.0, 4.0, 0.32f, 0.32f);
  802a2ae:	4a76      	ldr	r2, [pc, #472]	@ (802a488 <_ZN4Mode15Interface_CheckEv+0x900>)
  802a2b0:	4976      	ldr	r1, [pc, #472]	@ (802a48c <_ZN4Mode15Interface_CheckEv+0x904>)
- 802a2b2:	eddf 1a7b 	vldr	s3, [pc, #492]	@ 802a4a0 <_ZN4Mode15Interface_CheckEv+0x918>
- 802a2b6:	ed9f 1a7a 	vldr	s2, [pc, #488]	@ 802a4a0 <_ZN4Mode15Interface_CheckEv+0x918>
+ 802a2b2:	eddf 1a7a 	vldr	s3, [pc, #488]	@ 802a49c <_ZN4Mode15Interface_CheckEv+0x914>
+ 802a2b6:	ed9f 1a79 	vldr	s2, [pc, #484]	@ 802a49c <_ZN4Mode15Interface_CheckEv+0x914>
  802a2ba:	eef1 0a00 	vmov.f32	s1, #16	@ 0x40800000  4.0
- 802a2be:	ed9f 0a79 	vldr	s0, [pc, #484]	@ 802a4a4 <_ZN4Mode15Interface_CheckEv+0x91c>
+ 802a2be:	ed9f 0a78 	vldr	s0, [pc, #480]	@ 802a4a0 <_ZN4Mode15Interface_CheckEv+0x918>
  802a2c2:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
  802a2c6:	f005 fb97 	bl	802f9f8 <_ZN6Motion20Init_Motion_straightEffffPK10t_pid_gainS2_>
 						  motion->execute_Motion();
@@ -90911,7 +90911,7 @@ namespace Mode
 							  motion->Init_Motion_search_turn(&param_R90_search_320 );
  802a2da:	4b6b      	ldr	r3, [pc, #428]	@ (802a488 <_ZN4Mode15Interface_CheckEv+0x900>)
  802a2dc:	4a6b      	ldr	r2, [pc, #428]	@ (802a48c <_ZN4Mode15Interface_CheckEv+0x904>)
- 802a2de:	4972      	ldr	r1, [pc, #456]	@ (802a4a8 <_ZN4Mode15Interface_CheckEv+0x920>)
+ 802a2de:	4971      	ldr	r1, [pc, #452]	@ (802a4a4 <_ZN4Mode15Interface_CheckEv+0x91c>)
  802a2e0:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
  802a2e4:	f005 f93c 	bl	802f560 <_ZN6Motion23Init_Motion_search_turnEPK7t_paramPK10t_pid_gainS5_>
 							  motion->execute_Motion();
@@ -90928,10 +90928,10 @@ namespace Mode
 						  motion->Init_Motion_straight(45.0, 4.0, 0.32f, 0.0f);
  802a302:	4a61      	ldr	r2, [pc, #388]	@ (802a488 <_ZN4Mode15Interface_CheckEv+0x900>)
  802a304:	4961      	ldr	r1, [pc, #388]	@ (802a48c <_ZN4Mode15Interface_CheckEv+0x904>)
- 802a306:	eddf 1a69 	vldr	s3, [pc, #420]	@ 802a4ac <_ZN4Mode15Interface_CheckEv+0x924>
- 802a30a:	ed9f 1a65 	vldr	s2, [pc, #404]	@ 802a4a0 <_ZN4Mode15Interface_CheckEv+0x918>
+ 802a306:	eddf 1a68 	vldr	s3, [pc, #416]	@ 802a4a8 <_ZN4Mode15Interface_CheckEv+0x920>
+ 802a30a:	ed9f 1a64 	vldr	s2, [pc, #400]	@ 802a49c <_ZN4Mode15Interface_CheckEv+0x914>
  802a30e:	eef1 0a00 	vmov.f32	s1, #16	@ 0x40800000  4.0
- 802a312:	ed9f 0a64 	vldr	s0, [pc, #400]	@ 802a4a4 <_ZN4Mode15Interface_CheckEv+0x91c>
+ 802a312:	ed9f 0a63 	vldr	s0, [pc, #396]	@ 802a4a0 <_ZN4Mode15Interface_CheckEv+0x918>
  802a316:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
  802a31a:	f005 fb6d 	bl	802f9f8 <_ZN6Motion20Init_Motion_straightEffffPK10t_pid_gainS2_>
 						  motion->execute_Motion();
@@ -91014,10 +91014,10 @@ namespace Mode
 						  motion->Init_Motion_straight(90.0*3, 4.0, 0.32f, 0.0f);
  802a3ca:	4a2f      	ldr	r2, [pc, #188]	@ (802a488 <_ZN4Mode15Interface_CheckEv+0x900>)
  802a3cc:	492f      	ldr	r1, [pc, #188]	@ (802a48c <_ZN4Mode15Interface_CheckEv+0x904>)
- 802a3ce:	eddf 1a37 	vldr	s3, [pc, #220]	@ 802a4ac <_ZN4Mode15Interface_CheckEv+0x924>
- 802a3d2:	ed9f 1a33 	vldr	s2, [pc, #204]	@ 802a4a0 <_ZN4Mode15Interface_CheckEv+0x918>
+ 802a3ce:	eddf 1a36 	vldr	s3, [pc, #216]	@ 802a4a8 <_ZN4Mode15Interface_CheckEv+0x920>
+ 802a3d2:	ed9f 1a32 	vldr	s2, [pc, #200]	@ 802a49c <_ZN4Mode15Interface_CheckEv+0x914>
  802a3d6:	eef1 0a00 	vmov.f32	s1, #16	@ 0x40800000  4.0
- 802a3da:	ed9f 0a35 	vldr	s0, [pc, #212]	@ 802a4b0 <_ZN4Mode15Interface_CheckEv+0x928>
+ 802a3da:	ed9f 0a34 	vldr	s0, [pc, #208]	@ 802a4ac <_ZN4Mode15Interface_CheckEv+0x924>
  802a3de:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
  802a3e2:	f005 fb09 	bl	802f9f8 <_ZN6Motion20Init_Motion_straightEffffPK10t_pid_gainS2_>
 						  motion->execute_Motion();
@@ -91090,396 +91090,396 @@ namespace Mode
 						  for(int i = 0; i < 1000;i++)
  802a47e:	2300      	movs	r3, #0
  802a480:	f8c7 31fc 	str.w	r3, [r7, #508]	@ 0x1fc
- 802a484:	e04a      	b.n	802a51c <_ZN4Mode15Interface_CheckEv+0x994>
+ 802a484:	e048      	b.n	802a518 <_ZN4Mode15Interface_CheckEv+0x990>
  802a486:	bf00      	nop
  802a488:	080485b8 	.word	0x080485b8
  802a48c:	080485ac 	.word	0x080485ac
  802a490:	41490fda 	.word	0x41490fda
  802a494:	433c7edc 	.word	0x433c7edc
- 802a498:	3fc90fda 	.word	0x3fc90fda
- 802a49c:	453b8000 	.word	0x453b8000
- 802a4a0:	3ea3d70a 	.word	0x3ea3d70a
- 802a4a4:	42340000 	.word	0x42340000
- 802a4a8:	080485f4 	.word	0x080485f4
- 802a4ac:	00000000 	.word	0x00000000
- 802a4b0:	43870000 	.word	0x43870000
+ 802a498:	453b8000 	.word	0x453b8000
+ 802a49c:	3ea3d70a 	.word	0x3ea3d70a
+ 802a4a0:	42340000 	.word	0x42340000
+ 802a4a4:	080485f4 	.word	0x080485f4
+ 802a4a8:	00000000 	.word	0x00000000
+ 802a4ac:	43870000 	.word	0x43870000
 						  {
 							printf("gyro:%lf\n",(-1.0)*read_gyro_z_axis()*PI/180);
- 802a4b4:	f7ea ff92 	bl	80153dc <read_gyro_z_axis>
- 802a4b8:	ee10 3a10 	vmov	r3, s0
- 802a4bc:	4618      	mov	r0, r3
- 802a4be:	f7d6 f847 	bl	8000550 <__aeabi_f2d>
- 802a4c2:	4602      	mov	r2, r0
- 802a4c4:	460b      	mov	r3, r1
- 802a4c6:	60ba      	str	r2, [r7, #8]
- 802a4c8:	f083 4300 	eor.w	r3, r3, #2147483648	@ 0x80000000
- 802a4cc:	60fb      	str	r3, [r7, #12]
- 802a4ce:	a3d4      	add	r3, pc, #848	@ (adr r3, 802a820 <_ZN4Mode15Interface_CheckEv+0xc98>)
- 802a4d0:	e9d3 2300 	ldrd	r2, r3, [r3]
- 802a4d4:	e9d7 0102 	ldrd	r0, r1, [r7, #8]
- 802a4d8:	f7d6 f892 	bl	8000600 <__aeabi_dmul>
- 802a4dc:	4602      	mov	r2, r0
- 802a4de:	460b      	mov	r3, r1
- 802a4e0:	4610      	mov	r0, r2
- 802a4e2:	4619      	mov	r1, r3
- 802a4e4:	f04f 0200 	mov.w	r2, #0
- 802a4e8:	4bcf      	ldr	r3, [pc, #828]	@ (802a828 <_ZN4Mode15Interface_CheckEv+0xca0>)
- 802a4ea:	f7d6 f9b3 	bl	8000854 <__aeabi_ddiv>
- 802a4ee:	4602      	mov	r2, r0
- 802a4f0:	460b      	mov	r3, r1
- 802a4f2:	48ce      	ldr	r0, [pc, #824]	@ (802a82c <_ZN4Mode15Interface_CheckEv+0xca4>)
- 802a4f4:	f015 fb78 	bl	803fbe8 <iprintf>
+ 802a4b0:	f7ea ff94 	bl	80153dc <read_gyro_z_axis>
+ 802a4b4:	ee10 3a10 	vmov	r3, s0
+ 802a4b8:	4618      	mov	r0, r3
+ 802a4ba:	f7d6 f849 	bl	8000550 <__aeabi_f2d>
+ 802a4be:	4602      	mov	r2, r0
+ 802a4c0:	460b      	mov	r3, r1
+ 802a4c2:	60ba      	str	r2, [r7, #8]
+ 802a4c4:	f083 4300 	eor.w	r3, r3, #2147483648	@ 0x80000000
+ 802a4c8:	60fb      	str	r3, [r7, #12]
+ 802a4ca:	a3d5      	add	r3, pc, #852	@ (adr r3, 802a820 <_ZN4Mode15Interface_CheckEv+0xc98>)
+ 802a4cc:	e9d3 2300 	ldrd	r2, r3, [r3]
+ 802a4d0:	e9d7 0102 	ldrd	r0, r1, [r7, #8]
+ 802a4d4:	f7d6 f894 	bl	8000600 <__aeabi_dmul>
+ 802a4d8:	4602      	mov	r2, r0
+ 802a4da:	460b      	mov	r3, r1
+ 802a4dc:	4610      	mov	r0, r2
+ 802a4de:	4619      	mov	r1, r3
+ 802a4e0:	f04f 0200 	mov.w	r2, #0
+ 802a4e4:	4bd0      	ldr	r3, [pc, #832]	@ (802a828 <_ZN4Mode15Interface_CheckEv+0xca0>)
+ 802a4e6:	f7d6 f9b5 	bl	8000854 <__aeabi_ddiv>
+ 802a4ea:	4602      	mov	r2, r0
+ 802a4ec:	460b      	mov	r3, r1
+ 802a4ee:	48cf      	ldr	r0, [pc, #828]	@ (802a82c <_ZN4Mode15Interface_CheckEv+0xca4>)
+ 802a4f0:	f015 fb7a 	bl	803fbe8 <iprintf>
 							HAL_Delay(2);
- 802a4f8:	2002      	movs	r0, #2
- 802a4fa:	f7da fcf5 	bl	8004ee8 <HAL_Delay>
+ 802a4f4:	2002      	movs	r0, #2
+ 802a4f6:	f7da fcf7 	bl	8004ee8 <HAL_Delay>
 							gyro_sum += read_gyro_z_axis();
- 802a4fe:	f7ea ff6d 	bl	80153dc <read_gyro_z_axis>
- 802a502:	eeb0 7a40 	vmov.f32	s14, s0
- 802a506:	edd7 7a80 	vldr	s15, [r7, #512]	@ 0x200
- 802a50a:	ee77 7a87 	vadd.f32	s15, s15, s14
- 802a50e:	edc7 7a80 	vstr	s15, [r7, #512]	@ 0x200
+ 802a4fa:	f7ea ff6f 	bl	80153dc <read_gyro_z_axis>
+ 802a4fe:	eeb0 7a40 	vmov.f32	s14, s0
+ 802a502:	edd7 7a80 	vldr	s15, [r7, #512]	@ 0x200
+ 802a506:	ee77 7a87 	vadd.f32	s15, s15, s14
+ 802a50a:	edc7 7a80 	vstr	s15, [r7, #512]	@ 0x200
 						  for(int i = 0; i < 1000;i++)
- 802a512:	f8d7 31fc 	ldr.w	r3, [r7, #508]	@ 0x1fc
- 802a516:	3301      	adds	r3, #1
- 802a518:	f8c7 31fc 	str.w	r3, [r7, #508]	@ 0x1fc
- 802a51c:	f8d7 31fc 	ldr.w	r3, [r7, #508]	@ 0x1fc
- 802a520:	f5b3 7f7a 	cmp.w	r3, #1000	@ 0x3e8
- 802a524:	dbc6      	blt.n	802a4b4 <_ZN4Mode15Interface_CheckEv+0x92c>
+ 802a50e:	f8d7 31fc 	ldr.w	r3, [r7, #508]	@ 0x1fc
+ 802a512:	3301      	adds	r3, #1
+ 802a514:	f8c7 31fc 	str.w	r3, [r7, #508]	@ 0x1fc
+ 802a518:	f8d7 31fc 	ldr.w	r3, [r7, #508]	@ 0x1fc
+ 802a51c:	f5b3 7f7a 	cmp.w	r3, #1000	@ 0x3e8
+ 802a520:	dbc6      	blt.n	802a4b0 <_ZN4Mode15Interface_CheckEv+0x928>
 						  }
 						  printf("offset - >%f,%f",gyro_sum/1000.0f,DEG2RAD((-1.0)*gyro_sum/1000.0f));
- 802a526:	edd7 7a80 	vldr	s15, [r7, #512]	@ 0x200
- 802a52a:	ed9f 7ac1 	vldr	s14, [pc, #772]	@ 802a830 <_ZN4Mode15Interface_CheckEv+0xca8>
- 802a52e:	eec7 6a87 	vdiv.f32	s13, s15, s14
- 802a532:	ee16 0a90 	vmov	r0, s13
- 802a536:	f7d6 f80b 	bl	8000550 <__aeabi_f2d>
- 802a53a:	4604      	mov	r4, r0
- 802a53c:	460d      	mov	r5, r1
- 802a53e:	f8d7 0200 	ldr.w	r0, [r7, #512]	@ 0x200
- 802a542:	f7d6 f805 	bl	8000550 <__aeabi_f2d>
- 802a546:	4602      	mov	r2, r0
- 802a548:	460b      	mov	r3, r1
- 802a54a:	603a      	str	r2, [r7, #0]
- 802a54c:	f083 4300 	eor.w	r3, r3, #2147483648	@ 0x80000000
- 802a550:	607b      	str	r3, [r7, #4]
- 802a552:	f04f 0200 	mov.w	r2, #0
- 802a556:	4bb7      	ldr	r3, [pc, #732]	@ (802a834 <_ZN4Mode15Interface_CheckEv+0xcac>)
- 802a558:	e9d7 0100 	ldrd	r0, r1, [r7]
- 802a55c:	f7d6 f97a 	bl	8000854 <__aeabi_ddiv>
- 802a560:	4602      	mov	r2, r0
- 802a562:	460b      	mov	r3, r1
- 802a564:	4610      	mov	r0, r2
- 802a566:	4619      	mov	r1, r3
- 802a568:	f04f 0200 	mov.w	r2, #0
- 802a56c:	4bae      	ldr	r3, [pc, #696]	@ (802a828 <_ZN4Mode15Interface_CheckEv+0xca0>)
- 802a56e:	f7d6 f971 	bl	8000854 <__aeabi_ddiv>
- 802a572:	4602      	mov	r2, r0
- 802a574:	460b      	mov	r3, r1
- 802a576:	4610      	mov	r0, r2
- 802a578:	4619      	mov	r1, r3
- 802a57a:	a3a9      	add	r3, pc, #676	@ (adr r3, 802a820 <_ZN4Mode15Interface_CheckEv+0xc98>)
- 802a57c:	e9d3 2300 	ldrd	r2, r3, [r3]
- 802a580:	f7d6 f83e 	bl	8000600 <__aeabi_dmul>
- 802a584:	4602      	mov	r2, r0
- 802a586:	460b      	mov	r3, r1
- 802a588:	e9cd 2300 	strd	r2, r3, [sp]
- 802a58c:	4622      	mov	r2, r4
- 802a58e:	462b      	mov	r3, r5
- 802a590:	48a9      	ldr	r0, [pc, #676]	@ (802a838 <_ZN4Mode15Interface_CheckEv+0xcb0>)
- 802a592:	f015 fb29 	bl	803fbe8 <iprintf>
+ 802a522:	edd7 7a80 	vldr	s15, [r7, #512]	@ 0x200
+ 802a526:	ed9f 7ac2 	vldr	s14, [pc, #776]	@ 802a830 <_ZN4Mode15Interface_CheckEv+0xca8>
+ 802a52a:	eec7 6a87 	vdiv.f32	s13, s15, s14
+ 802a52e:	ee16 0a90 	vmov	r0, s13
+ 802a532:	f7d6 f80d 	bl	8000550 <__aeabi_f2d>
+ 802a536:	4604      	mov	r4, r0
+ 802a538:	460d      	mov	r5, r1
+ 802a53a:	f8d7 0200 	ldr.w	r0, [r7, #512]	@ 0x200
+ 802a53e:	f7d6 f807 	bl	8000550 <__aeabi_f2d>
+ 802a542:	4602      	mov	r2, r0
+ 802a544:	460b      	mov	r3, r1
+ 802a546:	603a      	str	r2, [r7, #0]
+ 802a548:	f083 4300 	eor.w	r3, r3, #2147483648	@ 0x80000000
+ 802a54c:	607b      	str	r3, [r7, #4]
+ 802a54e:	f04f 0200 	mov.w	r2, #0
+ 802a552:	4bb8      	ldr	r3, [pc, #736]	@ (802a834 <_ZN4Mode15Interface_CheckEv+0xcac>)
+ 802a554:	e9d7 0100 	ldrd	r0, r1, [r7]
+ 802a558:	f7d6 f97c 	bl	8000854 <__aeabi_ddiv>
+ 802a55c:	4602      	mov	r2, r0
+ 802a55e:	460b      	mov	r3, r1
+ 802a560:	4610      	mov	r0, r2
+ 802a562:	4619      	mov	r1, r3
+ 802a564:	f04f 0200 	mov.w	r2, #0
+ 802a568:	4baf      	ldr	r3, [pc, #700]	@ (802a828 <_ZN4Mode15Interface_CheckEv+0xca0>)
+ 802a56a:	f7d6 f973 	bl	8000854 <__aeabi_ddiv>
+ 802a56e:	4602      	mov	r2, r0
+ 802a570:	460b      	mov	r3, r1
+ 802a572:	4610      	mov	r0, r2
+ 802a574:	4619      	mov	r1, r3
+ 802a576:	a3aa      	add	r3, pc, #680	@ (adr r3, 802a820 <_ZN4Mode15Interface_CheckEv+0xc98>)
+ 802a578:	e9d3 2300 	ldrd	r2, r3, [r3]
+ 802a57c:	f7d6 f840 	bl	8000600 <__aeabi_dmul>
+ 802a580:	4602      	mov	r2, r0
+ 802a582:	460b      	mov	r3, r1
+ 802a584:	e9cd 2300 	strd	r2, r3, [sp]
+ 802a588:	4622      	mov	r2, r4
+ 802a58a:	462b      	mov	r3, r5
+ 802a58c:	48aa      	ldr	r0, [pc, #680]	@ (802a838 <_ZN4Mode15Interface_CheckEv+0xcb0>)
+ 802a58e:	f015 fb2b 	bl	803fbe8 <iprintf>
 						  enable = 0x00;
- 802a596:	2300      	movs	r3, #0
- 802a598:	f887 3225 	strb.w	r3, [r7, #549]	@ 0x225
+ 802a592:	2300      	movs	r3, #0
+ 802a594:	f887 3225 	strb.w	r3, [r7, #549]	@ 0x225
 						  HAL_Delay(500);
- 802a59c:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
- 802a5a0:	f7da fca2 	bl	8004ee8 <HAL_Delay>
+ 802a598:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
+ 802a59c:	f7da fca4 	bl	8004ee8 <HAL_Delay>
 					}
 					break;
- 802a5a4:	e1ef      	b.n	802a986 <_ZN4Mode15Interface_CheckEv+0xdfe>
+ 802a5a0:	e1f1      	b.n	802a986 <_ZN4Mode15Interface_CheckEv+0xdfe>
 					case ENABLE|0x0A:
 					if(irsens->IrSensor_Avg() > 1500){
- 802a5a6:	f8d7 01d4 	ldr.w	r0, [r7, #468]	@ 0x1d4
- 802a5aa:	f00b f8a3 	bl	80356f4 <_ZN10IrSensTask12IrSensor_AvgEv>
- 802a5ae:	4603      	mov	r3, r0
- 802a5b0:	461a      	mov	r2, r3
- 802a5b2:	f240 53dc 	movw	r3, #1500	@ 0x5dc
- 802a5b6:	429a      	cmp	r2, r3
- 802a5b8:	bfcc      	ite	gt
- 802a5ba:	2301      	movgt	r3, #1
- 802a5bc:	2300      	movle	r3, #0
- 802a5be:	b2db      	uxtb	r3, r3
- 802a5c0:	2b00      	cmp	r3, #0
- 802a5c2:	f000 81e2 	beq.w	802a98a <_ZN4Mode15Interface_CheckEv+0xe02>
+ 802a5a2:	f8d7 01d4 	ldr.w	r0, [r7, #468]	@ 0x1d4
+ 802a5a6:	f00b f8a5 	bl	80356f4 <_ZN10IrSensTask12IrSensor_AvgEv>
+ 802a5aa:	4603      	mov	r3, r0
+ 802a5ac:	461a      	mov	r2, r3
+ 802a5ae:	f240 53dc 	movw	r3, #1500	@ 0x5dc
+ 802a5b2:	429a      	cmp	r2, r3
+ 802a5b4:	bfcc      	ite	gt
+ 802a5b6:	2301      	movgt	r3, #1
+ 802a5b8:	2300      	movle	r3, #0
+ 802a5ba:	b2db      	uxtb	r3, r3
+ 802a5bc:	2b00      	cmp	r3, #0
+ 802a5be:	f000 81e4 	beq.w	802a98a <_ZN4Mode15Interface_CheckEv+0xe02>
 						  for(int i = 0;i < 11;i++)
- 802a5c6:	2300      	movs	r3, #0
- 802a5c8:	f8c7 31f8 	str.w	r3, [r7, #504]	@ 0x1f8
- 802a5cc:	e01a      	b.n	802a604 <_ZN4Mode15Interface_CheckEv+0xa7c>
+ 802a5c2:	2300      	movs	r3, #0
+ 802a5c4:	f8c7 31f8 	str.w	r3, [r7, #504]	@ 0x1f8
+ 802a5c8:	e01a      	b.n	802a600 <_ZN4Mode15Interface_CheckEv+0xa78>
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
- 802a5ce:	f8d7 31f8 	ldr.w	r3, [r7, #504]	@ 0x1f8
- 802a5d2:	f003 0301 	and.w	r3, r3, #1
- 802a5d6:	2b00      	cmp	r3, #0
- 802a5d8:	d109      	bne.n	802a5ee <_ZN4Mode15Interface_CheckEv+0xa66>
- 802a5da:	f897 21df 	ldrb.w	r2, [r7, #479]	@ 0x1df
- 802a5de:	f897 3226 	ldrb.w	r3, [r7, #550]	@ 0x226
- 802a5e2:	4313      	orrs	r3, r2
- 802a5e4:	b2db      	uxtb	r3, r3
- 802a5e6:	4618      	mov	r0, r3
- 802a5e8:	f7ea ff92 	bl	8015510 <Indicate_LED>
- 802a5ec:	e002      	b.n	802a5f4 <_ZN4Mode15Interface_CheckEv+0xa6c>
- 802a5ee:	2000      	movs	r0, #0
- 802a5f0:	f7ea ff8e 	bl	8015510 <Indicate_LED>
+ 802a5ca:	f8d7 31f8 	ldr.w	r3, [r7, #504]	@ 0x1f8
+ 802a5ce:	f003 0301 	and.w	r3, r3, #1
+ 802a5d2:	2b00      	cmp	r3, #0
+ 802a5d4:	d109      	bne.n	802a5ea <_ZN4Mode15Interface_CheckEv+0xa62>
+ 802a5d6:	f897 21df 	ldrb.w	r2, [r7, #479]	@ 0x1df
+ 802a5da:	f897 3226 	ldrb.w	r3, [r7, #550]	@ 0x226
+ 802a5de:	4313      	orrs	r3, r2
+ 802a5e0:	b2db      	uxtb	r3, r3
+ 802a5e2:	4618      	mov	r0, r3
+ 802a5e4:	f7ea ff94 	bl	8015510 <Indicate_LED>
+ 802a5e8:	e002      	b.n	802a5f0 <_ZN4Mode15Interface_CheckEv+0xa68>
+ 802a5ea:	2000      	movs	r0, #0
+ 802a5ec:	f7ea ff90 	bl	8015510 <Indicate_LED>
 							  HAL_Delay(50);
- 802a5f4:	2032      	movs	r0, #50	@ 0x32
- 802a5f6:	f7da fc77 	bl	8004ee8 <HAL_Delay>
+ 802a5f0:	2032      	movs	r0, #50	@ 0x32
+ 802a5f2:	f7da fc79 	bl	8004ee8 <HAL_Delay>
 						  for(int i = 0;i < 11;i++)
- 802a5fa:	f8d7 31f8 	ldr.w	r3, [r7, #504]	@ 0x1f8
- 802a5fe:	3301      	adds	r3, #1
- 802a600:	f8c7 31f8 	str.w	r3, [r7, #504]	@ 0x1f8
- 802a604:	f8d7 31f8 	ldr.w	r3, [r7, #504]	@ 0x1f8
- 802a608:	2b0a      	cmp	r3, #10
- 802a60a:	dde0      	ble.n	802a5ce <_ZN4Mode15Interface_CheckEv+0xa46>
+ 802a5f6:	f8d7 31f8 	ldr.w	r3, [r7, #504]	@ 0x1f8
+ 802a5fa:	3301      	adds	r3, #1
+ 802a5fc:	f8c7 31f8 	str.w	r3, [r7, #504]	@ 0x1f8
+ 802a600:	f8d7 31f8 	ldr.w	r3, [r7, #504]	@ 0x1f8
+ 802a604:	2b0a      	cmp	r3, #10
+ 802a606:	dde0      	ble.n	802a5ca <_ZN4Mode15Interface_CheckEv+0xa42>
 						  }
 					      const static t_pid_gain sp_gain = {0.0,0.0,0.0};
 					      const static t_pid_gain om_gain = {0.0,0.0,0.0};
 						  motion->Motion_start();
- 802a60c:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
- 802a610:	f004 fc8e 	bl	802ef30 <_ZN6Motion12Motion_startEv>
+ 802a608:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
+ 802a60c:	f004 fc90 	bl	802ef30 <_ZN6Motion12Motion_startEv>
 						  motion->Init_Motion_suction_start(7.0, 3000, &sp_gain, &om_gain);
- 802a614:	4a89      	ldr	r2, [pc, #548]	@ (802a83c <_ZN4Mode15Interface_CheckEv+0xcb4>)
- 802a616:	498a      	ldr	r1, [pc, #552]	@ (802a840 <_ZN4Mode15Interface_CheckEv+0xcb8>)
- 802a618:	eddf 0a8a 	vldr	s1, [pc, #552]	@ 802a844 <_ZN4Mode15Interface_CheckEv+0xcbc>
- 802a61c:	eeb1 0a0c 	vmov.f32	s0, #28	@ 0x40e00000  7.0
- 802a620:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
- 802a624:	f007 fc18 	bl	8031e58 <_ZN6Motion25Init_Motion_suction_startEffPK10t_pid_gainS2_>
+ 802a610:	4a8a      	ldr	r2, [pc, #552]	@ (802a83c <_ZN4Mode15Interface_CheckEv+0xcb4>)
+ 802a612:	498b      	ldr	r1, [pc, #556]	@ (802a840 <_ZN4Mode15Interface_CheckEv+0xcb8>)
+ 802a614:	eddf 0a8b 	vldr	s1, [pc, #556]	@ 802a844 <_ZN4Mode15Interface_CheckEv+0xcbc>
+ 802a618:	eeb1 0a0c 	vmov.f32	s0, #28	@ 0x40e00000  7.0
+ 802a61c:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
+ 802a620:	f007 fc1a 	bl	8031e58 <_ZN6Motion25Init_Motion_suction_startEffPK10t_pid_gainS2_>
 						  while(motion->motion_exeStatus_get() == execute){
- 802a628:	e022      	b.n	802a670 <_ZN4Mode15Interface_CheckEv+0xae8>
+ 802a624:	e022      	b.n	802a66c <_ZN4Mode15Interface_CheckEv+0xae4>
 								printf("current->,");
- 802a62a:	4887      	ldr	r0, [pc, #540]	@ (802a848 <_ZN4Mode15Interface_CheckEv+0xcc0>)
- 802a62c:	f015 fadc 	bl	803fbe8 <iprintf>
+ 802a626:	4888      	ldr	r0, [pc, #544]	@ (802a848 <_ZN4Mode15Interface_CheckEv+0xcc0>)
+ 802a628:	f015 fade 	bl	803fbe8 <iprintf>
 								for(int i = 0; i < 4 ; i++)
- 802a630:	2300      	movs	r3, #0
- 802a632:	f8c7 31f4 	str.w	r3, [r7, #500]	@ 0x1f4
- 802a636:	e00d      	b.n	802a654 <_ZN4Mode15Interface_CheckEv+0xacc>
+ 802a62c:	2300      	movs	r3, #0
+ 802a62e:	f8c7 31f4 	str.w	r3, [r7, #500]	@ 0x1f4
+ 802a632:	e00d      	b.n	802a650 <_ZN4Mode15Interface_CheckEv+0xac8>
 								{
 									printf("%ld,",ADC4_get_value(i));
- 802a638:	f8d7 01f4 	ldr.w	r0, [r7, #500]	@ 0x1f4
- 802a63c:	f7ea fb86 	bl	8014d4c <ADC4_get_value>
- 802a640:	4603      	mov	r3, r0
- 802a642:	4619      	mov	r1, r3
- 802a644:	4881      	ldr	r0, [pc, #516]	@ (802a84c <_ZN4Mode15Interface_CheckEv+0xcc4>)
- 802a646:	f015 facf 	bl	803fbe8 <iprintf>
+ 802a634:	f8d7 01f4 	ldr.w	r0, [r7, #500]	@ 0x1f4
+ 802a638:	f7ea fb88 	bl	8014d4c <ADC4_get_value>
+ 802a63c:	4603      	mov	r3, r0
+ 802a63e:	4619      	mov	r1, r3
+ 802a640:	4882      	ldr	r0, [pc, #520]	@ (802a84c <_ZN4Mode15Interface_CheckEv+0xcc4>)
+ 802a642:	f015 fad1 	bl	803fbe8 <iprintf>
 								for(int i = 0; i < 4 ; i++)
- 802a64a:	f8d7 31f4 	ldr.w	r3, [r7, #500]	@ 0x1f4
- 802a64e:	3301      	adds	r3, #1
- 802a650:	f8c7 31f4 	str.w	r3, [r7, #500]	@ 0x1f4
- 802a654:	f8d7 31f4 	ldr.w	r3, [r7, #500]	@ 0x1f4
- 802a658:	2b03      	cmp	r3, #3
- 802a65a:	dded      	ble.n	802a638 <_ZN4Mode15Interface_CheckEv+0xab0>
+ 802a646:	f8d7 31f4 	ldr.w	r3, [r7, #500]	@ 0x1f4
+ 802a64a:	3301      	adds	r3, #1
+ 802a64c:	f8c7 31f4 	str.w	r3, [r7, #500]	@ 0x1f4
+ 802a650:	f8d7 31f4 	ldr.w	r3, [r7, #500]	@ 0x1f4
+ 802a654:	2b03      	cmp	r3, #3
+ 802a656:	dded      	ble.n	802a634 <_ZN4Mode15Interface_CheckEv+0xaac>
 								}
 								printf("%ld\n",Fan_Motor_Current_avg());
- 802a65c:	f7ea fb88 	bl	8014d70 <Fan_Motor_Current_avg>
- 802a660:	4603      	mov	r3, r0
- 802a662:	4619      	mov	r1, r3
- 802a664:	487a      	ldr	r0, [pc, #488]	@ (802a850 <_ZN4Mode15Interface_CheckEv+0xcc8>)
- 802a666:	f015 fabf 	bl	803fbe8 <iprintf>
+ 802a658:	f7ea fb8a 	bl	8014d70 <Fan_Motor_Current_avg>
+ 802a65c:	4603      	mov	r3, r0
+ 802a65e:	4619      	mov	r1, r3
+ 802a660:	487b      	ldr	r0, [pc, #492]	@ (802a850 <_ZN4Mode15Interface_CheckEv+0xcc8>)
+ 802a662:	f015 fac1 	bl	803fbe8 <iprintf>
 								HAL_Delay(1);
- 802a66a:	2001      	movs	r0, #1
- 802a66c:	f7da fc3c 	bl	8004ee8 <HAL_Delay>
+ 802a666:	2001      	movs	r0, #1
+ 802a668:	f7da fc3e 	bl	8004ee8 <HAL_Delay>
 						  while(motion->motion_exeStatus_get() == execute){
- 802a670:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
- 802a674:	f7ee fee2 	bl	801943c <_ZN6Motion20motion_exeStatus_getEv>
- 802a678:	4603      	mov	r3, r0
- 802a67a:	2b02      	cmp	r3, #2
- 802a67c:	bf0c      	ite	eq
- 802a67e:	2301      	moveq	r3, #1
- 802a680:	2300      	movne	r3, #0
- 802a682:	b2db      	uxtb	r3, r3
- 802a684:	2b00      	cmp	r3, #0
- 802a686:	d1d0      	bne.n	802a62a <_ZN4Mode15Interface_CheckEv+0xaa2>
+ 802a66c:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
+ 802a670:	f7ee fee4 	bl	801943c <_ZN6Motion20motion_exeStatus_getEv>
+ 802a674:	4603      	mov	r3, r0
+ 802a676:	2b02      	cmp	r3, #2
+ 802a678:	bf0c      	ite	eq
+ 802a67a:	2301      	moveq	r3, #1
+ 802a67c:	2300      	movne	r3, #0
+ 802a67e:	b2db      	uxtb	r3, r3
+ 802a680:	2b00      	cmp	r3, #0
+ 802a682:	d1d0      	bne.n	802a626 <_ZN4Mode15Interface_CheckEv+0xa9e>
 						  }
 						  motion->Motion_end();
- 802a688:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
- 802a68c:	f004 fc9a 	bl	802efc4 <_ZN6Motion10Motion_endEv>
+ 802a684:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
+ 802a688:	f004 fc9c 	bl	802efc4 <_ZN6Motion10Motion_endEv>
 						  enable = 0x00;
- 802a690:	2300      	movs	r3, #0
- 802a692:	f887 3225 	strb.w	r3, [r7, #549]	@ 0x225
+ 802a68c:	2300      	movs	r3, #0
+ 802a68e:	f887 3225 	strb.w	r3, [r7, #549]	@ 0x225
 						  HAL_Delay(500);
- 802a696:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
- 802a69a:	f7da fc25 	bl	8004ee8 <HAL_Delay>
+ 802a692:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
+ 802a696:	f7da fc27 	bl	8004ee8 <HAL_Delay>
 					}
 					break;
- 802a69e:	e174      	b.n	802a98a <_ZN4Mode15Interface_CheckEv+0xe02>
+ 802a69a:	e176      	b.n	802a98a <_ZN4Mode15Interface_CheckEv+0xe02>
 				case ENABLE|0x0B:
 					if(irsens->IrSensor_Avg() > 2500){
- 802a6a0:	f8d7 01d4 	ldr.w	r0, [r7, #468]	@ 0x1d4
- 802a6a4:	f00b f826 	bl	80356f4 <_ZN10IrSensTask12IrSensor_AvgEv>
- 802a6a8:	4603      	mov	r3, r0
- 802a6aa:	461a      	mov	r2, r3
- 802a6ac:	f640 13c4 	movw	r3, #2500	@ 0x9c4
- 802a6b0:	429a      	cmp	r2, r3
- 802a6b2:	bfcc      	ite	gt
- 802a6b4:	2301      	movgt	r3, #1
- 802a6b6:	2300      	movle	r3, #0
- 802a6b8:	b2db      	uxtb	r3, r3
- 802a6ba:	2b00      	cmp	r3, #0
- 802a6bc:	f000 8167 	beq.w	802a98e <_ZN4Mode15Interface_CheckEv+0xe06>
+ 802a69c:	f8d7 01d4 	ldr.w	r0, [r7, #468]	@ 0x1d4
+ 802a6a0:	f00b f828 	bl	80356f4 <_ZN10IrSensTask12IrSensor_AvgEv>
+ 802a6a4:	4603      	mov	r3, r0
+ 802a6a6:	461a      	mov	r2, r3
+ 802a6a8:	f640 13c4 	movw	r3, #2500	@ 0x9c4
+ 802a6ac:	429a      	cmp	r2, r3
+ 802a6ae:	bfcc      	ite	gt
+ 802a6b0:	2301      	movgt	r3, #1
+ 802a6b2:	2300      	movle	r3, #0
+ 802a6b4:	b2db      	uxtb	r3, r3
+ 802a6b6:	2b00      	cmp	r3, #0
+ 802a6b8:	f000 8169 	beq.w	802a98e <_ZN4Mode15Interface_CheckEv+0xe06>
 						  for(int i = 0;i < 11;i++)
- 802a6c0:	2300      	movs	r3, #0
- 802a6c2:	f8c7 31f0 	str.w	r3, [r7, #496]	@ 0x1f0
- 802a6c6:	e01a      	b.n	802a6fe <_ZN4Mode15Interface_CheckEv+0xb76>
+ 802a6bc:	2300      	movs	r3, #0
+ 802a6be:	f8c7 31f0 	str.w	r3, [r7, #496]	@ 0x1f0
+ 802a6c2:	e01a      	b.n	802a6fa <_ZN4Mode15Interface_CheckEv+0xb72>
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
- 802a6c8:	f8d7 31f0 	ldr.w	r3, [r7, #496]	@ 0x1f0
- 802a6cc:	f003 0301 	and.w	r3, r3, #1
- 802a6d0:	2b00      	cmp	r3, #0
- 802a6d2:	d109      	bne.n	802a6e8 <_ZN4Mode15Interface_CheckEv+0xb60>
- 802a6d4:	f897 21df 	ldrb.w	r2, [r7, #479]	@ 0x1df
- 802a6d8:	f897 3226 	ldrb.w	r3, [r7, #550]	@ 0x226
- 802a6dc:	4313      	orrs	r3, r2
- 802a6de:	b2db      	uxtb	r3, r3
- 802a6e0:	4618      	mov	r0, r3
- 802a6e2:	f7ea ff15 	bl	8015510 <Indicate_LED>
- 802a6e6:	e002      	b.n	802a6ee <_ZN4Mode15Interface_CheckEv+0xb66>
- 802a6e8:	2000      	movs	r0, #0
- 802a6ea:	f7ea ff11 	bl	8015510 <Indicate_LED>
+ 802a6c4:	f8d7 31f0 	ldr.w	r3, [r7, #496]	@ 0x1f0
+ 802a6c8:	f003 0301 	and.w	r3, r3, #1
+ 802a6cc:	2b00      	cmp	r3, #0
+ 802a6ce:	d109      	bne.n	802a6e4 <_ZN4Mode15Interface_CheckEv+0xb5c>
+ 802a6d0:	f897 21df 	ldrb.w	r2, [r7, #479]	@ 0x1df
+ 802a6d4:	f897 3226 	ldrb.w	r3, [r7, #550]	@ 0x226
+ 802a6d8:	4313      	orrs	r3, r2
+ 802a6da:	b2db      	uxtb	r3, r3
+ 802a6dc:	4618      	mov	r0, r3
+ 802a6de:	f7ea ff17 	bl	8015510 <Indicate_LED>
+ 802a6e2:	e002      	b.n	802a6ea <_ZN4Mode15Interface_CheckEv+0xb62>
+ 802a6e4:	2000      	movs	r0, #0
+ 802a6e6:	f7ea ff13 	bl	8015510 <Indicate_LED>
 							  HAL_Delay(50);
- 802a6ee:	2032      	movs	r0, #50	@ 0x32
- 802a6f0:	f7da fbfa 	bl	8004ee8 <HAL_Delay>
+ 802a6ea:	2032      	movs	r0, #50	@ 0x32
+ 802a6ec:	f7da fbfc 	bl	8004ee8 <HAL_Delay>
 						  for(int i = 0;i < 11;i++)
- 802a6f4:	f8d7 31f0 	ldr.w	r3, [r7, #496]	@ 0x1f0
- 802a6f8:	3301      	adds	r3, #1
- 802a6fa:	f8c7 31f0 	str.w	r3, [r7, #496]	@ 0x1f0
- 802a6fe:	f8d7 31f0 	ldr.w	r3, [r7, #496]	@ 0x1f0
- 802a702:	2b0a      	cmp	r3, #10
- 802a704:	dde0      	ble.n	802a6c8 <_ZN4Mode15Interface_CheckEv+0xb40>
+ 802a6f0:	f8d7 31f0 	ldr.w	r3, [r7, #496]	@ 0x1f0
+ 802a6f4:	3301      	adds	r3, #1
+ 802a6f6:	f8c7 31f0 	str.w	r3, [r7, #496]	@ 0x1f0
+ 802a6fa:	f8d7 31f0 	ldr.w	r3, [r7, #496]	@ 0x1f0
+ 802a6fe:	2b0a      	cmp	r3, #10
+ 802a700:	dde0      	ble.n	802a6c4 <_ZN4Mode15Interface_CheckEv+0xb3c>
 						  }
 
 							  motion->Motion_start();
- 802a706:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
- 802a70a:	f004 fc11 	bl	802ef30 <_ZN6Motion12Motion_startEv>
+ 802a702:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
+ 802a706:	f004 fc13 	bl	802ef30 <_ZN6Motion12Motion_startEv>
 							  LogData::getInstance().data_count = 0;
- 802a70e:	f7e9 fb8f 	bl	8013e30 <_ZN9SingletonI7LogDataE11getInstanceEv>
- 802a712:	4603      	mov	r3, r0
- 802a714:	2200      	movs	r2, #0
- 802a716:	60da      	str	r2, [r3, #12]
+ 802a70a:	f7e9 fb91 	bl	8013e30 <_ZN9SingletonI7LogDataE11getInstanceEv>
+ 802a70e:	4603      	mov	r3, r0
+ 802a710:	2200      	movs	r2, #0
+ 802a712:	60da      	str	r2, [r3, #12]
 							  LogData::getInstance().log_enable = True;
- 802a718:	f7e9 fb8a 	bl	8013e30 <_ZN9SingletonI7LogDataE11getInstanceEv>
- 802a71c:	4603      	mov	r3, r0
- 802a71e:	2201      	movs	r2, #1
- 802a720:	701a      	strb	r2, [r3, #0]
+ 802a714:	f7e9 fb8c 	bl	8013e30 <_ZN9SingletonI7LogDataE11getInstanceEv>
+ 802a718:	4603      	mov	r3, r0
+ 802a71a:	2201      	movs	r2, #1
+ 802a71c:	701a      	strb	r2, [r3, #0]
 							  motion->exe_Motion_enkaigei(3000);
- 802a722:	4a4c      	ldr	r2, [pc, #304]	@ (802a854 <_ZN4Mode15Interface_CheckEv+0xccc>)
- 802a724:	494c      	ldr	r1, [pc, #304]	@ (802a858 <_ZN4Mode15Interface_CheckEv+0xcd0>)
- 802a726:	ed9f 0a47 	vldr	s0, [pc, #284]	@ 802a844 <_ZN4Mode15Interface_CheckEv+0xcbc>
- 802a72a:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
- 802a72e:	f7ff fa13 	bl	8029b58 <_ZN6Motion19exe_Motion_enkaigeiEfPK10t_pid_gainS2_>
+ 802a71e:	4a4d      	ldr	r2, [pc, #308]	@ (802a854 <_ZN4Mode15Interface_CheckEv+0xccc>)
+ 802a720:	494d      	ldr	r1, [pc, #308]	@ (802a858 <_ZN4Mode15Interface_CheckEv+0xcd0>)
+ 802a722:	ed9f 0a48 	vldr	s0, [pc, #288]	@ 802a844 <_ZN4Mode15Interface_CheckEv+0xcbc>
+ 802a726:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
+ 802a72a:	f7ff fa15 	bl	8029b58 <_ZN6Motion19exe_Motion_enkaigeiEfPK10t_pid_gainS2_>
 							  LogData::getInstance().log_enable = False;
- 802a732:	f7e9 fb7d 	bl	8013e30 <_ZN9SingletonI7LogDataE11getInstanceEv>
- 802a736:	4603      	mov	r3, r0
- 802a738:	2200      	movs	r2, #0
- 802a73a:	701a      	strb	r2, [r3, #0]
+ 802a72e:	f7e9 fb7f 	bl	8013e30 <_ZN9SingletonI7LogDataE11getInstanceEv>
+ 802a732:	4603      	mov	r3, r0
+ 802a734:	2200      	movs	r2, #0
+ 802a736:	701a      	strb	r2, [r3, #0]
 							  motion->Motion_end();
- 802a73c:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
- 802a740:	f004 fc40 	bl	802efc4 <_ZN6Motion10Motion_endEv>
+ 802a738:	f8d7 01d8 	ldr.w	r0, [r7, #472]	@ 0x1d8
+ 802a73c:	f004 fc42 	bl	802efc4 <_ZN6Motion10Motion_endEv>
 							  enable = 0x00;
- 802a744:	2300      	movs	r3, #0
- 802a746:	f887 3225 	strb.w	r3, [r7, #549]	@ 0x225
+ 802a740:	2300      	movs	r3, #0
+ 802a742:	f887 3225 	strb.w	r3, [r7, #549]	@ 0x225
 							  HAL_Delay(500);
- 802a74a:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
- 802a74e:	f7da fbcb 	bl	8004ee8 <HAL_Delay>
+ 802a746:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
+ 802a74a:	f7da fbcd 	bl	8004ee8 <HAL_Delay>
 						  enable = 0x00;
- 802a752:	2300      	movs	r3, #0
- 802a754:	f887 3225 	strb.w	r3, [r7, #549]	@ 0x225
+ 802a74e:	2300      	movs	r3, #0
+ 802a750:	f887 3225 	strb.w	r3, [r7, #549]	@ 0x225
 						  HAL_Delay(500);
- 802a758:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
- 802a75c:	f7da fbc4 	bl	8004ee8 <HAL_Delay>
+ 802a754:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
+ 802a758:	f7da fbc6 	bl	8004ee8 <HAL_Delay>
 					}
 					break;
- 802a760:	e115      	b.n	802a98e <_ZN4Mode15Interface_CheckEv+0xe06>
+ 802a75c:	e117      	b.n	802a98e <_ZN4Mode15Interface_CheckEv+0xe06>
 				case ENABLE|0x0C:
 					if(irsens->IrSensor_Avg() > 2500){
- 802a762:	f8d7 01d4 	ldr.w	r0, [r7, #468]	@ 0x1d4
- 802a766:	f00a ffc5 	bl	80356f4 <_ZN10IrSensTask12IrSensor_AvgEv>
- 802a76a:	4603      	mov	r3, r0
- 802a76c:	461a      	mov	r2, r3
- 802a76e:	f640 13c4 	movw	r3, #2500	@ 0x9c4
- 802a772:	429a      	cmp	r2, r3
- 802a774:	bfcc      	ite	gt
- 802a776:	2301      	movgt	r3, #1
- 802a778:	2300      	movle	r3, #0
- 802a77a:	b2db      	uxtb	r3, r3
- 802a77c:	2b00      	cmp	r3, #0
- 802a77e:	f000 8108 	beq.w	802a992 <_ZN4Mode15Interface_CheckEv+0xe0a>
+ 802a75e:	f8d7 01d4 	ldr.w	r0, [r7, #468]	@ 0x1d4
+ 802a762:	f00a ffc7 	bl	80356f4 <_ZN10IrSensTask12IrSensor_AvgEv>
+ 802a766:	4603      	mov	r3, r0
+ 802a768:	461a      	mov	r2, r3
+ 802a76a:	f640 13c4 	movw	r3, #2500	@ 0x9c4
+ 802a76e:	429a      	cmp	r2, r3
+ 802a770:	bfcc      	ite	gt
+ 802a772:	2301      	movgt	r3, #1
+ 802a774:	2300      	movle	r3, #0
+ 802a776:	b2db      	uxtb	r3, r3
+ 802a778:	2b00      	cmp	r3, #0
+ 802a77a:	f000 810a 	beq.w	802a992 <_ZN4Mode15Interface_CheckEv+0xe0a>
 						  for(int i = 0;i < 11;i++)
- 802a782:	2300      	movs	r3, #0
- 802a784:	f8c7 31ec 	str.w	r3, [r7, #492]	@ 0x1ec
- 802a788:	e01a      	b.n	802a7c0 <_ZN4Mode15Interface_CheckEv+0xc38>
+ 802a77e:	2300      	movs	r3, #0
+ 802a780:	f8c7 31ec 	str.w	r3, [r7, #492]	@ 0x1ec
+ 802a784:	e01a      	b.n	802a7bc <_ZN4Mode15Interface_CheckEv+0xc34>
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
- 802a78a:	f8d7 31ec 	ldr.w	r3, [r7, #492]	@ 0x1ec
- 802a78e:	f003 0301 	and.w	r3, r3, #1
- 802a792:	2b00      	cmp	r3, #0
- 802a794:	d109      	bne.n	802a7aa <_ZN4Mode15Interface_CheckEv+0xc22>
- 802a796:	f897 21df 	ldrb.w	r2, [r7, #479]	@ 0x1df
- 802a79a:	f897 3226 	ldrb.w	r3, [r7, #550]	@ 0x226
- 802a79e:	4313      	orrs	r3, r2
- 802a7a0:	b2db      	uxtb	r3, r3
- 802a7a2:	4618      	mov	r0, r3
- 802a7a4:	f7ea feb4 	bl	8015510 <Indicate_LED>
- 802a7a8:	e002      	b.n	802a7b0 <_ZN4Mode15Interface_CheckEv+0xc28>
- 802a7aa:	2000      	movs	r0, #0
- 802a7ac:	f7ea feb0 	bl	8015510 <Indicate_LED>
+ 802a786:	f8d7 31ec 	ldr.w	r3, [r7, #492]	@ 0x1ec
+ 802a78a:	f003 0301 	and.w	r3, r3, #1
+ 802a78e:	2b00      	cmp	r3, #0
+ 802a790:	d109      	bne.n	802a7a6 <_ZN4Mode15Interface_CheckEv+0xc1e>
+ 802a792:	f897 21df 	ldrb.w	r2, [r7, #479]	@ 0x1df
+ 802a796:	f897 3226 	ldrb.w	r3, [r7, #550]	@ 0x226
+ 802a79a:	4313      	orrs	r3, r2
+ 802a79c:	b2db      	uxtb	r3, r3
+ 802a79e:	4618      	mov	r0, r3
+ 802a7a0:	f7ea feb6 	bl	8015510 <Indicate_LED>
+ 802a7a4:	e002      	b.n	802a7ac <_ZN4Mode15Interface_CheckEv+0xc24>
+ 802a7a6:	2000      	movs	r0, #0
+ 802a7a8:	f7ea feb2 	bl	8015510 <Indicate_LED>
 							  HAL_Delay(50);
- 802a7b0:	2032      	movs	r0, #50	@ 0x32
- 802a7b2:	f7da fb99 	bl	8004ee8 <HAL_Delay>
+ 802a7ac:	2032      	movs	r0, #50	@ 0x32
+ 802a7ae:	f7da fb9b 	bl	8004ee8 <HAL_Delay>
 						  for(int i = 0;i < 11;i++)
- 802a7b6:	f8d7 31ec 	ldr.w	r3, [r7, #492]	@ 0x1ec
- 802a7ba:	3301      	adds	r3, #1
- 802a7bc:	f8c7 31ec 	str.w	r3, [r7, #492]	@ 0x1ec
- 802a7c0:	f8d7 31ec 	ldr.w	r3, [r7, #492]	@ 0x1ec
- 802a7c4:	2b0a      	cmp	r3, #10
- 802a7c6:	dde0      	ble.n	802a78a <_ZN4Mode15Interface_CheckEv+0xc02>
+ 802a7b2:	f8d7 31ec 	ldr.w	r3, [r7, #492]	@ 0x1ec
+ 802a7b6:	3301      	adds	r3, #1
+ 802a7b8:	f8c7 31ec 	str.w	r3, [r7, #492]	@ 0x1ec
+ 802a7bc:	f8d7 31ec 	ldr.w	r3, [r7, #492]	@ 0x1ec
+ 802a7c0:	2b0a      	cmp	r3, #10
+ 802a7c2:	dde0      	ble.n	802a786 <_ZN4Mode15Interface_CheckEv+0xbfe>
 						  }
 						  enable = 0x00;
- 802a7c8:	2300      	movs	r3, #0
- 802a7ca:	f887 3225 	strb.w	r3, [r7, #549]	@ 0x225
+ 802a7c4:	2300      	movs	r3, #0
+ 802a7c6:	f887 3225 	strb.w	r3, [r7, #549]	@ 0x225
 						  HAL_Delay(500);
- 802a7ce:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
- 802a7d2:	f7da fb89 	bl	8004ee8 <HAL_Delay>
+ 802a7ca:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
+ 802a7ce:	f7da fb8b 	bl	8004ee8 <HAL_Delay>
 					}
 					break;
- 802a7d6:	e0dc      	b.n	802a992 <_ZN4Mode15Interface_CheckEv+0xe0a>
+ 802a7d2:	e0de      	b.n	802a992 <_ZN4Mode15Interface_CheckEv+0xe0a>
 				case ENABLE|0x0D:
 					if(irsens->IrSensor_Avg() > 2500){
- 802a7d8:	f8d7 01d4 	ldr.w	r0, [r7, #468]	@ 0x1d4
- 802a7dc:	f00a ff8a 	bl	80356f4 <_ZN10IrSensTask12IrSensor_AvgEv>
- 802a7e0:	4603      	mov	r3, r0
- 802a7e2:	461a      	mov	r2, r3
- 802a7e4:	f640 13c4 	movw	r3, #2500	@ 0x9c4
- 802a7e8:	429a      	cmp	r2, r3
- 802a7ea:	bfcc      	ite	gt
- 802a7ec:	2301      	movgt	r3, #1
- 802a7ee:	2300      	movle	r3, #0
- 802a7f0:	b2db      	uxtb	r3, r3
- 802a7f2:	2b00      	cmp	r3, #0
- 802a7f4:	f000 80cf 	beq.w	802a996 <_ZN4Mode15Interface_CheckEv+0xe0e>
+ 802a7d4:	f8d7 01d4 	ldr.w	r0, [r7, #468]	@ 0x1d4
+ 802a7d8:	f00a ff8c 	bl	80356f4 <_ZN10IrSensTask12IrSensor_AvgEv>
+ 802a7dc:	4603      	mov	r3, r0
+ 802a7de:	461a      	mov	r2, r3
+ 802a7e0:	f640 13c4 	movw	r3, #2500	@ 0x9c4
+ 802a7e4:	429a      	cmp	r2, r3
+ 802a7e6:	bfcc      	ite	gt
+ 802a7e8:	2301      	movgt	r3, #1
+ 802a7ea:	2300      	movle	r3, #0
+ 802a7ec:	b2db      	uxtb	r3, r3
+ 802a7ee:	2b00      	cmp	r3, #0
+ 802a7f0:	f000 80d1 	beq.w	802a996 <_ZN4Mode15Interface_CheckEv+0xe0e>
 						  for(int i = 0;i < 11;i++)
- 802a7f8:	2300      	movs	r3, #0
- 802a7fa:	f8c7 31e8 	str.w	r3, [r7, #488]	@ 0x1e8
- 802a7fe:	e038      	b.n	802a872 <_ZN4Mode15Interface_CheckEv+0xcea>
+ 802a7f4:	2300      	movs	r3, #0
+ 802a7f6:	f8c7 31e8 	str.w	r3, [r7, #488]	@ 0x1e8
+ 802a7fa:	e03a      	b.n	802a872 <_ZN4Mode15Interface_CheckEv+0xcea>
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
- 802a800:	f8d7 31e8 	ldr.w	r3, [r7, #488]	@ 0x1e8
- 802a804:	f003 0301 	and.w	r3, r3, #1
- 802a808:	2b00      	cmp	r3, #0
- 802a80a:	d127      	bne.n	802a85c <_ZN4Mode15Interface_CheckEv+0xcd4>
- 802a80c:	f897 21df 	ldrb.w	r2, [r7, #479]	@ 0x1df
- 802a810:	f897 3226 	ldrb.w	r3, [r7, #550]	@ 0x226
- 802a814:	4313      	orrs	r3, r2
- 802a816:	b2db      	uxtb	r3, r3
- 802a818:	4618      	mov	r0, r3
- 802a81a:	f7ea fe79 	bl	8015510 <Indicate_LED>
- 802a81e:	e020      	b.n	802a862 <_ZN4Mode15Interface_CheckEv+0xcda>
+ 802a7fc:	f8d7 31e8 	ldr.w	r3, [r7, #488]	@ 0x1e8
+ 802a800:	f003 0301 	and.w	r3, r3, #1
+ 802a804:	2b00      	cmp	r3, #0
+ 802a806:	d129      	bne.n	802a85c <_ZN4Mode15Interface_CheckEv+0xcd4>
+ 802a808:	f897 21df 	ldrb.w	r2, [r7, #479]	@ 0x1df
+ 802a80c:	f897 3226 	ldrb.w	r3, [r7, #550]	@ 0x226
+ 802a810:	4313      	orrs	r3, r2
+ 802a812:	b2db      	uxtb	r3, r3
+ 802a814:	4618      	mov	r0, r3
+ 802a816:	f7ea fe7b 	bl	8015510 <Indicate_LED>
+ 802a81a:	e022      	b.n	802a862 <_ZN4Mode15Interface_CheckEv+0xcda>
+ 802a81c:	f3af 8000 	nop.w
  802a820:	40000000 	.word	0x40000000
  802a824:	400921fb 	.word	0x400921fb
  802a828:	40668000 	.word	0x40668000
@@ -91506,7 +91506,7 @@ namespace Mode
  802a86e:	f8c7 31e8 	str.w	r3, [r7, #488]	@ 0x1e8
  802a872:	f8d7 31e8 	ldr.w	r3, [r7, #488]	@ 0x1e8
  802a876:	2b0a      	cmp	r3, #10
- 802a878:	ddc2      	ble.n	802a800 <_ZN4Mode15Interface_CheckEv+0xc78>
+ 802a878:	ddc0      	ble.n	802a7fc <_ZN4Mode15Interface_CheckEv+0xc74>
 						  }
 						  enable = 0x00;
  802a87a:	2300      	movs	r3, #0

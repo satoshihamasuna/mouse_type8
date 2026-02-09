@@ -23,13 +23,13 @@
 #include "typedef_run_param.h"
 
 const static t_pid_gain basic_sp_gain = {1.0,0.08,0.00};
-const static t_pid_gain basic_om_gain = {0.10f,0.000f,0.0f};//{0.10f, 0.01f, 0.00f};
+const static t_pid_gain basic_om_gain = {10.0f/1000.0f,1.0f/1000.0f,0.000f};//{0.10f, 0.01f, 0.00f};
 
 const static t_pid_gain search_sp_gain = {1.0,0.08,0.00};
-const static t_pid_gain search_om_gain = {0.10f,0.00f,0.0f};
+const static t_pid_gain search_om_gain = {10.0f/1000.0f,0.001f,0.000f};
 
 const static t_pid_gain sp_gain_search_turn = {1.0,0.08,0.0};;//{2.0,0.04};
-const static t_pid_gain om_gain_search_turn = {0.08f,0.01f,0.00f};//{0.50f, 0.0005f, 0.001f};
+const static t_pid_gain om_gain_search_turn = {10.0f/1000.0f,1.0f/1000.0f,0.000f};//{0.50f, 0.0005f, 0.001f};
 const static t_turn_param_table slalom_L90_table_320 = {0.32f, 26.00f,9.46,11.16, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_table_320 = {0.32f,-26.00f,9.46,11.16,-90.0f,Turn_R};
 const static t_param param_L90_search_320 = {&slalom_L90_table_320 ,&sp_gain_search_turn,&om_gain_search_turn};
