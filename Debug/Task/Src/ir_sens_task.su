@@ -1,16 +1,15 @@
 ../Task/Src/../Inc/../../Module/Inc/vehicle.h:24:15:void param_element::set(float)	16	static
 ../Task/Src/../Inc/../../Module/Inc/vehicle.h:26:16:float param_element::get()	16	static
-../Task/Src/ir_sens_task.cpp:25:14:t_wall_state IrSensTask::conv_Sensin2Wall(t_sensor_dir)	16	static
-../Task/Src/ir_sens_task.cpp:41:6:virtual void IrSensTask::IrSensorSet()	16	static
-../Task/Src/ir_sens_task.cpp:51:7:float IrSensTask::IrSensor_adc2voltage(int16_t)	16	static
-../Task/Src/ir_sens_task.cpp:56:7:float IrSensTask::IrSensor_Vce(int16_t)	16	static
-../Task/Src/ir_sens_task.cpp:61:7:float IrSensTask::IrSensor_SensingCurrent(int16_t)	16	static
-../Task/Src/ir_sens_task.cpp:66:7:float IrSensTask::IrSensor_RelativeCurrent(int16_t)	24	static
-../Task/Src/ir_sens_task.cpp:71:7:float IrSensTask::IrSensor_Irradiance(int16_t)	24	static
-../Task/Src/ir_sens_task.cpp:81:7:float IrSensTask::Sensor_CalcDistance(t_sensor_dir, int16_t)	40	static
-../Task/Src/ir_sens_task.cpp:200:6:void IrSensTask::IrSensorDistanceSet()	16	static
-../Task/Src/ir_sens_task.cpp:243:6:void IrSensTask::IrSensorWallSet()	16	static
-../Task/Src/ir_sens_task.cpp:367:6:void IrSensTask::IrSensorReferenceSet(float)	16	static
-../Task/Src/ir_sens_task.cpp:372:7:float IrSensTask::IrSensorMaxValueFromLog(t_sensor_dir)	40	static
-../Task/Src/ir_sens_task.cpp:421:6:void IrSensTask::SetWallControl_RadVelo(Vehicle*, float)	80	static
-../Task/Src/ir_sens_task.cpp:485:9:int16_t IrSensTask::IrSensor_Avg()	16	static
+../Task/Src/../../Params/sens_table.h:36:21:float clampf(float, float, float)	24	static
+../Task/Src/../../Params/sens_table.h:43:21:float interpolate(uint16_t, uint16_t, float, float, uint16_t)	32	static
+../Task/Src/../../Params/sens_table.h:53:21:float tableToDistanceStep(const int16_t*, int, float, float, int16_t)	48	static
+../Task/Src/ir_sens_task.cpp:31:14:t_wall_state IrSensTask::conv_Sensin2Wall(t_sensor_dir)	16	static
+../Task/Src/ir_sens_task.cpp:47:6:virtual void IrSensTask::IrSensorSet()	16	static
+../Task/Src/ir_sens_task.cpp:57:7:float IrSensTask::IrSensor_adc2voltage(int16_t)	16	static
+../Task/Src/ir_sens_task.cpp:63:7:float IrSensTask::Sensor_CalcDistance(t_sensor_dir, int16_t)	48	static
+../Task/Src/ir_sens_task.cpp:121:6:void IrSensTask::IrSensorDistanceSet()	16	static
+../Task/Src/ir_sens_task.cpp:165:6:void IrSensTask::IrSensorWallSet()	16	static
+../Task/Src/ir_sens_task.cpp:289:6:void IrSensTask::IrSensorReferenceSet(float)	16	static
+../Task/Src/ir_sens_task.cpp:294:7:float IrSensTask::IrSensorMaxValueFromLog(t_sensor_dir)	40	static
+../Task/Src/ir_sens_task.cpp:343:6:void IrSensTask::SetWallControl_RadVelo(Vehicle*, float)	80	static
+../Task/Src/ir_sens_task.cpp:407:9:int16_t IrSensTask::IrSensor_Avg()	16	static

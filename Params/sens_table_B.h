@@ -8,6 +8,7 @@
 #ifndef SENS_TABLE_B_H_
 #define SENS_TABLE_B_H_
 
+#include "stdint.h"
 const static int16_t sens_sr_table[]=
 {
 		3900,//25

@@ -1,7 +1,7 @@
-../Peripheral/Src/motor.c:34:6:Motor_Initialize	8	static
-../Peripheral/Src/motor.c:47:6:Motor_Stop	8	static
-../Peripheral/Src/motor.c:64:6:Motor_SetDuty_Left	40	static
-../Peripheral/Src/motor.c:103:6:Motor_SetDuty_Right	40	static
-../Peripheral/Src/motor.c:142:6:FAN_Motor_Initialize	8	static
-../Peripheral/Src/motor.c:152:6:FAN_Motor_Stop	8	static
-../Peripheral/Src/motor.c:158:6:FAN_Motor_SetDuty	24	static
+../Peripheral/Src/motor.c:35:6:Motor_Initialize	8	static
+../Peripheral/Src/motor.c:48:6:Motor_Stop	8	static
+../Peripheral/Src/motor.c:65:6:Motor_SetDuty_Left	40	static
+../Peripheral/Src/motor.c:104:6:Motor_SetDuty_Right	40	static
+../Peripheral/Src/motor.c:143:6:FAN_Motor_Initialize	8	static
+../Peripheral/Src/motor.c:153:6:FAN_Motor_Stop	8	static
+../Peripheral/Src/motor.c:159:6:FAN_Motor_SetDuty	24	static

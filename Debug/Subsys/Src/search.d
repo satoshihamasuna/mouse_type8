@@ -70,20 +70,20 @@ Subsys/Src/search.o: ../Subsys/Src/search.cpp \
  ../Subsys/Src/../Inc/../../Task/Inc/sensing_task.h \
  ../Subsys/Src/../Inc/../../Task/Inc/../../Params/run_param.h \
  ../Subsys/Src/../Inc/../../Task/Inc/../../Params/mouse_config.h \
- ../Subsys/Src/../Inc/../../Task/Inc/../../Params/run_param_B.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1000.h \
+ ../Subsys/Src/../Inc/../../Task/Inc/../../Params/run_param_A.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1000.h \
  D:/mouse8/mouse_program/mouse_type8/Params/typedef_run_param.h \
  D:/mouse8/mouse_program/mouse_type8/Params/../Component/Inc/controller.h \
  D:/mouse8/mouse_program/mouse_type8/Params/../Module/Inc/vehicle.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1200.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1400.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1500.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1600.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1800.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_2000.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_300.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_500.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_700.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1200.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1400.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1500.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1600.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1800.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_2000.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_300.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_500.h \
+ D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_700.h \
  ../Subsys/Src/../Inc/../../Task/Inc/../../Params/../Component/Inc/controller.h \
  ../Subsys/Src/../Inc/../../Task/Inc/../../Params/../Module/Inc/vehicle.h \
  ../Subsys/Src/../Inc/../../Task/Inc/../../Params/typedef_run_param.h \
@@ -171,20 +171,20 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h:
 ../Subsys/Src/../Inc/../../Task/Inc/sensing_task.h:
 ../Subsys/Src/../Inc/../../Task/Inc/../../Params/run_param.h:
 ../Subsys/Src/../Inc/../../Task/Inc/../../Params/mouse_config.h:
-../Subsys/Src/../Inc/../../Task/Inc/../../Params/run_param_B.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1000.h:
+../Subsys/Src/../Inc/../../Task/Inc/../../Params/run_param_A.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1000.h:
 D:/mouse8/mouse_program/mouse_type8/Params/typedef_run_param.h:
 D:/mouse8/mouse_program/mouse_type8/Params/../Component/Inc/controller.h:
 D:/mouse8/mouse_program/mouse_type8/Params/../Module/Inc/vehicle.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1200.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1400.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1500.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1600.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1800.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_2000.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_300.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_500.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_700.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1200.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1400.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1500.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1600.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_1800.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_2000.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_300.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_500.h:
+D:/mouse8/mouse_program/mouse_type8/Params/Param_A/turn_700.h:
 ../Subsys/Src/../Inc/../../Task/Inc/../../Params/../Component/Inc/controller.h:
 ../Subsys/Src/../Inc/../../Task/Inc/../../Params/../Module/Inc/vehicle.h:
 ../Subsys/Src/../Inc/../../Task/Inc/../../Params/typedef_run_param.h:

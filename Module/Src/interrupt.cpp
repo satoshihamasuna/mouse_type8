@@ -12,6 +12,7 @@
 #include "../Inc/log_data.h"
 
 #include "peripheral.h"
+#include "mouse_config.h"
 
 #include "../../Task/Inc/sensing_task.h"
 #include "../../Task/Inc/ctrl_task.h"
@@ -137,7 +138,7 @@ void Interrupt::preprocess()
 
 	Vehicle_type7::getInstance().ego.z_accel.set(z_acc_mean);
 
-	float rad_velo 		= (-1.015f)*(read_gyro_z_axis()*PI/180.0+GYRO_OFFSET);
+	float rad_velo 		= (GYRO_COR_RATE)*(read_gyro_z_axis()*PI/180.0+GYRO_OFFSET);
 	float rad			= Vehicle_type7::getInstance().ego.radian.get() + rad_velo/1000.0f;
 
 	Vehicle_type7::getInstance().ego.rad_velo.set(rad_velo);

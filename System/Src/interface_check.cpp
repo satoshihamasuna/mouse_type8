@@ -69,9 +69,9 @@ namespace Mode
 			switch((enable<<4)|param)
 			{
 				case ENABLE|0x00:
-					 fr = irsens->sen_fr.distance;	fl = irsens->sen_fl.distance;
+					 fr = irsens->sen_fr.avg_distance;	fl = irsens->sen_fl.avg_distance;
 					 sr = irsens->sen_r.avg_distance;	sl = irsens->sen_l.avg_distance;
-					 int_fr = irsens->sen_r.value_sum;	int_fl = irsens->sen_l.value_sum;
+					 int_fr = irsens->sen_fr.value;	int_fl = irsens->sen_fl.value;
 					 int_sr = irsens->sen_r.value;	int_sl = irsens->sen_l.value;
 					 printf("fr:%f,fl:%f,sr:%f,sl:%f\n",fr,fl,sr,sl);
 					 printf("fr:%4d,fl:%4d,sr:%4d,sl:%4d\n",int_fr,int_fl,int_sr,int_sl);

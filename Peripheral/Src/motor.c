@@ -18,12 +18,13 @@
 #include "gpio.h"
 #include "math_utils.h"
 #include "motor.h"
+#include "mouse_config.h"
 
 #define PCLK1			(50000000)//(HAL_RCC_GetPCLK1Freq())//25,000,000
 #define PCLK2			(50000000)//(HAL_RCC_GetPCLK2Freq())//50,000,000
 #define PWMFREQ			(100000)//(100000)
 #define FANPWMFREQ		(100000)
-#define MOT_DUTY_MIN	(80)
+#define MOT_DUTY_MIN	(DUTY_MIN)
 #define MOT_DUTY_MAX	(980)
 
 #define MOT_SET_COMPARE_R_FORWARD(x)	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, x)

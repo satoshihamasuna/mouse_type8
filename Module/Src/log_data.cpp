@@ -18,7 +18,7 @@
 
 #include "../../Component/Inc/controller.h"
 #include "../../Component/Inc/half_float.h"
-
+/*
 void LogData::indicate_data()
 {
 	if(mode == 0)
@@ -50,7 +50,11 @@ void LogData::indicate_data()
 			"Battery",
 
 		    "ideal.accel",
-		    "ego.accel"
+		    "ego.accel",
+
+			"speed_ctrl.get_I_peration",
+			"omega_ctrl.get_I_peration",
+			"test","test","test",
 
 		};
 
@@ -60,80 +64,6 @@ void LogData::indicate_data()
 
 		printf("\n");
 	}
-	if(mode == 1)
-	{
-		printf("cnt,");
-		printf("%s,","ideal.velo");
-		printf("%s,","ego.velo");
-		printf("%s,","ideal.rad_velo");
-		printf("%s,","ego.rad_velo");
-		printf("%s,","ideal.length");
-		printf("%s,","ego.length");
-		printf("%s,","ideal.radian");
-		printf("%s,","ego.radian");
-
-		printf("%s,","V_r");
-		printf("%s,","V_l");
-		printf("%s,","sp_feedback");
-		printf("%s,","sp_feedforward");
-		printf("%s,","om_feedback");
-		printf("%s,","om_feedforward");
-
-		printf("%s,","ego.horizon_accel");
-		printf("%s,","ideal.horizon_accel");
-		printf("%s,","ego.horizon_velo");
-		printf("%s,","ideal.horizon_velo");
-
-
-		printf("%s,","ego.x_point");
-		printf("%s,","ideal.x_point");
-		printf("%s,","ego.turn_x");
-		printf("%s,","ideal.turn_x");
-		printf("%s,","ego.turn_y");
-		printf("%s,","ideal.turn_y");
-		printf("%s,","ego.turn_slip_theta");
-		printf("%s,","ideal.turn_slip_theta");
-		printf("%s,","ego.turn_slip_dot");
-		printf("%s,","ideal.turn_slip_dot");
-		printf("\n");
-	}
-
-	if(mode == 2)
-		{
-			printf("cnt,");
-			printf("%s,","ideal.velo");
-			printf("%s,","ego.velo");
-			printf("%s,","ideal.rad_velo");
-			printf("%s,","ego.rad_velo");
-			printf("%s,","ideal.length");
-			printf("%s,","ego.length");
-			printf("%s,","ideal.radian");
-			printf("%s,","ego.radian");
-
-			printf("%s,","V_r");
-			printf("%s,","V_l");
-			printf("%s,","sp_feedback");
-			printf("%s,","sp_feedforward");
-			printf("%s,","om_feedback");
-			printf("%s,","om_feedforward");
-
-			printf("%s,","sen_fl.distance");
-			printf("%s,","sen_fr.distance");
-			printf("%s,","sen_l.distance");
-			printf("%s,","sen_r.distance");
-
-			printf("%s,","ego.x_point");
-			printf("%s,","ideal.x_point");
-			printf("%s,","ego.turn_x");
-			printf("%s,","ideal.turn_x");
-			printf("%s,","ego.turn_y");
-			printf("%s,","ideal.turn_y");
-			printf("%s,","ego.accel");
-			printf("%s,","ideal.accel");
-			printf("%s,","Encoder_GetProperty_Right().sp_pulse");
-			printf("%s,","Encoder_GetProperty_Left().sp_pulse");
-			printf("\n");
-		}
 
 	for(int i = 0; i< 1000;i++)
 	{
@@ -175,7 +105,7 @@ void LogData::indicate_data()
 				half_to_float(data[32][i]),half_to_float(data[33][i]),
 				half_to_float(data[34][i]),half_to_float(data[35][i]));
 		HAL_Delay(2);
-		printf("%4.4lf,%4.4lf,%4.4lf,%4.4lf,",
+		printf("%4.4lf,%4.4lf,%4.4lf,%4.4lf",
 				half_to_float(data[36][i]),half_to_float(data[37][i]),
 				half_to_float(data[38][i]),half_to_float(data[39][i]));
 		HAL_Delay(2);
@@ -186,7 +116,74 @@ void LogData::indicate_data()
 
 
 }
+*/
 
+void LogData::indicate_data()
+{
+    static const char *labels[(LOG_DATA_NUM+1)] = {
+        "cnt",
+        "ideal.velo", "ego.velo",
+        "ideal.rad_velo", "ego.rad_velo",
+        "ideal.length", "ego.length",
+        "ideal.radian", "ego.radian",
+
+        "V_r", "V_l",
+        "sp_feedback", "sp_feedforward",
+        "om_feedback", "om_feedforward",
+
+        "sen_l.avg_distance", "sen_r.avg_distance",
+        "sen_l.distance", "sen_r.distance",
+
+        "ego.x_point", "ideal.x_point",
+        "ego.turn_x", "ideal.turn_x",
+        "ego.turn_y", "ideal.turn_y",
+        "ego.turn_slip_theta", "ideal.turn_slip_theta",
+        "ego.horizon_accel.get", "ideal.horizon_accel.get",
+        "ego.horizon_velo.get", "ideal.horizon_velo.get",
+
+        "Encoder_GetProperty_Right().sp_pulse",
+        "Encoder_GetProperty_Left().sp_pulse",
+
+        "Battery",
+
+        "ideal.accel",
+        "ego.accel",
+
+        "speed_ctrl.get_I_peration",
+        "omega_ctrl.get_I_peration",
+        "test","test","test",
+    };
+
+    const int COLS = LOG_DATA_NUM;
+
+    printf("START\r\n");
+    /* ==== ヘッダ ==== */
+    if(mode == 0)
+    {
+    	printf("HEADER,");
+        for (int i = 0; i < COLS + 1; i++) {
+            printf("%s", labels[i]);
+            if(i < COLS) printf(",");
+        }
+        printf("\r\n");
+    }
+
+    /* ==== データ ==== */
+    for(int i = 0; i < 1000; i++)
+    {
+        printf("LOG,%d,", i);
+
+        for(int j = 0; j < LOG_DATA_NUM; j++) {
+            printf("%4.5lf", half_to_float(data[j][i]));
+            if(j < 39) printf(",");
+        }
+
+        printf("\r\n");
+    }
+
+    /* ==== 終端 ==== */
+    printf("END\r\n");
+}
 
 void LogData::logging()
 {

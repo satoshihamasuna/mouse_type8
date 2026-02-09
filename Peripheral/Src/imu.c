@@ -8,7 +8,10 @@
 #include "interface.h"
 #include "imu.h"
 #include "spi.h"
+#include "mouse_config.h"
 #include "lsm6dsr_reg.h"
+#include "lsm6dsrx_reg.h"
+#include "lsm6dsv16x_reg.h"
 
 uint8_t imu_address = OUTX_L_G|0x80; //ACCEL_X_HIGH_BYTE
 uint8_t imu_value[13];
@@ -37,23 +40,129 @@ void write_byte(uint8_t reg, uint8_t data){
 	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
 }
 
+
 void IMU_initialize()
 {
-	  HAL_Delay(50);
-	  HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
-	  HAL_Delay(50);
-	  read_byte(WHO_AM_I);
-	  HAL_Delay(50);
-	  write_byte(CTRL1_XL, ACCEL_ODR_SET|ACCEL_8G);
-	  HAL_Delay(50);
-	  write_byte(0x17, 0x29);
-	  HAL_Delay(50);
-	  write_byte(CTRL2_G, GYRO_ODR_SET|GYRO_4000_DPS);
-	  HAL_Delay(50);
-	  write_byte(0x15,0x00);
-	  HAL_Delay(50);
+#if defined(MOUSE_A)
+	IMU_initialize_lsm6dsv16x();
+#elif defined(MOUSE_B)
+	IMU_initialize_lsm6dsrx();
+#endif
+}
+
+/*
+void IMU_initialize()
+{
+	HAL_Delay(50);
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
+	HAL_Delay(50);
+	read_byte(LSM6DSRX_WHO_AM_I);
+	HAL_Delay(50);
+	//write_byte(LSM6DSRX_CTRL1_XL, 0x80|0x0E);
+
+	write_byte(LSM6DSRX_CTRL1_XL,
+			   LSM6DSRX_XL_ODR_1KHZ |
+			   LSM6DSRX_XL_FS_8G |
+			   LSM6DSRX_LPF2_XL_EN);
+
+	HAL_Delay(50);
+	//write_byte(LSM6DSRX_CTRL8_XL, 0x29);
+
+	write_byte(LSM6DSRX_CTRL8_XL,
+			   LSM6DSRX_XL_HPCF_ODR_10 |
+			   LSM6DSRX_XL_FAST_SETTLE |
+			   LSM6DSRX_XL_LPF_ON_6D);
+
+	HAL_Delay(50);
+	//write_byte(LSM6DSRX_CTRL2_G, 0x80|0x01);
+
+	write_byte(LSM6DSRX_CTRL2_G,
+			   LSM6DSRX_GY_ODR_1KHZ |
+			   LSM6DSRX_GY_FS_4000DPS);
+
+	HAL_Delay(50);
+	//write_byte(LSM6DSRX_CTRL6_C,0x00);
+
+	write_byte(LSM6DSRX_CTRL6_C,
+			   LSM6DSRX_GY_LPF1_FTYPE_0);
+	HAL_Delay(50);
 
 }
+*/
+void IMU_initialize_lsm6dsrx()
+{
+	HAL_Delay(5);
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
+	HAL_Delay(5);
+	read_byte(LSM6DSRX_WHO_AM_I);
+	HAL_Delay(5);
+	write_byte(LSM6DSRX_CTRL1_XL,
+			   LSM6DSRX_XL_ODR_1KHZ |
+			   LSM6DSRX_XL_FS_8G |
+			   LSM6DSRX_LPF2_XL_EN);
+
+	HAL_Delay(5);
+	write_byte(LSM6DSRX_CTRL8_XL,
+			   LSM6DSRX_XL_HPCF_ODR_10 |
+			   LSM6DSRX_XL_FAST_SETTLE |
+			   LSM6DSRX_XL_LPF_ON_6D);
+
+	HAL_Delay(5);
+	write_byte(LSM6DSRX_CTRL2_G,
+			   LSM6DSRX_GY_ODR_1KHZ |
+			   LSM6DSRX_GY_FS_4000DPS);
+
+	HAL_Delay(5);
+	write_byte(LSM6DSRX_CTRL6_C,
+			   LSM6DSRX_GY_LPF1_FTYPE_0);
+	HAL_Delay(5);
+}
+void IMU_initialize_lsm6dsv16x()
+{
+	HAL_Delay(5);
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin,GPIO_PIN_SET);
+	HAL_Delay(5);
+	read_byte(LSM6DSV16X_WHO_AM_I );							HAL_Delay(5);
+	write_byte(LSM6DSV16X_CTRL3_C , LSM6DSV16X_SW_RESET );		HAL_Delay(5);
+
+	write_byte(LSM6DSV16X_CTRL1_XL ,
+				LSM6DSV16X_XL_ODR_960HZ |
+				LSM6DSV16X_XL_HP_MODE);
+	HAL_Delay(5);
+
+	write_byte(LSM6DSV16X_CTRL8_XL,
+				LSM6DSV16X_XL_CF_ODR_20  |
+				LSM6DSV16X_XL_DualIC_DIS |
+				LSM6DSV16X_XL_FS_8G );
+
+	HAL_Delay(5);
+
+	write_byte(LSM6DSV16X_CTRL9_C,
+				LSM6DSV16X_XL_HP_REF_MODE_XL_DIS |
+				LSM6DSV16X_XL_HP_SLOPE_XL_DIS  |
+				LSM6DSV16X_XL_FASTSETTL_MODE_DIS |
+				LSM6DSV16X_XL_LPF2_XL_EN );
+
+	HAL_Delay(5);
+
+
+	write_byte(LSM6DSV16X_CTRL2_G,
+				LSM6DSV16X_G_HP_MODE |
+				LSM6DSV16X_G_ODR_2KHZ );
+	HAL_Delay(5);
+
+	write_byte(LSM6DSV16X_CTRL6_G,
+				LSM6DSV16X_GY_LPF1_FTYPE_0 |
+				LSM6DSV16X_GY_FS_4000DPS);
+	HAL_Delay(5);
+
+	write_byte(LSM6DSV16X_CTRL7_C,
+				LSM6DSV16X_GY_LPF1_ENABLE );
+	HAL_Delay(5);
+
+
+}
+
 
 uint16_t IMU_Check()
 {

@@ -34,8 +34,8 @@ typedef struct{
 	float control_th;
 	uint16_t control_cnt;
 	float error;
-	int16_t value_log[20];
-	int value_sum;
+	float distance_log[20];
+	float distance_sum;
 	float avg_distance;
 	float diff;
 	float prev_diff;
@@ -54,10 +54,6 @@ class IrSensTask
 	private:
 		float Sensor_CalcDistance(t_sensor_dir dir,int16_t value);
 		float IrSensor_adc2voltage(int16_t value);
-		float IrSensor_Vce(int16_t value);
-		float IrSensor_SensingCurrent(int16_t value);
-		float IrSensor_RelativeCurrent(int16_t value);
-		float IrSensor_Irradiance(int16_t value);
 		float	 wall_ref = STRAIGHT_REF;
 		t_bool	 isEnableIrSens = False;
 		t_irsens_motion irsens_motion;

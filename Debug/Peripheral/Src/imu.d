@@ -39,7 +39,11 @@ Peripheral/Src/imu.o: ../Peripheral/Src/imu.c \
  D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h \
  D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h \
  ../Core/Inc/spi.h ../Core/Inc/main.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/lsm6dsr_reg.h
+ D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
+ D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/lsm6dsr_reg.h \
+ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/lsm6dsrx_reg.h \
+ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/lsm6dsv16x_reg.h
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/interface.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h:
@@ -82,4 +86,8 @@ D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h:
 ../Core/Inc/spi.h:
 ../Core/Inc/main.h:
+D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
+D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
 D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/lsm6dsr_reg.h:
+D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/lsm6dsrx_reg.h:
+D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/lsm6dsv16x_reg.h:
