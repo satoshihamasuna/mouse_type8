@@ -33,15 +33,15 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  14 .debug_macro  00047a37  00000000  00000000  0014d223  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_line   000728f3  00000000  00000000  00194c5a  2**0
+ 15 .debug_line   00071552  00000000  00000000  00194c5a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_str    0015a650  00000000  00000000  0020754d  2**0
+ 16 .debug_str    0015a636  00000000  00000000  002061ac  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .comment      00000043  00000000  00000000  00361b9d  2**0
+ 17 .comment      00000043  00000000  00000000  003607e2  2**0
                   CONTENTS, READONLY
- 18 .debug_frame  00011a58  00000000  00000000  00361be0  2**2
+ 18 .debug_frame  00011a58  00000000  00000000  00360828  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_line_str 0000006b  00000000  00000000  00373638  2**0
+ 19 .debug_line_str 00000052  00000000  00000000  00372280  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -53858,7 +53858,7 @@ void Motor_SetDuty_Left( int16_t duty_l )
  8015a68:	4770      	bx	lr
  8015a6a:	bf00      	nop
  8015a6c:	447a0000 	.word	0x447a0000
- 8015a70:	3dcccccd 	.word	0x3dcccccd
+ 8015a70:	3d4ccccd 	.word	0x3d4ccccd
  8015a74:	3f7ae148 	.word	0x3f7ae148
  8015a78:	43fa0000 	.word	0x43fa0000
  8015a7c:	200009d8 	.word	0x200009d8
@@ -53978,7 +53978,7 @@ void Motor_SetDuty_Right( int16_t duty_r )
  8015b48:	4770      	bx	lr
  8015b4a:	bf00      	nop
  8015b4c:	447a0000 	.word	0x447a0000
- 8015b50:	3dcccccd 	.word	0x3dcccccd
+ 8015b50:	3d4ccccd 	.word	0x3d4ccccd
  8015b54:	3f7ae148 	.word	0x3f7ae148
  8015b58:	43fa0000 	.word	0x43fa0000
  8015b5c:	200009d8 	.word	0x200009d8
@@ -54057,7 +54057,7 @@ void FAN_Motor_SetDuty(int16_t duty_f)
  8015bd0:	bfb8      	it	lt
  8015bd2:	425b      	neglt	r3, r3
  8015bd4:	b29b      	uxth	r3, r3
- 8015bd6:	2b63      	cmp	r3, #99	@ 0x63
+ 8015bd6:	2b31      	cmp	r3, #49	@ 0x31
  8015bd8:	d802      	bhi.n	8015be0 <FAN_Motor_SetDuty+0x48>
 		pulse_f = (uint32_t)((PCLK1) / FANPWMFREQ * 10/ 1000) - 1;
  8015bda:	2304      	movs	r3, #4
@@ -87395,7 +87395,7 @@ void Demo()
  80282b4:	49b8      	ldr	r1, [pc, #736]	@ (8028598 <_ZN4Mode4DemoEv+0x19d0>)
  80282b6:	4618      	mov	r0, r3
  80282b8:	f7ee f992 	bl	80165e0 <_ZN11calcRunTime13turn_time_setEPKPK7t_param>
-					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,700,
+					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,600,
  80282bc:	f607 13e8 	addw	r3, r7, #2536	@ 0x9e8
  80282c0:	f6a3 13d4 	subw	r3, r3, #2516	@ 0x9d4
  80282c4:	f607 12e8 	addw	r2, r7, #2536	@ 0x9e8
@@ -87416,7 +87416,7 @@ void Demo()
  80282ec:	9203      	str	r2, [sp, #12]
  80282ee:	4aac      	ldr	r2, [pc, #688]	@ (80285a0 <_ZN4Mode4DemoEv+0x19d8>)
  80282f0:	9202      	str	r2, [sp, #8]
- 80282f2:	f44f 722f 	mov.w	r2, #700	@ 0x2bc
+ 80282f2:	f44f 7216 	mov.w	r2, #600	@ 0x258
  80282f6:	9201      	str	r2, [sp, #4]
  80282f8:	2202      	movs	r2, #2
  80282fa:	9200      	str	r2, [sp, #0]
