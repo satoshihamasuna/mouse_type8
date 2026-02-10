@@ -12,4 +12,4 @@
 ../Task/Src/ctrl_task.cpp:26:6:void CtrlTask::motion_ideal_param_set()	16	static
 ../Task/Src/ctrl_task.cpp:99:6:void CtrlTask::motion_prev_control()	16	static
 ../Task/Src/ctrl_task.cpp:107:6:void CtrlTask::motion_control()	104	static
-../Task/Src/ctrl_task.cpp:247:6:void CtrlTask::motion_post_control()	48	static
+../Task/Src/ctrl_task.cpp:265:6:void CtrlTask::motion_post_control()	48	static

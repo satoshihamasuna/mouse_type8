@@ -17,7 +17,7 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../Module/Src/interrupt.cpp:30:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	16	static
 ../Module/Src/interrupt.cpp:42:6:void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef*)	16	static
 ../Module/Src/interrupt.cpp:51:6:void Interrupt_Initialize()	4	static
-../Module/Src/interrupt.cpp:103:6:void Interrupt::preprocess()	344	static
+../Module/Src/interrupt.cpp:103:6:void Interrupt::preprocess()	336	static
 ../Module/Src/interrupt.cpp:182:6:void Interrupt::main()	16	static
 ../Module/Src/interrupt.cpp:194:6:void Interrupt::postprocess()	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:19:7:constexpr PID_Controller::PID_Controller()	16	static

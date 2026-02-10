@@ -86,7 +86,7 @@ namespace Mode
 					 printf("fr:%4d,fl:%4d,sr:%4d,sl:%4d\n", int_fr, int_fl, int_sr, int_sl);
 					 break;
 				case ENABLE|0x02:
-					printf("gyro:%lf\n",(-1.0)*read_gyro_z_axis()*PI/180);
+					printf("gyro:%lf,accel:%lf\n",CtrlTask_type7::getInstance().return_vehicleObj()->ego.radian.get(),CtrlTask_type7::getInstance().return_vehicleObj()->ego.accel.get());
 					HAL_Delay(10);
 					break;
 				case ENABLE|0x03:

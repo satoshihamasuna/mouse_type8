@@ -11,5 +11,5 @@
 ../Task/Src/../Inc/ctrl_task.h:352:17:t_bool CtrlTask::is_control_enable()	1
 ../Task/Src/ctrl_task.cpp:26:6:void CtrlTask::motion_ideal_param_set()	18
 ../Task/Src/ctrl_task.cpp:99:6:void CtrlTask::motion_prev_control()	2
-../Task/Src/ctrl_task.cpp:107:6:void CtrlTask::motion_control()	29
-../Task/Src/ctrl_task.cpp:247:6:void CtrlTask::motion_post_control()	30
+../Task/Src/ctrl_task.cpp:107:6:void CtrlTask::motion_control()	37
+../Task/Src/ctrl_task.cpp:265:6:void CtrlTask::motion_post_control()	30

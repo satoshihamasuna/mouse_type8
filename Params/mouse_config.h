@@ -31,17 +31,16 @@
 #define TIRE_RADIUS		(TIRE_DIAMETER/2.0f)			//mm
 #define MMPP			(TIRE_DIAMETER*PI/ENC_RESOLUTION)	//mm
 #define TREAD_WIDTH		(28.0)
-
+#define RAD_2_RPM		60.0/(2.0*3.141592)
 
 
 #if defined(MOUSE_A)
 	#define WEIGHT			(20.0)					//g
-	#define MOTOR_K_ER		(0.08)					//mV/rpm
-	#define MOTOR_K_TR		(0.764)	//0.4//0.594				//mNm/A
+	#define MOTOR_K_ER		(0.1)					//mV/rpm
+	#define MOTOR_K_TR		(MOTOR_K_ER*(RAD_2_RPM))	//0.4//0.594				//mNm/A
 	#define MOTOR_R			(3.5)//6.0
 	#define GEAR_N			(34.0/7.0)
 	#define MOUSE_INERTIA	((1.0/1000.0))//0.001f//0.003,0.0022				//g・m^2
-	#define RAD_2_RPM		60.0/(2.0*3.141592)
 	#define TIRE_RADIUS_M	(TIRE_RADIUS/1000.0)		//m
 	#define TREAD_WIDTH_M	(TREAD_WIDTH/1000.0)
 	#define MOTOR_BR		(1.0/1000000.0*0.0)			//mNm/rpm
@@ -49,8 +48,9 @@
 
 
 	#define DUTY_MIN		(50)
+	#define DEAD_V			(0.4)
 
-	#define GYRO_COR_RATE	(-1.0f)
+	#define GYRO_COR_RATE	(-1.015f)
 
 
 #elif defined(MOUSE_B)
@@ -60,7 +60,6 @@
 	#define MOTOR_R			(3.5)//6.0
 	#define GEAR_N			(52.0/8.0)
 	#define MOUSE_INERTIA	((1.0/1000.0))//0.001f//0.003,0.0022				//g・m^2
-	#define RAD_2_RPM		60.0/(2.0*3.141592)
 	#define TIRE_RADIUS_M	(TIRE_RADIUS/1000.0)		//m
 	#define TREAD_WIDTH_M	(TREAD_WIDTH/1000.0)
 	#define MOTOR_BR		(1.0/1000000.0*0.0)			//mNm/rpm

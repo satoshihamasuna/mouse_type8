@@ -193,6 +193,24 @@ void CtrlTask::motion_control()
 			vehicle->V_r =  vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get() )*1.0 + vehicle->sp_feedback.get() + vehicle->om_feedback.get();
 			vehicle->V_l = -vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get())*1.0 - vehicle->sp_feedback.get() + vehicle->om_feedback.get();
 
+			if(ABS(vehicle->V_r) > 0.0)
+			{
+				vehicle->V_r = SIGN(vehicle->V_r)*(ABS(vehicle->V_r) + DEAD_V);
+			}
+			else
+			{
+				vehicle->V_r = 0.0f;
+			}
+
+			if(ABS(vehicle->V_l) > 0.0)
+			{
+				vehicle->V_l = SIGN(vehicle->V_l)*(ABS(vehicle->V_l) + DEAD_V);
+			}
+			else
+			{
+				vehicle->V_l = 0.0f;
+			}
+
 			float duty_r = vehicle->V_r/ ctrl_battery;
 			float duty_l = vehicle->V_l/ ctrl_battery;
 
