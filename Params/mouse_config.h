@@ -48,9 +48,9 @@
 
 
 	#define DUTY_MIN		(50)
-	#define DEAD_V			(0.4)
+	#define DEAD_V			(0.6)
 
-	#define GYRO_COR_RATE	(-1.015f)
+	#define GYRO_COR_RATE	(-1.005f)
 
 
 #elif defined(MOUSE_B)
@@ -66,6 +66,7 @@
 	#define L_BAR_DT		(20.0/1000.0*0.0)
 
 	#define DUTY_MIN		(80)
+	#define DEAD_V			(0.6)
 
 	#define GYRO_COR_RATE	(-1.015f)
 #else

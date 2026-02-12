@@ -120,16 +120,12 @@ void CtrlTask::motion_control()
 
 			float motor_l_rpm = (1.0f)*RAD_2_RPM*GEAR_N*(vehicle->ideal.velo.get()*1000/TIRE_RADIUS
 														- 1.0f*TREAD_WIDTH*vehicle->ideal.rad_velo.get()/(2*TIRE_RADIUS));
-			//calc friction()
-			float friction = 0.0f;
-			if(motion_pattern_get() != Fix_wall || motion_pattern_get() != run_brake)
-				friction = (ABS(vehicle->ideal.velo.get()) > 0.15) ? (float)(SIGN(vehicle->ideal.velo.get()))*0.05*9.8/(1+0.0*ABS(vehicle->ideal.accel.get())):0.0f;
 
 			//calc motor induce ampere
-			float motor_r_ampere = 1.0f/(MOTOR_K_TR*GEAR_N)*(WEIGHT*((1.0)*vehicle->ideal.accel.get()+friction*0.0)/1000.0f*(TIRE_RADIUS)/2.0f)
+			float motor_r_ampere = 1.0f/(MOTOR_K_TR*GEAR_N)*(WEIGHT*((1.0)*vehicle->ideal.accel.get())/1000.0f*(TIRE_RADIUS)/2.0f)
 								 + 1.0f/(MOTOR_K_TR*GEAR_N)*(MOUSE_INERTIA*vehicle->ideal.rad_accel.get()*TIRE_RADIUS/(TREAD_WIDTH/2.0f))
 								 + MOTOR_BR*motor_r_rpm /MOTOR_K_TR*1.0;
-			float motor_l_ampere = 1.0f/(MOTOR_K_TR*GEAR_N)*(WEIGHT*((1.0)*vehicle->ideal.accel.get()+friction*0.0)/1000.0f*(TIRE_RADIUS)/2.0f)
+			float motor_l_ampere = 1.0f/(MOTOR_K_TR*GEAR_N)*(WEIGHT*((1.0)*vehicle->ideal.accel.get())/1000.0f*(TIRE_RADIUS)/2.0f)
 								 - 1.0f/(MOTOR_K_TR*GEAR_N)*(MOUSE_INERTIA*vehicle->ideal.rad_accel.get()*TIRE_RADIUS/(TREAD_WIDTH/2.0f))
 								 + MOTOR_BR*motor_l_rpm /MOTOR_K_TR*1.0;
 
@@ -190,8 +186,8 @@ void CtrlTask::motion_control()
 			//vehicle->om_feedback.set( om_antiwindup );
 
 			//set & supply voltage
-			vehicle->V_r =  vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get() )*1.0 + vehicle->sp_feedback.get() + vehicle->om_feedback.get();
-			vehicle->V_l = -vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get())*1.0 - vehicle->sp_feedback.get() + vehicle->om_feedback.get();
+			vehicle->V_r =  vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get() + om_feedforward_corr_R-om_feedforward_corr_L)*1.0 + vehicle->sp_feedback.get() + vehicle->om_feedback.get();
+			vehicle->V_l = -vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get() + om_feedforward_corr_L-om_feedforward_corr_R)*1.0 - vehicle->sp_feedback.get() + vehicle->om_feedback.get();
 
 			if(ABS(vehicle->V_r) > 0.0)
 			{

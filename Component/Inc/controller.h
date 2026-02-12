@@ -8,6 +8,7 @@
 #ifndef CPP_INC_CONTROLL_H_
 #define CPP_INC_CONTROLL_H_
 
+#include "typedef.h"
 
 typedef struct{
 	float Kp;
@@ -20,6 +21,7 @@ class PID_Controller
 {
 	private:
 		//float Kp,Ki,Kd;
+		t_bool enable_integral = True;
 	public:
 		float Kp = 0.0,Ki = 0.0,Kd = 0.0;
 		float target= 0.0,I_target= 0.0,prev_target= 0.0;
@@ -30,6 +32,9 @@ class PID_Controller
 		float Control(float _target,float _output,float dt);
 		float Anti_windup_1(float operation,float limit);
 		float Anti_windup_2(float operation,float limit);
+
+		void Enable_Integral()	{		enable_integral = True;		}
+		void Disable_Integral()	{		enable_integral = False;		}
 
 		float get_I_peration()
 		{

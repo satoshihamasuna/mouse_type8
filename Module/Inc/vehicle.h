@@ -64,6 +64,7 @@ class Vehicle
 		int suction_duty;
 		t_bool suction_flag = False;
 	public:
+
 		machine_params ego;
 		void ego_initialize()
 		{
@@ -166,7 +167,7 @@ class Vehicle
 		virtual void suctionSetDuty(int out_s)
 		{
 			suction_duty = out_s;
-			turn_slip_k.set(250.0f);
+			turn_slip_k.set(500.0f);
 		}
 
 		virtual void suctionStop()
@@ -176,9 +177,17 @@ class Vehicle
 			FAN_Motor_SetDuty(suction_duty);
 			turn_slip_k.set(75.0f);
 		}
+
+		virtual ~Vehicle()
+		{
+		    motorSetDuty_l(0);
+		    motorSetDuty_r(0);
+		    suctionStop();
+		}
 };
 
 class Vehicle_type7:public Vehicle,public Singleton<Vehicle_type7>{
+
 
 	void motorSetDuty_l(int out_l) override
 	{
@@ -206,6 +215,7 @@ class Vehicle_type7:public Vehicle,public Singleton<Vehicle_type7>{
 		FAN_Motor_SetDuty(suction_duty);
 		turn_slip_k.set(75.0f);
 	}
+
 
 };
 

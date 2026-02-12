@@ -403,7 +403,7 @@ void  Motion::SetIdeal_search_turn()
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*straight_motion_param.sp_gain);
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*straight_motion_param.om_gain);
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
 	}
 
@@ -826,6 +826,7 @@ void Motion::SetIdeal_turn_in		( )
 	if(motion_plan.turn_state.get() == turn_motion_param.param->turn_dir)
 	{
 		motion_state_set(SLATURN_STATE);
+		vehicle->Vehicle_controller.speed_ctrl.Disable_Integral();
 		if((run_time_ms_get() - turn_start_time_ms) < motion_plan.turn_time_ms.get())
 		{
 			vehicle->ideal.velo.set(turn_motion_param.param->velo);
@@ -880,6 +881,7 @@ void Motion::SetIdeal_turn_in		( )
 			ir_sens->Division_Wall_Correction_Reset();
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.speed_ctrl.Enable_Integral();
 		}
 	}
 
@@ -1075,6 +1077,7 @@ void Motion::SetIdeal_turn_out		( ){
 	if(motion_plan.turn_state.get() == turn_motion_param.param->turn_dir)
 	{
 		motion_state_set(SLATURN_STATE);
+		vehicle->Vehicle_controller.speed_ctrl.Disable_Integral();
 		if((run_time_ms_get() - turn_start_time_ms) < motion_plan.turn_time_ms.get())
 		{
 			vehicle->ideal.velo.set(turn_motion_param.param->velo);
@@ -1129,6 +1132,7 @@ void Motion::SetIdeal_turn_out		( ){
 			ir_sens->Division_Wall_Correction_Reset();
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.speed_ctrl.Enable_Integral();
 		}
 	}
 
@@ -1277,11 +1281,13 @@ void Motion::SetIdeal_long_turn		( )
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*turn_motion_param.om_gain);
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+
 		}
 	}
 
 	if(motion_plan.turn_state.get() == turn_motion_param.param->turn_dir)
 	{
+		vehicle->Vehicle_controller.speed_ctrl.Disable_Integral();
 		motion_state_set(SLATURN_STATE);
 		if((run_time_ms_get() - turn_start_time_ms) < motion_plan.turn_time_ms.get())
 		{
@@ -1299,7 +1305,7 @@ void Motion::SetIdeal_long_turn		( )
 			float acc = -vehicle->ideal.horizon_velo.get()*(vehicle->ideal.rad_velo.get()+vehicle->ideal.turn_slip_dot.get())
 						+vehicle->turn_slip_k.get()*(alpha_r*alpha_r + alpha_l *alpha_l)/2;
 			//if( ABS(turn_motion_param.param->degree) == 180.0)
-				//vehicle->ideal.accel.set(acc);
+			//vehicle->ideal.accel.set(acc/2.0);
 		}
 		else
 		{
@@ -1336,14 +1342,15 @@ void Motion::SetIdeal_long_turn		( )
 
 			ir_sens->Division_Wall_Correction_Reset();
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.speed_ctrl.Enable_Integral();
+
 		}
 	}
 
 	if(motion_plan.turn_state.get() == Post_Turn)
 	{
 		motion_state_set(STRAIGHT_STATE);
-		;
 		if(vehicle->ego.length.get() <=  (turn_motion_param.param->Lend + motion_plan.fix_post_run.get()))
 		{
 			vehicle->ideal.accel.set(motion_plan.deccel.get());
@@ -1512,7 +1519,7 @@ void Motion::SetIdeal_turn_v90		( )
 	if(motion_plan.turn_state.get() == turn_motion_param.param->turn_dir)
 	{
 		motion_state_set(SLATURN_STATE);
-
+		vehicle->Vehicle_controller.speed_ctrl.Disable_Integral();
 		if((run_time_ms_get() - turn_start_time_ms) < motion_plan.turn_time_ms.get())
 		{
 			vehicle->ideal.velo.set(turn_motion_param.param->velo);
@@ -1573,6 +1580,7 @@ void Motion::SetIdeal_turn_v90		( )
 			ir_sens->Division_Wall_Correction_Reset();
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.speed_ctrl.Enable_Integral();
 		}
 	}
 

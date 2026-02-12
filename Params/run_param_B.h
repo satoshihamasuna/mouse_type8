@@ -22,13 +22,13 @@
 #include "../Module/Inc/vehicle.h"
 #include "typedef_run_param.h"
 
-const static t_pid_gain basic_sp_gain = {1.50,0.02,0.0};
+const static t_pid_gain basic_sp_gain = {1.20,0.02,0.0};
 const static t_pid_gain basic_om_gain = {0.1f,0.005f,0.00f};//{0.05f, 0.001f, 0.00f};
 
-const static t_pid_gain search_sp_gain = {1.500,0.02,0.0};
+const static t_pid_gain search_sp_gain = {1.200,0.02,0.0};
 const static t_pid_gain search_om_gain = {0.1f,0.005f,0.00f};
 
-const static t_pid_gain sp_gain_search_turn = {1.500,0.02,0.0};//{1.0,0.04,0.05};;//{2.0,0.04};
+const static t_pid_gain sp_gain_search_turn = {1.200,0.02,0.0};//{1.0,0.04,0.05};;//{2.0,0.04};
 const static t_pid_gain om_gain_search_turn = {0.1f,0.0015f,0.00f};//{0.50f, 0.0005f, 0.001f};
 const static t_turn_param_table slalom_L90_table_320 = {0.32f, 26.00f,9.46,11.16, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_table_320 = {0.32f,-26.00f,9.46,11.16,-90.0f,Turn_R};
@@ -45,32 +45,32 @@ const static t_turn_param_table slalom_R90_table_280 = {0.28f,-26.00f,9.49,11.16
 const static t_param param_L90_search_280 = {&slalom_L90_table_280 ,&sp_gain_search_turn,&om_gain_search_turn};
 const static t_param param_R90_search_280 = {&slalom_R90_table_280, &sp_gain_search_turn,&om_gain_search_turn};
 
-const static t_pid_gain sp_gain_280 = {2.00,0.05,0.00};
+const static t_pid_gain sp_gain_280 = {1.20,0.02,0.0};
 const static t_pid_gain om_gain_280 = {0.1f,0.005f,0.00f};//{
 const static t_velo_param param_280 = {0.28f,4.0f};
 const static t_straight_param st_param_280 = {&param_280,&sp_gain_280,&om_gain_280};
 
-const static t_pid_gain sp_gain_300 = {2.00,0.05,0.0};//{1.0,0.05,0.02};
+const static t_pid_gain sp_gain_300 = {1.20,0.02,0.0};//{1.0,0.05,0.02};
 const static t_pid_gain om_gain_300 = {0.1f,0.005f,0.00f};//{
 const static t_velo_param param_300 = {0.30f,4.0f};
 const static t_straight_param st_param_300 = {&param_300,&sp_gain_300,&om_gain_300};
 
-const static t_pid_gain sp_gain_320 = {2.00,0.05,0.0};//{1.0,0.05,0.02};
+const static t_pid_gain sp_gain_320 = {1.20,0.02,0.0};//{1.0,0.05,0.02};
 const static t_pid_gain om_gain_320 = {0.1f,0.005f,0.00f};//{
 const static t_velo_param param_320 = {0.32f,4.0f};
 const static t_straight_param st_param_320 = {&param_320,&sp_gain_320,&om_gain_320};
 
-const static t_pid_gain sp_gain_450 = {1.00,0.05,0.0};//{1.0,0.05,0.02};
+const static t_pid_gain sp_gain_450 = {1.20,0.02,0.0};//{1.0,0.05,0.02};
 const static t_pid_gain om_gain_450 = {0.1f,0.005f,0.00f};//{
 const static t_velo_param param_450 = {0.45f,6.0f};
 const static t_straight_param st_param_450 = {&param_450,&sp_gain_450,&om_gain_450};
 
-const static t_pid_gain sp_gain_500 = {2.50,0.02,0.0};
+const static t_pid_gain sp_gain_500 = {1.20,0.02,0.0};
 const static t_pid_gain om_gain_500 = {0.1f,0.01f,0.00f};//{
 const static t_velo_param param_500 = {0.50f,6.0f};
 const static t_straight_param st_param_500 = {&param_500,&sp_gain_500,&om_gain_500};
 
-const static t_pid_gain sp_gain_600 = {1.5,0.05,0.00};
+const static t_pid_gain sp_gain_600 = {1.20,0.02,0.0};
 const static t_pid_gain om_gain_600 = {0.1f,0.005f,0.00f};
 const static t_velo_param param_600 = {0.60f,6.0f};
 const static t_straight_param st_param_600 = {&param_600,&sp_gain_600,&om_gain_600};

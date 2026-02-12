@@ -54,6 +54,9 @@ extern "C" {
 #define LSM6DSV16X_CTRL9_C      0x18
 #define LSM6DSV16X_CTRL10_C     0x19
 
+#define LSM6DSV16X_HAODR_CFG   0x62
+
+
 /* ==============================
  * Accelerometer settings LSM6DSV16X_CTRL1
  * ============================== */
@@ -214,6 +217,11 @@ extern "C" {
 #define LSM6DSV16X_XL_FS_4G       	(0x01 << 0)
 #define LSM6DSV16X_XL_FS_8G       	(0x02 << 0)
 #define LSM6DSV16X_XL_FS_16G      	(0x03 << 0)
+
+/*HAODR_SEL [1:0]*/
+#define LSM6DSV16X_HAODR_HAODR_SEL0 (0x00 << 0)
+#define LSM6DSV16X_HAODR_HAODR_SEL1 (0x01 << 0)
+#define LSM6DSV16X_HAODR_HAODR_SEL2 (0x02 << 0)
 
 #ifdef __cplusplus
 }
