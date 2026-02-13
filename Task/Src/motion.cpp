@@ -53,10 +53,10 @@ float get_turn2_table_value(float time_period_ms,float time_ms)
 void Motion::SetIdeal_wall_control()
 {
 	//ir_sens->set_sidewall_control_cnt(vehicle->ideal.velo.get());
-	if(motion_state_get() == STRAIGHT_STATE || motion_state_get() == DIAGONAL_STATE)
+	if(motion_control_get()== STRAIGHT_STATE || motion_control_get()== DIAGONAL_STATE)
 	{
-		if(motion_state_get() == STRAIGHT_STATE) ir_sens->EnableIrSensStraight();
-		if(motion_state_get() == DIAGONAL_STATE) ir_sens->EnableIrSensDiagonal();
+		if(motion_control_get()== STRAIGHT_STATE) ir_sens->EnableIrSensStraight();
+		if(motion_control_get()== DIAGONAL_STATE) ir_sens->EnableIrSensDiagonal();
 
 		//検討必要
 		if(vehicle->ideal.velo.get() <= 0.150 && vehicle->ideal.velo.get() >= 0.0f )
@@ -78,7 +78,7 @@ void Motion::SetIdeal_wall_control()
 
 void Motion::Adjust_wall_corner()
 {
-	if(motion_state_get() == STRAIGHT_STATE)
+	if(motion_control_get()== STRAIGHT_STATE)
 	{
 		if((ir_sens->r_wall_corner == True || ir_sens->l_wall_corner == True) && vehicle->ideal.velo.get() > 0.1 )
 		{
@@ -133,7 +133,7 @@ void Motion::Adjust_wall_corner()
 			}
 		}
 	}
-	else if(motion_state_get() == DIAGONAL_STATE)
+	else if(motion_control_get()== DIAGONAL_STATE)
 	{
 		if((ir_sens->r_wall_corner == True || ir_sens->l_wall_corner == True) && vehicle->ideal.velo.get() > 0.2 )
 		{
@@ -248,7 +248,7 @@ void Motion::Adjust_wall_corner()
 
 void  Motion::SetIdeal_search_straight(){
 
-	motion_state_set(STRAIGHT_STATE);
+	motion_control_set(STRAIGHT_STATE);
 
 	if(motion_plan.length_deccel.get() < ( motion_plan.end_length.get() - vehicle->ego.length.get()))
 	{
@@ -323,7 +323,7 @@ void  Motion::SetIdeal_search_straight(){
 			vehicle->ego.turn_slip_theta.set(0.0f);
 
 			motion_pattern_set(Run_Pause);
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
 			Init_Motion_stop_brake(400);
 			return;
 		}
@@ -346,7 +346,7 @@ void  Motion::SetIdeal_search_straight(){
 			vehicle->ideal.turn_y.set(0.0f);
 
 			motion_pattern_set(Run_Pause);
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
 			motion_exeStatus_set(complete);
 		}
 	}
@@ -362,7 +362,7 @@ void  Motion::SetIdeal_search_turn()
 	vehicle->ideal.accel.set(0.0f);
 	if(motion_plan.turn_state.get() == Prev_Turn)
 	{
-		motion_state_set(STRAIGHT_STATE);
+		motion_control_set(STRAIGHT_STATE);
 		if(vehicle->ego.length.get() <= (turn_motion_param.param->Lstart + motion_plan.fix_prev_run.get()))
 		{
 
@@ -380,7 +380,7 @@ void  Motion::SetIdeal_search_turn()
 
 	if(motion_plan.turn_state.get() == turn_motion_param.param->turn_dir)
 	{
-		motion_state_set(SLATURN_STATE);
+		motion_control_set(SLATURN_STATE);
 		if((run_time_ms_get() - turn_start_time_ms) < motion_plan.turn_time_ms.get())
 		{
 			float rad_velo 		 	= motion_plan.rad_max_velo.get()*get_turn_table_value(motion_plan.turn_time_ms.get(), (run_time_ms_get() - turn_start_time_ms));
@@ -428,7 +428,7 @@ void  Motion::SetIdeal_search_turn()
 
 	if(motion_plan.turn_state.get() == Post_Turn)
 	{
-		motion_state_set(STRAIGHT_STATE);
+		motion_control_set(STRAIGHT_STATE);
 		if(vehicle->ego.length.get() <= (turn_motion_param.param->Lend + motion_plan.fix_post_run.get()))
 		{
 
@@ -453,7 +453,7 @@ void  Motion::SetIdeal_search_turn()
 			vehicle->ideal.turn_y.set(0.0f);
 
 			motion_pattern_set(Run_Pause);
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
 			motion_exeStatus_set(complete);
 		}
 	}
@@ -466,7 +466,7 @@ void  Motion::SetIdeal_search_turn()
 
 void Motion::SetIdeal_straight()
 {
-	motion_state_set(STRAIGHT_STATE);
+	motion_control_set(STRAIGHT_STATE);
 	float offset = 0.0f;
 	if(motion_plan.max_velo.get() > motion_plan.end_velo.get())
 	{
@@ -533,7 +533,7 @@ void Motion::SetIdeal_straight()
 			vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 			motion_pattern_set(Run_Pause);
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
 			Init_Motion_stop_brake(400);
 			return;
 		}
@@ -558,7 +558,7 @@ void Motion::SetIdeal_straight()
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 			motion_pattern_set(Run_Pause);
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
 			motion_exeStatus_set(complete);
 		}
 	}
@@ -581,7 +581,7 @@ void Motion::SetIdeal_straight()
 
 void Motion::SetIdeal_backward()
 {
-	motion_state_set(STRAIGHT_STATE);
+	motion_control_set(STRAIGHT_STATE);
 
 	if(ABS(motion_plan.length_deccel.get()) < ( ABS(motion_plan.end_length.get()) - ABS(vehicle->ego.length.get())))
 	{
@@ -620,7 +620,7 @@ void Motion::SetIdeal_backward()
 			vehicle->ego.radian.set(0.0f);
 			vehicle->ego.turn_slip_theta.set(0.0f);
 			motion_pattern_set(Run_Pause);
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
 			Init_Motion_stop_brake(200);
 			return;
 	}
@@ -633,7 +633,7 @@ void Motion::SetIdeal_backward()
 
 void Motion::SetIdeal_diagonal		( )
 {
-	motion_state_set(DIAGONAL_STATE);
+	motion_control_set(DIAGONAL_STATE);
 
 	float offset = 0.0f;
 	if(motion_plan.max_velo.get() > motion_plan.end_velo.get())
@@ -690,7 +690,7 @@ void Motion::SetIdeal_diagonal		( )
 			vehicle->ego.radian.set(0.0f);
 			vehicle->ego.turn_slip_theta.set(0.0f);
 			motion_pattern_set(Run_Pause);
-			motion_state_set(DIAGONAL_STATE);
+			motion_control_set(DIAGONAL_STATE);
 			Init_Motion_stop_brake(400);
 			return;
 		}
@@ -701,7 +701,7 @@ void Motion::SetIdeal_diagonal		( )
 			vehicle->ideal_integral_init();
 
 			motion_pattern_set(Run_Pause);
-			motion_state_set(DIAGONAL_STATE);
+			motion_control_set(DIAGONAL_STATE);
 			motion_exeStatus_set(complete);
 		}
 	}
@@ -718,7 +718,7 @@ void Motion::SetIdeal_pivot_turn()
 	vehicle->ideal.velo.set(0.0f);
 	vehicle->ideal.accel.set(0.0f);
 
-	motion_state_set(PIVTURN_STATE);
+	motion_control_set(PIVTURN_STATE);
 	if(ABS(motion_plan.radian_deccel.get()) < (ABS(motion_plan.end_radian.get()) - ABS(vehicle->ego.radian.get())))
 	{
 		vehicle->ideal.rad_accel.set(motion_plan.rad_accel.get());
@@ -764,7 +764,7 @@ void Motion::SetIdeal_pivot_turn()
 		vehicle->ego.turn_y.set(0.0f);
 		vehicle->ego.x_point.set(0.0f);
 		motion_pattern_set(Run_Pause);
-		motion_state_set(PIVTURN_STATE);
+		motion_control_set(PIVTURN_STATE);
 		Init_Motion_stop_brake(400);
 		return;
 	}
@@ -909,7 +909,7 @@ void Motion::SetIdeal_suction_start		( )
 		vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		//Init_Motion_stop_brake(200);
 		motion_exeStatus_set(complete);
-		motion_state_set(NOP_STATE);
+		motion_control_set(NOP_STATE);
 		motion_pattern_set(No_run);
 
 		return;
@@ -965,7 +965,7 @@ void Motion::SetIdeal_stop_brake	( )
 		vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		//Init_Motion_stop_brake(200);
 		motion_exeStatus_set(complete);
-		motion_state_set(NOP_STATE);
+		motion_control_set(NOP_STATE);
 		motion_pattern_set(No_run);
 
 		return;
@@ -1054,7 +1054,7 @@ void Motion::SetIdeal_enkaigei	( )
 		vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		//Init_Motion_stop_brake(200);
 		motion_exeStatus_set(complete);
-		motion_state_set(NOP_STATE);
+		motion_control_set(NOP_STATE);
 		motion_pattern_set(No_run);
 
 		return;

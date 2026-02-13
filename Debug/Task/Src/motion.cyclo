@@ -11,13 +11,13 @@
 ../Task/Src/../Inc/sensing_task.h:84:8:void IrSensTask::EnableIrSensStraight()	1
 ../Task/Src/../Inc/sensing_task.h:85:8:void IrSensTask::EnableIrSensDiagonal()	1
 ../Task/Src/../Inc/sensing_task.h:88:10:t_bool IrSensTask::Division_Wall_Correction()	5
-../Task/Src/../Inc/ctrl_task.h:144:15:void Motion::run_time_ms_update()	1
-../Task/Src/../Inc/ctrl_task.h:145:16:float Motion::run_time_ms_get()	1
-../Task/Src/../Inc/ctrl_task.h:150:16:float Motion::run_time_limit_ms_get()	1
-../Task/Src/../Inc/ctrl_task.h:158:18:void Motion::motion_pattern_set(t_run_pattern)	1
-../Task/Src/../Inc/ctrl_task.h:161:18:void Motion::motion_state_set(t_runStatus)	1
-../Task/Src/../Inc/ctrl_task.h:164:18:void Motion::motion_exeStatus_set(t_exeStatus)	1
-../Task/Src/../Inc/ctrl_task.h:188:24:t_runStatus Motion::motion_state_get()	1
+../Task/Src/../Inc/ctrl_task.h:128:15:void Motion::run_time_ms_update()	1
+../Task/Src/../Inc/ctrl_task.h:129:16:float Motion::run_time_ms_get()	1
+../Task/Src/../Inc/ctrl_task.h:134:16:float Motion::run_time_limit_ms_get()	1
+../Task/Src/../Inc/ctrl_task.h:157:18:void Motion::motion_pattern_set(t_run_pattern)	1
+../Task/Src/../Inc/ctrl_task.h:159:24:t_runControl Motion::motion_control_get()	1
+../Task/Src/../Inc/ctrl_task.h:160:18:void Motion::motion_control_set(t_runControl)	1
+../Task/Src/../Inc/ctrl_task.h:163:18:void Motion::motion_exeStatus_set(t_exeStatus)	1
 ../Task/Src/motion.cpp:15:7:float get_turn_table_value(float, float)	2
 ../Task/Src/motion.cpp:53:6:void Motion::SetIdeal_wall_control()	9
 ../Task/Src/motion.cpp:79:6:void Motion::Adjust_wall_corner()	51

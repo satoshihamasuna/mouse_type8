@@ -13,9 +13,9 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:204:7:virtual void Vehicle_type7::suctionSetDuty(int)	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:211:7:virtual void Vehicle_type7::suctionStop()	16	static
 ../Module/Src/../../Task/Inc/sensing_task.h:128:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
-../Module/Src/../../Task/Inc/ctrl_task.h:180:3:Motion::Motion(Vehicle*, IrSensTask*, int)	24	static
-../Module/Src/../../Task/Inc/ctrl_task.h:360:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	24	static
-../Module/Src/../../Task/Inc/ctrl_task.h:378:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	24	static
+../Module/Src/../../Task/Inc/ctrl_task.h:149:3:Motion::Motion(Vehicle*, IrSensTask*, int)	24	static
+../Module/Src/../../Task/Inc/ctrl_task.h:340:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	24	static
+../Module/Src/../../Task/Inc/ctrl_task.h:358:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	24	static
 ../Module/Src/interrupt.cpp:30:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	16	static
 ../Module/Src/interrupt.cpp:42:6:void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef*)	16	static
 ../Module/Src/interrupt.cpp:51:6:void Interrupt_Initialize()	4	static

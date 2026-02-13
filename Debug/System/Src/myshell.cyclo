@@ -11,12 +11,12 @@
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:204:7:virtual void Vehicle_type7::suctionSetDuty(int)	1
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:211:7:virtual void Vehicle_type7::suctionStop()	1
 ../System/Src/../../Task/Inc/sensing_task.h:128:8:virtual void IrSensTask_type7::IrSensorSet()	1
-../System/Src/../../Task/Inc/ctrl_task.h:180:3:Motion::Motion(Vehicle*, IrSensTask*, int)	1
-../System/Src/../../Task/Inc/ctrl_task.h:189:24:t_exeStatus Motion::motion_exeStatus_get()	1
-../System/Src/../../Task/Inc/ctrl_task.h:225:22:t_exeStatus Motion::execute_Motion()	2
-../System/Src/../../Task/Inc/ctrl_task.h:347:15:IrSensTask* Motion::return_irObj()	1
-../System/Src/../../Task/Inc/ctrl_task.h:360:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	1
-../System/Src/../../Task/Inc/ctrl_task.h:378:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	1
+../System/Src/../../Task/Inc/ctrl_task.h:149:3:Motion::Motion(Vehicle*, IrSensTask*, int)	1
+../System/Src/../../Task/Inc/ctrl_task.h:162:24:t_exeStatus Motion::motion_exeStatus_get()	1
+../System/Src/../../Task/Inc/ctrl_task.h:205:22:t_exeStatus Motion::execute_Motion()	2
+../System/Src/../../Task/Inc/ctrl_task.h:327:15:IrSensTask* Motion::return_irObj()	1
+../System/Src/../../Task/Inc/ctrl_task.h:340:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	1
+../System/Src/../../Task/Inc/ctrl_task.h:358:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	1
 ../System/Src/myshell.cpp:57:12:int usrcmd_help(int, char**)	2
 ../System/Src/myshell.cpp:70:12:int usrcmd_info(int, char**)	4
 ../System/Src/myshell.cpp:90:12:int usrcmd_disp(int, char**)	4

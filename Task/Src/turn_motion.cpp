@@ -14,7 +14,7 @@
 void Motion::handleTurnPrev_Straight()
 {
 
-		motion_state_set(STRAIGHT_STATE);
+		motion_control_set(STRAIGHT_STATE);
 		if(vehicle->ego.length.get() <= (turn_motion_param.param->Lstart + motion_plan.fix_prev_run.get()))
 		{
 			if(ir_sens->Division_Wall_Correction() == True)
@@ -53,7 +53,7 @@ void Motion::handleTurnPrev_Straight()
 
 void Motion::handleTurnPrev_Diagonal()
 {
-		motion_state_set(DIAGONAL_STATE);
+		motion_control_set(DIAGONAL_STATE);
 
 		if(vehicle->ego.length.get() <= (turn_motion_param.param->Lstart + motion_plan.fix_prev_run.get()))
 		{
@@ -116,7 +116,7 @@ void Motion::handleTurnPrev_Diagonal()
 
 void Motion::handleTurnPost_Straight()
 {
-		motion_state_set(STRAIGHT_STATE);
+		motion_control_set(STRAIGHT_STATE);
 		if(vehicle->ego.length.get() <=  (turn_motion_param.param->Lend + motion_plan.fix_post_run.get()))
 		{
 
@@ -176,7 +176,7 @@ void Motion::handleTurnPost_Straight()
 
 void Motion::handleTurnPost_Diagonal()
 {
-		motion_state_set(DIAGONAL_STATE);
+		motion_control_set(DIAGONAL_STATE);
 
 		if(vehicle->ego.length.get() <=  (turn_motion_param.param->Lend + motion_plan.fix_post_run.get()))
 		{
@@ -259,7 +259,7 @@ void Motion::handleTurnPost_Diagonal()
 }
 void Motion::handleTurnMain()
 {
-		motion_state_set(SLATURN_STATE);
+		motion_control_set(SLATURN_STATE);
 		vehicle->Vehicle_controller.speed_ctrl.Disable_Integral();
 		float exe_turn_time = (run_time_ms_get() - turn_start_time_ms_get());
 		if(exe_turn_time < motion_plan.turn_time_ms.get())

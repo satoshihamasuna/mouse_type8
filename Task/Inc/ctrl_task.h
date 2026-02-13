@@ -48,21 +48,6 @@ struct motion_plan_params
 		param_element turn_time_ms;
 };
 
-typedef enum{
-	execute	    = 2,
-	complete    = 1,
-	error 		= 0,
-}t_exeStatus;
-
-typedef enum
-{
-	NOP_STATE = 0,
-	STRAIGHT_STATE  = 1,
-	DIAGONAL_STATE  = 2,
-	SLATURN_STATE	= 3,
-	PIVTURN_STATE	= 4,
-	BRAKE_STATE		= 5,
-}t_runStatus;
 
 typedef struct{
 	t_turn_param_table * param;
@@ -74,15 +59,15 @@ class Motion
 {
 	private:
 		//define motion status
-		t_run_pattern		motion_pattern  = No_run;
-		t_runStatus			motion_state	= NOP_STATE;
-		t_exeStatus		    motion_exeStatus= complete;
+		t_run_pattern		motion_pattern  	= No_run;
+		t_runControl		motion_control		= NOP_STATE;
+		t_exeStatus		    motion_exeStatus	= complete;
 		t_bool				is_motion_enable	= False;
 
 		//define motion parameter
-	    t_param			turn_motion_param;
+	    t_param				turn_motion_param;
 		t_straight_param 	straight_motion_param;
-		motion_plan_params    motion_plan;
+		motion_plan_params  motion_plan;
 
 		//define error counter
 		int error_cnt = 0;
@@ -90,7 +75,6 @@ class Motion
 		//define ir sensor & vehicle instance
 		Vehicle *vehicle;
 		IrSensTask *ir_sens;
-
 
 		//float delta_t;
 		int deltaT_ms;
@@ -153,21 +137,6 @@ class Motion
 		inline void turn_start_time_ms_set(float _time_ms)						{	turn_start_time_ms = _time_ms;		}
 		inline float turn_start_time_ms_get()									{	return turn_start_time_ms;			}
 
-
-		//inline t_run_pattern motion_pattern_get() 							 	{	return motion_pattern;				}
-		inline void			 motion_pattern_set(t_run_pattern _motion_pattern)  {	motion_pattern	= _motion_pattern;	}
-
-		//inline t_runStatus 	 motion_state_get() 							 	{	return motion_state;				}
-		inline void			 motion_state_set(t_runStatus _motion_state)   	 	{	motion_state	= _motion_state;	}
-
-		//inline t_exeStatus 	 motion_exeStatus_get() 							 	{	return motion_exeStatus;				}
-		inline void			 motion_exeStatus_set(t_exeStatus _motion_exeStatus)   	{	motion_exeStatus	= _motion_exeStatus;	}
-		t_exeStatus 		 motion_execute();
-
-		inline	void 		motion_enable_set()										{ 	is_motion_enable		= True;		}
-		inline	void 		motion_disable_set()									{ 	is_motion_enable		= False;	}
-		//inline  t_bool 		motion_is_enable_get()									{	return	is_motion_enable;			}
-
 		void Motion_error_handling();
 
 		void error_counter_reset()												{	error_cnt = 0;							}
@@ -185,9 +154,20 @@ class Motion
 		}
 
 		inline t_run_pattern motion_pattern_get() 							 		{	return motion_pattern;				}
-		inline t_runStatus 	 motion_state_get() 							 		{	return motion_state;				}
+		inline void			 motion_pattern_set(t_run_pattern _motion_pattern)  	{	motion_pattern	= _motion_pattern;	}
+
+		inline t_runControl  motion_control_get() 							 		{	return motion_control;				}
+		inline void			 motion_control_set(t_runControl _motion_control)   	{	motion_control	= _motion_control;	}
+
 		inline t_exeStatus 	 motion_exeStatus_get() 							 	{	return motion_exeStatus;				}
+		inline void			 motion_exeStatus_set(t_exeStatus _motion_exeStatus)   	{	motion_exeStatus	= _motion_exeStatus;	}
+		t_exeStatus 		 motion_execute();
+
+		inline	void 		motion_enable_set()										{ 	is_motion_enable		= True;		}
+		inline	void 		motion_disable_set()									{ 	is_motion_enable		= False;	}
 		inline  t_bool 		motion_is_enable_get()									{	return	is_motion_enable;			}
+
+
 
 		void Motion_start();
 		void Motion_end();

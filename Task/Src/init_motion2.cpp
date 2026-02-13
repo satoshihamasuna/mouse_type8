@@ -111,7 +111,7 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
-	motion_state_set(STRAIGHT_STATE);
+	motion_control_set(STRAIGHT_STATE);
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
@@ -220,7 +220,7 @@ void Motion::Init_Motion_turn_out		(	const t_param *turn_param,t_run_pattern run
 
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
-	motion_state_set(DIAGONAL_STATE);
+	motion_control_set(DIAGONAL_STATE);
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
@@ -366,7 +366,7 @@ void Motion::Init_Motion_long_turn	(	const t_param *turn_param,t_run_pattern run
 
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
-	motion_state_set(STRAIGHT_STATE);
+	motion_control_set(STRAIGHT_STATE);
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
@@ -457,7 +457,7 @@ void Motion::Init_Motion_turn_v90		(	const t_param *turn_param,t_run_pattern run
 
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
-	motion_state_set(DIAGONAL_STATE);
+	motion_control_set(DIAGONAL_STATE);
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
@@ -550,7 +550,7 @@ void Motion::Init_Motion_long_turn_v90		(	const t_param *turn_param,t_run_patter
 
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
-	motion_state_set(DIAGONAL_STATE);
+	motion_control_set(DIAGONAL_STATE);
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 

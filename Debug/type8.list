@@ -23,25 +23,25 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
   9 .ARM.attributes 00000036  00000000  00000000  000492dc  2**0
                   CONTENTS, READONLY
- 10 .debug_info   000f468d  00000000  00000000  00049312  2**0
+ 10 .debug_info   000f46ab  00000000  00000000  00049312  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 11 .debug_abbrev 000110a5  00000000  00000000  0013d99f  2**0
+ 11 .debug_abbrev 00011093  00000000  00000000  0013d9bd  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 12 .debug_aranges 00003e20  00000000  00000000  0014ea48  2**3
+ 12 .debug_aranges 00003e20  00000000  00000000  0014ea50  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_rnglists 0000305a  00000000  00000000  00152868  2**0
+ 13 .debug_rnglists 0000305a  00000000  00000000  00152870  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_macro  000480aa  00000000  00000000  001558c2  2**0
+ 14 .debug_macro  000480aa  00000000  00000000  001558ca  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_line   00072cea  00000000  00000000  0019d96c  2**0
+ 15 .debug_line   00072cce  00000000  00000000  0019d974  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_str    0015ab1f  00000000  00000000  00210656  2**0
+ 16 .debug_str    0015ab1b  00000000  00000000  00210642  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .comment      00000043  00000000  00000000  0036b175  2**0
+ 17 .comment      00000043  00000000  00000000  0036b15d  2**0
                   CONTENTS, READONLY
- 18 .debug_frame  00012524  00000000  00000000  0036b1b8  2**2
+ 18 .debug_frame  00012524  00000000  00000000  0036b1a0  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_line_str 00000052  00000000  00000000  0037d6dc  2**0
+ 19 .debug_line_str 00000052  00000000  00000000  0037d6c4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -61051,11 +61051,11 @@ void make_map::Display()
  801969a:	4770      	bx	lr
 
 0801969c <_ZN6Motion20motion_exeStatus_getEv>:
-			deltaT_ms = _deltaT_ms;
-		}
+		inline void			 motion_pattern_set(t_run_pattern _motion_pattern)  	{	motion_pattern	= _motion_pattern;	}
 
-		inline t_run_pattern motion_pattern_get() 							 		{	return motion_pattern;				}
-		inline t_runStatus 	 motion_state_get() 							 		{	return motion_state;				}
+		inline t_runControl  motion_control_get() 							 		{	return motion_control;				}
+		inline void			 motion_control_set(t_runControl _motion_control)   	{	motion_control	= _motion_control;	}
+
 		inline t_exeStatus 	 motion_exeStatus_get() 							 	{	return motion_exeStatus;				}
  801969c:	b480      	push	{r7}
  801969e:	b083      	sub	sp, #12
@@ -96715,100 +96715,102 @@ namespace Mode
  802d336:	f85d 7b04 	ldr.w	r7, [sp], #4
  802d33a:	4770      	bx	lr
 
-0802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>:
-
-		//inline t_runStatus 	 motion_state_get() 							 	{	return motion_state;				}
-		inline void			 motion_state_set(t_runStatus _motion_state)   	 	{	motion_state	= _motion_state;	}
-
-		//inline t_exeStatus 	 motion_exeStatus_get() 							 	{	return motion_exeStatus;				}
-		inline void			 motion_exeStatus_set(t_exeStatus _motion_exeStatus)   	{	motion_exeStatus	= _motion_exeStatus;	}
- 802d33c:	b480      	push	{r7}
- 802d33e:	b083      	sub	sp, #12
- 802d340:	af00      	add	r7, sp, #0
- 802d342:	6078      	str	r0, [r7, #4]
- 802d344:	460b      	mov	r3, r1
- 802d346:	70fb      	strb	r3, [r7, #3]
- 802d348:	687b      	ldr	r3, [r7, #4]
- 802d34a:	78fa      	ldrb	r2, [r7, #3]
- 802d34c:	709a      	strb	r2, [r3, #2]
- 802d34e:	bf00      	nop
- 802d350:	370c      	adds	r7, #12
- 802d352:	46bd      	mov	sp, r7
- 802d354:	f85d 7b04 	ldr.w	r7, [sp], #4
- 802d358:	4770      	bx	lr
-
-0802d35a <_ZN6Motion19error_counter_resetEv>:
-		inline	void 		motion_disable_set()									{ 	is_motion_enable		= False;	}
-		//inline  t_bool 		motion_is_enable_get()									{	return	is_motion_enable;			}
+0802d33c <_ZN6Motion19error_counter_resetEv>:
+		inline void turn_start_time_ms_set(float _time_ms)						{	turn_start_time_ms = _time_ms;		}
+		inline float turn_start_time_ms_get()									{	return turn_start_time_ms;			}
 
 		void Motion_error_handling();
 
 		void error_counter_reset()												{	error_cnt = 0;							}
- 802d35a:	b480      	push	{r7}
- 802d35c:	b083      	sub	sp, #12
- 802d35e:	af00      	add	r7, sp, #0
- 802d360:	6078      	str	r0, [r7, #4]
- 802d362:	687b      	ldr	r3, [r7, #4]
- 802d364:	2200      	movs	r2, #0
- 802d366:	66da      	str	r2, [r3, #108]	@ 0x6c
- 802d368:	bf00      	nop
- 802d36a:	370c      	adds	r7, #12
- 802d36c:	46bd      	mov	sp, r7
- 802d36e:	f85d 7b04 	ldr.w	r7, [sp], #4
- 802d372:	4770      	bx	lr
+ 802d33c:	b480      	push	{r7}
+ 802d33e:	b083      	sub	sp, #12
+ 802d340:	af00      	add	r7, sp, #0
+ 802d342:	6078      	str	r0, [r7, #4]
+ 802d344:	687b      	ldr	r3, [r7, #4]
+ 802d346:	2200      	movs	r2, #0
+ 802d348:	66da      	str	r2, [r3, #108]	@ 0x6c
+ 802d34a:	bf00      	nop
+ 802d34c:	370c      	adds	r7, #12
+ 802d34e:	46bd      	mov	sp, r7
+ 802d350:	f85d 7b04 	ldr.w	r7, [sp], #4
+ 802d354:	4770      	bx	lr
 
-0802d374 <_ZN6Motion17error_counter_setEi>:
+0802d356 <_ZN6Motion17error_counter_setEi>:
 		void error_counter_set	(int cnt)										{	error_cnt = cnt;						}
- 802d374:	b480      	push	{r7}
- 802d376:	b083      	sub	sp, #12
- 802d378:	af00      	add	r7, sp, #0
- 802d37a:	6078      	str	r0, [r7, #4]
- 802d37c:	6039      	str	r1, [r7, #0]
- 802d37e:	687b      	ldr	r3, [r7, #4]
- 802d380:	683a      	ldr	r2, [r7, #0]
- 802d382:	66da      	str	r2, [r3, #108]	@ 0x6c
- 802d384:	bf00      	nop
- 802d386:	370c      	adds	r7, #12
- 802d388:	46bd      	mov	sp, r7
- 802d38a:	f85d 7b04 	ldr.w	r7, [sp], #4
- 802d38e:	4770      	bx	lr
+ 802d356:	b480      	push	{r7}
+ 802d358:	b083      	sub	sp, #12
+ 802d35a:	af00      	add	r7, sp, #0
+ 802d35c:	6078      	str	r0, [r7, #4]
+ 802d35e:	6039      	str	r1, [r7, #0]
+ 802d360:	687b      	ldr	r3, [r7, #4]
+ 802d362:	683a      	ldr	r2, [r7, #0]
+ 802d364:	66da      	str	r2, [r3, #108]	@ 0x6c
+ 802d366:	bf00      	nop
+ 802d368:	370c      	adds	r7, #12
+ 802d36a:	46bd      	mov	sp, r7
+ 802d36c:	f85d 7b04 	ldr.w	r7, [sp], #4
+ 802d370:	4770      	bx	lr
 
-0802d390 <_ZN6Motion17error_counter_getEv>:
+0802d372 <_ZN6Motion17error_counter_getEv>:
 		int  error_counter_get	()												{	return error_cnt;						}
- 802d390:	b480      	push	{r7}
- 802d392:	b083      	sub	sp, #12
- 802d394:	af00      	add	r7, sp, #0
- 802d396:	6078      	str	r0, [r7, #4]
- 802d398:	687b      	ldr	r3, [r7, #4]
- 802d39a:	6edb      	ldr	r3, [r3, #108]	@ 0x6c
- 802d39c:	4618      	mov	r0, r3
- 802d39e:	370c      	adds	r7, #12
- 802d3a0:	46bd      	mov	sp, r7
- 802d3a2:	f85d 7b04 	ldr.w	r7, [sp], #4
- 802d3a6:	4770      	bx	lr
+ 802d372:	b480      	push	{r7}
+ 802d374:	b083      	sub	sp, #12
+ 802d376:	af00      	add	r7, sp, #0
+ 802d378:	6078      	str	r0, [r7, #4]
+ 802d37a:	687b      	ldr	r3, [r7, #4]
+ 802d37c:	6edb      	ldr	r3, [r3, #108]	@ 0x6c
+ 802d37e:	4618      	mov	r0, r3
+ 802d380:	370c      	adds	r7, #12
+ 802d382:	46bd      	mov	sp, r7
+ 802d384:	f85d 7b04 	ldr.w	r7, [sp], #4
+ 802d388:	4770      	bx	lr
 
-0802d3a8 <_ZN6Motion18motion_pattern_getEv>:
+0802d38a <_ZN6Motion18motion_pattern_getEv>:
 			vehicle = _vehicle;
 			ir_sens = _ir_sens;
 			deltaT_ms = _deltaT_ms;
 		}
 
 		inline t_run_pattern motion_pattern_get() 							 		{	return motion_pattern;				}
- 802d3a8:	b480      	push	{r7}
- 802d3aa:	b083      	sub	sp, #12
- 802d3ac:	af00      	add	r7, sp, #0
- 802d3ae:	6078      	str	r0, [r7, #4]
- 802d3b0:	687b      	ldr	r3, [r7, #4]
- 802d3b2:	781b      	ldrb	r3, [r3, #0]
- 802d3b4:	4618      	mov	r0, r3
+ 802d38a:	b480      	push	{r7}
+ 802d38c:	b083      	sub	sp, #12
+ 802d38e:	af00      	add	r7, sp, #0
+ 802d390:	6078      	str	r0, [r7, #4]
+ 802d392:	687b      	ldr	r3, [r7, #4]
+ 802d394:	781b      	ldrb	r3, [r3, #0]
+ 802d396:	4618      	mov	r0, r3
+ 802d398:	370c      	adds	r7, #12
+ 802d39a:	46bd      	mov	sp, r7
+ 802d39c:	f85d 7b04 	ldr.w	r7, [sp], #4
+ 802d3a0:	4770      	bx	lr
+
+0802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>:
+
+		inline t_runControl  motion_control_get() 							 		{	return motion_control;				}
+		inline void			 motion_control_set(t_runControl _motion_control)   	{	motion_control	= _motion_control;	}
+
+		inline t_exeStatus 	 motion_exeStatus_get() 							 	{	return motion_exeStatus;				}
+		inline void			 motion_exeStatus_set(t_exeStatus _motion_exeStatus)   	{	motion_exeStatus	= _motion_exeStatus;	}
+ 802d3a2:	b480      	push	{r7}
+ 802d3a4:	b083      	sub	sp, #12
+ 802d3a6:	af00      	add	r7, sp, #0
+ 802d3a8:	6078      	str	r0, [r7, #4]
+ 802d3aa:	460b      	mov	r3, r1
+ 802d3ac:	70fb      	strb	r3, [r7, #3]
+ 802d3ae:	687b      	ldr	r3, [r7, #4]
+ 802d3b0:	78fa      	ldrb	r2, [r7, #3]
+ 802d3b2:	709a      	strb	r2, [r3, #2]
+ 802d3b4:	bf00      	nop
  802d3b6:	370c      	adds	r7, #12
  802d3b8:	46bd      	mov	sp, r7
  802d3ba:	f85d 7b04 	ldr.w	r7, [sp], #4
  802d3be:	4770      	bx	lr
 
 0802d3c0 <_ZN6Motion20motion_is_enable_getEv>:
-		inline t_runStatus 	 motion_state_get() 							 		{	return motion_state;				}
-		inline t_exeStatus 	 motion_exeStatus_get() 							 	{	return motion_exeStatus;				}
+		t_exeStatus 		 motion_execute();
+
+		inline	void 		motion_enable_set()										{ 	is_motion_enable		= True;		}
+		inline	void 		motion_disable_set()									{ 	is_motion_enable		= False;	}
 		inline  t_bool 		motion_is_enable_get()									{	return	is_motion_enable;			}
  802d3c0:	b480      	push	{r7}
  802d3c2:	b083      	sub	sp, #12
@@ -96858,7 +96860,7 @@ void CtrlTask::motion_ideal_param_set()
 	switch(motion_pattern_get())
  802d3fc:	687b      	ldr	r3, [r7, #4]
  802d3fe:	4618      	mov	r0, r3
- 802d400:	f7ff ffd2 	bl	802d3a8 <_ZN6Motion18motion_pattern_getEv>
+ 802d400:	f7ff ffc3 	bl	802d38a <_ZN6Motion18motion_pattern_getEv>
  802d404:	4603      	mov	r3, r0
  802d406:	2b1f      	cmp	r3, #31
  802d408:	f200 8095 	bhi.w	802d536 <_ZN8CtrlTask22motion_ideal_param_setEv+0x142>
@@ -97092,7 +97094,7 @@ void CtrlTask::motion_control()
 		if(motion_pattern_get() != motor_free )
  802d594:	687b      	ldr	r3, [r7, #4]
  802d596:	4618      	mov	r0, r3
- 802d598:	f7ff ff06 	bl	802d3a8 <_ZN6Motion18motion_pattern_getEv>
+ 802d598:	f7ff fef7 	bl	802d38a <_ZN6Motion18motion_pattern_getEv>
  802d59c:	4603      	mov	r3, r0
  802d59e:	2b1a      	cmp	r3, #26
  802d5a0:	bf14      	ite	ne
@@ -98646,7 +98648,7 @@ void CtrlTask::motion_control()
 		else if(motion_pattern_get() == motor_free)
  802e69c:	687b      	ldr	r3, [r7, #4]
  802e69e:	4618      	mov	r0, r3
- 802e6a0:	f7fe fe82 	bl	802d3a8 <_ZN6Motion18motion_pattern_getEv>
+ 802e6a0:	f7fe fe73 	bl	802d38a <_ZN6Motion18motion_pattern_getEv>
  802e6a4:	4603      	mov	r3, r0
  802e6a6:	2b1a      	cmp	r3, #26
  802e6a8:	bf0c      	ite	eq
@@ -98867,7 +98869,7 @@ void CtrlTask::motion_post_control()
 		if(motion_pattern_get() != motor_free)
  802e88a:	687b      	ldr	r3, [r7, #4]
  802e88c:	4618      	mov	r0, r3
- 802e88e:	f7fe fd8b 	bl	802d3a8 <_ZN6Motion18motion_pattern_getEv>
+ 802e88e:	f7fe fd7c 	bl	802d38a <_ZN6Motion18motion_pattern_getEv>
  802e892:	4603      	mov	r3, r0
  802e894:	2b1a      	cmp	r3, #26
  802e896:	bf14      	ite	ne
@@ -98896,7 +98898,7 @@ void CtrlTask::motion_post_control()
 				int error_flag = error_counter_get();
  802e8cc:	687b      	ldr	r3, [r7, #4]
  802e8ce:	4618      	mov	r0, r3
- 802e8d0:	f7fe fd5e 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802e8d0:	f7fe fd4f 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802e8d4:	60f8      	str	r0, [r7, #12]
 				if(ABS((vehicle->ego.velo.get() - vehicle->ideal.velo.get())) >= 2.0)
  802e8d6:	687b      	ldr	r3, [r7, #4]
@@ -98963,12 +98965,12 @@ void CtrlTask::motion_post_control()
  802e986:	687c      	ldr	r4, [r7, #4]
  802e988:	687b      	ldr	r3, [r7, #4]
  802e98a:	4618      	mov	r0, r3
- 802e98c:	f7fe fd00 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802e98c:	f7fe fcf1 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802e990:	4603      	mov	r3, r0
  802e992:	3332      	adds	r3, #50	@ 0x32
  802e994:	4619      	mov	r1, r3
  802e996:	4620      	mov	r0, r4
- 802e998:	f7fe fcec 	bl	802d374 <_ZN6Motion17error_counter_setEi>
+ 802e998:	f7fe fcdd 	bl	802d356 <_ZN6Motion17error_counter_setEi>
 				}
 
 				if(vehicle->ideal.velo.get() >= 0.20f)
@@ -99054,12 +99056,12 @@ void CtrlTask::motion_post_control()
  802ea7c:	687c      	ldr	r4, [r7, #4]
  802ea7e:	687b      	ldr	r3, [r7, #4]
  802ea80:	4618      	mov	r0, r3
- 802ea82:	f7fe fc85 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802ea82:	f7fe fc76 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802ea86:	4603      	mov	r3, r0
  802ea88:	3314      	adds	r3, #20
  802ea8a:	4619      	mov	r1, r3
  802ea8c:	4620      	mov	r0, r4
- 802ea8e:	f7fe fc71 	bl	802d374 <_ZN6Motion17error_counter_setEi>
+ 802ea8e:	f7fe fc62 	bl	802d356 <_ZN6Motion17error_counter_setEi>
 					}
 				}
 
@@ -99107,12 +99109,12 @@ void CtrlTask::motion_post_control()
  802eafe:	687c      	ldr	r4, [r7, #4]
  802eb00:	687b      	ldr	r3, [r7, #4]
  802eb02:	4618      	mov	r0, r3
- 802eb04:	f7fe fc44 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802eb04:	f7fe fc35 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802eb08:	4603      	mov	r3, r0
  802eb0a:	331e      	adds	r3, #30
  802eb0c:	4619      	mov	r1, r3
  802eb0e:	4620      	mov	r0, r4
- 802eb10:	f7fe fc30 	bl	802d374 <_ZN6Motion17error_counter_setEi>
+ 802eb10:	f7fe fc21 	bl	802d356 <_ZN6Motion17error_counter_setEi>
 				}
 
 				if(ABS(vehicle->ego.rad_velo.get() - vehicle->ideal.rad_velo.get()) > 10.0)
@@ -99253,12 +99255,12 @@ void CtrlTask::motion_post_control()
  802ec86:	687c      	ldr	r4, [r7, #4]
  802ec88:	687b      	ldr	r3, [r7, #4]
  802ec8a:	4618      	mov	r0, r3
- 802ec8c:	f7fe fb80 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802ec8c:	f7fe fb71 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802ec90:	4603      	mov	r3, r0
  802ec92:	3303      	adds	r3, #3
  802ec94:	4619      	mov	r1, r3
  802ec96:	4620      	mov	r0, r4
- 802ec98:	f7fe fb6c 	bl	802d374 <_ZN6Motion17error_counter_setEi>
+ 802ec98:	f7fe fb5d 	bl	802d356 <_ZN6Motion17error_counter_setEi>
 					}
 					if(ABS(vehicle->V_l) >  12.0)
  802ec9c:	687b      	ldr	r3, [r7, #4]
@@ -99294,12 +99296,12 @@ void CtrlTask::motion_post_control()
  802ecf8:	687c      	ldr	r4, [r7, #4]
  802ecfa:	687b      	ldr	r3, [r7, #4]
  802ecfc:	4618      	mov	r0, r3
- 802ecfe:	f7fe fb47 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802ecfe:	f7fe fb38 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802ed02:	4603      	mov	r3, r0
  802ed04:	3364      	adds	r3, #100	@ 0x64
  802ed06:	4619      	mov	r1, r3
  802ed08:	4620      	mov	r0, r4
- 802ed0a:	f7fe fb33 	bl	802d374 <_ZN6Motion17error_counter_setEi>
+ 802ed0a:	f7fe fb24 	bl	802d356 <_ZN6Motion17error_counter_setEi>
 					}
 				}
 
@@ -99385,12 +99387,12 @@ void CtrlTask::motion_post_control()
  802ede0:	687c      	ldr	r4, [r7, #4]
  802ede2:	687b      	ldr	r3, [r7, #4]
  802ede4:	4618      	mov	r0, r3
- 802ede6:	f7fe fad3 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802ede6:	f7fe fac4 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802edea:	4603      	mov	r3, r0
  802edec:	3303      	adds	r3, #3
  802edee:	4619      	mov	r1, r3
  802edf0:	4620      	mov	r0, r4
- 802edf2:	f7fe fabf 	bl	802d374 <_ZN6Motion17error_counter_setEi>
+ 802edf2:	f7fe fab0 	bl	802d356 <_ZN6Motion17error_counter_setEi>
 					}
 					if(ABS(vehicle->V_r) >  12.0)
  802edf6:	687b      	ldr	r3, [r7, #4]
@@ -99421,12 +99423,12 @@ void CtrlTask::motion_post_control()
  802ee3e:	687c      	ldr	r4, [r7, #4]
  802ee40:	687b      	ldr	r3, [r7, #4]
  802ee42:	4618      	mov	r0, r3
- 802ee44:	f7fe faa4 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802ee44:	f7fe fa95 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802ee48:	4603      	mov	r3, r0
  802ee4a:	3364      	adds	r3, #100	@ 0x64
  802ee4c:	4619      	mov	r1, r3
  802ee4e:	4620      	mov	r0, r4
- 802ee50:	f7fe fa90 	bl	802d374 <_ZN6Motion17error_counter_setEi>
+ 802ee50:	f7fe fa81 	bl	802d356 <_ZN6Motion17error_counter_setEi>
 					}
 				}
 
@@ -99474,12 +99476,12 @@ void CtrlTask::motion_post_control()
  802eec0:	687c      	ldr	r4, [r7, #4]
  802eec2:	687b      	ldr	r3, [r7, #4]
  802eec4:	4618      	mov	r0, r3
- 802eec6:	f7fe fa63 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802eec6:	f7fe fa54 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802eeca:	4603      	mov	r3, r0
  802eecc:	3364      	adds	r3, #100	@ 0x64
  802eece:	4619      	mov	r1, r3
  802eed0:	4620      	mov	r0, r4
- 802eed2:	f7fe fa4f 	bl	802d374 <_ZN6Motion17error_counter_setEi>
+ 802eed2:	f7fe fa40 	bl	802d356 <_ZN6Motion17error_counter_setEi>
 				}
 				if(ABS(vehicle->Vehicle_controller.omega_ctrl.get_I_peration()) > 3.0)
  802eed6:	687b      	ldr	r3, [r7, #4]
@@ -99525,17 +99527,17 @@ void CtrlTask::motion_post_control()
  802ef42:	687c      	ldr	r4, [r7, #4]
  802ef44:	687b      	ldr	r3, [r7, #4]
  802ef46:	4618      	mov	r0, r3
- 802ef48:	f7fe fa22 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802ef48:	f7fe fa13 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802ef4c:	4603      	mov	r3, r0
  802ef4e:	3364      	adds	r3, #100	@ 0x64
  802ef50:	4619      	mov	r1, r3
  802ef52:	4620      	mov	r0, r4
- 802ef54:	f7fe fa0e 	bl	802d374 <_ZN6Motion17error_counter_setEi>
+ 802ef54:	f7fe f9ff 	bl	802d356 <_ZN6Motion17error_counter_setEi>
 				}
 				if(error_flag == error_counter_get())
  802ef58:	687b      	ldr	r3, [r7, #4]
  802ef5a:	4618      	mov	r0, r3
- 802ef5c:	f7fe fa18 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802ef5c:	f7fe fa09 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802ef60:	4602      	mov	r2, r0
  802ef62:	68fb      	ldr	r3, [r7, #12]
  802ef64:	4293      	cmp	r3, r2
@@ -99550,16 +99552,16 @@ void CtrlTask::motion_post_control()
  802ef72:	687c      	ldr	r4, [r7, #4]
  802ef74:	687b      	ldr	r3, [r7, #4]
  802ef76:	4618      	mov	r0, r3
- 802ef78:	f7fe fa0a 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802ef78:	f7fe f9fb 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802ef7c:	4603      	mov	r3, r0
  802ef7e:	3b02      	subs	r3, #2
  802ef80:	4619      	mov	r1, r3
  802ef82:	4620      	mov	r0, r4
- 802ef84:	f7fe f9f6 	bl	802d374 <_ZN6Motion17error_counter_setEi>
+ 802ef84:	f7fe f9e7 	bl	802d356 <_ZN6Motion17error_counter_setEi>
 					if(error_counter_get() < 0) error_counter_reset();
  802ef88:	687b      	ldr	r3, [r7, #4]
  802ef8a:	4618      	mov	r0, r3
- 802ef8c:	f7fe fa00 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802ef8c:	f7fe f9f1 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802ef90:	4603      	mov	r3, r0
  802ef92:	0fdb      	lsrs	r3, r3, #31
  802ef94:	b2db      	uxtb	r3, r3
@@ -99567,7 +99569,7 @@ void CtrlTask::motion_post_control()
  802ef98:	d008      	beq.n	802efac <_ZN8CtrlTask19motion_post_controlEv+0x754>
  802ef9a:	687b      	ldr	r3, [r7, #4]
  802ef9c:	4618      	mov	r0, r3
- 802ef9e:	f7fe f9dc 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 802ef9e:	f7fe f9cd 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
  802efa2:	e003      	b.n	802efac <_ZN8CtrlTask19motion_post_controlEv+0x754>
 
 			//error_counter_reset();
@@ -99577,14 +99579,14 @@ void CtrlTask::motion_post_control()
 			error_counter_reset();
  802efa4:	687b      	ldr	r3, [r7, #4]
  802efa6:	4618      	mov	r0, r3
- 802efa8:	f7fe f9d7 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 802efa8:	f7fe f9c8 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 		}
 	}
 
 	if(error_counter_get() >= 1000)
  802efac:	687b      	ldr	r3, [r7, #4]
  802efae:	4618      	mov	r0, r3
- 802efb0:	f7fe f9ee 	bl	802d390 <_ZN6Motion17error_counter_getEv>
+ 802efb0:	f7fe f9df 	bl	802d372 <_ZN6Motion17error_counter_getEv>
  802efb4:	4603      	mov	r3, r0
  802efb6:	f240 32e7 	movw	r2, #999	@ 0x3e7
  802efba:	4293      	cmp	r3, r2
@@ -99599,7 +99601,7 @@ void CtrlTask::motion_post_control()
  802efc8:	687b      	ldr	r3, [r7, #4]
  802efca:	2100      	movs	r1, #0
  802efcc:	4618      	mov	r0, r3
- 802efce:	f7fe f9b5 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+ 802efce:	f7fe f9e8 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
 	}
 
 	if(motion_exeStatus_get() == error)
@@ -100076,7 +100078,7 @@ class turn_dir_element
  802f2fa:	4770      	bx	lr
 
 0802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>:
-		inline void			 motion_pattern_set(t_run_pattern _motion_pattern)  {	motion_pattern	= _motion_pattern;	}
+		inline void			 motion_pattern_set(t_run_pattern _motion_pattern)  	{	motion_pattern	= _motion_pattern;	}
  802f2fc:	b480      	push	{r7}
  802f2fe:	b083      	sub	sp, #12
  802f300:	af00      	add	r7, sp, #0
@@ -100092,8 +100094,8 @@ class turn_dir_element
  802f314:	f85d 7b04 	ldr.w	r7, [sp], #4
  802f318:	4770      	bx	lr
 
-0802f31a <_ZN6Motion16motion_state_setE11t_runStatus>:
-		inline void			 motion_state_set(t_runStatus _motion_state)   	 	{	motion_state	= _motion_state;	}
+0802f31a <_ZN6Motion18motion_control_setE12t_runControl>:
+		inline void			 motion_control_set(t_runControl _motion_control)   	{	motion_control	= _motion_control;	}
  802f31a:	b480      	push	{r7}
  802f31c:	b083      	sub	sp, #12
  802f31e:	af00      	add	r7, sp, #0
@@ -100189,11 +100191,11 @@ void Motion::Motion_start()
 	motion_exeStatus_set(complete);
  802f3be:	2101      	movs	r1, #1
  802f3c0:	6878      	ldr	r0, [r7, #4]
- 802f3c2:	f7fd ffbb 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(NOP_STATE);
+ 802f3c2:	f7fd ffee 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(NOP_STATE);
  802f3c6:	2100      	movs	r1, #0
  802f3c8:	6878      	ldr	r0, [r7, #4]
- 802f3ca:	f7ff ffa6 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 802f3ca:	f7ff ffa6 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  802f3ce:	6878      	ldr	r0, [r7, #4]
  802f3d0:	f7ff ff67 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -100263,10 +100265,10 @@ void Motion::Motion_end()
  802f448:	6878      	ldr	r0, [r7, #4]
  802f44a:	f7ff ff57 	bl	802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>
 	//motion_exeStatus_set(complete);
-	motion_state_set(NOP_STATE);
+	motion_control_set(NOP_STATE);
  802f44e:	2100      	movs	r1, #0
  802f450:	6878      	ldr	r0, [r7, #4]
- 802f452:	f7ff ff62 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 802f452:	f7ff ff62 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  802f456:	6878      	ldr	r0, [r7, #4]
  802f458:	f7ff ff23 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -100406,11 +100408,11 @@ void Motion::Motion_error_handling()
 	motion_exeStatus_set(error);
  802f558:	2100      	movs	r1, #0
  802f55a:	6878      	ldr	r0, [r7, #4]
- 802f55c:	f7fd feee 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(NOP_STATE);
+ 802f55c:	f7fd ff21 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(NOP_STATE);
  802f560:	2100      	movs	r1, #0
  802f562:	6878      	ldr	r0, [r7, #4]
- 802f564:	f7ff fed9 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 802f564:	f7ff fed9 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	motion_pattern_set(No_run);
  802f568:	2100      	movs	r1, #0
  802f56a:	6878      	ldr	r0, [r7, #4]
@@ -100542,11 +100544,11 @@ void Motion::Init_Motion_free_rotation_set( )
 	motion_exeStatus_set(execute);
  802f650:	2102      	movs	r1, #2
  802f652:	6878      	ldr	r0, [r7, #4]
- 802f654:	f7fd fe72 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(NOP_STATE);
+ 802f654:	f7fd fea5 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(NOP_STATE);
  802f658:	2100      	movs	r1, #0
  802f65a:	6878      	ldr	r0, [r7, #4]
- 802f65c:	f7ff fe5d 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 802f65c:	f7ff fe5d 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  802f660:	6878      	ldr	r0, [r7, #4]
  802f662:	f7ff fe1e 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -100869,11 +100871,11 @@ void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp
 	motion_exeStatus_set(execute);
  802f956:	2102      	movs	r1, #2
  802f958:	69f8      	ldr	r0, [r7, #28]
- 802f95a:	f7fd fcef 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(STRAIGHT_STATE);
+ 802f95a:	f7fd fd22 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(STRAIGHT_STATE);
  802f95e:	2101      	movs	r1, #1
  802f960:	69f8      	ldr	r0, [r7, #28]
- 802f962:	f7ff fcda 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 802f962:	f7ff fcda 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  802f966:	69f8      	ldr	r0, [r7, #28]
  802f968:	f7ff fc9b 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -100894,7 +100896,7 @@ void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp
 
 	error_counter_reset();
  802f986:	69f8      	ldr	r0, [r7, #28]
- 802f988:	f7fd fce7 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 802f988:	f7fd fcd8 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 
 }
  802f98c:	3724      	adds	r7, #36	@ 0x24
@@ -101364,11 +101366,11 @@ void Motion::Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain
 	motion_exeStatus_set(execute);
  802fdf0:	2102      	movs	r1, #2
  802fdf2:	68f8      	ldr	r0, [r7, #12]
- 802fdf4:	f7fd faa2 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(STRAIGHT_STATE);
+ 802fdf4:	f7fd fad5 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(STRAIGHT_STATE);
  802fdf8:	2101      	movs	r1, #1
  802fdfa:	68f8      	ldr	r0, [r7, #12]
- 802fdfc:	f7ff fa8d 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 802fdfc:	f7ff fa8d 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  802fe00:	68f8      	ldr	r0, [r7, #12]
  802fe02:	f7ff fa4e 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -101389,7 +101391,7 @@ void Motion::Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain
 
 	error_counter_reset();
  802fe20:	68f8      	ldr	r0, [r7, #12]
- 802fe22:	f7fd fa9a 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 802fe22:	f7fd fa8b 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 
 }
  802fe26:	371c      	adds	r7, #28
@@ -101729,11 +101731,11 @@ void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,floa
 	motion_exeStatus_set(execute);
  803013e:	2102      	movs	r1, #2
  8030140:	69f8      	ldr	r0, [r7, #28]
- 8030142:	f7fd f8fb 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(STRAIGHT_STATE);
+ 8030142:	f7fd f92e 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(STRAIGHT_STATE);
  8030146:	2101      	movs	r1, #1
  8030148:	69f8      	ldr	r0, [r7, #28]
- 803014a:	f7ff f8e6 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 803014a:	f7ff f8e6 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  803014e:	69f8      	ldr	r0, [r7, #28]
  8030150:	f7ff f8a7 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -101754,7 +101756,7 @@ void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,floa
 
 	error_counter_reset();
  803016e:	69f8      	ldr	r0, [r7, #28]
- 8030170:	f7fd f8f3 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 8030170:	f7fd f8e4 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 
 }
  8030174:	3724      	adds	r7, #36	@ 0x24
@@ -102155,11 +102157,11 @@ void Motion::Init_Motion_diagonal		(float len_target,float acc,float max_sp,floa
 	motion_exeStatus_set(execute);
  8030502:	2102      	movs	r1, #2
  8030504:	69f8      	ldr	r0, [r7, #28]
- 8030506:	f7fc ff19 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(DIAGONAL_STATE);
+ 8030506:	f7fc ff4c 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(DIAGONAL_STATE);
  803050a:	2102      	movs	r1, #2
  803050c:	69f8      	ldr	r0, [r7, #28]
- 803050e:	f7fe ff04 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 803050e:	f7fe ff04 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  8030512:	69f8      	ldr	r0, [r7, #28]
  8030514:	f7fe fec5 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -102192,7 +102194,7 @@ void Motion::Init_Motion_diagonal		(float len_target,float acc,float max_sp,floa
 
 	error_counter_reset();
  803054e:	69f8      	ldr	r0, [r7, #28]
- 8030550:	f7fc ff03 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 8030550:	f7fc fef4 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  8030554:	3724      	adds	r7, #36	@ 0x24
  8030556:	46bd      	mov	sp, r7
@@ -102618,11 +102620,11 @@ void Motion::Init_Motion_pivot_turn	(float rad_target,float rad_acc,float rad_ve
 	motion_exeStatus_set(execute);
  8030920:	2102      	movs	r1, #2
  8030922:	6978      	ldr	r0, [r7, #20]
- 8030924:	f7fc fd0a 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(PIVTURN_STATE);
+ 8030924:	f7fc fd3d 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(PIVTURN_STATE);
  8030928:	2104      	movs	r1, #4
  803092a:	6978      	ldr	r0, [r7, #20]
- 803092c:	f7fe fcf5 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 803092c:	f7fe fcf5 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 
 	run_time_ms_reset();
  8030930:	6978      	ldr	r0, [r7, #20]
@@ -102644,7 +102646,7 @@ void Motion::Init_Motion_pivot_turn	(float rad_target,float rad_acc,float rad_ve
 
 	error_counter_reset();
  8030950:	6978      	ldr	r0, [r7, #20]
- 8030952:	f7fc fd02 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 8030952:	f7fc fcf3 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  8030956:	371c      	adds	r7, #28
  8030958:	46bd      	mov	sp, r7
@@ -103177,11 +103179,11 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 	motion_exeStatus_set(execute);
  8030e74:	2102      	movs	r1, #2
  8030e76:	6978      	ldr	r0, [r7, #20]
- 8030e78:	f7fc fa60 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(STRAIGHT_STATE);
+ 8030e78:	f7fc fa93 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(STRAIGHT_STATE);
  8030e7c:	2101      	movs	r1, #1
  8030e7e:	6978      	ldr	r0, [r7, #20]
- 8030e80:	f7fe fa4b 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8030e80:	f7fe fa4b 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 
 	run_time_ms_reset();
  8030e84:	6978      	ldr	r0, [r7, #20]
@@ -103203,7 +103205,7 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 
 	error_counter_reset();
  8030ea4:	6978      	ldr	r0, [r7, #20]
- 8030ea6:	f7fc fa58 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 8030ea6:	f7fc fa49 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  8030eaa:	3724      	adds	r7, #36	@ 0x24
  8030eac:	46bd      	mov	sp, r7
@@ -103741,11 +103743,11 @@ void Motion::Init_Motion_turn_out		(const t_param *turn_param,t_run_pattern run_
 	motion_exeStatus_set(execute);
  80313dc:	2102      	movs	r1, #2
  80313de:	6978      	ldr	r0, [r7, #20]
- 80313e0:	f7fb ffac 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(DIAGONAL_STATE);
+ 80313e0:	f7fb ffdf 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(DIAGONAL_STATE);
  80313e4:	2102      	movs	r1, #2
  80313e6:	6978      	ldr	r0, [r7, #20]
- 80313e8:	f7fd ff97 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80313e8:	f7fd ff97 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 
 	run_time_ms_reset();
  80313ec:	6978      	ldr	r0, [r7, #20]
@@ -103768,7 +103770,7 @@ void Motion::Init_Motion_turn_out		(const t_param *turn_param,t_run_pattern run_
 
 	error_counter_reset();
  803140c:	6978      	ldr	r0, [r7, #20]
- 803140e:	f7fb ffa4 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 803140e:	f7fb ff95 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  8031412:	3724      	adds	r7, #36	@ 0x24
  8031414:	46bd      	mov	sp, r7
@@ -104614,11 +104616,11 @@ void Motion::Init_Motion_long_turn	(const t_param *turn_param,t_run_pattern run_
 	motion_exeStatus_set(execute);
  8031ce0:	2102      	movs	r1, #2
  8031ce2:	68f8      	ldr	r0, [r7, #12]
- 8031ce4:	f7fb fb2a 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(STRAIGHT_STATE);
+ 8031ce4:	f7fb fb5d 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(STRAIGHT_STATE);
  8031ce8:	2101      	movs	r1, #1
  8031cea:	68f8      	ldr	r0, [r7, #12]
- 8031cec:	f7fd fb15 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8031cec:	f7fd fb15 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 
 	run_time_ms_reset();
  8031cf0:	68f8      	ldr	r0, [r7, #12]
@@ -104640,7 +104642,7 @@ void Motion::Init_Motion_long_turn	(const t_param *turn_param,t_run_pattern run_
 
 	error_counter_reset();
  8031d10:	68f8      	ldr	r0, [r7, #12]
- 8031d12:	f7fb fb22 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 8031d12:	f7fb fb13 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  8031d16:	372c      	adds	r7, #44	@ 0x2c
  8031d18:	46bd      	mov	sp, r7
@@ -105034,11 +105036,11 @@ void Motion::Init_Motion_turn_v90		(const t_param *turn_param,t_run_pattern run_
 	motion_exeStatus_set(execute);
  80320cc:	2102      	movs	r1, #2
  80320ce:	68f8      	ldr	r0, [r7, #12]
- 80320d0:	f7fb f934 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(DIAGONAL_STATE);
+ 80320d0:	f7fb f967 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(DIAGONAL_STATE);
  80320d4:	2102      	movs	r1, #2
  80320d6:	68f8      	ldr	r0, [r7, #12]
- 80320d8:	f7fd f91f 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80320d8:	f7fd f91f 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 
 	run_time_ms_reset();
  80320dc:	68f8      	ldr	r0, [r7, #12]
@@ -105061,7 +105063,7 @@ void Motion::Init_Motion_turn_v90		(const t_param *turn_param,t_run_pattern run_
 
 	error_counter_reset();
  80320fc:	68f8      	ldr	r0, [r7, #12]
- 80320fe:	f7fb f92c 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 80320fe:	f7fb f91d 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  8032102:	371c      	adds	r7, #28
  8032104:	46bd      	mov	sp, r7
@@ -105327,11 +105329,11 @@ void Motion::Init_Motion_fix_wall		(float set_time,const t_pid_gain *sp_gain  ,c
 	motion_exeStatus_set(execute);
  8032300:	2102      	movs	r1, #2
  8032302:	68f8      	ldr	r0, [r7, #12]
- 8032304:	f7fb f81a 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(BRAKE_STATE);
+ 8032304:	f7fb f84d 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(BRAKE_STATE);
  8032308:	2105      	movs	r1, #5
  803230a:	68f8      	ldr	r0, [r7, #12]
- 803230c:	f7fd f805 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 803230c:	f7fd f805 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  8032310:	68f8      	ldr	r0, [r7, #12]
  8032312:	f7fc ffc6 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -105353,7 +105355,7 @@ void Motion::Init_Motion_fix_wall		(float set_time,const t_pid_gain *sp_gain  ,c
 
 	error_counter_reset();
  8032334:	68f8      	ldr	r0, [r7, #12]
- 8032336:	f7fb f810 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 8032336:	f7fb f801 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  803233a:	3710      	adds	r7, #16
  803233c:	46bd      	mov	sp, r7
@@ -105642,11 +105644,11 @@ void Motion::Init_Motion_suction_start	(float suction_voltage,float set_time,con
 	motion_exeStatus_set(execute);
  8032572:	2102      	movs	r1, #2
  8032574:	6978      	ldr	r0, [r7, #20]
- 8032576:	f7fa fee1 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(BRAKE_STATE);
+ 8032576:	f7fa ff14 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(BRAKE_STATE);
  803257a:	2105      	movs	r1, #5
  803257c:	6978      	ldr	r0, [r7, #20]
- 803257e:	f7fc fecc 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 803257e:	f7fc fecc 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  8032582:	6978      	ldr	r0, [r7, #20]
  8032584:	f7fc fe8d 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -105668,7 +105670,7 @@ void Motion::Init_Motion_suction_start	(float suction_voltage,float set_time,con
 
 	error_counter_reset();
  80325a6:	6978      	ldr	r0, [r7, #20]
- 80325a8:	f7fa fed7 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 80325a8:	f7fa fec8 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  80325ac:	3718      	adds	r7, #24
  80325ae:	46bd      	mov	sp, r7
@@ -105932,11 +105934,11 @@ void Motion::Init_Motion_stop_brake	(float set_time,const t_pid_gain *sp_gain  ,
 	motion_exeStatus_set(execute);
  80327ac:	2102      	movs	r1, #2
  80327ae:	68f8      	ldr	r0, [r7, #12]
- 80327b0:	f7fa fdc4 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(BRAKE_STATE);
+ 80327b0:	f7fa fdf7 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(BRAKE_STATE);
  80327b4:	2105      	movs	r1, #5
  80327b6:	68f8      	ldr	r0, [r7, #12]
- 80327b8:	f7fc fdaf 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80327b8:	f7fc fdaf 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  80327bc:	68f8      	ldr	r0, [r7, #12]
  80327be:	f7fc fd70 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -105958,7 +105960,7 @@ void Motion::Init_Motion_stop_brake	(float set_time,const t_pid_gain *sp_gain  ,
 
 	error_counter_reset();
  80327e0:	68f8      	ldr	r0, [r7, #12]
- 80327e2:	f7fa fdba 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 80327e2:	f7fa fdab 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  80327e6:	3710      	adds	r7, #16
  80327e8:	46bd      	mov	sp, r7
@@ -106221,11 +106223,11 @@ void Motion::Init_Motion_enkaigei	(float set_time,const t_pid_gain *sp_gain  ,co
 	motion_exeStatus_set(execute);
  80329e0:	2102      	movs	r1, #2
  80329e2:	68f8      	ldr	r0, [r7, #12]
- 80329e4:	f7fa fcaa 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(BRAKE_STATE);
+ 80329e4:	f7fa fcdd 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(BRAKE_STATE);
  80329e8:	2105      	movs	r1, #5
  80329ea:	68f8      	ldr	r0, [r7, #12]
- 80329ec:	f7fc fc95 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80329ec:	f7fc fc95 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  80329f0:	68f8      	ldr	r0, [r7, #12]
  80329f2:	f7fc fc56 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -106247,7 +106249,7 @@ void Motion::Init_Motion_enkaigei	(float set_time,const t_pid_gain *sp_gain  ,co
 
 	error_counter_reset();
  8032a14:	68f8      	ldr	r0, [r7, #12]
- 8032a16:	f7fa fca0 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 8032a16:	f7fa fc91 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  8032a1a:	3710      	adds	r7, #16
  8032a1c:	46bd      	mov	sp, r7
@@ -106848,11 +106850,11 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 	motion_exeStatus_set(execute);
  8032fe0:	2102      	movs	r1, #2
  8032fe2:	69f8      	ldr	r0, [r7, #28]
- 8032fe4:	f7fa f9aa 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(STRAIGHT_STATE);
+ 8032fe4:	f7fa f9dd 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(STRAIGHT_STATE);
  8032fe8:	2101      	movs	r1, #1
  8032fea:	69f8      	ldr	r0, [r7, #28]
- 8032fec:	f7fc f995 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8032fec:	f7fc f995 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  8032ff0:	69f8      	ldr	r0, [r7, #28]
  8032ff2:	f7fc f956 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -106873,7 +106875,7 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 
 	error_counter_reset();
  8033010:	69f8      	ldr	r0, [r7, #28]
- 8033012:	f7fa f9a2 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 8033012:	f7fa f993 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  8033016:	3734      	adds	r7, #52	@ 0x34
  8033018:	46bd      	mov	sp, r7
@@ -107478,11 +107480,11 @@ void Motion::Init_Motion_turn_out		(	const t_param *turn_param,t_run_pattern run
 	motion_exeStatus_set(execute);
  80335f8:	2102      	movs	r1, #2
  80335fa:	69f8      	ldr	r0, [r7, #28]
- 80335fc:	f7f9 fe9e 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(DIAGONAL_STATE);
+ 80335fc:	f7f9 fed1 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(DIAGONAL_STATE);
  8033600:	2102      	movs	r1, #2
  8033602:	69f8      	ldr	r0, [r7, #28]
- 8033604:	f7fb fe89 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8033604:	f7fb fe89 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  8033608:	69f8      	ldr	r0, [r7, #28]
  803360a:	f7fb fe4a 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -107503,7 +107505,7 @@ void Motion::Init_Motion_turn_out		(	const t_param *turn_param,t_run_pattern run
 
 	error_counter_reset();
  8033628:	69f8      	ldr	r0, [r7, #28]
- 803362a:	f7f9 fe96 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 803362a:	f7f9 fe87 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  803362e:	3734      	adds	r7, #52	@ 0x34
  8033630:	46bd      	mov	sp, r7
@@ -108417,11 +108419,11 @@ void Motion::Init_Motion_long_turn	(	const t_param *turn_param,t_run_pattern run
 	motion_exeStatus_set(execute);
  8033fb0:	2102      	movs	r1, #2
  8033fb2:	6978      	ldr	r0, [r7, #20]
- 8033fb4:	f7f9 f9c2 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(STRAIGHT_STATE);
+ 8033fb4:	f7f9 f9f5 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(STRAIGHT_STATE);
  8033fb8:	2101      	movs	r1, #1
  8033fba:	6978      	ldr	r0, [r7, #20]
- 8033fbc:	f7fb f9ad 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8033fbc:	f7fb f9ad 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  8033fc0:	6978      	ldr	r0, [r7, #20]
  8033fc2:	f7fb f96e 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -108442,7 +108444,7 @@ void Motion::Init_Motion_long_turn	(	const t_param *turn_param,t_run_pattern run
 
 	error_counter_reset();
  8033fe0:	6978      	ldr	r0, [r7, #20]
- 8033fe2:	f7f9 f9ba 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 8033fe2:	f7f9 f9ab 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  8033fe6:	3734      	adds	r7, #52	@ 0x34
  8033fe8:	46bd      	mov	sp, r7
@@ -108902,11 +108904,11 @@ void Motion::Init_Motion_turn_v90		(	const t_param *turn_param,t_run_pattern run
 	motion_exeStatus_set(execute);
  8034448:	2102      	movs	r1, #2
  803444a:	6978      	ldr	r0, [r7, #20]
- 803444c:	f7f8 ff76 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(DIAGONAL_STATE);
+ 803444c:	f7f8 ffa9 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(DIAGONAL_STATE);
  8034450:	2102      	movs	r1, #2
  8034452:	6978      	ldr	r0, [r7, #20]
- 8034454:	f7fa ff61 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8034454:	f7fa ff61 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  8034458:	6978      	ldr	r0, [r7, #20]
  803445a:	f7fa ff22 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -108928,7 +108930,7 @@ void Motion::Init_Motion_turn_v90		(	const t_param *turn_param,t_run_pattern run
 
 	error_counter_reset();
  8034478:	6978      	ldr	r0, [r7, #20]
- 803447a:	f7f8 ff6e 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 803447a:	f7f8 ff5f 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  803447e:	3724      	adds	r7, #36	@ 0x24
  8034480:	46bd      	mov	sp, r7
@@ -109389,11 +109391,11 @@ void Motion::Init_Motion_long_turn_v90		(	const t_param *turn_param,t_run_patter
 	motion_exeStatus_set(execute);
  80348e0:	2102      	movs	r1, #2
  80348e2:	6978      	ldr	r0, [r7, #20]
- 80348e4:	f7f8 fd2a 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-	motion_state_set(DIAGONAL_STATE);
+ 80348e4:	f7f8 fd5d 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+	motion_control_set(DIAGONAL_STATE);
  80348e8:	2102      	movs	r1, #2
  80348ea:	6978      	ldr	r0, [r7, #20]
- 80348ec:	f7fa fd15 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80348ec:	f7fa fd15 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	run_time_ms_reset();
  80348f0:	6978      	ldr	r0, [r7, #20]
  80348f2:	f7fa fcd6 	bl	802f2a2 <_ZN6Motion17run_time_ms_resetEv>
@@ -109414,7 +109416,7 @@ void Motion::Init_Motion_long_turn_v90		(	const t_param *turn_param,t_run_patter
 
 	error_counter_reset();
  8034910:	6978      	ldr	r0, [r7, #20]
- 8034912:	f7f8 fd22 	bl	802d35a <_ZN6Motion19error_counter_resetEv>
+ 8034912:	f7f8 fd13 	bl	802d33c <_ZN6Motion19error_counter_resetEv>
 }
  8034916:	3724      	adds	r7, #36	@ 0x24
  8034918:	46bd      	mov	sp, r7
@@ -111845,8 +111847,8 @@ int16_t IrSensTask::IrSensor_Avg()
  8035d70:	f85d 7b04 	ldr.w	r7, [sp], #4
  8035d74:	4770      	bx	lr
 
-08035d76 <_ZN6Motion16motion_state_getEv>:
-		inline t_runStatus 	 motion_state_get() 							 		{	return motion_state;				}
+08035d76 <_ZN6Motion18motion_control_getEv>:
+		inline t_runControl  motion_control_get() 							 		{	return motion_control;				}
  8035d76:	b480      	push	{r7}
  8035d78:	b083      	sub	sp, #12
  8035d7a:	af00      	add	r7, sp, #0
@@ -111967,14 +111969,14 @@ void Motion::SetIdeal_wall_control()
  8035e7c:	af00      	add	r7, sp, #0
  8035e7e:	6078      	str	r0, [r7, #4]
 	//ir_sens->set_sidewall_control_cnt(vehicle->ideal.velo.get());
-	if(motion_state_get() == STRAIGHT_STATE || motion_state_get() == DIAGONAL_STATE)
+	if(motion_control_get()== STRAIGHT_STATE || motion_control_get()== DIAGONAL_STATE)
  8035e80:	6878      	ldr	r0, [r7, #4]
- 8035e82:	f7ff ff78 	bl	8035d76 <_ZN6Motion16motion_state_getEv>
+ 8035e82:	f7ff ff78 	bl	8035d76 <_ZN6Motion18motion_control_getEv>
  8035e86:	4603      	mov	r3, r0
  8035e88:	2b01      	cmp	r3, #1
  8035e8a:	d005      	beq.n	8035e98 <_ZN6Motion21SetIdeal_wall_controlEv+0x20>
  8035e8c:	6878      	ldr	r0, [r7, #4]
- 8035e8e:	f7ff ff72 	bl	8035d76 <_ZN6Motion16motion_state_getEv>
+ 8035e8e:	f7ff ff72 	bl	8035d76 <_ZN6Motion18motion_control_getEv>
  8035e92:	4603      	mov	r3, r0
  8035e94:	2b02      	cmp	r3, #2
  8035e96:	d101      	bne.n	8035e9c <_ZN6Motion21SetIdeal_wall_controlEv+0x24>
@@ -111984,9 +111986,9 @@ void Motion::SetIdeal_wall_control()
  8035e9e:	2b00      	cmp	r3, #0
  8035ea0:	d05f      	beq.n	8035f62 <_ZN6Motion21SetIdeal_wall_controlEv+0xea>
 	{
-		if(motion_state_get() == STRAIGHT_STATE) ir_sens->EnableIrSensStraight();
+		if(motion_control_get()== STRAIGHT_STATE) ir_sens->EnableIrSensStraight();
  8035ea2:	6878      	ldr	r0, [r7, #4]
- 8035ea4:	f7ff ff67 	bl	8035d76 <_ZN6Motion16motion_state_getEv>
+ 8035ea4:	f7ff ff67 	bl	8035d76 <_ZN6Motion18motion_control_getEv>
  8035ea8:	4603      	mov	r3, r0
  8035eaa:	2b01      	cmp	r3, #1
  8035eac:	bf0c      	ite	eq
@@ -111999,9 +112001,9 @@ void Motion::SetIdeal_wall_control()
  8035eba:	6f5b      	ldr	r3, [r3, #116]	@ 0x74
  8035ebc:	4618      	mov	r0, r3
  8035ebe:	f7f9 f9b5 	bl	802f22c <_ZN10IrSensTask20EnableIrSensStraightEv>
-		if(motion_state_get() == DIAGONAL_STATE) ir_sens->EnableIrSensDiagonal();
+		if(motion_control_get()== DIAGONAL_STATE) ir_sens->EnableIrSensDiagonal();
  8035ec2:	6878      	ldr	r0, [r7, #4]
- 8035ec4:	f7ff ff57 	bl	8035d76 <_ZN6Motion16motion_state_getEv>
+ 8035ec4:	f7ff ff57 	bl	8035d76 <_ZN6Motion18motion_control_getEv>
  8035ec8:	4603      	mov	r3, r0
  8035eca:	2b02      	cmp	r3, #2
  8035ecc:	bf0c      	ite	eq
@@ -112103,9 +112105,9 @@ void Motion::Adjust_wall_corner()
  8035f88:	b089      	sub	sp, #36	@ 0x24
  8035f8a:	af00      	add	r7, sp, #0
  8035f8c:	6078      	str	r0, [r7, #4]
-	if(motion_state_get() == STRAIGHT_STATE)
+	if(motion_control_get()== STRAIGHT_STATE)
  8035f8e:	6878      	ldr	r0, [r7, #4]
- 8035f90:	f7ff fef1 	bl	8035d76 <_ZN6Motion16motion_state_getEv>
+ 8035f90:	f7ff fef1 	bl	8035d76 <_ZN6Motion18motion_control_getEv>
  8035f94:	4603      	mov	r3, r0
  8035f96:	2b01      	cmp	r3, #1
  8035f98:	bf0c      	ite	eq
@@ -112527,9 +112529,9 @@ void Motion::Adjust_wall_corner()
  8036370:	40504000 	.word	0x40504000
  8036374:	9999999a 	.word	0x9999999a
  8036378:	3fb99999 	.word	0x3fb99999
-	else if(motion_state_get() == DIAGONAL_STATE)
+	else if(motion_control_get()== DIAGONAL_STATE)
  803637c:	6878      	ldr	r0, [r7, #4]
- 803637e:	f7ff fcfa 	bl	8035d76 <_ZN6Motion16motion_state_getEv>
+ 803637e:	f7ff fcfa 	bl	8035d76 <_ZN6Motion18motion_control_getEv>
  8036382:	4603      	mov	r3, r0
  8036384:	2b02      	cmp	r3, #2
  8036386:	bf0c      	ite	eq
@@ -113075,10 +113077,10 @@ void  Motion::SetIdeal_search_straight(){
  80368d8:	af00      	add	r7, sp, #0
  80368da:	6078      	str	r0, [r7, #4]
 
-	motion_state_set(STRAIGHT_STATE);
+	motion_control_set(STRAIGHT_STATE);
  80368dc:	2101      	movs	r1, #1
  80368de:	6878      	ldr	r0, [r7, #4]
- 80368e0:	f7f8 fd1b 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80368e0:	f7f8 fd1b 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 
 	if(motion_plan.length_deccel.get() < ( motion_plan.end_length.get() - vehicle->ego.length.get()))
  80368e4:	687b      	ldr	r3, [r7, #4]
@@ -113716,10 +113718,10 @@ void  Motion::SetIdeal_search_straight(){
  8036eec:	211e      	movs	r1, #30
  8036eee:	6878      	ldr	r0, [r7, #4]
  8036ef0:	f7f8 fa04 	bl	802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
  8036ef4:	2101      	movs	r1, #1
  8036ef6:	6878      	ldr	r0, [r7, #4]
- 8036ef8:	f7f8 fa0f 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8036ef8:	f7f8 fa0f 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 			Init_Motion_stop_brake(400);
  8036efc:	4a5a      	ldr	r2, [pc, #360]	@ (8037068 <_ZN6Motion24SetIdeal_search_straightEv+0x798>)
  8036efe:	495b      	ldr	r1, [pc, #364]	@ (803706c <_ZN6Motion24SetIdeal_search_straightEv+0x79c>)
@@ -113805,14 +113807,14 @@ void  Motion::SetIdeal_search_straight(){
  8036f9c:	211e      	movs	r1, #30
  8036f9e:	6878      	ldr	r0, [r7, #4]
  8036fa0:	f7f8 f9ac 	bl	802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
  8036fa4:	2101      	movs	r1, #1
  8036fa6:	6878      	ldr	r0, [r7, #4]
- 8036fa8:	f7f8 f9b7 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8036fa8:	f7f8 f9b7 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 			motion_exeStatus_set(complete);
  8036fac:	2101      	movs	r1, #1
  8036fae:	6878      	ldr	r0, [r7, #4]
- 8036fb0:	f7f6 f9c4 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+ 8036fb0:	f7f6 f9f7 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
 		}
 	}
 	SetIdeal_wall_control();
@@ -113930,10 +113932,10 @@ void  Motion::SetIdeal_search_turn()
  80370d2:	2b00      	cmp	r3, #0
  80370d4:	d05e      	beq.n	8037194 <_ZN6Motion20SetIdeal_search_turnEv+0x114>
 	{
-		motion_state_set(STRAIGHT_STATE);
+		motion_control_set(STRAIGHT_STATE);
  80370d6:	2101      	movs	r1, #1
  80370d8:	6878      	ldr	r0, [r7, #4]
- 80370da:	f7f8 f91e 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80370da:	f7f8 f91e 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 		if(vehicle->ego.length.get() <= (turn_motion_param.param->Lstart + motion_plan.fix_prev_run.get()))
  80370de:	687b      	ldr	r3, [r7, #4]
  80370e0:	6f1b      	ldr	r3, [r3, #112]	@ 0x70
@@ -114029,10 +114031,10 @@ void  Motion::SetIdeal_search_turn()
  80371b2:	2b00      	cmp	r3, #0
  80371b4:	f000 815c 	beq.w	8037470 <_ZN6Motion20SetIdeal_search_turnEv+0x3f0>
 	{
-		motion_state_set(SLATURN_STATE);
+		motion_control_set(SLATURN_STATE);
  80371b8:	2103      	movs	r1, #3
  80371ba:	6878      	ldr	r0, [r7, #4]
- 80371bc:	f7f8 f8ad 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80371bc:	f7f8 f8ad 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 		if((run_time_ms_get() - turn_start_time_ms) < motion_plan.turn_time_ms.get())
  80371c0:	6878      	ldr	r0, [r7, #4]
  80371c2:	f7fe fdb9 	bl	8035d38 <_ZN6Motion15run_time_ms_getEv>
@@ -114328,10 +114330,10 @@ void  Motion::SetIdeal_search_turn()
  8037486:	2b00      	cmp	r3, #0
  8037488:	f000 8091 	beq.w	80375ae <_ZN6Motion20SetIdeal_search_turnEv+0x52e>
 	{
-		motion_state_set(STRAIGHT_STATE);
+		motion_control_set(STRAIGHT_STATE);
  803748c:	2101      	movs	r1, #1
  803748e:	6878      	ldr	r0, [r7, #4]
- 8037490:	f7f7 ff43 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8037490:	f7f7 ff43 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 		if(vehicle->ego.length.get() <= (turn_motion_param.param->Lend + motion_plan.fix_post_run.get()))
  8037494:	687b      	ldr	r3, [r7, #4]
  8037496:	6f1b      	ldr	r3, [r3, #112]	@ 0x70
@@ -114453,14 +114455,14 @@ void  Motion::SetIdeal_search_turn()
  8037596:	211e      	movs	r1, #30
  8037598:	6878      	ldr	r0, [r7, #4]
  803759a:	f7f7 feaf 	bl	802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
  803759e:	2101      	movs	r1, #1
  80375a0:	6878      	ldr	r0, [r7, #4]
- 80375a2:	f7f7 feba 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80375a2:	f7f7 feba 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 			motion_exeStatus_set(complete);
  80375a6:	2101      	movs	r1, #1
  80375a8:	6878      	ldr	r0, [r7, #4]
- 80375aa:	f7f5 fec7 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+ 80375aa:	f7f5 fefa 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
 		}
 	}
 	SetIdeal_wall_control();
@@ -114542,10 +114544,10 @@ void Motion::SetIdeal_straight()
  803766e:	b085      	sub	sp, #20
  8037670:	af00      	add	r7, sp, #0
  8037672:	6078      	str	r0, [r7, #4]
-	motion_state_set(STRAIGHT_STATE);
+	motion_control_set(STRAIGHT_STATE);
  8037674:	2101      	movs	r1, #1
  8037676:	6878      	ldr	r0, [r7, #4]
- 8037678:	f7f7 fe4f 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8037678:	f7f7 fe4f 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	float offset = 0.0f;
  803767c:	f04f 0300 	mov.w	r3, #0
  8037680:	60fb      	str	r3, [r7, #12]
@@ -114966,10 +114968,10 @@ void Motion::SetIdeal_straight()
  8037a5e:	211e      	movs	r1, #30
  8037a60:	6878      	ldr	r0, [r7, #4]
  8037a62:	f7f7 fc4b 	bl	802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
  8037a66:	2101      	movs	r1, #1
  8037a68:	6878      	ldr	r0, [r7, #4]
- 8037a6a:	f7f7 fc56 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8037a6a:	f7f7 fc56 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 			Init_Motion_stop_brake(400);
  8037a6e:	4a74      	ldr	r2, [pc, #464]	@ (8037c40 <_ZN6Motion17SetIdeal_straightEv+0x5d8>)
  8037a70:	4974      	ldr	r1, [pc, #464]	@ (8037c44 <_ZN6Motion17SetIdeal_straightEv+0x5dc>)
@@ -115070,14 +115072,14 @@ void Motion::SetIdeal_straight()
  8037b36:	211e      	movs	r1, #30
  8037b38:	6878      	ldr	r0, [r7, #4]
  8037b3a:	f7f7 fbdf 	bl	802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
  8037b3e:	2101      	movs	r1, #1
  8037b40:	6878      	ldr	r0, [r7, #4]
- 8037b42:	f7f7 fbea 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8037b42:	f7f7 fbea 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 			motion_exeStatus_set(complete);
  8037b46:	2101      	movs	r1, #1
  8037b48:	6878      	ldr	r0, [r7, #4]
- 8037b4a:	f7f5 fbf7 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+ 8037b4a:	f7f5 fc2a 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
 		}
 	}
 
@@ -115197,10 +115199,10 @@ void Motion::SetIdeal_backward()
  8037c5e:	b083      	sub	sp, #12
  8037c60:	af00      	add	r7, sp, #0
  8037c62:	6078      	str	r0, [r7, #4]
-	motion_state_set(STRAIGHT_STATE);
+	motion_control_set(STRAIGHT_STATE);
  8037c64:	2101      	movs	r1, #1
  8037c66:	6878      	ldr	r0, [r7, #4]
- 8037c68:	f7f7 fb57 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8037c68:	f7f7 fb57 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 
 	if(ABS(motion_plan.length_deccel.get()) < ( ABS(motion_plan.end_length.get()) - ABS(vehicle->ego.length.get())))
  8037c6c:	687b      	ldr	r3, [r7, #4]
@@ -115638,10 +115640,10 @@ void Motion::SetIdeal_backward()
  80380cc:	211e      	movs	r1, #30
  80380ce:	6878      	ldr	r0, [r7, #4]
  80380d0:	f7f7 f914 	bl	802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>
-			motion_state_set(STRAIGHT_STATE);
+			motion_control_set(STRAIGHT_STATE);
  80380d4:	2101      	movs	r1, #1
  80380d6:	6878      	ldr	r0, [r7, #4]
- 80380d8:	f7f7 f91f 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80380d8:	f7f7 f91f 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 			Init_Motion_stop_brake(200);
  80380dc:	4a2f      	ldr	r2, [pc, #188]	@ (803819c <_ZN6Motion17SetIdeal_backwardEv+0x544>)
  80380de:	4930      	ldr	r1, [pc, #192]	@ (80381a0 <_ZN6Motion17SetIdeal_backwardEv+0x548>)
@@ -115732,10 +115734,10 @@ void Motion::SetIdeal_diagonal		( )
  80381b6:	b085      	sub	sp, #20
  80381b8:	af00      	add	r7, sp, #0
  80381ba:	6078      	str	r0, [r7, #4]
-	motion_state_set(DIAGONAL_STATE);
+	motion_control_set(DIAGONAL_STATE);
  80381bc:	2102      	movs	r1, #2
  80381be:	6878      	ldr	r0, [r7, #4]
- 80381c0:	f7f7 f8ab 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80381c0:	f7f7 f8ab 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 
 	float offset = 0.0f;
  80381c4:	f04f 0300 	mov.w	r3, #0
@@ -116149,10 +116151,10 @@ void Motion::SetIdeal_diagonal		( )
  803859a:	211e      	movs	r1, #30
  803859c:	6878      	ldr	r0, [r7, #4]
  803859e:	f7f6 fead 	bl	802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>
-			motion_state_set(DIAGONAL_STATE);
+			motion_control_set(DIAGONAL_STATE);
  80385a2:	2102      	movs	r1, #2
  80385a4:	6878      	ldr	r0, [r7, #4]
- 80385a6:	f7f6 feb8 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80385a6:	f7f6 feb8 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 			Init_Motion_stop_brake(400);
  80385aa:	4a3f      	ldr	r2, [pc, #252]	@ (80386a8 <_ZN6Motion17SetIdeal_diagonalEv+0x4f8>)
  80385ac:	493f      	ldr	r1, [pc, #252]	@ (80386ac <_ZN6Motion17SetIdeal_diagonalEv+0x4fc>)
@@ -116186,14 +116188,14 @@ void Motion::SetIdeal_diagonal		( )
  80385de:	211e      	movs	r1, #30
  80385e0:	6878      	ldr	r0, [r7, #4]
  80385e2:	f7f6 fe8b 	bl	802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>
-			motion_state_set(DIAGONAL_STATE);
+			motion_control_set(DIAGONAL_STATE);
  80385e6:	2102      	movs	r1, #2
  80385e8:	6878      	ldr	r0, [r7, #4]
- 80385ea:	f7f6 fe96 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80385ea:	f7f6 fe96 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 			motion_exeStatus_set(complete);
  80385ee:	2101      	movs	r1, #1
  80385f0:	6878      	ldr	r0, [r7, #4]
- 80385f2:	f7f4 fea3 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+ 80385f2:	f7f4 fed6 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
 		}
 	}
 
@@ -116294,10 +116296,10 @@ void Motion::SetIdeal_pivot_turn()
  80386e2:	4618      	mov	r0, r3
  80386e4:	f7da fd65 	bl	80131b2 <_ZN13param_element3setEf>
 
-	motion_state_set(PIVTURN_STATE);
+	motion_control_set(PIVTURN_STATE);
  80386e8:	2104      	movs	r1, #4
  80386ea:	6878      	ldr	r0, [r7, #4]
- 80386ec:	f7f6 fe15 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80386ec:	f7f6 fe15 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 	if(ABS(motion_plan.radian_deccel.get()) < (ABS(motion_plan.end_radian.get()) - ABS(vehicle->ego.radian.get())))
  80386f0:	687b      	ldr	r3, [r7, #4]
  80386f2:	3350      	adds	r3, #80	@ 0x50
@@ -116797,10 +116799,10 @@ void Motion::SetIdeal_pivot_turn()
  8038be2:	211e      	movs	r1, #30
  8038be4:	6878      	ldr	r0, [r7, #4]
  8038be6:	f7f6 fb89 	bl	802f2fc <_ZN6Motion18motion_pattern_setE13t_run_pattern>
-		motion_state_set(PIVTURN_STATE);
+		motion_control_set(PIVTURN_STATE);
  8038bea:	2104      	movs	r1, #4
  8038bec:	6878      	ldr	r0, [r7, #4]
- 8038bee:	f7f6 fb94 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8038bee:	f7f6 fb94 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 		Init_Motion_stop_brake(400);
  8038bf2:	4a30      	ldr	r2, [pc, #192]	@ (8038cb4 <_ZN6Motion19SetIdeal_pivot_turnEv+0x5f8>)
  8038bf4:	4930      	ldr	r1, [pc, #192]	@ (8038cb8 <_ZN6Motion19SetIdeal_pivot_turnEv+0x5fc>)
@@ -117669,11 +117671,11 @@ void Motion::SetIdeal_suction_start		( )
 		motion_exeStatus_set(complete);
  80393ee:	2101      	movs	r1, #1
  80393f0:	6878      	ldr	r0, [r7, #4]
- 80393f2:	f7f3 ffa3 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-		motion_state_set(NOP_STATE);
+ 80393f2:	f7f3 ffd6 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+		motion_control_set(NOP_STATE);
  80393f6:	2100      	movs	r1, #0
  80393f8:	6878      	ldr	r0, [r7, #4]
- 80393fa:	f7f5 ff8e 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 80393fa:	f7f5 ff8e 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 		motion_pattern_set(No_run);
  80393fe:	2100      	movs	r1, #0
  8039400:	6878      	ldr	r0, [r7, #4]
@@ -118022,11 +118024,11 @@ void Motion::SetIdeal_stop_brake	( )
 		motion_exeStatus_set(complete);
  8039728:	2101      	movs	r1, #1
  803972a:	6878      	ldr	r0, [r7, #4]
- 803972c:	f7f3 fe06 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-		motion_state_set(NOP_STATE);
+ 803972c:	f7f3 fe39 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+		motion_control_set(NOP_STATE);
  8039730:	2100      	movs	r1, #0
  8039732:	6878      	ldr	r0, [r7, #4]
- 8039734:	f7f5 fdf1 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8039734:	f7f5 fdf1 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 		motion_pattern_set(No_run);
  8039738:	2100      	movs	r1, #0
  803973a:	6878      	ldr	r0, [r7, #4]
@@ -118204,7 +118206,7 @@ void Motion::SetIdeal_free_rotation_set	()
 		motion_exeStatus_set(complete);
  80398aa:	2101      	movs	r1, #1
  80398ac:	6878      	ldr	r0, [r7, #4]
- 80398ae:	f7f3 fd45 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+ 80398ae:	f7f3 fd78 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
 	}
 
 	run_time_ms_update();
@@ -118490,11 +118492,11 @@ void Motion::SetIdeal_enkaigei	( )
 		motion_exeStatus_set(complete);
  8039b30:	2101      	movs	r1, #1
  8039b32:	6878      	ldr	r0, [r7, #4]
- 8039b34:	f7f3 fc02 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
-		motion_state_set(NOP_STATE);
+ 8039b34:	f7f3 fc35 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+		motion_control_set(NOP_STATE);
  8039b38:	2100      	movs	r1, #0
  8039b3a:	6878      	ldr	r0, [r7, #4]
- 8039b3c:	f7f5 fbed 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8039b3c:	f7f5 fbed 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 		motion_pattern_set(No_run);
  8039b40:	2100      	movs	r1, #0
  8039b42:	6878      	ldr	r0, [r7, #4]
@@ -118604,10 +118606,10 @@ void Motion::handleTurnPrev_Straight()
  8039bf8:	af00      	add	r7, sp, #0
  8039bfa:	6078      	str	r0, [r7, #4]
 
-		motion_state_set(STRAIGHT_STATE);
+		motion_control_set(STRAIGHT_STATE);
  8039bfc:	2101      	movs	r1, #1
  8039bfe:	6878      	ldr	r0, [r7, #4]
- 8039c00:	f7f5 fb8b 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8039c00:	f7f5 fb8b 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 		if(vehicle->ego.length.get() <= (turn_motion_param.param->Lstart + motion_plan.fix_prev_run.get()))
  8039c04:	687b      	ldr	r3, [r7, #4]
  8039c06:	6f1b      	ldr	r3, [r3, #112]	@ 0x70
@@ -118887,10 +118889,10 @@ void Motion::handleTurnPrev_Diagonal()
  8039eaa:	b083      	sub	sp, #12
  8039eac:	af00      	add	r7, sp, #0
  8039eae:	6078      	str	r0, [r7, #4]
-		motion_state_set(DIAGONAL_STATE);
+		motion_control_set(DIAGONAL_STATE);
  8039eb0:	2102      	movs	r1, #2
  8039eb2:	6878      	ldr	r0, [r7, #4]
- 8039eb4:	f7f5 fa31 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 8039eb4:	f7f5 fa31 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 
 		if(vehicle->ego.length.get() <= (turn_motion_param.param->Lstart + motion_plan.fix_prev_run.get()))
  8039eb8:	687b      	ldr	r3, [r7, #4]
@@ -119240,10 +119242,10 @@ void Motion::handleTurnPost_Straight()
  803a1d6:	b083      	sub	sp, #12
  803a1d8:	af00      	add	r7, sp, #0
  803a1da:	6078      	str	r0, [r7, #4]
-		motion_state_set(STRAIGHT_STATE);
+		motion_control_set(STRAIGHT_STATE);
  803a1dc:	2101      	movs	r1, #1
  803a1de:	6878      	ldr	r0, [r7, #4]
- 803a1e0:	f7f5 f89b 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 803a1e0:	f7f5 f89b 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 		if(vehicle->ego.length.get() <=  (turn_motion_param.param->Lend + motion_plan.fix_post_run.get()))
  803a1e4:	687b      	ldr	r3, [r7, #4]
  803a1e6:	6f1b      	ldr	r3, [r3, #112]	@ 0x70
@@ -119594,7 +119596,7 @@ void Motion::handleTurnPost_Straight()
 			motion_exeStatus_set(complete);
  803a532:	2101      	movs	r1, #1
  803a534:	6878      	ldr	r0, [r7, #4]
- 803a536:	f7f2 ff01 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+ 803a536:	f7f2 ff34 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
 }
  803a53a:	bf00      	nop
  803a53c:	370c      	adds	r7, #12
@@ -119615,10 +119617,10 @@ void Motion::handleTurnPost_Diagonal()
  803a556:	b083      	sub	sp, #12
  803a558:	af00      	add	r7, sp, #0
  803a55a:	6078      	str	r0, [r7, #4]
-		motion_state_set(DIAGONAL_STATE);
+		motion_control_set(DIAGONAL_STATE);
  803a55c:	2102      	movs	r1, #2
  803a55e:	6878      	ldr	r0, [r7, #4]
- 803a560:	f7f4 fedb 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 803a560:	f7f4 fedb 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 
 		if(vehicle->ego.length.get() <=  (turn_motion_param.param->Lend + motion_plan.fix_post_run.get()))
  803a564:	687b      	ldr	r3, [r7, #4]
@@ -120048,7 +120050,7 @@ void Motion::handleTurnPost_Diagonal()
 			motion_exeStatus_set(complete);
  803a946:	2101      	movs	r1, #1
  803a948:	6878      	ldr	r0, [r7, #4]
- 803a94a:	f7f2 fcf7 	bl	802d33c <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
+ 803a94a:	f7f2 fd2a 	bl	802d3a2 <_ZN6Motion20motion_exeStatus_setE11t_exeStatus>
 }
  803a94e:	bf00      	nop
  803a950:	370c      	adds	r7, #12
@@ -120067,10 +120069,10 @@ void Motion::handleTurnMain()
  803a96a:	b086      	sub	sp, #24
  803a96c:	af00      	add	r7, sp, #0
  803a96e:	6078      	str	r0, [r7, #4]
-		motion_state_set(SLATURN_STATE);
+		motion_control_set(SLATURN_STATE);
  803a970:	2103      	movs	r1, #3
  803a972:	6878      	ldr	r0, [r7, #4]
- 803a974:	f7f4 fcd1 	bl	802f31a <_ZN6Motion16motion_state_setE11t_runStatus>
+ 803a974:	f7f4 fcd1 	bl	802f31a <_ZN6Motion18motion_control_setE12t_runControl>
 		vehicle->Vehicle_controller.speed_ctrl.Disable_Integral();
  803a978:	687b      	ldr	r3, [r7, #4]
  803a97a:	6f1b      	ldr	r3, [r3, #112]	@ 0x70

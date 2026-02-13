@@ -45,14 +45,79 @@ typedef enum{
 	enkaigei			= 31,
 }t_run_pattern;
 
-typedef enum{
-	NOP_MODE 		= 0,
-	STRAIGHT_MODE 	= 1,
-	DIAGONAL_MODE 	= 2,
-	TURN_MODE 		= 3,
-	SPIN_TURN_MODE  = 4,
-}t_run_mode;
+/*
+enum class MotionPattern : uint8_t {
+	No_run				,
+	Straight 			,
+	Diagonal			,
+	Long_turnR90		,
+	Long_turnL90		,
+	Long_turnR180		,
+	Long_turnL180		,
+	Turn_in_R45			,
+	Turn_in_L45			,
+	Turn_out_R45		,
+	Turn_out_L45		,
+	Turn_in_R135		,
+	Turn_in_L135		,
+	Turn_out_R135		,
+	Turn_out_L135		,
+	Turn_RV90			,
+	Turn_LV90			,
+	Long_turn_RV90		,
+	Long_turn_LV90		,
+	Search_st_section	,
+	Search_st_half		,
+	Pivot_turn_R		,
+	Pivot_turn_L		,
+	Search_slalom_R		,
+	Search_slalom_L		,
+	Run_brake			,
+	Motor_free			,
+	Fix_wall			,
+	Suction_start		,
+	Backward			,
+	Run_Pause			,
+	Enkaigei			,
+};
+*/
 
+
+typedef enum{
+	execute	    = 2,
+	complete    = 1,
+	error 		= 0,
+}t_exeStatus;
+
+typedef enum
+{
+	NOP_STATE = 0,
+	STRAIGHT_STATE  = 1,
+	DIAGONAL_STATE  = 2,
+	SLATURN_STATE	= 3,
+	PIVTURN_STATE	= 4,
+	BRAKE_STATE		= 5,
+}t_runControl;
+
+/*
+enum class MotionControlMode : uint8_t{
+    Idle,
+    Straight,
+    Diagonal,
+    SlalomTurn,
+    PivotTurn,
+    Brake,
+};
+*/
+
+/*
+enum class MotionExecState : uint8_t
+{
+    Running,       // 実行中
+    Completed,     // 正常完了
+    Error,         // 異常終了
+};
+*/
 typedef enum
 {
 	Non_controll = 0,
