@@ -154,7 +154,7 @@ void Interrupt::preprocess()
 	float slip_theta_dot = -Vehicle_type7::getInstance().turn_slip_k.get()*slip_theta/set_velo - rad_velo;
 	Vehicle_type7::getInstance().ego.turn_slip_dot.set(slip_theta_dot);
 
-	float horizon_velo = velo*slip_theta;
+	float horizon_velo = enc_velo*slip_theta;
 	float horizon_acc  =  -Vehicle_type7::getInstance().turn_slip_k.get()*slip_theta - rad_velo*velo;
 	Vehicle_type7::getInstance().ego.horizon_accel.set(horizon_acc);
 	Vehicle_type7::getInstance().ego.horizon_velo.set(horizon_velo);

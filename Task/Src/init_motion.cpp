@@ -460,21 +460,21 @@ void Motion::Init_Motion_diagonal		(float len_target,float acc,float max_sp,floa
 	//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 	vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 
-	/*
+
 	vehicle->ego.length.init();
-	//vehicle->ego.radian.init();
-	//vehicle->ego.x_point.init();
+	vehicle->ego.radian.init();
+	vehicle->ego.x_point.init();
 	vehicle->ego.turn_x.init();
 	vehicle->ego.turn_y.init();
 	vehicle->ego.turn_slip_theta.init();
 
 	vehicle->ideal.length.init();
 	vehicle->ideal.radian.init();
-	//vehicle->ideal.x_point.init();
+	vehicle->ideal.x_point.init();
 	vehicle->ideal.turn_x.init();
 	vehicle->ideal.turn_y.init();
 	vehicle->ideal.turn_slip_theta.init();
-	*/
+
 
 	motion_pattern_set(Diagonal);
 	motion_exeStatus_set(execute);
@@ -484,6 +484,8 @@ void Motion::Init_Motion_diagonal		(float len_target,float acc,float max_sp,floa
 
 	ir_sens->EnableIrSensDiagonal();
 	ir_sens->Division_Wall_Correction_Reset();
+	ir_sens->r_corner_length.init();
+	ir_sens->l_corner_length.init();
 
 	error_counter_reset();
 }

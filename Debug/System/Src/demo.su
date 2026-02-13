@@ -9,7 +9,7 @@
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/vehicle.h:198:7:virtual void Vehicle_type7::motorSetDuty_r(int)	16	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/vehicle.h:204:7:virtual void Vehicle_type7::suctionSetDuty(int)	16	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/vehicle.h:211:7:virtual void Vehicle_type7::suctionStop()	16	static
-../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:118:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
+../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:125:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
 ../System/Src/../../Subsys/Inc/wall_class.h:30:8:void wall_histry_class::histry_init()	24	static
 ../System/Src/../../Subsys/Inc/wall_class.h:45:11:int16_t wall_histry_class::get_histry_cnt()	16	static
 ../System/Src/../../Subsys/Inc/wall_class.h:70:8:void wall_histry_class::histry_delete(int)	24	static
@@ -42,7 +42,7 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:16:12:void __tcf_0()	8	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Vehicle_type7]	8	static,ignoring_inline_asm
 ../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:52:7:IrSensTask::IrSensTask()	16	static
-../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:115:7:IrSensTask_type7::IrSensTask_type7()	16	static
+../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:122:7:IrSensTask_type7::IrSensTask_type7()	16	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = IrSensTask_type7]	8	static,ignoring_inline_asm
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Interrupt]	4	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = CtrlTask_type7]	16	static,ignoring_inline_asm

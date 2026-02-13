@@ -176,8 +176,11 @@ void IrSensTask::IrSensorWallSet()
 
 	if(sen_r.is_wall == False && sen_r.prev_is_wall == True)
 	{
-		r_wall_corner = True;
-		r_corner_time = 0;
+		if(irsens_motion == STRAIGHT_IRSENS)
+		{
+			r_wall_corner = True;
+			r_corner_time = 0;
+		}
 	}
 	else if(sen_r.is_wall == False && sen_r.prev_is_wall == True
 		&& (sen_r.prev_diff) < 2.0 && (sen_r.diff) > 2.0)
@@ -187,6 +190,17 @@ void IrSensTask::IrSensorWallSet()
 			r_wall_corner = True;
 			r_corner_time = 0;
 		}
+
+	}
+	else if( (sen_r.diff > 0.0) && (sen_r.prev_diff < 0.0))
+	{
+
+		if(irsens_motion == DIAGONAL_IRSENS && sen_r.distance < 60.0)
+		{
+				r_wall_corner = True;
+				r_corner_time = 0;
+		}
+
 	}
 	else
 	{
@@ -198,8 +212,11 @@ void IrSensTask::IrSensorWallSet()
 
 	if(sen_l.is_wall == False && sen_l.prev_is_wall == True)
 	{
-		l_wall_corner = True;
-		l_corner_time = 0;
+		if(irsens_motion == STRAIGHT_IRSENS)
+		{
+			l_wall_corner = True;
+			l_corner_time = 0;
+		}
 	}
 	else if(sen_l.is_wall == False && sen_l.prev_is_wall == True
 		&& (sen_l.prev_diff) < 2.0 && (sen_l.diff) > 2.0)
@@ -209,6 +226,16 @@ void IrSensTask::IrSensorWallSet()
 			l_wall_corner = True;
 			l_corner_time = 0;
 		}
+	}
+	else if( (sen_l.diff > 0.0) && (sen_l.prev_diff < 0.0))
+	{
+
+		if(irsens_motion == DIAGONAL_IRSENS && sen_l.distance < 60.0)
+		{
+				l_wall_corner = True;
+				l_corner_time = 0;
+		}
+
 	}
 	else
 	{
@@ -344,9 +371,9 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 {
 	float ir_rad_acc_control = 0.0;
 	const float k1 = 1.0;
-	const float k2 = 20.0;
-	float s 	= 0.0f;
-	float s_dot = 0.0f;
+	const float k2 = 19.0;
+	control_ir.init();
+	control_ir_dot.init();
 
 	//sensor_output = k1*ydiff/1000.0 + k2/1000.0*theta;
 	if(isEnableIrSens == True)
@@ -354,20 +381,15 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 		if(sen_r.is_control == True && sen_l.is_control == True)
 		{
 			ir_rad_acc_control = -(sen_l.error - sen_r.error)/2.0;
-			{
-				vehicle->ego.x_point.set(ir_rad_acc_control);
-				//if(ABS(ir_rad_acc_control) < 10.0 )
-					//vehicle->ego.radian.set(((-ir_rad_acc_control/20.0) + vehicle->ego.radian.get())/2.0f);
-			}
+			vehicle->ego.x_point.set(ir_rad_acc_control);
 		}
 		else
 		{
 			ir_rad_acc_control = -(sen_l.error - sen_r.error);
 			if(sen_r.is_control == True || sen_l.is_control == True)
 			{
+				if(irsens_motion == STRAIGHT_IRSENS)
 				vehicle->ego.x_point.set((ir_rad_acc_control+vehicle->ego.x_point.get())/2.0);
-				//if(ABS(ir_rad_acc_control) < 10.0)
-					//vehicle->ego.radian.set(((-ir_rad_acc_control/20.0) + vehicle->ego.radian.get())/2.0f);
 			}
 		}
 	}
@@ -375,24 +397,27 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 	if(isEnableIrSens == True && (sen_r.is_control == True || sen_l.is_control == True))
 	{
 
-		s 		= ir_rad_acc_control;
-		s_dot 	= k1*vehicle->ideal.velo.get()*1000.0*(vehicle->ideal.radian.get())*1.0 + k2*vehicle->ideal.rad_velo.get();
+		//s 		= ir_rad_acc_control;
+		control_ir.set(ir_rad_acc_control);
+		//s_dot 	= k1*vehicle->ideal.velo.get()*1000.0*(vehicle->ideal.radian.get())*1.0 + k2*vehicle->ideal.rad_velo.get();
+		control_ir_dot.set( k1*vehicle->ideal.velo.get()*1000.0*(vehicle->ideal.radian.get())*1.0 + k2*vehicle->ideal.rad_velo.get());
 
 	}
 
 	else
 	{
 
-		s 		= k1*vehicle->ego.x_point.get()+k2*vehicle->ego.radian.get()*0.0;//k2*machine_->radian;//
-		s_dot 	= k1*vehicle->ideal.velo.get()*1000.0*(vehicle->ideal.radian.get())*1.0 + k2*vehicle->ideal.rad_velo.get();
-
+		//s 		= k1*vehicle->ego.x_point.get()+k2*vehicle->ego.radian.get()*0.0;//k2*machine_->radian;//
+		control_ir.set( k1*vehicle->ego.x_point.get()+k2*(vehicle->ideal.radian.get())*0.0);//k2*machine_->radian;//
+		//s_dot 	= k1*vehicle->ideal.velo.get()*1000.0*(vehicle->ideal.radian.get())*1.0 + k2*vehicle->ideal.rad_velo.get();
+		control_ir_dot.set( k1*vehicle->ideal.velo.get()*1000.0*(vehicle->ideal.radian.get())*1.0 + k2*vehicle->ideal.rad_velo.get());
 
 	}
 
 
-	float target_rad_acc	= 	(-1.0)*300.0*s/k2 - 60.0*1.0/k2*s_dot
-							     - k1/k2*(vehicle->ideal.accel.get()*1000.0*vehicle->ideal.radian.get()*0.0
-							    		 + vehicle->ideal.velo.get()*vehicle->ideal.rad_velo.get()*1000.0);
+
+	float target_rad_acc	= 	(-1.0)*300.0*control_ir.get()/k2 - 60.0*1.0/k2*control_ir_dot.get()
+							     - k1/k2*(vehicle->ideal.accel.get()*1000.0*vehicle->ideal.radian.get()*0.0 + vehicle->ideal.velo.get()*vehicle->ideal.rad_velo.get()*1000.0);
 
 
 

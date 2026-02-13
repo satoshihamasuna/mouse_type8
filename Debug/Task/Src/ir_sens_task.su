@@ -1,4 +1,5 @@
 ../Task/Src/../Inc/../../Module/Inc/vehicle.h:24:15:void param_element::set(float)	16	static
+../Task/Src/../Inc/../../Module/Inc/vehicle.h:25:15:void param_element::init()	16	static
 ../Task/Src/../Inc/../../Module/Inc/vehicle.h:26:16:float param_element::get()	16	static
 ../Task/Src/../../Params/sens_table.h:36:21:float clampf(float, float, float)	24	static
 ../Task/Src/../../Params/sens_table.h:43:21:float interpolate(uint16_t, uint16_t, float, float, uint16_t)	32	static
@@ -9,7 +10,7 @@
 ../Task/Src/ir_sens_task.cpp:63:7:float IrSensTask::Sensor_CalcDistance(t_sensor_dir, int16_t)	48	static
 ../Task/Src/ir_sens_task.cpp:121:6:void IrSensTask::IrSensorDistanceSet()	16	static
 ../Task/Src/ir_sens_task.cpp:165:6:void IrSensTask::IrSensorWallSet()	16	static
-../Task/Src/ir_sens_task.cpp:289:6:void IrSensTask::IrSensorReferenceSet(float)	16	static
-../Task/Src/ir_sens_task.cpp:294:7:float IrSensTask::IrSensorMaxValueFromLog(t_sensor_dir)	40	static
-../Task/Src/ir_sens_task.cpp:343:6:void IrSensTask::SetWallControl_RadVelo(Vehicle*, float)	80	static
-../Task/Src/ir_sens_task.cpp:407:9:int16_t IrSensTask::IrSensor_Avg()	16	static
+../Task/Src/ir_sens_task.cpp:316:6:void IrSensTask::IrSensorReferenceSet(float)	16	static
+../Task/Src/ir_sens_task.cpp:321:7:float IrSensTask::IrSensorMaxValueFromLog(t_sensor_dir)	40	static
+../Task/Src/ir_sens_task.cpp:370:6:void IrSensTask::SetWallControl_RadVelo(Vehicle*, float)	80	static
+../Task/Src/ir_sens_task.cpp:432:9:int16_t IrSensTask::IrSensor_Avg()	16	static

@@ -58,11 +58,16 @@ class IrSensTask
 		t_bool	 isEnableIrSens = False;
 		t_irsens_motion irsens_motion;
 		int ir_log_cnt;
+
 	public:
+
+		param_element control_ir;
+		param_element control_ir_dot;
 		t_sensor sen_fr,sen_fl,sen_r,sen_l;
 		t_bool 	 wall_correction;
-		t_bool 	 r_wall_corner,l_wall_corner;
-		uint16_t r_corner_time,l_corner_time;
+		t_bool 	 r_wall_corner,		l_wall_corner;
+		uint16_t r_corner_time,		l_corner_time;
+		param_element 	 r_corner_length,	l_corner_length;
 		t_wall_state conv_Sensin2Wall(t_sensor_dir sens_dir);
 		virtual 		void IrSensorSet();
 		void IrSensMotion_Set(t_irsens_motion _irsens_motion){irsens_motion = _irsens_motion;	}
@@ -110,6 +115,8 @@ class IrSensTask
 			//r_check = l_check =
 			wall_correction = False;
 		}
+
+
 };
 
 class IrSensTask_type7: public IrSensTask,public Singleton<IrSensTask_type7>

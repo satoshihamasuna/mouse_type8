@@ -151,7 +151,14 @@ void LogData::indicate_data()
 
         "speed_ctrl.get_I_peration",
         "omega_ctrl.get_I_peration",
-        "test","test","test",
+
+		"control_ir",
+		"control_ir_dot",
+
+        "sen_fl.avg_distance", "sen_fr.avg_distance",
+        "sen_fl.distance", "sen_fr.distance",
+
+
     };
 
     const int COLS = LOG_DATA_NUM;
@@ -175,7 +182,7 @@ void LogData::indicate_data()
 
         for(int j = 0; j < LOG_DATA_NUM; j++) {
             printf("%4.5lf", half_to_float(data[j][i]));
-            if(j < 39) printf(",");
+            if(j < LOG_DATA_NUM-1) printf(",");
         }
 
         printf("\r\n");
@@ -232,6 +239,14 @@ void LogData::logging()
 
 		data[35][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Vehicle_type7::getInstance().Vehicle_controller.speed_ctrl.get_I_peration());
 		data[36][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Vehicle_type7::getInstance().Vehicle_controller.omega_ctrl.get_I_peration());
+
+		data[37][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(IrSensTask_type7::getInstance().control_ir.get());
+		data[38][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(IrSensTask_type7::getInstance().control_ir_dot.get());
+
+		data[39][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(IrSensTask_type7::getInstance().sen_l.error);
+		data[40][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(IrSensTask_type7::getInstance().sen_r.error);
+		data[41][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(IrSensTask_type7::getInstance().sen_fl.distance);
+		data[42][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(IrSensTask_type7::getInstance().sen_fr.distance);
 
 		data_count++;
 		if(data_count >= data_size*LOG_DATA_PRIOD) data_count = (data_size*LOG_DATA_PRIOD) - 1;

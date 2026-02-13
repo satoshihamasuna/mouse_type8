@@ -9,6 +9,7 @@
 #define INC_TYPEDEF_H_
 
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,6 +18,7 @@ typedef enum{
 	True   = 1,
 	False = 0,
 }t_bool;
+
 
 
 
