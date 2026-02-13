@@ -86,3 +86,4 @@
 "./Task/Src/init_motion2.o"
 "./Task/Src/ir_sens_task.o"
 "./Task/Src/motion.o"
+"./Task/Src/turn_motion.o"

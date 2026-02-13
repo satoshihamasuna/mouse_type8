@@ -19,6 +19,10 @@
 #include "run_typedef.h"
 
 #define SUCTION_ACC (0.008)
+const float detect_wall_edge_st = STRAIGHT_CORRECTION;
+const float detect_wall_edge_di = DIAGONAL_CORRECTION;
+
+float get_turn_table_value(float time_period_ms,float time_ms);
 
 struct motion_plan_params
 {
@@ -92,6 +96,7 @@ class Motion
 		int deltaT_ms;
 		float run_time_ms;
 		float run_time_ms_limit;
+		float turn_start_time_ms;
 
 		void Motion_EndSetting_turn();
 		void Motion_EndSetting_straight();
@@ -106,6 +111,14 @@ class Motion
 		void SetIdeal_backward		();
 
 		void SetIdeal_pivot_turn	();
+
+		void handleTurnPrev_Straight();
+		void handleTurnPost_Straight();
+		void handleTurnPrev_Diagonal();
+		void handleTurnPost_Diagonal();
+		void handleTurnMain();
+		void updateTurnKinematics();
+
 
 		void SetIdeal_turn_in		();
 		void SetIdeal_turn_out		();
@@ -135,6 +148,11 @@ class Motion
 		inline void run_time_limit_ms_reset()									{	run_time_ms_limit = 0.0f;					}
 		inline void run_time_limit_ms_set(float run_time_ms_limit_)				{	run_time_ms_limit = run_time_ms_limit_;		}
 		inline float run_time_limit_ms_get()									{	return run_time_ms_limit;					}
+
+		inline void turn_start_time_ms_reset()									{	turn_start_time_ms = 0.0f;					}
+		inline void turn_start_time_ms_set(float _time_ms)						{	turn_start_time_ms = _time_ms;		}
+		inline float turn_start_time_ms_get()									{	return turn_start_time_ms;			}
+
 
 		//inline t_run_pattern motion_pattern_get() 							 	{	return motion_pattern;				}
 		inline void			 motion_pattern_set(t_run_pattern _motion_pattern)  {	motion_pattern	= _motion_pattern;	}

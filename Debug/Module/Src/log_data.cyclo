@@ -11,7 +11,7 @@
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:198:7:virtual void Vehicle_type7::motorSetDuty_r(int)	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:204:7:virtual void Vehicle_type7::suctionSetDuty(int)	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:211:7:virtual void Vehicle_type7::suctionStop()	1
-../Module/Src/../../Task/Inc/sensing_task.h:125:8:virtual void IrSensTask_type7::IrSensorSet()	1
+../Module/Src/../../Task/Inc/sensing_task.h:128:8:virtual void IrSensTask_type7::IrSensorSet()	1
 ../Module/Src/log_data.cpp:121:6:void LogData::indicate_data()	7
 ../Module/Src/log_data.cpp:195:6:void LogData::logging()	3
 ../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:20:7:constexpr PID_Controller::PID_Controller()	1
@@ -22,6 +22,6 @@
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:189:7:virtual Vehicle_type7::~Vehicle_type7()	1
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:16:12:void __tcf_0()	1
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Vehicle_type7]	3
-../Module/Src/../../Task/Inc/sensing_task.h:52:7:IrSensTask::IrSensTask()	1
-../Module/Src/../../Task/Inc/sensing_task.h:122:7:IrSensTask_type7::IrSensTask_type7()	1
+../Module/Src/../../Task/Inc/sensing_task.h:55:7:IrSensTask::IrSensTask()	1
+../Module/Src/../../Task/Inc/sensing_task.h:125:7:IrSensTask_type7::IrSensTask_type7()	1
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = IrSensTask_type7]	3

@@ -19,7 +19,10 @@
 
 #define SIDE_R_THRESHOLD		(65.0)
 #define SIDE_L_THRESHOLD		(65.0)
-#define SIDE_THRESHOLD		(65.0)
+#define SIDE_THRESHOLD			(65.0)
+#define CORNER_R_THRESHOLD		(60.0)
+#define CORNER_L_THRESHOLD		(60.0)
+
 
 #define FRONT_THRESHOLD		(105.0)
 

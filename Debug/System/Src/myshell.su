@@ -10,13 +10,13 @@
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:198:7:virtual void Vehicle_type7::motorSetDuty_r(int)	16	static
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:204:7:virtual void Vehicle_type7::suctionSetDuty(int)	16	static
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:211:7:virtual void Vehicle_type7::suctionStop()	16	static
-../System/Src/../../Task/Inc/sensing_task.h:125:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
-../System/Src/../../Task/Inc/ctrl_task.h:162:3:Motion::Motion(Vehicle*, IrSensTask*, int)	24	static
-../System/Src/../../Task/Inc/ctrl_task.h:171:24:t_exeStatus Motion::motion_exeStatus_get()	16	static
-../System/Src/../../Task/Inc/ctrl_task.h:207:22:t_exeStatus Motion::execute_Motion()	16	static
-../System/Src/../../Task/Inc/ctrl_task.h:329:15:IrSensTask* Motion::return_irObj()	16	static
-../System/Src/../../Task/Inc/ctrl_task.h:342:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	24	static
-../System/Src/../../Task/Inc/ctrl_task.h:360:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	24	static
+../System/Src/../../Task/Inc/sensing_task.h:128:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
+../System/Src/../../Task/Inc/ctrl_task.h:180:3:Motion::Motion(Vehicle*, IrSensTask*, int)	24	static
+../System/Src/../../Task/Inc/ctrl_task.h:189:24:t_exeStatus Motion::motion_exeStatus_get()	16	static
+../System/Src/../../Task/Inc/ctrl_task.h:225:22:t_exeStatus Motion::execute_Motion()	16	static
+../System/Src/../../Task/Inc/ctrl_task.h:347:15:IrSensTask* Motion::return_irObj()	16	static
+../System/Src/../../Task/Inc/ctrl_task.h:360:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	24	static
+../System/Src/../../Task/Inc/ctrl_task.h:378:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	24	static
 ../System/Src/myshell.cpp:57:12:int usrcmd_help(int, char**)	24	static
 ../System/Src/myshell.cpp:70:12:int usrcmd_info(int, char**)	16	static
 ../System/Src/myshell.cpp:90:12:int usrcmd_disp(int, char**)	16	static
@@ -41,8 +41,8 @@
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:189:7:virtual Vehicle_type7::~Vehicle_type7()	16	static
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:16:12:void __tcf_0()	8	static
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Vehicle_type7]	8	static,ignoring_inline_asm
-../System/Src/../../Task/Inc/sensing_task.h:52:7:IrSensTask::IrSensTask()	16	static
-../System/Src/../../Task/Inc/sensing_task.h:122:7:IrSensTask_type7::IrSensTask_type7()	16	static
+../System/Src/../../Task/Inc/sensing_task.h:55:7:IrSensTask::IrSensTask()	16	static
+../System/Src/../../Task/Inc/sensing_task.h:125:7:IrSensTask_type7::IrSensTask_type7()	16	static
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = IrSensTask_type7]	8	static,ignoring_inline_asm
 ../System/Src/../../Module/Inc/log_data.h:19:7:LogData::LogData()	16	static
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = LogData]	8	static,ignoring_inline_asm

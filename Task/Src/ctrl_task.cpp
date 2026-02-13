@@ -299,7 +299,12 @@ void CtrlTask::motion_post_control()
 					{
 						error_counter_set(error_counter_get() + 3);
 					}
+					if(ABS(vehicle->V_l) >  12.0)
+					{
+						error_counter_set(error_counter_get() + 100);
+					}
 				}
+
 				if(ABS(vehicle->V_r) > vehicle->battery.get())
 				{
 					//error_counter_set(error_counter_get() + 5);
@@ -307,8 +312,20 @@ void CtrlTask::motion_post_control()
 					{
 						error_counter_set(error_counter_get() + 3);
 					}
+					if(ABS(vehicle->V_r) >  12.0)
+					{
+						error_counter_set(error_counter_get() + 100);
+					}
 				}
 
+				if(ABS(vehicle->Vehicle_controller.speed_ctrl.get_I_peration()) > 3.0)
+				{
+					error_counter_set(error_counter_get() + 100);
+				}
+				if(ABS(vehicle->Vehicle_controller.omega_ctrl.get_I_peration()) > 3.0)
+				{
+					error_counter_set(error_counter_get() + 100);
+				}
 				if(error_flag == error_counter_get())
 				{
 					error_counter_set(error_counter_get() - 2);

@@ -12,10 +12,10 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:198:7:virtual void Vehicle_type7::motorSetDuty_r(int)	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:204:7:virtual void Vehicle_type7::suctionSetDuty(int)	16	static
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:211:7:virtual void Vehicle_type7::suctionStop()	16	static
-../Module/Src/../../Task/Inc/sensing_task.h:125:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
-../Module/Src/../../Task/Inc/ctrl_task.h:162:3:Motion::Motion(Vehicle*, IrSensTask*, int)	24	static
-../Module/Src/../../Task/Inc/ctrl_task.h:342:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	24	static
-../Module/Src/../../Task/Inc/ctrl_task.h:360:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	24	static
+../Module/Src/../../Task/Inc/sensing_task.h:128:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
+../Module/Src/../../Task/Inc/ctrl_task.h:180:3:Motion::Motion(Vehicle*, IrSensTask*, int)	24	static
+../Module/Src/../../Task/Inc/ctrl_task.h:360:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	24	static
+../Module/Src/../../Task/Inc/ctrl_task.h:378:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	24	static
 ../Module/Src/interrupt.cpp:30:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	16	static
 ../Module/Src/interrupt.cpp:42:6:void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef*)	16	static
 ../Module/Src/interrupt.cpp:51:6:void Interrupt_Initialize()	4	static
@@ -30,8 +30,8 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:189:7:virtual Vehicle_type7::~Vehicle_type7()	16	static
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:16:12:void __tcf_0()	8	static
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Vehicle_type7]	8	static,ignoring_inline_asm
-../Module/Src/../../Task/Inc/sensing_task.h:52:7:IrSensTask::IrSensTask()	16	static
-../Module/Src/../../Task/Inc/sensing_task.h:122:7:IrSensTask_type7::IrSensTask_type7()	16	static
+../Module/Src/../../Task/Inc/sensing_task.h:55:7:IrSensTask::IrSensTask()	16	static
+../Module/Src/../../Task/Inc/sensing_task.h:125:7:IrSensTask_type7::IrSensTask_type7()	16	static
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = IrSensTask_type7]	8	static,ignoring_inline_asm
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Interrupt]	4	static
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = CtrlTask_type7]	16	static,ignoring_inline_asm

@@ -195,7 +195,7 @@ void IrSensTask::IrSensorWallSet()
 	else if( (sen_r.diff > 0.0) && (sen_r.prev_diff < 0.0))
 	{
 
-		if(irsens_motion == DIAGONAL_IRSENS && sen_r.distance < 60.0)
+		if(irsens_motion == DIAGONAL_IRSENS && sen_r.distance < CORNER_R_THRESHOLD	)
 		{
 				r_wall_corner = True;
 				r_corner_time = 0;
@@ -230,7 +230,7 @@ void IrSensTask::IrSensorWallSet()
 	else if( (sen_l.diff > 0.0) && (sen_l.prev_diff < 0.0))
 	{
 
-		if(irsens_motion == DIAGONAL_IRSENS && sen_l.distance < 60.0)
+		if(irsens_motion == DIAGONAL_IRSENS && sen_l.distance < CORNER_L_THRESHOLD	)
 		{
 				l_wall_corner = True;
 				l_corner_time = 0;
