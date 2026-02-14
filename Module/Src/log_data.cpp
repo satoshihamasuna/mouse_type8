@@ -155,7 +155,7 @@ void LogData::indicate_data()
 		"control_ir",
 		"control_ir_dot",
 
-        "sen_fl.avg_distance", "sen_fr.avg_distance",
+        "sen_l.error", "sen_r.error",
         "sen_fl.distance", "sen_fr.distance",
 
 

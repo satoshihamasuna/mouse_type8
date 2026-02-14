@@ -565,7 +565,7 @@ void Motion::SetIdeal_straight()
 
 	//if(motion_plan.end_length.get() > 50.0f)
 	//{
-		vehicle->ideal.radian.set(0.0f);
+	//vehicle->ideal.radian.set(0.0f + vehicle->ideal.radian.get()/2.0);
 	//	vehicle->ego.radian.set(0.0f);
 	//}
 
@@ -705,6 +705,8 @@ void Motion::SetIdeal_diagonal		( )
 			motion_exeStatus_set(complete);
 		}
 	}
+
+	//vehicle->ideal.radian.set(0.0f + vehicle->ideal.radian.get()/2.0);
 
 	Adjust_wall_corner();
 	SetIdeal_wall_control();

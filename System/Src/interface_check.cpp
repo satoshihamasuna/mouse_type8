@@ -92,6 +92,11 @@ namespace Mode
 				case ENABLE|0x03:
 						while(1)
 						{
+							sr = irsens->sen_r.distance;	sl = irsens->sen_l.distance;
+
+							float diff = - ((sl-45.0) - (sr-45.0));
+							printf("\033[2A");
+							printf("sr:%f,sl:%f,diff:%f\n",sr,sl,-diff);
 							printf("length:%lf,",CtrlTask_type7::getInstance().return_vehicleObj()->ego.length.get());
 							printf("angle:%lf,",CtrlTask_type7::getInstance().return_vehicleObj()->ego.radian.get());
 							printf("battery:%lf\n",Battery_GetVoltage());
