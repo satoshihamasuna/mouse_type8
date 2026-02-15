@@ -20,6 +20,7 @@
 #include "maze_typedef.h"
 #include "peripheral.h"
 #include <math.h>
+/*
 #ifdef MOUSE_A
   #include "sens_table_A.h"
 #elif defined(MOUSE_B)
@@ -27,7 +28,7 @@
 #else
   #error "No SENSOR_TYPE defined. Please define SENSOR_TYPE_A or SENSOR_TYPE_B."
 #endif
-
+*/
 t_wall_state IrSensTask::conv_Sensin2Wall(t_sensor_dir sens_dir)
 {
 	switch(sens_dir){
@@ -283,8 +284,8 @@ void IrSensTask::IrSensorWallSet()
 		}
 		else
 		{
-			sen_r.is_control 	= (sen_fr.distance <= 80.0)? False:sen_r.is_control;
-			sen_l.is_control 	= (sen_fl.distance <= 80.0)? False:sen_l.is_control;
+			sen_r.is_control 	= (sen_fr.distance <= SIDECONTROL_FR_THRESHOLD)? False:sen_r.is_control;
+			sen_l.is_control 	= (sen_fl.distance <= SIDECONTROL_FL_THRESHOLD)? False:sen_l.is_control;
 		}
 
 
@@ -378,61 +379,52 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 	const float k2 = 19.0;
 	control_ir.init();
 	control_ir_dot.init();
-
+	float ir_xposition = vehicle->ego.x_point.get();
+	float deviation_rad = 0.0f;
+	float gain = CLAMP(vehicle->ego.velo.get()/0.320f,0,8.0);
 
 	//sensor_output = k1*ydiff/1000.0 + k2/1000.0*theta;
 	if(isEnableIrSens == True)
 	{
 		if(sen_r.is_control == True && sen_l.is_control == True)
 		{
-			ir_rad_acc_control = -(sen_l.error - sen_r.error)/2.0;
-			vehicle->ego.x_point.set(ir_rad_acc_control);
-		}
-		else
-		{
-			ir_rad_acc_control = -(sen_l.error - sen_r.error);
-			if(sen_r.is_control == True || sen_l.is_control == True)
+			ir_xposition =  -(sen_l.error - sen_r.error)/2.0;
+			if(irsens_motion == STRAIGHT_IRSENS)
 			{
-				if(irsens_motion == STRAIGHT_IRSENS)
-				vehicle->ego.x_point.set((ir_rad_acc_control+vehicle->ego.x_point.get())/2.0);
+				vehicle->ego.x_point.set(ir_xposition);
 			}
+
+		}
+		else if(sen_r.is_control == True || sen_l.is_control == True)
+		{
+			ir_xposition =  -(sen_l.error - sen_r.error);
+			if(irsens_motion == STRAIGHT_IRSENS)
+			{
+				vehicle->ego.x_point.set((ir_xposition+vehicle->ego.x_point.get())/2.0);
+			}
+
 		}
 	}
 
-	float deviation_rad = 0.0f;
+
+
 	if(irsens_motion == STRAIGHT_IRSENS){
-		deviation_rad = 0.0f;
+		//deviation_rad = vehicle->ego.radian.get();
 	}
 	else if(irsens_motion == DIAGONAL_IRSENS)
 	{
 		deviation_rad =  vehicle->ideal.radian.get();
 	}
 
-	if(isEnableIrSens == True && (sen_r.is_control == True || sen_l.is_control == True))
-	{
+	ir_rad_acc_control = ir_xposition + k2*deviation_rad*0.0;
 
-		control_ir.set(ir_rad_acc_control );
-		//s_dot 	= k1*vehicle->ideal.velo.get()*1000.0*(vehicle->ideal.radian.get())*1.0 + k2*vehicle->ideal.rad_velo.get();
-		control_ir_dot.set( k1*vehicle->ideal.velo.get()*1000.0*(deviation_rad)*(1.0) + k2*vehicle->ideal.rad_velo.get());
-
-	}
-
-	else
-	{
-
-		ir_rad_acc_control = k1*vehicle->ego.x_point.get()+k2*(deviation_rad)*0.0;
-
-		control_ir.set( ir_rad_acc_control);//k2*machine_->radian;//
-		//s_dot 	= k1*vehicle->ideal.velo.get()*1000.0*(vehicle->ideal.radian.get())*1.0 + k2*vehicle->ideal.rad_velo.get();
-		control_ir_dot.set( k1*vehicle->ideal.velo.get()*1000.0*(deviation_rad)*(1.0) + k2*vehicle->ideal.rad_velo.get());
-
-	}
+	control_ir.set(ir_rad_acc_control );
+	//s_dot 	= k1*vehicle->ideal.velo.get()*1000.0*(vehicle->ideal.radian.get())*1.0 + k2*vehicle->ideal.rad_velo.get();
+	control_ir_dot.set( k1*vehicle->ideal.velo.get()*1000.0*(deviation_rad)*(1.0) + k2*vehicle->ideal.rad_velo.get());
 
 
-	//float deviation_rad =  vehicle->ideal.radian.get() - vehicle->ego.radian.get();
-
-	float target_rad_acc	= 	(-1.0)*(	k1*300.0*control_ir.get()/k2
-										+ 	60.0*k1/k2*control_ir_dot.get()
+	float target_rad_acc	= 	(-1.0)*(	300.0*gain*k1/k2*control_ir.get()
+										+ 	60.0*gain*1.0/k2*control_ir_dot.get()
 										+ 	k1/k2*(vehicle->ideal.accel.get()*1000.0*deviation_rad*0.0 + vehicle->ideal.velo.get()*vehicle->ideal.rad_velo.get()*1000.0));
 
 

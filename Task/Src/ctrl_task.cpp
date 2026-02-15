@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include "peripheral.h"
 #include "typedef.h"
-
+#include "math_utils.h"
 #include "../../Component/Inc/singleton.h"
 #include "../../Component/Inc/controller.h"
 
@@ -115,10 +115,10 @@ void CtrlTask::motion_control()
 			vehicle->motor_out_r = 0;		vehicle->motor_out_l = 0;
 
 			//calc motor speed(rpm)
-			float motor_r_rpm = (1.0f)*RAD_2_RPM*GEAR_N*(vehicle->ideal.velo.get()*1000/TIRE_RADIUS
+			float motor_r_rpm = (1.0f)*RADPS_2_RPM *GEAR_N*(vehicle->ideal.velo.get()*1000/TIRE_RADIUS
 														+ 1.0f*TREAD_WIDTH*vehicle->ideal.rad_velo.get()/(2*TIRE_RADIUS));
 
-			float motor_l_rpm = (1.0f)*RAD_2_RPM*GEAR_N*(vehicle->ideal.velo.get()*1000/TIRE_RADIUS
+			float motor_l_rpm = (1.0f)*RADPS_2_RPM *GEAR_N*(vehicle->ideal.velo.get()*1000/TIRE_RADIUS
 														- 1.0f*TREAD_WIDTH*vehicle->ideal.rad_velo.get()/(2*TIRE_RADIUS));
 
 			//calc motor induce ampere
@@ -129,8 +129,8 @@ void CtrlTask::motion_control()
 								 - 1.0f/(MOTOR_K_TR*GEAR_N)*(MOUSE_INERTIA*vehicle->ideal.rad_accel.get()*TIRE_RADIUS/(TREAD_WIDTH/2.0f))
 								 + MOTOR_BR*motor_l_rpm /MOTOR_K_TR*1.0;
 
-			float motor_r_Idot = RAD_2_RPM*vehicle->ideal.accel.get()/(TIRE_RADIUS_M)*GEAR_N*MOTOR_BR/MOTOR_K_TR;
-			float motor_l_Idot = RAD_2_RPM*vehicle->ideal.accel.get()/(TIRE_RADIUS_M)*GEAR_N*MOTOR_BR/MOTOR_K_TR;
+			float motor_r_Idot = RADPS_2_RPM*vehicle->ideal.accel.get()/(TIRE_RADIUS_M)*GEAR_N*MOTOR_BR/MOTOR_K_TR;
+			float motor_l_Idot = RADPS_2_RPM*vehicle->ideal.accel.get()/(TIRE_RADIUS_M)*GEAR_N*MOTOR_BR/MOTOR_K_TR;
 
 			//calc motor induce voltage
 			float sp_FF_control_r =  MOTOR_R*motor_r_ampere + MOTOR_K_ER*motor_r_rpm/1000 + motor_r_Idot*L_BAR_DT;
@@ -191,7 +191,7 @@ void CtrlTask::motion_control()
 
 			if(ABS(vehicle->V_r) > 0.0)
 			{
-				vehicle->V_r = SIGN(vehicle->V_r)*(ABS(vehicle->V_r) + DEAD_V);
+				vehicle->V_r = SIGN(vehicle->V_r)*(ABS(vehicle->V_r) + DEAD_VR);
 			}
 			else
 			{
@@ -200,7 +200,7 @@ void CtrlTask::motion_control()
 
 			if(ABS(vehicle->V_l) > 0.0)
 			{
-				vehicle->V_l = SIGN(vehicle->V_l)*(ABS(vehicle->V_l) + DEAD_V);
+				vehicle->V_l = SIGN(vehicle->V_l)*(ABS(vehicle->V_l) + DEAD_VL);
 			}
 			else
 			{
@@ -269,6 +269,7 @@ void CtrlTask::motion_post_control()
 			if(vehicle->ideal.velo.get() != 0.0f)
 			{
 				int error_flag = error_counter_get();
+
 				if(ABS((vehicle->ego.velo.get() - vehicle->ideal.velo.get())) >= 2.0)
 				{
 					error_counter_set(error_counter_get() + 50);
@@ -281,6 +282,7 @@ void CtrlTask::motion_post_control()
 						error_counter_set(error_counter_get() + 20);
 					}
 				}
+
 
 				if(ABS(vehicle->ego.z_accel.get()) >= 30.0)
 				{
@@ -318,11 +320,11 @@ void CtrlTask::motion_post_control()
 					}
 				}
 
-				if(ABS(vehicle->Vehicle_controller.speed_ctrl.get_I_peration()) > 3.0)
+				if(ABS(vehicle->Vehicle_controller.speed_ctrl.get_I_peration()) > 2.0)
 				{
 					error_counter_set(error_counter_get() + 100);
 				}
-				if(ABS(vehicle->Vehicle_controller.omega_ctrl.get_I_peration()) > 3.0)
+				if(ABS(vehicle->Vehicle_controller.omega_ctrl.get_I_peration()) > 2.0)
 				{
 					error_counter_set(error_counter_get() + 100);
 				}

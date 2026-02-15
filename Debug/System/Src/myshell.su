@@ -10,7 +10,7 @@
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:198:7:virtual void Vehicle_type7::motorSetDuty_r(int)	16	static
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:204:7:virtual void Vehicle_type7::suctionSetDuty(int)	16	static
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:211:7:virtual void Vehicle_type7::suctionStop()	16	static
-../System/Src/../../Task/Inc/sensing_task.h:128:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
+../System/Src/../../Task/Inc/sensing_task.h:143:8:virtual void IrSensTask_type7::IrSensorSet()	16	static
 ../System/Src/../../Task/Inc/ctrl_task.h:149:3:Motion::Motion(Vehicle*, IrSensTask*, int)	24	static
 ../System/Src/../../Task/Inc/ctrl_task.h:162:24:t_exeStatus Motion::motion_exeStatus_get()	16	static
 ../System/Src/../../Task/Inc/ctrl_task.h:205:22:t_exeStatus Motion::execute_Motion()	16	static
@@ -41,8 +41,8 @@
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:189:7:virtual Vehicle_type7::~Vehicle_type7()	16	static
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:16:12:void __tcf_0()	8	static
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Vehicle_type7]	8	static,ignoring_inline_asm
-../System/Src/../../Task/Inc/sensing_task.h:55:7:IrSensTask::IrSensTask()	16	static
-../System/Src/../../Task/Inc/sensing_task.h:125:7:IrSensTask_type7::IrSensTask_type7()	16	static
+../System/Src/../../Task/Inc/sensing_task.h:70:7:IrSensTask::IrSensTask()	16	static
+../System/Src/../../Task/Inc/sensing_task.h:140:7:IrSensTask_type7::IrSensTask_type7()	16	static
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = IrSensTask_type7]	8	static,ignoring_inline_asm
 ../System/Src/../../Module/Inc/log_data.h:19:7:LogData::LogData()	16	static
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = LogData]	8	static,ignoring_inline_asm

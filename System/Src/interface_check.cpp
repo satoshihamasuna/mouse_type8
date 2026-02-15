@@ -94,9 +94,9 @@ namespace Mode
 						{
 							sr = irsens->sen_r.distance;	sl = irsens->sen_l.distance;
 
-							float diff = - ((sl-45.0) - (sr-45.0));
+							float diff = - ((sl-45.0));
 							printf("\033[2A");
-							printf("sr:%f,sl:%f,diff:%f\n",sr,sl,-diff);
+							printf("sr:%f,sl:%f,diff:%f\n",sr,sl,diff);
 							printf("length:%lf,",CtrlTask_type7::getInstance().return_vehicleObj()->ego.length.get());
 							printf("angle:%lf,",CtrlTask_type7::getInstance().return_vehicleObj()->ego.radian.get());
 							printf("battery:%lf\n",Battery_GetVoltage());
@@ -115,10 +115,12 @@ namespace Mode
 						  }
 						  motion->Motion_start();
 						  motion->Init_Motion_free_rotation_set();
+						  LogData::getInstance().log_enable = True;
 						  while(motion->motion_exeStatus_get() == execute){
-								printf("encoder:%ld,%ld\n",Encoder_GetProperty_Right().sp_pulse,Encoder_GetProperty_Left().sp_pulse);
+								//printf("encoder:%ld,%ld\n",Encoder_GetProperty_Right().sp_pulse,Encoder_GetProperty_Left().sp_pulse);
 								HAL_Delay(10);
 						  }
+						  LogData::getInstance().log_enable = False;
 						  motion->Motion_end();
 						  enable = 0x00;
 						  HAL_Delay(500);

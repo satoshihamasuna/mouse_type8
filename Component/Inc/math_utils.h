@@ -51,6 +51,10 @@
 
 #define DEG2RAD(x)			(((x)/180.0f)*PI)			// 度数法からラジアンに変換
 #define RAD2DEG(x)			(180.0f*((x)/PI))			// ラジアンから度数法に変換
+#define RADPS_2_RPM  (60.0f/(2.0f*PI))
+#define RADPS2RPM(x)    ((x) * RADPS_TO_RPM)
+#define RPM2RADPS(x)    ((x) / RADPS_TO_RPM)
+
 #define SWAP(a, b) 			((a != b) && (a += b, b = a - b, a -= b))
 #define ABS(x) 				((x) < 0 ? -(x) : (x))		// 絶対値
 #define SIGN(x)				((x) < 0 ? -1 : 1)			// 符号
@@ -58,6 +62,8 @@
 #define MIN(a, b) 			((a) < (b) ? (a) : (b))		// 2つのうち小さい方を返します
 #define MAX3(a, b, c) 		((a) > (MAX(b, c)) ? (a) : (MAX(b, c)))
 #define MIN3(a, b, c) 		((a) < (MIN(b, c)) ? (a) : (MIN(b, c)))
+#define CLAMP(x, low, high)  ((x) < (low) ? (low) : ((x) > (high) ? (high) : (x)))
+
 
 //machine parameter
 #define SECTION				(90.0)

@@ -9,7 +9,7 @@
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/vehicle.h:198:7:virtual void Vehicle_type7::motorSetDuty_r(int)	1
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/vehicle.h:204:7:virtual void Vehicle_type7::suctionSetDuty(int)	1
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/vehicle.h:211:7:virtual void Vehicle_type7::suctionStop()	1
-../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:128:8:virtual void IrSensTask_type7::IrSensorSet()	1
+../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:143:8:virtual void IrSensTask_type7::IrSensorSet()	1
 ../System/Src/../../Subsys/Inc/wall_class.h:30:8:void wall_histry_class::histry_init()	2
 ../System/Src/../../Subsys/Inc/wall_class.h:45:11:int16_t wall_histry_class::get_histry_cnt()	1
 ../System/Src/../../Subsys/Inc/wall_class.h:70:8:void wall_histry_class::histry_delete(int)	4
@@ -41,8 +41,8 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/vehicle.h:189:7:virtual Vehicle_type7::~Vehicle_type7()	1
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:16:12:void __tcf_0()	1
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Vehicle_type7]	3
-../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:55:7:IrSensTask::IrSensTask()	1
-../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:125:7:IrSensTask_type7::IrSensTask_type7()	1
+../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:70:7:IrSensTask::IrSensTask()	1
+../System/Src/../../Subsys/Inc/../../Task/Inc/sensing_task.h:140:7:IrSensTask_type7::IrSensTask_type7()	1
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = IrSensTask_type7]	3
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Interrupt]	1
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = CtrlTask_type7]	3
