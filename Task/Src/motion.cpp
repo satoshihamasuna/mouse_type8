@@ -893,7 +893,7 @@ void Motion::SetIdeal_suction_start		( )
 		vehicle->ideal.turn_slip_theta.set(0.0f);
 
 		vehicle->ego.length.set(0.0f);
-		//vehicle->ego.radian.set(0.0f);
+		vehicle->ego.radian.set(0.0f);
 		vehicle->ego.turn_slip_theta.set(0.0f);
 
 		vehicle->ideal.turn_x_dash.set(0.0f);
@@ -906,7 +906,7 @@ void Motion::SetIdeal_suction_start		( )
 		vehicle->ego.turn_y_dash.set(0.0f);
 		vehicle->ego.turn_x.set(0.0f);
 		vehicle->ego.turn_y.set(0.0f);
-		//vehicle->ego.x_point.set(0.0f);
+		vehicle->ego.x_point.set(0.0f);
 		vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 		vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		//Init_Motion_stop_brake(200);
@@ -982,7 +982,7 @@ void Motion::SetIdeal_free_rotation_set	()
 {
 	if(run_time_ms_get() <= run_time_limit_ms_get())
 	{
-		vehicle->motor_out_r = 100;		vehicle->motor_out_l = 100;
+		vehicle->motor_out_r = 500;		vehicle->motor_out_l = -500;
 	}
 	else
 	{

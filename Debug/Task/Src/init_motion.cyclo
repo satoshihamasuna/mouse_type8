@@ -6,11 +6,11 @@
 ../Task/Src/../Inc/../../Module/Inc/vehicle.h:69:8:void Vehicle::ego_initialize()	1
 ../Task/Src/../Inc/../../Module/Inc/vehicle.h:103:8:void Vehicle::ideal_initialize()	1
 ../Task/Src/../Inc/../../Module/Inc/vehicle.h:157:8:void Vehicle::suction_flag_set(t_bool)	1
-../Task/Src/../Inc/sensing_task.h:91:8:void IrSensTask::IrSensMotion_Set(t_irsens_motion)	1
-../Task/Src/../Inc/sensing_task.h:97:15:void IrSensTask::EnableIrSens()	1
-../Task/Src/../Inc/sensing_task.h:99:8:void IrSensTask::EnableIrSensStraight()	1
-../Task/Src/../Inc/sensing_task.h:100:8:void IrSensTask::EnableIrSensDiagonal()	1
-../Task/Src/../Inc/sensing_task.h:130:8:void IrSensTask::Division_Wall_Correction_Reset()	1
+../Task/Src/../Inc/sensing_task.h:92:8:void IrSensTask::IrSensMotion_Set(t_irsens_motion)	1
+../Task/Src/../Inc/sensing_task.h:98:15:void IrSensTask::EnableIrSens()	1
+../Task/Src/../Inc/sensing_task.h:100:8:void IrSensTask::EnableIrSensStraight()	1
+../Task/Src/../Inc/sensing_task.h:101:8:void IrSensTask::EnableIrSensDiagonal()	1
+../Task/Src/../Inc/sensing_task.h:131:8:void IrSensTask::Division_Wall_Correction_Reset()	1
 ../Task/Src/../Inc/ctrl_task.h:127:15:void Motion::run_time_ms_reset()	1
 ../Task/Src/../Inc/ctrl_task.h:132:15:void Motion::run_time_limit_ms_reset()	1
 ../Task/Src/../Inc/ctrl_task.h:133:15:void Motion::run_time_limit_ms_set(float)	1

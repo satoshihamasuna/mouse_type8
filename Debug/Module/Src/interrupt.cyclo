@@ -12,7 +12,7 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:198:7:virtual void Vehicle_type7::motorSetDuty_r(int)	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:204:7:virtual void Vehicle_type7::suctionSetDuty(int)	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:211:7:virtual void Vehicle_type7::suctionStop()	1
-../Module/Src/../../Task/Inc/sensing_task.h:143:8:virtual void IrSensTask_type7::IrSensorSet()	1
+../Module/Src/../../Task/Inc/sensing_task.h:144:8:virtual void IrSensTask_type7::IrSensorSet()	1
 ../Module/Src/../../Task/Inc/ctrl_task.h:149:3:Motion::Motion(Vehicle*, IrSensTask*, int)	1
 ../Module/Src/../../Task/Inc/ctrl_task.h:340:3:CtrlTask::CtrlTask(Vehicle*, IrSensTask*, int)	1
 ../Module/Src/../../Task/Inc/ctrl_task.h:358:3:CtrlTask_type7::CtrlTask_type7(Vehicle*, IrSensTask*)	1
@@ -22,16 +22,16 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../Module/Src/interrupt.cpp:103:6:void Interrupt::preprocess()	3
 ../Module/Src/interrupt.cpp:182:6:void Interrupt::main()	1
 ../Module/Src/interrupt.cpp:194:6:void Interrupt::postprocess()	1
-../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:20:7:constexpr PID_Controller::PID_Controller()	1
-../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:47:7:constexpr mouse_Controller::mouse_Controller()	1
+../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:20:7:PID_Controller::PID_Controller()	1
+../Module/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/controller.h:58:7:mouse_Controller::mouse_Controller()	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:60:7:Vehicle::Vehicle()	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:189:7:Vehicle_type7::Vehicle_type7()	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:189:7:Vehicle_type7::~Vehicle_type7()	1
 ../Module/Src/../../Task/Inc/../../Module/Inc/vehicle.h:189:7:virtual Vehicle_type7::~Vehicle_type7()	1
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:16:12:void __tcf_0()	1
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Vehicle_type7]	3
-../Module/Src/../../Task/Inc/sensing_task.h:70:7:IrSensTask::IrSensTask()	1
-../Module/Src/../../Task/Inc/sensing_task.h:140:7:IrSensTask_type7::IrSensTask_type7()	1
+../Module/Src/../../Task/Inc/sensing_task.h:71:7:IrSensTask::IrSensTask()	1
+../Module/Src/../../Task/Inc/sensing_task.h:141:7:IrSensTask_type7::IrSensTask_type7()	1
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = IrSensTask_type7]	3
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Interrupt]	1
 ../Module/Src/../Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = CtrlTask_type7]	3

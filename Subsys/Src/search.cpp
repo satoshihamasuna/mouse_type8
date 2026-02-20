@@ -17,8 +17,13 @@
 #include "../../Task/Inc/ctrl_task.h"
 //#include "glob_var_machine.h"
 
-#define ALLOW_SIDE_DIFF 15.0
-
+#if defined(MOUSE_A)
+#define ALLOW_SIDE_DIFF 	15.0
+#define ALLOW_FRONT_DIFF 	8.0
+#elif defined(MOUSE_B)
+#define ALLOW_SIDE_DIFF		15.0
+#define ALLOW_FRONT_DIFF 	10.0
+#endif
 
 t_bool Search::i_am_goal(int x,int y,int gx,int gy,int goal_size){
 	t_bool flag = False;
@@ -130,7 +135,7 @@ t_exeStatus Search::turn_right_process(t_position my_position,t_position tmp_my_
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
-	else if(_wall->get_WallState(my_position) == WALL && ABS(ir_sens->sen_fr.distance - ir_sens->sen_fl.distance) >= ALLOW_SIDE_DIFF)
+	else if(_wall->get_WallState(my_position) == WALL && ABS(ir_sens->sen_fr.distance - ir_sens->sen_fl.distance) >= ALLOW_FRONT_DIFF)
 	{
 		result = updateMap_half_straight_and_stop(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 
@@ -143,6 +148,20 @@ t_exeStatus Search::turn_right_process(t_position my_position,t_position tmp_my_
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
+	else if(_wall->get_WallState(my_position) == WALL && ((ir_sens->sen_fr.distance + ir_sens->sen_fl.distance)/2.0 - 90.0) < -10.0)
+		{
+			result = updateMap_half_straight_and_stop(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
+
+			if(_wall->get_WallState(my_position) == WALL)
+			{
+				result = motion->exe_Motion_fix_wall(500);
+			}
+
+			result = motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI);
+
+			result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
+		}
+
 	else
 	{
 		result = updateMap_right_turn(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
@@ -172,7 +191,19 @@ t_exeStatus Search::turn_left_process (	t_position my_position,t_position tmp_my
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
-	else if(_wall->get_WallState(my_position) == WALL && ABS(ir_sens->sen_fr.distance - ir_sens->sen_fl.distance) >= ALLOW_SIDE_DIFF)
+	else if(_wall->get_WallState(my_position) == WALL && ABS(ir_sens->sen_fr.distance - ir_sens->sen_fl.distance) >= ALLOW_FRONT_DIFF)
+	{
+		result = updateMap_half_straight_and_stop(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
+
+		if(_wall->get_WallState(my_position) == WALL)
+		{
+			result = motion->exe_Motion_fix_wall(500);
+		}
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI);
+
+		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
+	}
+	else if(_wall->get_WallState(my_position) == WALL && ((ir_sens->sen_fr.distance + ir_sens->sen_fl.distance)/2.0 - 90.0) < -10.0)
 	{
 		result = updateMap_half_straight_and_stop(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 

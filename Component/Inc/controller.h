@@ -26,19 +26,30 @@ class PID_Controller
 		float Kp = 0.0,Ki = 0.0,Kd = 0.0;
 		float target= 0.0,I_target= 0.0,prev_target= 0.0;
 		float output= 0.0,I_output= 0.0,prev_output= 0.0;
+		float dt;
 		void Gain_Set(float _Kp,float _Ki,float _Kd);
 		void Gain_Set(t_pid_gain gain);
 		void I_param_reset();
-		float Control(float _target,float _output,float dt);
+		float Control(float _target,float _output,float _dt);
 		float Anti_windup_1(float operation,float limit);
 		float Anti_windup_2(float operation,float limit);
 
 		void Enable_Integral()	{		enable_integral = True;		}
 		void Disable_Integral()	{		enable_integral = False;		}
 
+		float get_P_peration()
+		{
+			return  Kp*(target - output);
+		}
+
 		float get_I_peration()
 		{
 			return  Ki*(I_target - I_output);
+		}
+
+		float get_D_peration()
+		{
+			return  Kd*(I_target - I_output)/dt;
 		}
 		//PID_Controller()I
 };

@@ -381,7 +381,7 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 	control_ir_dot.init();
 	float ir_xposition = vehicle->ego.x_point.get();
 	float deviation_rad = 0.0f;
-	float gain = CLAMP(vehicle->ego.velo.get()/0.320f,0,8.0);
+	float gain = CLAMP(vehicle->ego.velo.get()/0.320f,0,20.0);
 
 	//sensor_output = k1*ydiff/1000.0 + k2/1000.0*theta;
 	if(isEnableIrSens == True)

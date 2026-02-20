@@ -11,8 +11,8 @@
 #include "math_utils.h"
 
 // ===== 使用するマウスを選択 =====
-#define MOUSE_A
-//#define MOUSE_B
+//#define MOUSE_A
+#define MOUSE_B
 // ================================
 
 // ===== 安全チェック =====
@@ -46,7 +46,7 @@
 
 
 	#define DUTY_MIN		(50)
-	#define DEAD_V			(0.8)
+	#define DEAD_V			(0.5)
 	#define DEAD_VR			(DEAD_V)
 	#define DEAD_VL			(DEAD_V)
 

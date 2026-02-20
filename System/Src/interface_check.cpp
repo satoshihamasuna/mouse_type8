@@ -174,14 +174,14 @@ namespace Mode
 						  motion->Motion_start();
 						  LogData::getInstance().data_count = 0;
 						  LogData::getInstance().log_enable = True;
-						  motion->Init_Motion_straight(45.0, 4.0, 0.32f, 0.32f);
+						  motion->Init_Motion_straight(45.0, 4.0, 0.40f, 0.40f);
 						  motion->execute_Motion();
 						  for(int i = 0; i< 8;i++)
 						  {
-							  motion->Init_Motion_search_turn(&param_R90_search_320 );
+							  motion->Init_Motion_search_turn(&param_R90_search_280 );
 							  motion->execute_Motion();
 						  }
-						  motion->Init_Motion_straight(45.0, 4.0, 0.32f, 0.0f);
+						  motion->Init_Motion_straight(45.0, 4.0, 0.40f, 0.0f);
 						  motion->execute_Motion();
 						  LogData::getInstance().log_enable = False;
 						  motion->Motion_end();
@@ -199,7 +199,7 @@ namespace Mode
 						  motion->Motion_start();
 						  LogData::getInstance().data_count = 0;
 						  LogData::getInstance().log_enable = True;
-						  motion->Init_Motion_straight(90.0*3, 4.0, 0.32f, 0.0f);
+						  motion->Init_Motion_straight(90.0*3, 4.0, 0.40f, 0.0f);
 						  motion->execute_Motion();
 						  LogData::getInstance().log_enable = False;
 						  motion->Motion_end();

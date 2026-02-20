@@ -69,10 +69,11 @@ float PID_Controller::Control(float _target,float _output,float dt)
 }
 */
 
-float PID_Controller::Control(float _target,float _output,float dt)
+float PID_Controller::Control(float _target,float _output,float _dt)
 {
     float operation = 0.0f;
 
+    dt = _dt;
     target = _target;
     output = _output;
 

@@ -158,6 +158,8 @@ void LogData::indicate_data()
         "sen_l.error", "sen_r.error",
         "sen_fl.distance", "sen_fr.distance",
 
+        "speed_ctrl.get_D_peration",
+        "omega_ctrl.get_D_peration",
 
     };
 
@@ -247,6 +249,10 @@ void LogData::logging()
 		data[40][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(IrSensTask_type7::getInstance().sen_r.error);
 		data[41][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(IrSensTask_type7::getInstance().sen_fl.distance);
 		data[42][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(IrSensTask_type7::getInstance().sen_fr.distance);
+
+		data[43][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Vehicle_type7::getInstance().Vehicle_controller.speed_ctrl.get_D_peration());
+		data[44][(data_count/LOG_DATA_PRIOD)%data_size] =  float_to_half(Vehicle_type7::getInstance().Vehicle_controller.omega_ctrl.get_D_peration());
+
 
 		data_count++;
 		if(data_count >= data_size*LOG_DATA_PRIOD) data_count = (data_size*LOG_DATA_PRIOD) - 1;

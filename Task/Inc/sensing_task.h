@@ -23,23 +23,24 @@
 #define CORNER_R_THRESHOLD		(60.0)
 #define CORNER_L_THRESHOLD		(60.0)
 
-#define SIDECONTROL_FR_THRESHOLD		(80.0)
-#define SIDECONTROL_FL_THRESHOLD		(80.0)
+//#define SIDECONTROL_FR_THRESHOLD		(80.0)
+//#define SIDECONTROL_FL_THRESHOLD		(80.0)
 
 #if defined(MOUSE_A)
-	#define SIDECONTROL_FR_THRESHOLD		(90.0)
-	#define SIDECONTROL_FL_THRESHOLD		(90.0)
+	#define SIDECONTROL_FR_THRESHOLD		(80.0)
+	#define SIDECONTROL_FL_THRESHOLD		(80.0)
+	#define FRONT_THRESHOLD		(110.0)
 
 #elif defined(MOUSE_B)
 	#define SIDECONTROL_FR_THRESHOLD		(80.0)
 	#define SIDECONTROL_FL_THRESHOLD		(80.0)
+	#define FRONT_THRESHOLD		(105.0)
 
 #else
     #error "MOUSEA または MOUSEB が定義されていません。mouse_select.h を確認してください。"
 #endif
 
 
-#define FRONT_THRESHOLD		(105.0)
 
 #define SIDE_CORNER_THRESHOLD (68.0)
 
