@@ -55,6 +55,7 @@ typedef struct{
 	float error;
 	float distance_log[20];
 	float distance_sum;
+	float control_distance;
 	float avg_distance;
 	float diff;
 	float prev_diff;
@@ -88,12 +89,12 @@ class IrSensTask
 		uint16_t r_corner_time,		l_corner_time;
 		param_element 	 r_corner_length,	l_corner_length;
 		t_wall_state conv_Sensin2Wall(t_sensor_dir sens_dir);
-		virtual 		void IrSensorSet();
+		virtual 		void IrSensorSet(Vehicle *vehicle);
 		void IrSensMotion_Set(t_irsens_motion _irsens_motion){irsens_motion = _irsens_motion;	}
 
 		void IrSensorReferenceSet(float ref_value);
-		void IrSensorDistanceSet();
-		void IrSensorWallSet();
+		void IrSensorDistanceSet(Vehicle *vehicle);
+		void IrSensorWallSet(Vehicle *vehicle);
 		void SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms);
 		inline void EnableIrSens()		{isEnableIrSens = True;}
 		inline void DisableIrSens()			{isEnableIrSens = False;}
@@ -141,14 +142,14 @@ class IrSensTask
 class IrSensTask_type7: public IrSensTask,public Singleton<IrSensTask_type7>
 {
 	public:
-		void IrSensorSet() override
+		void IrSensorSet(Vehicle *vehicle) override
 		{
 			sen_fl.value =  Sensor_GetValue(sensor_fl);
 			sen_fr.value =  Sensor_GetValue(sensor_fr);
 			sen_l.value  =  Sensor_GetValue(sensor_sl);
 			sen_r.value  =  Sensor_GetValue(sensor_sr);
-			IrSensorDistanceSet();
-			IrSensorWallSet();
+			IrSensorDistanceSet(vehicle);
+			IrSensorWallSet(vehicle);
 		}
 
 };

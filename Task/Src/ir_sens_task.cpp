@@ -45,14 +45,14 @@ t_wall_state IrSensTask::conv_Sensin2Wall(t_sensor_dir sens_dir)
 	}
 }
 
-void IrSensTask::IrSensorSet()
+void IrSensTask::IrSensorSet(Vehicle *vehicle)
 {
 	sen_fl.value =  100;//Sensor_GetValue(sensor_fl);
 	sen_fr.value =  100;//Sensor_GetValue(sensor_fr);
 	sen_l.value  =  100;//Sensor_GetValue(sensor_sl);
 	sen_r.value  =  100;//Sensor_GetValue(sensor_sr);
-	IrSensorDistanceSet();
-	IrSensorWallSet();
+	IrSensorDistanceSet(vehicle);
+	IrSensorWallSet(vehicle);
 }
 
 float IrSensTask::IrSensor_adc2voltage(int16_t value)
@@ -119,7 +119,7 @@ float IrSensTask::Sensor_CalcDistance(t_sensor_dir dir, int16_t value)
     return clampf(distance, min_d, max_d);
 }
 
-void IrSensTask::IrSensorDistanceSet()
+void IrSensTask::IrSensorDistanceSet(Vehicle *vehicle)
 {
 	static int i = 0;
 	i = i + 1;
@@ -163,7 +163,7 @@ void IrSensTask::IrSensorDistanceSet()
 
 }
 
-void IrSensTask::IrSensorWallSet()
+void IrSensTask::IrSensorWallSet(Vehicle *vehicle)
 {
 	sen_fr.prev_is_wall 	= sen_fr.is_wall ;
 	sen_fl.prev_is_wall 	= sen_fl.is_wall ;
@@ -247,18 +247,33 @@ void IrSensTask::IrSensorWallSet()
 
 	sen_fr.control_cnt = (sen_fr.is_wall == True) ? sen_fr.control_cnt + 1 : 0;
 	sen_fl.control_cnt = (sen_fl.is_wall == True) ? sen_fl.control_cnt + 1 : 0;
+	sen_fr.control_th = (sen_fr.control_cnt > 10) ? FRONT_THRESHOLD : 90.0;
+	sen_fl.control_th = (sen_fl.control_cnt > 10) ? FRONT_THRESHOLD : 90.0;
 
-	sen_r.control_cnt = (sen_r.is_wall == True && ABS(sen_r.distance - sen_r.avg_distance) < 0.5) ? sen_r.control_cnt + 1 : 0;
-	sen_l.control_cnt = (sen_l.is_wall == True && ABS(sen_l.distance - sen_l.avg_distance) < 0.5) ? sen_l.control_cnt + 1 : 0;
+	sen_r.control_cnt = (sen_r.is_wall == True ) ? sen_r.control_cnt + 1 : 0;
+	sen_l.control_cnt = (sen_l.is_wall == True ) ? sen_l.control_cnt + 1 : 0;
+
+	sen_r.control_cnt = (ABS(sen_r.diff) < 0.5) ? sen_r.control_cnt:0 ;
+	sen_l.control_cnt = (ABS(sen_l.diff) < 0.5) ? sen_l.control_cnt:0 ;
+
+
 	sen_r.control_cnt = (r_wall_corner == True ) ? 0 : sen_r.control_cnt;
 	sen_l.control_cnt = (l_wall_corner == True ) ? 0 : sen_l.control_cnt;
 
 
-	//sen_r.control_cnt = (sen_r.is_wall == True ) ? sen_r.control_cnt + 1 : 0;
-	//sen_l.control_cnt = (sen_l.is_wall == True ) ? sen_l.control_cnt + 1 : 0;
+	/*追記文*/
+	sen_r.control_cnt 	= (sen_fr.distance <= SIDECONTROL_FR_THRESHOLD) ? 0 : sen_r.control_cnt;
+	sen_l.control_cnt 	= (sen_fl.distance <= SIDECONTROL_FL_THRESHOLD) ? 0 : sen_l.control_cnt;
 
-	sen_fr.control_th = (sen_fr.control_cnt > 10) ? FRONT_THRESHOLD : 90.0;
-	sen_fl.control_th = (sen_fl.control_cnt > 10) ? FRONT_THRESHOLD : 90.0;
+	sen_r.control_distance =  (sen_r.is_wall == True)? sen_r.control_distance + vehicle->ego.velo.get():0.0f;
+	sen_l.control_distance =  (sen_l.is_wall == True)? sen_l.control_distance + vehicle->ego.velo.get():0.0f;
+
+	sen_r.control_distance = (ABS(sen_r.diff) < 0.5) ? sen_r.control_distance:0.0;
+	sen_l.control_distance = (ABS(sen_l.diff) < 0.5) ? sen_l.control_distance:0.0;
+
+	sen_r.control_distance = (sen_fr.distance <= SIDECONTROL_FR_THRESHOLD) ? 0.0f : sen_r.control_distance;
+	sen_l.control_distance = (sen_fl.distance <= SIDECONTROL_FL_THRESHOLD) ? 0.0f : sen_l.control_distance;
+
 	//need to update
 	if(isEnableIrSens == True)
 	{
@@ -267,6 +282,12 @@ void IrSensTask::IrSensorWallSet()
 		{
 			sen_r.control_th = (sen_r.control_cnt > 10) ? SIDE_THRESHOLD: wall_ref;
 			sen_l.control_th = (sen_l.control_cnt > 10) ? SIDE_THRESHOLD: wall_ref;
+
+			if(sen_r.control_th == SIDE_THRESHOLD)
+			sen_r.control_th = (sen_r.control_distance > 10.0) ? SIDE_THRESHOLD: wall_ref;
+			if(sen_l.control_th == SIDE_THRESHOLD)
+			sen_l.control_th = (sen_l.control_distance > 10.0) ? SIDE_THRESHOLD: wall_ref;
+
 		}
 		else
 		{
@@ -286,11 +307,13 @@ void IrSensTask::IrSensorWallSet()
 		{
 			sen_r.is_control 	= (sen_fr.distance <= SIDECONTROL_FR_THRESHOLD)? False:sen_r.is_control;
 			sen_l.is_control 	= (sen_fl.distance <= SIDECONTROL_FL_THRESHOLD)? False:sen_l.is_control;
-		}
 
+		}
 
 		sen_r.error	= (sen_r.is_control == True) ? sen_r.distance - wall_ref : 0.0;
 		sen_l.error	= (sen_l.is_control == True) ? sen_l.distance - wall_ref : 0.0;
+
+
 
 		if(irsens_motion == STRAIGHT_IRSENS)
 		{
@@ -381,10 +404,10 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 	control_ir_dot.init();
 	float ir_xposition = vehicle->ego.x_point.get();
 	float deviation_rad = 0.0f;
-	float gain = CLAMP(vehicle->ego.velo.get()/0.320f,0,20.0);
+	float gain = CLAMP(vehicle->ego.velo.get()/0.320f,1.0,20.0);
 
 	//sensor_output = k1*ydiff/1000.0 + k2/1000.0*theta;
-	if(isEnableIrSens == True)
+	if(isEnableIrSens == True && vehicle->ideal.velo.get() > 0.20)
 	{
 		if(sen_r.is_control == True && sen_l.is_control == True)
 		{
@@ -400,7 +423,7 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 			ir_xposition =  -(sen_l.error - sen_r.error);
 			if(irsens_motion == STRAIGHT_IRSENS)
 			{
-				vehicle->ego.x_point.set((ir_xposition+vehicle->ego.x_point.get())/2.0);
+				//vehicle->ego.x_point.set((ir_xposition+vehicle->ego.x_point.get())/2.0);
 			}
 
 		}

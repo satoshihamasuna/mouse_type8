@@ -172,6 +172,9 @@ void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp
 
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
+	ir_sens->r_corner_length.init();
+	ir_sens->l_corner_length.init();
+
 
 	error_counter_reset();
 
@@ -344,6 +347,9 @@ void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,floa
 
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
+	ir_sens->r_corner_length.init();
+	ir_sens->l_corner_length.init();
+
 
 	error_counter_reset();
 

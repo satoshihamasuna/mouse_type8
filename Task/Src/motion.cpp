@@ -80,21 +80,31 @@ void Motion::Adjust_wall_corner()
 {
 	if(motion_control_get()== STRAIGHT_STATE)
 	{
-		if((ir_sens->r_wall_corner == True || ir_sens->l_wall_corner == True) && vehicle->ideal.velo.get() > 0.1 )
+		if((ir_sens->r_wall_corner == True || ir_sens->l_wall_corner == True) && vehicle->ideal.velo.get() > 0.28 )
 		{
 			//ir_sens->Division_Wall_Correction();
 
-			if(ir_sens->r_wall_corner == True)	{		Indicate_LED((0x01 << 4)|Return_LED_Status());		}
-			if(ir_sens->l_wall_corner == True)	{		Indicate_LED((0x01 << 5)|Return_LED_Status());		}
+			float straight_diff = 0.0f;
 
-			if(ABS(ir_sens->r_corner_time - ir_sens->l_corner_time) < (int)((8.0)/vehicle->ideal.velo.get())
+			if(ir_sens->r_wall_corner == True)	{
+				Indicate_LED((0x01 << 4)|Return_LED_Status());
+				ir_sens->r_corner_length.set(vehicle->ego.length.get());
+			}
+			if(ir_sens->l_wall_corner == True)	{
+				Indicate_LED((0x01 << 5)|Return_LED_Status());
+				ir_sens->l_corner_length.set(vehicle->ego.length.get());
+			}
+
+			straight_diff = ir_sens->r_corner_length.get() - ir_sens->l_corner_length.get();
+			if(ABS(straight_diff) < (8.0)
 						&& motion_plan.end_length.get() >= 90.0f)
 			{
 				int diff_time_ms = (ir_sens->r_corner_time - ir_sens->l_corner_time);
-				float diff = ((float)diff_time_ms) * vehicle->ideal.velo.get();
-				if(diff != 0.0f)
+				//float diff = ((float)diff_time_ms) * vehicle->ideal.velo.get();
+				float diff = straight_diff;
+				if(diff != 0.0f && vehicle->ideal.velo.get() > 0.30)
 				{
-					vehicle->ego.radian.set(-diff/84.0);
+					vehicle->ego.radian.set(-diff/84.0*0.0);
 					vehicle->ego.x_point.set(42.0*diff/65.0);
 					Indicate_LED((0x0f)|Return_LED_Status());
 				}
@@ -104,11 +114,11 @@ void Motion::Adjust_wall_corner()
 		{
 			if(ir_sens->r_corner_time > (int)((8.0)/vehicle->ideal.velo.get()) )
 			{
-				Indicate_LED((~0x01)&Return_LED_Status());
+				Indicate_LED((~(0x01 << 4))&Return_LED_Status());
 			}
 			if(ir_sens->l_corner_time > (int)((8.0)/vehicle->ideal.velo.get()) )
 			{
-				Indicate_LED((~0x08)&Return_LED_Status());
+				Indicate_LED((~(0x01 << 5))&Return_LED_Status());
 			}
 			if(ir_sens->r_corner_time > (int)((8.0)/vehicle->ideal.velo.get())
 					&& ir_sens->l_corner_time > (int)((8.0)/vehicle->ideal.velo.get()) )
@@ -120,11 +130,11 @@ void Motion::Adjust_wall_corner()
 		{
 			if(ir_sens->r_corner_time > 40 )
 			{
-				Indicate_LED((~0x01)&Return_LED_Status());
+				Indicate_LED((~(0x01 << 4))&Return_LED_Status());
 			}
 			if(ir_sens->l_corner_time > 40 )
 			{
-				Indicate_LED((~0x08)&Return_LED_Status());
+				Indicate_LED((~(0x01 << 5))&Return_LED_Status());
 			}
 
 			if(ir_sens->l_corner_time > 40 && ir_sens->r_corner_time > 40 )
@@ -138,19 +148,46 @@ void Motion::Adjust_wall_corner()
 		if((ir_sens->r_wall_corner == True || ir_sens->l_wall_corner == True) && vehicle->ideal.velo.get() > 0.2 )
 		{
 			//ir_sens->Division_Wall_Correction();
+			float diagonal_diff = 0.0;
 
+			float prev_r_corner_length = 0.0;
 			if(ir_sens->r_wall_corner == True)	{
 				Indicate_LED((0x01 << 4)|Return_LED_Status());
+				prev_r_corner_length = ir_sens->r_corner_length.get();
 				ir_sens->r_corner_length.set(vehicle->ego.length.get());
+
+				diagonal_diff = ir_sens->r_corner_length.get() - ir_sens->l_corner_length.get();
+
+				/*
+				if(diagonal_diff >= DIAG_SECTION * 1.5 && diagonal_diff < DIAG_SECTION * 2.5)
+					diagonal_diff = (ir_sens->r_corner_length.get() - prev_r_corner_length)/2.0;
+				*/
+				if(diagonal_diff >= DIAG_SECTION * 2 && diagonal_diff < DIAG_SECTION * 3.5)
+					diagonal_diff = diagonal_diff/3.0f;
+				else if(diagonal_diff < 0.0)
+					diagonal_diff = 0.0f;
+
 			}
+
+			float prev_l_corner_length = 0.0;
 			if(ir_sens->l_wall_corner == True)	{
 				Indicate_LED((0x01 << 5)|Return_LED_Status());
+				prev_l_corner_length = ir_sens->r_corner_length.get();
 				ir_sens->l_corner_length.set(vehicle->ego.length.get());
+
+				diagonal_diff = ir_sens->l_corner_length.get() - ir_sens->r_corner_length.get();
+				/*
+				if(diagonal_diff >= DIAG_SECTION * 1.5 && diagonal_diff < DIAG_SECTION * 2.5)
+					diagonal_diff = (ir_sens->l_corner_length.get() - prev_l_corner_length)/2.0;
+				*/
+				if(diagonal_diff >= DIAG_SECTION * 2.0 && diagonal_diff < DIAG_SECTION * 3.5)
+					diagonal_diff = (ir_sens->l_corner_length.get() - prev_l_corner_length)/3.0;
+				else if(diagonal_diff < 0.0)
+					diagonal_diff = 0.0f;
 			}
 
 
 			int time_diff = ABS(ir_sens->r_corner_time - ir_sens->l_corner_time);
-			float diagonal_diff = ABS(ir_sens->r_corner_length.get() - ir_sens->l_corner_length.get());
 
 			/*
 			if(ABS((time_diff*vehicle->ideal.velo.get())-DIAG_SECTION) < (int)((10.0)) && motion_plan.end_length.get() > DIAG_SECTION)
@@ -182,32 +219,6 @@ void Motion::Adjust_wall_corner()
 				}
 
 			}
-
-
-			/*
-			if(ir_sens->r_wall_corner == True && vehicle->ideal.velo.get() > 0.2)
-			{
-				float diff = ir_sens->IrSensorMaxValueFromLog(sensor_sr) - DIAG_SECTION/2.0f;
-				vehicle->ego.radian.set(-(diff/DIAG_SECTION)/2.0*0.0);
-				vehicle->ego.x_point.set(diff/4);
-
-				Indicate_LED((0x0f)|Return_LED_Status());
-
-			}
-			*/
-			/*
-			if(ir_sens->l_wall_corner == True && vehicle->ideal.velo.get() > 0.2)
-			{
-				float diff = -(ir_sens->IrSensorMaxValueFromLog(sensor_sl) - DIAG_SECTION/2.0f);
-
-				//vehicle->ego.radian.set(((diff/20.0) + vehicle->ego.radian.get())/2.0f);
-				//vehicle->ego.x_point.set((diff+vehicle->ego.x_point.get())/2);
-
-				vehicle->ego.radian.set(-(diff/DIAG_SECTION)/2.0*0.0);
-				vehicle->ego.x_point.set(diff/4);
-				Indicate_LED((0x0f)|Return_LED_Status());
-			}
-			*/
 		}
 
 
@@ -274,14 +285,28 @@ void  Motion::SetIdeal_search_straight(){
 
 		if(ir_sens->r_wall_corner == True || ir_sens->l_wall_corner == True )
 		{
-			if(ABS(ir_sens->r_corner_time - ir_sens->l_corner_time) < (int)((8.0)/vehicle->ideal.velo.get()))
+			float straight_diff = 0.0f;
+
+			if(ir_sens->r_wall_corner == True)	{
+				Indicate_LED((0x01 << 4)|Return_LED_Status());
+				ir_sens->r_corner_length.set(vehicle->ego.length.get());
+			}
+			if(ir_sens->l_wall_corner == True)	{
+				Indicate_LED((0x01 << 5)|Return_LED_Status());
+				ir_sens->l_corner_length.set(vehicle->ego.length.get());
+			}
+
+			straight_diff = ir_sens->r_corner_length.get() - ir_sens->l_corner_length.get();
+			if(ABS(straight_diff) < (5.0))
 			{
 				int diff_time_ms = (ir_sens->r_corner_time - ir_sens->l_corner_time);
-				float diff = ((float)diff_time_ms) * vehicle->ideal.velo.get();
+				//float diff = ((float)diff_time_ms) * vehicle->ideal.velo.get();
+				float diff = straight_diff;
 				if(diff != 0.0f)
 				{
-					vehicle->ego.radian.set(-diff/84.0);
+					//vehicle->ego.radian.set(-diff/84.0);
 					vehicle->ego.x_point.set(42.0*diff/65.0);
+					Indicate_LED((0x0f)|Return_LED_Status());
 				}
 			}
 		}

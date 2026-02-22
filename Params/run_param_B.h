@@ -97,12 +97,12 @@ const static t_velo_param param_1100 = {1.10f,9.0f};
 const static t_straight_param st_param_1100 = {&param_1100,&sp_gain_1100,&om_gain_1100};
 
 const static t_pid_gain sp_gain_1200 = {3.0,0.05,0.0};
-const static t_pid_gain om_gain_1200 = {0.07f, 0.005f, 0.00f};
+const static t_pid_gain om_gain_1200 = {0.2f, 0.01f, 0.00f};
 const static t_velo_param param_1200 = {1.20f,10.0f};
 const static t_straight_param st_param_1200 = {&param_1200,&sp_gain_1200,&om_gain_1200};
 
 const static t_pid_gain sp_gain_1300 = {3.0,0.05,0.0};
-const static t_pid_gain om_gain_1300 = {0.07f, 0.005f, 0.00f};
+const static t_pid_gain om_gain_1300 = {0.2f, 0.01f, 0.00f};
 const static t_velo_param param_1300 = {1.30f,10.0f};
 const static t_straight_param st_param_1300 = {&param_1300,&sp_gain_1300,&om_gain_1300};
 

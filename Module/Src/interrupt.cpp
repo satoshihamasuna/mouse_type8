@@ -103,8 +103,6 @@ void Interrupt::preprocess(){
 void Interrupt::preprocess()
 {
 
-	//update wall sensor information
-	IrSensTask_type7::getInstance().IrSensorSet();
 
 	//update encoder information
 	Encoder_SetSpeed_Left();
@@ -177,6 +175,9 @@ void Interrupt::preprocess()
 
 	float battery_voltage = 0.98 * Vehicle_type7::getInstance().battery.get() + (0.02)*Battery_GetVoltage();
 	Vehicle_type7::getInstance().battery.set(battery_voltage);
+
+	//update wall sensor information
+	IrSensTask_type7::getInstance().IrSensorSet(&Vehicle_type7::getInstance());
 }
 
 void Interrupt::main()
