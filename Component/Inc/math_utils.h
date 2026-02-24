@@ -65,23 +65,6 @@
 #define CLAMP(x, low, high)  ((x) < (low) ? (low) : ((x) > (high) ? (high) : (x)))
 
 
-//machine parameter
-#define SECTION				(90.0)
-#define HALF_SECTION		(SECTION/2.0)
-#define DIAG_SECTION		(63.6396)
-#define DIAG_HALF_SECTION	(DIAG_SECTION/2.0)
-#define SEARCH_CORRECTION	(45.0)
-#define DIAGONAL_CORRECTION	(0.0)
-#define STRAIGHT_CORRECTION (0.0)
-
-#define MAZE_SIZE_X  32
-#define MAZE_SIZE_Y  32
-#define MAZE_SIZE  1024
-
-#define MAZE_GOAL_X  13
-#define MAZE_GOAL_Y  14
-#define MAZE_GOAL_SIZE  3
-#define MAP_MAX_VALUE 1024
 
 
 
