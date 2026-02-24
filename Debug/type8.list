@@ -7,41 +7,41 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
   1 .text         0004164c  08000238  08000238  00001238  2**3
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .rodata       00006ff1  08041888  08041888  00042888  2**3
+  2 .rodata       00007001  08041888  08041888  00042888  2**3
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  3 .ARM          00000008  0804887c  0804887c  0004987c  2**2
+  3 .ARM          00000008  0804888c  0804888c  0004988c  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  4 .init_array   00000008  08048884  08048884  00049884  2**2
+  4 .init_array   00000008  08048894  08048894  00049894  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  5 .fini_array   00000004  0804888c  0804888c  0004988c  2**2
+  5 .fini_array   00000004  0804889c  0804889c  0004989c  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  6 .data         000002e4  20000000  08048890  0004a000  2**2
+  6 .data         000002e4  20000000  080488a0  0004a000  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  7 .bss          00019510  200002e4  08048b74  0004a2e4  2**2
+  7 .bss          00019510  200002e4  08048b84  0004a2e4  2**2
                   ALLOC
-  8 ._user_heap_stack 00000604  200197f4  08048b74  0004a7f4  2**0
+  8 ._user_heap_stack 00000604  200197f4  08048b84  0004a7f4  2**0
                   ALLOC
   9 .ARM.attributes 00000036  00000000  00000000  0004a2e4  2**0
                   CONTENTS, READONLY
- 10 .debug_info   000f4e3e  00000000  00000000  0004a31a  2**0
+ 10 .debug_info   000f57fc  00000000  00000000  0004a31a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 11 .debug_abbrev 0001109e  00000000  00000000  0013f158  2**0
+ 11 .debug_abbrev 0001111b  00000000  00000000  0013fb16  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 12 .debug_aranges 00003e28  00000000  00000000  001501f8  2**3
+ 12 .debug_aranges 00003e30  00000000  00000000  00150c38  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_rnglists 0000306f  00000000  00000000  00154020  2**0
+ 13 .debug_rnglists 00003076  00000000  00000000  00154a68  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_macro  000480d6  00000000  00000000  0015708f  2**0
+ 14 .debug_macro  000480d6  00000000  00000000  00157ade  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_line   000730de  00000000  00000000  0019f165  2**0
+ 15 .debug_line   00071d24  00000000  00000000  0019fbb4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_str    0015acef  00000000  00000000  00212243  2**0
+ 16 .debug_str    0015acf9  00000000  00000000  002118d8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .comment      00000043  00000000  00000000  0036cf32  2**0
+ 17 .comment      00000043  00000000  00000000  0036c5d1  2**0
                   CONTENTS, READONLY
- 18 .debug_frame  00012560  00000000  00000000  0036cf78  2**2
+ 18 .debug_frame  00012584  00000000  00000000  0036c614  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_line_str 00000052  00000000  00000000  0037f4d8  2**0
+ 19 .debug_line_str 00000052  00000000  00000000  0037eb98  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -3550,7 +3550,7 @@ void vtrecv_callback(vtrecv_t *vtrecv, vtrecv_action_t action, unsigned char ch)
  8002026:	46bd      	mov	sp, r7
  8002028:	bd80      	pop	{r7, pc}
  800202a:	bf00      	nop
- 800202c:	08042288 	.word	0x08042288
+ 800202c:	08042298 	.word	0x08042298
 
 08002030 <ntshell_init>:
 void ntshell_init(ntshell_t *p,
@@ -4785,7 +4785,7 @@ state_change_t GET_STATE_TABLE(const int state, const int ch)
  8002720:	46bd      	mov	sp, r7
  8002722:	f85d 7b04 	ldr.w	r7, [sp], #4
  8002726:	4770      	bx	lr
- 8002728:	08042310 	.word	0x08042310
+ 8002728:	08042320 	.word	0x08042320
 
 0800272c <GET_ENTRY_ACTIONS>:
 
@@ -4806,7 +4806,7 @@ vtrecv_action_t GET_ENTRY_ACTIONS(const int state)
  8002740:	46bd      	mov	sp, r7
  8002742:	f85d 7b04 	ldr.w	r7, [sp], #4
  8002746:	4770      	bx	lr
- 8002748:	08042b68 	.word	0x08042b68
+ 8002748:	08042b78 	.word	0x08042b78
 
 0800274c <GET_EXIT_ACTIONS>:
 
@@ -4827,7 +4827,7 @@ vtrecv_action_t GET_EXIT_ACTIONS(const int state)
  8002760:	46bd      	mov	sp, r7
  8002762:	f85d 7b04 	ldr.w	r7, [sp], #4
  8002766:	4770      	bx	lr
- 8002768:	08042b78 	.word	0x08042b78
+ 8002768:	08042b88 	.word	0x08042b88
 
 0800276c <vtrecv_init>:
 
@@ -11148,49 +11148,109 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
  8004d74:	40020150 	.word	0x40020150
 
 08004d78 <Reset_Handler>:
+
+  .section .text.Reset_Handler
+  .weak Reset_Handler
+  .type Reset_Handler, %function
+Reset_Handler:
+  ldr   r0, =_estack
  8004d78:	480d      	ldr	r0, [pc, #52]	@ (8004db0 <LoopForever+0x2>)
+  mov   sp, r0          /* set stack pointer */
  8004d7a:	4685      	mov	sp, r0
+/* Call the clock system initialization function.*/
+  bl  SystemInit
  8004d7c:	f7ff fac4 	bl	8004308 <SystemInit>
+
+/* Copy the data segment initializers from flash to SRAM */
+  ldr r0, =_sdata
  8004d80:	480c      	ldr	r0, [pc, #48]	@ (8004db4 <LoopForever+0x6>)
+  ldr r1, =_edata
  8004d82:	490d      	ldr	r1, [pc, #52]	@ (8004db8 <LoopForever+0xa>)
+  ldr r2, =_sidata
  8004d84:	4a0d      	ldr	r2, [pc, #52]	@ (8004dbc <LoopForever+0xe>)
+  movs r3, #0
  8004d86:	2300      	movs	r3, #0
+  b LoopCopyDataInit
  8004d88:	e002      	b.n	8004d90 <LoopCopyDataInit>
 
 08004d8a <CopyDataInit>:
+
+CopyDataInit:
+  ldr r4, [r2, r3]
  8004d8a:	58d4      	ldr	r4, [r2, r3]
+  str r4, [r0, r3]
  8004d8c:	50c4      	str	r4, [r0, r3]
+  adds r3, r3, #4
  8004d8e:	3304      	adds	r3, #4
 
 08004d90 <LoopCopyDataInit>:
+
+LoopCopyDataInit:
+  adds r4, r0, r3
  8004d90:	18c4      	adds	r4, r0, r3
+  cmp r4, r1
  8004d92:	428c      	cmp	r4, r1
+  bcc CopyDataInit
  8004d94:	d3f9      	bcc.n	8004d8a <CopyDataInit>
+
+/* Zero fill the bss segment. */
+  ldr r2, =_sbss
  8004d96:	4a0a      	ldr	r2, [pc, #40]	@ (8004dc0 <LoopForever+0x12>)
+  ldr r4, =_ebss
  8004d98:	4c0a      	ldr	r4, [pc, #40]	@ (8004dc4 <LoopForever+0x16>)
+  movs r3, #0
  8004d9a:	2300      	movs	r3, #0
+  b LoopFillZerobss
  8004d9c:	e001      	b.n	8004da2 <LoopFillZerobss>
 
 08004d9e <FillZerobss>:
+
+FillZerobss:
+  str  r3, [r2]
  8004d9e:	6013      	str	r3, [r2, #0]
+  adds r2, r2, #4
  8004da0:	3204      	adds	r2, #4
 
 08004da2 <LoopFillZerobss>:
+
+LoopFillZerobss:
+  cmp r2, r4
  8004da2:	42a2      	cmp	r2, r4
+  bcc FillZerobss
  8004da4:	d3fb      	bcc.n	8004d9e <FillZerobss>
+
+/* Call static constructors */
+  bl __libc_init_array
  8004da6:	f038 fdaf 	bl	803d908 <__libc_init_array>
+/* Call the application's entry point.*/
+  bl main
  8004daa:	f7fe fe87 	bl	8003abc <main>
 
 08004dae <LoopForever>:
+
+LoopForever:
+    b LoopForever
  8004dae:	e7fe      	b.n	8004dae <LoopForever>
+  ldr   r0, =_estack
  8004db0:	20040000 	.word	0x20040000
+  ldr r0, =_sdata
  8004db4:	20000000 	.word	0x20000000
+  ldr r1, =_edata
  8004db8:	200002e4 	.word	0x200002e4
- 8004dbc:	08048890 	.word	0x08048890
+  ldr r2, =_sidata
+ 8004dbc:	080488a0 	.word	0x080488a0
+  ldr r2, =_sbss
  8004dc0:	200002e4 	.word	0x200002e4
+  ldr r4, =_ebss
  8004dc4:	200197f4 	.word	0x200197f4
 
 08004dc8 <ADC4_IRQHandler>:
+ * @retval : None
+*/
+  .section .text.Default_Handler,"ax",%progbits
+Default_Handler:
+Infinite_Loop:
+  b Infinite_Loop
  8004dc8:	e7fe      	b.n	8004dc8 <ADC4_IRQHandler>
 	...
 
@@ -11261,7 +11321,7 @@ HAL_StatusTypeDef HAL_Init(void)
  8004e1a:	bd80      	pop	{r7, pc}
  8004e1c:	40022000 	.word	0x40022000
  8004e20:	46020c00 	.word	0x46020c00
- 8004e24:	08042b88 	.word	0x08042b88
+ 8004e24:	08042b98 	.word	0x08042b98
  8004e28:	20000000 	.word	0x20000000
 
 08004e2c <HAL_InitTick>:
@@ -24120,7 +24180,7 @@ void HAL_GPIO_Init(GPIO_TypeDef  *GPIOx, const GPIO_InitTypeDef *pGPIO_Init)
  8009958:	e01e      	b.n	8009998 <HAL_GPIO_Init+0x1c4>
  800995a:	bf00      	nop
  800995c:	46020000 	.word	0x46020000
- 8009960:	08042be0 	.word	0x08042be0
+ 8009960:	08042bf0 	.word	0x08042bf0
       {
         /* Check the parameters */
         assert_param(IS_GPIO_ALL_INSTANCE(GPIOx));
@@ -28670,7 +28730,7 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(const RCC_ClkInitTypeDef   *const pRCC_Clk
  800b3f6:	bd80      	pop	{r7, pc}
  800b3f8:	46020c00 	.word	0x46020c00
  800b3fc:	40022000 	.word	0x40022000
- 800b400:	08042b88 	.word	0x08042b88
+ 800b400:	08042b98 	.word	0x08042b98
  800b404:	20000000 	.word	0x20000000
  800b408:	20000004 	.word	0x20000004
 
@@ -28959,7 +29019,7 @@ uint32_t HAL_RCC_GetSysClockFreq(void)
  800b5f8:	4770      	bx	lr
  800b5fa:	bf00      	nop
  800b5fc:	46020c00 	.word	0x46020c00
- 800b600:	08042ba0 	.word	0x08042ba0
+ 800b600:	08042bb0 	.word	0x08042bb0
  800b604:	00f42400 	.word	0x00f42400
  800b608:	4b742400 	.word	0x4b742400
  800b60c:	46000000 	.word	0x46000000
@@ -28992,7 +29052,7 @@ uint32_t HAL_RCC_GetHCLKFreq(void)
  800b634:	bd80      	pop	{r7, pc}
  800b636:	bf00      	nop
  800b638:	46020c00 	.word	0x46020c00
- 800b63c:	08042b88 	.word	0x08042b88
+ 800b63c:	08042b98 	.word	0x08042b98
  800b640:	20000000 	.word	0x20000000
 
 0800b644 <HAL_RCC_GetPCLK1Freq>:
@@ -29019,7 +29079,7 @@ uint32_t HAL_RCC_GetPCLK1Freq(void)
  800b660:	4618      	mov	r0, r3
  800b662:	bd80      	pop	{r7, pc}
  800b664:	46020c00 	.word	0x46020c00
- 800b668:	08042b98 	.word	0x08042b98
+ 800b668:	08042ba8 	.word	0x08042ba8
 
 0800b66c <HAL_RCC_GetPCLK2Freq>:
   * @note   Each time PCLK2 changes, this function must be called to update the
@@ -29045,7 +29105,7 @@ uint32_t HAL_RCC_GetPCLK2Freq(void)
  800b688:	4618      	mov	r0, r3
  800b68a:	bd80      	pop	{r7, pc}
  800b68c:	46020c00 	.word	0x46020c00
- 800b690:	08042b98 	.word	0x08042b98
+ 800b690:	08042ba8 	.word	0x08042ba8
 
 0800b694 <HAL_RCC_GetPCLK3Freq>:
   * @note   Each time PCLK3 changes, this function must be called to update the
@@ -29071,7 +29131,7 @@ uint32_t HAL_RCC_GetPCLK3Freq(void)
  800b6b0:	4618      	mov	r0, r3
  800b6b2:	bd80      	pop	{r7, pc}
  800b6b4:	46020c00 	.word	0x46020c00
- 800b6b8:	08042b98 	.word	0x08042b98
+ 800b6b8:	08042ba8 	.word	0x08042ba8
 
 0800b6bc <RCC_SetFlashLatencyFromMSIRange>:
             voltage range.
@@ -31064,7 +31124,7 @@ void HAL_RCCEx_GetPLL1ClockFreq(PLL1_ClocksTypeDef *PLL1_Clocks)
  800c4b0:	46020c00 	.word	0x46020c00
  800c4b4:	4b742400 	.word	0x4b742400
  800c4b8:	46000000 	.word	0x46000000
- 800c4bc:	08042ba0 	.word	0x08042ba0
+ 800c4bc:	08042bb0 	.word	0x08042bb0
 
 0800c4c0 <HAL_RCCEx_GetPLL2ClockFreq>:
   *         right PLL2CLK value. Otherwise, any configuration based on this function will be incorrect.
@@ -31380,7 +31440,7 @@ void HAL_RCCEx_GetPLL2ClockFreq(PLL2_ClocksTypeDef *PLL2_Clocks)
  800c764:	46020c00 	.word	0x46020c00
  800c768:	4b742400 	.word	0x4b742400
  800c76c:	46000000 	.word	0x46000000
- 800c770:	08042ba0 	.word	0x08042ba0
+ 800c770:	08042bb0 	.word	0x08042bb0
 
 0800c774 <HAL_RCCEx_GetPLL3ClockFreq>:
   *         right PLL3CLK value. Otherwise, any configuration based on this function will be incorrect.
@@ -31699,7 +31759,7 @@ void HAL_RCCEx_GetPLL3ClockFreq(PLL3_ClocksTypeDef *PLL3_Clocks)
  800ca18:	46020c00 	.word	0x46020c00
  800ca1c:	4b742400 	.word	0x4b742400
  800ca20:	46000000 	.word	0x46000000
- 800ca24:	08042ba0 	.word	0x08042ba0
+ 800ca24:	08042bb0 	.word	0x08042bb0
 
 0800ca28 <HAL_RCCEx_GetPeriphCLKFreq>:
   * @retval Frequency in Hz
@@ -32151,7 +32211,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint64_t PeriphClk)
  800ccf4:	0007a120 	.word	0x0007a120
  800ccf8:	00f42400 	.word	0x00f42400
  800ccfc:	02dc6c00 	.word	0x02dc6c00
- 800cd00:	08042ba0 	.word	0x08042ba0
+ 800cd00:	08042bb0 	.word	0x08042bb0
         }
         case RCC_ICLK_CLKSOURCE_MSIK: /* MSIK frequency range in HZ */
         {
@@ -32569,7 +32629,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint64_t PeriphClk)
  800cfae:	f000 be3f 	b.w	800dc30 <HAL_RCCEx_GetPeriphCLKFreq+0x1208>
  800cfb2:	bf00      	nop
  800cfb4:	46020c00 	.word	0x46020c00
- 800cfb8:	08042ba0 	.word	0x08042ba0
+ 800cfb8:	08042bb0 	.word	0x08042bb0
  800cfbc:	00f42400 	.word	0x00f42400
     }
     else if ((HAL_IS_BIT_SET(RCC->BDCR, RCC_BDCR_LSERDY)) && (srcclk == RCC_LPUART1CLKSOURCE_LSE))
@@ -32968,7 +33028,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint64_t PeriphClk)
  800d27a:	f003 030f 	and.w	r3, r3, #15
  800d27e:	e00c      	b.n	800d29a <HAL_RCCEx_GetPeriphCLKFreq+0x872>
  800d280:	46020c00 	.word	0x46020c00
- 800d284:	08042ba0 	.word	0x08042ba0
+ 800d284:	08042bb0 	.word	0x08042bb0
  800d288:	00f42400 	.word	0x00f42400
  800d28c:	4b9d      	ldr	r3, [pc, #628]	@ (800d504 <HAL_RCCEx_GetPeriphCLKFreq+0xadc>)
  800d28e:	f8d3 30f4 	ldr.w	r3, [r3, #244]	@ 0xf4
@@ -33350,7 +33410,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint64_t PeriphClk)
  800d500:	637b      	str	r3, [r7, #52]	@ 0x34
  800d502:	e395      	b.n	800dc30 <HAL_RCCEx_GetPeriphCLKFreq+0x1208>
  800d504:	46020c00 	.word	0x46020c00
- 800d508:	08042ba0 	.word	0x08042ba0
+ 800d508:	08042bb0 	.word	0x08042bb0
  800d50c:	00f42400 	.word	0x00f42400
     }
     else if ((HAL_IS_BIT_SET(RCC->CR, RCC_CR_MSIKRDY)) && (srcclk == RCC_I2C4CLKSOURCE_MSIK))
@@ -33740,7 +33800,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint64_t PeriphClk)
  800d7a0:	e246      	b.n	800dc30 <HAL_RCCEx_GetPeriphCLKFreq+0x1208>
  800d7a2:	bf00      	nop
  800d7a4:	46020c00 	.word	0x46020c00
- 800d7a8:	08042ba0 	.word	0x08042ba0
+ 800d7a8:	08042bb0 	.word	0x08042bb0
  800d7ac:	00f42400 	.word	0x00f42400
     }
   }
@@ -34165,7 +34225,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint64_t PeriphClk)
  800da62:	bf00      	nop
  800da64:	46020c00 	.word	0x46020c00
  800da68:	00f42400 	.word	0x00f42400
- 800da6c:	08042ba0 	.word	0x08042ba0
+ 800da6c:	08042bb0 	.word	0x08042bb0
  800da70:	4b72      	ldr	r3, [pc, #456]	@ (800dc3c <HAL_RCCEx_GetPeriphCLKFreq+0x1214>)
  800da72:	f8d3 30f4 	ldr.w	r3, [r3, #244]	@ 0xf4
  800da76:	041b      	lsls	r3, r3, #16
@@ -34475,7 +34535,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint64_t PeriphClk)
  800dc38:	bd80      	pop	{r7, pc}
  800dc3a:	bf00      	nop
  800dc3c:	46020c00 	.word	0x46020c00
- 800dc40:	08042ba0 	.word	0x08042ba0
+ 800dc40:	08042bb0 	.word	0x08042bb0
  800dc44:	02dc6c00 	.word	0x02dc6c00
  800dc48:	016e3600 	.word	0x016e3600
  800dc4c:	00f42400 	.word	0x00f42400
@@ -45464,7 +45524,7 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
  8011f5c:	40004800 	.word	0x40004800
  8011f60:	40004c00 	.word	0x40004c00
  8011f64:	40005000 	.word	0x40005000
- 8011f68:	08042c60 	.word	0x08042c60
+ 8011f68:	08042c70 	.word	0x08042c70
       }
     }
   }
@@ -45555,7 +45615,7 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
  8011fec:	46bd      	mov	sp, r7
  8011fee:	e8bd 8fb0 	ldmia.w	sp!, {r4, r5, r7, r8, r9, sl, fp, pc}
  8011ff2:	bf00      	nop
- 8011ff4:	08042c60 	.word	0x08042c60
+ 8011ff4:	08042c70 	.word	0x08042c70
 
 08011ff8 <UART_AdvFeatureConfig>:
   * @brief Configure the UART peripheral advanced features.
@@ -47676,8 +47736,8 @@ static void UARTEx_SetNbDataToProcess(UART_HandleTypeDef *huart)
  8012bd8:	f85d 7b04 	ldr.w	r7, [sp], #4
  8012bdc:	4770      	bx	lr
  8012bde:	bf00      	nop
- 8012be0:	08042c78 	.word	0x08042c78
- 8012be4:	08042c80 	.word	0x08042c80
+ 8012be0:	08042c88 	.word	0x08042c88
+ 8012be4:	08042c90 	.word	0x08042c90
 
 08012be8 <_ZN17wall_histry_class11histry_initEv>:
 {
@@ -48671,7 +48731,7 @@ class param_element
  80132c2:	46bd      	mov	sp, r7
  80132c4:	bd80      	pop	{r7, pc}
  80132c6:	bf00      	nop
- 80132c8:	08042cbc 	.word	0x08042cbc
+ 80132c8:	08042ccc 	.word	0x08042ccc
 
 080132cc <_ZN7VehicleD0Ev>:
 		virtual ~Vehicle()
@@ -49883,7 +49943,7 @@ class Vehicle
  8013d6a:	3708      	adds	r7, #8
  8013d6c:	46bd      	mov	sp, r7
  8013d6e:	bd80      	pop	{r7, pc}
- 8013d70:	08042cbc 	.word	0x08042cbc
+ 8013d70:	08042ccc 	.word	0x08042ccc
 
 08013d74 <_ZN13Vehicle_type7C1Ev>:
 class Vehicle_type7:public Vehicle,public Singleton<Vehicle_type7>{
@@ -49902,7 +49962,7 @@ class Vehicle_type7:public Vehicle,public Singleton<Vehicle_type7>{
  8013d8e:	3708      	adds	r7, #8
  8013d90:	46bd      	mov	sp, r7
  8013d92:	bd80      	pop	{r7, pc}
- 8013d94:	08042c9c 	.word	0x08042c9c
+ 8013d94:	08042cac 	.word	0x08042cac
 
 08013d98 <_ZN13Vehicle_type7D1Ev>:
  8013d98:	b580      	push	{r7, lr}
@@ -49920,7 +49980,7 @@ class Vehicle_type7:public Vehicle,public Singleton<Vehicle_type7>{
  8013db2:	3708      	adds	r7, #8
  8013db4:	46bd      	mov	sp, r7
  8013db6:	bd80      	pop	{r7, pc}
- 8013db8:	08042c9c 	.word	0x08042c9c
+ 8013db8:	08042cac 	.word	0x08042cac
 
 08013dbc <_ZN13Vehicle_type7D0Ev>:
  8013dbc:	b580      	push	{r7, lr}
@@ -50015,7 +50075,7 @@ class IrSensTask
  8013e68:	46bd      	mov	sp, r7
  8013e6a:	f85d 7b04 	ldr.w	r7, [sp], #4
  8013e6e:	4770      	bx	lr
- 8013e70:	080470ac 	.word	0x080470ac
+ 8013e70:	080470bc 	.word	0x080470bc
  8013e74:	42340000 	.word	0x42340000
 
 08013e78 <_ZN16IrSensTask_type7C1Ev>:
@@ -50035,7 +50095,7 @@ class IrSensTask_type7: public IrSensTask,public Singleton<IrSensTask_type7>
  8013e92:	3708      	adds	r7, #8
  8013e94:	46bd      	mov	sp, r7
  8013e96:	bd80      	pop	{r7, pc}
- 8013e98:	08042c90 	.word	0x08042c90
+ 8013e98:	08042ca0 	.word	0x08042ca0
 
 08013e9c <_ZN9SingletonI16IrSensTask_type7E11getInstanceEv>:
 	static T& getInstance(void) {
@@ -50251,9 +50311,9 @@ class LogData:public Singleton<LogData>
 	...
 
 0801404c <_ZN7LogData13indicate_dataEv>:
+        "omega_ctrl.get_D_peration",
 
-}
-*/
+    };
 
 void LogData::indicate_data()
 {
@@ -50261,10 +50321,7 @@ void LogData::indicate_data()
  801404e:	b086      	sub	sp, #24
  8014050:	af00      	add	r7, sp, #0
  8014052:	6078      	str	r0, [r7, #4]
-        "speed_ctrl.get_D_peration",
-        "omega_ctrl.get_D_peration",
 
-    };
 
     const int COLS = LOG_DATA_NUM;
  8014054:	232d      	movs	r3, #45	@ 0x2d
@@ -50394,6 +50451,9 @@ void LogData::indicate_data()
  801413c:	08041c18 	.word	0x08041c18
 
 08014140 <_ZN7LogData7loggingEv>:
+
+    printf("\r\nEND\r\n");
+}
 
 void LogData::logging()
 {
@@ -60967,14 +61027,14 @@ void make_map::Display()
  80195ea:	46bd      	mov	sp, r7
  80195ec:	bd80      	pop	{r7, pc}
  80195ee:	bf00      	nop
- 80195f0:	08041c20 	.word	0x08041c20
- 80195f4:	08041c28 	.word	0x08041c28
- 80195f8:	08041c30 	.word	0x08041c30
- 80195fc:	08041c38 	.word	0x08041c38
- 8019600:	08041c40 	.word	0x08041c40
- 8019604:	08041c44 	.word	0x08041c44
- 8019608:	08041c4c 	.word	0x08041c4c
- 801960c:	08041c54 	.word	0x08041c54
+ 80195f0:	08041c30 	.word	0x08041c30
+ 80195f4:	08041c38 	.word	0x08041c38
+ 80195f8:	08041c40 	.word	0x08041c40
+ 80195fc:	08041c48 	.word	0x08041c48
+ 8019600:	08041c50 	.word	0x08041c50
+ 8019604:	08041c54 	.word	0x08041c54
+ 8019608:	08041c5c 	.word	0x08041c5c
+ 801960c:	08041c64 	.word	0x08041c64
 
 08019610 <_ZN10ring_queueILj1024E9t_MapNodeE4pushES0_>:
 		void push(T push_data)
@@ -64205,34 +64265,34 @@ void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos
  801ad86:	46bd      	mov	sp, r7
  801ad88:	bdf0      	pop	{r4, r5, r6, r7, pc}
  801ad8a:	bf00      	nop
- 801ad8c:	08041c58 	.word	0x08041c58
- 801ad90:	08041c74 	.word	0x08041c74
- 801ad94:	08041c7c 	.word	0x08041c7c
- 801ad98:	08041c88 	.word	0x08041c88
- 801ad9c:	08041c94 	.word	0x08041c94
- 801ada0:	08041ca0 	.word	0x08041ca0
- 801ada4:	08041cb0 	.word	0x08041cb0
- 801ada8:	08041cc0 	.word	0x08041cc0
- 801adac:	08041cd0 	.word	0x08041cd0
- 801adb0:	08041ce0 	.word	0x08041ce0
- 801adb4:	08041cec 	.word	0x08041cec
- 801adb8:	08041cf8 	.word	0x08041cf8
- 801adbc:	08041d08 	.word	0x08041d08
- 801adc0:	08041d18 	.word	0x08041d18
- 801adc4:	08041d28 	.word	0x08041d28
- 801adc8:	08041d38 	.word	0x08041d38
- 801adcc:	08041d48 	.word	0x08041d48
- 801add0:	08041d58 	.word	0x08041d58
- 801add4:	08041d64 	.word	0x08041d64
- 801add8:	08041d70 	.word	0x08041d70
- 801addc:	08041d84 	.word	0x08041d84
- 801ade0:	08041d94 	.word	0x08041d94
- 801ade4:	08041da4 	.word	0x08041da4
- 801ade8:	08041db4 	.word	0x08041db4
- 801adec:	08041dc4 	.word	0x08041dc4
- 801adf0:	08041dd4 	.word	0x08041dd4
- 801adf4:	08041de0 	.word	0x08041de0
- 801adf8:	08041dec 	.word	0x08041dec
+ 801ad8c:	08041c68 	.word	0x08041c68
+ 801ad90:	08041c84 	.word	0x08041c84
+ 801ad94:	08041c8c 	.word	0x08041c8c
+ 801ad98:	08041c98 	.word	0x08041c98
+ 801ad9c:	08041ca4 	.word	0x08041ca4
+ 801ada0:	08041cb0 	.word	0x08041cb0
+ 801ada4:	08041cc0 	.word	0x08041cc0
+ 801ada8:	08041cd0 	.word	0x08041cd0
+ 801adac:	08041ce0 	.word	0x08041ce0
+ 801adb0:	08041cf0 	.word	0x08041cf0
+ 801adb4:	08041cfc 	.word	0x08041cfc
+ 801adb8:	08041d08 	.word	0x08041d08
+ 801adbc:	08041d18 	.word	0x08041d18
+ 801adc0:	08041d28 	.word	0x08041d28
+ 801adc4:	08041d38 	.word	0x08041d38
+ 801adc8:	08041d48 	.word	0x08041d48
+ 801adcc:	08041d58 	.word	0x08041d58
+ 801add0:	08041d68 	.word	0x08041d68
+ 801add4:	08041d74 	.word	0x08041d74
+ 801add8:	08041d80 	.word	0x08041d80
+ 801addc:	08041d94 	.word	0x08041d94
+ 801ade0:	08041da4 	.word	0x08041da4
+ 801ade4:	08041db4 	.word	0x08041db4
+ 801ade8:	08041dc4 	.word	0x08041dc4
+ 801adec:	08041dd4 	.word	0x08041dd4
+ 801adf0:	08041de4 	.word	0x08041de4
+ 801adf4:	08041df0 	.word	0x08041df0
+ 801adf8:	08041dfc 	.word	0x08041dfc
  801adfc:	00000000 	.word	0x00000000
 
 0801ae00 <_ZN8Dijkstra12run_DijkstraE10t_position11t_directionS0_hPKPK16t_straight_paramtS6_tPKPK7t_paramP6Motion>:
@@ -64699,8 +64759,8 @@ void Dijkstra::run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_pos
  801b340:	f7fe fa40 	bl	80197c4 <_ZN6Motion19exe_Motion_straightEffffPK10t_pid_gainS2_>
 				break;
  801b344:	f000 bd0a 	b.w	801bd5c <_ZN8Dijkstra12run_DijkstraE10t_position11t_directionS0_hPKPK16t_straight_paramtS6_tPKPK7t_paramP6Motion+0xf5c>
- 801b348:	08042ce0 	.word	0x08042ce0
- 801b34c:	08042cd4 	.word	0x08042cd4
+ 801b348:	08042cf0 	.word	0x08042cf0
+ 801b34c:	08042ce4 	.word	0x08042ce4
  801b350:	4151999a 	.word	0x4151999a
  801b354:	40568000 	.word	0x40568000
  801b358:	00000000 	.word	0x00000000
@@ -76981,8 +77041,8 @@ t_exeStatus Search::updateMap_half_straight(int x, int y,t_position expand_end,i
  80224ce:	3718      	adds	r7, #24
  80224d0:	46bd      	mov	sp, r7
  80224d2:	bd80      	pop	{r7, pc}
- 80224d4:	08042cf8 	.word	0x08042cf8
- 80224d8:	08042cec 	.word	0x08042cec
+ 80224d4:	08042d08 	.word	0x08042d08
+ 80224d8:	08042cfc 	.word	0x08042cfc
  80224dc:	42700000 	.word	0x42700000
  80224e0:	42340000 	.word	0x42340000
 
@@ -77037,8 +77097,8 @@ t_exeStatus Search::updateMap_half_straight_and_stop(int x, int y,t_position exp
  8022542:	3718      	adds	r7, #24
  8022544:	46bd      	mov	sp, r7
  8022546:	bd80      	pop	{r7, pc}
- 8022548:	08042cf8 	.word	0x08042cf8
- 802254c:	08042cec 	.word	0x08042cec
+ 8022548:	08042d08 	.word	0x08042d08
+ 802254c:	08042cfc 	.word	0x08042cfc
  8022550:	00000000 	.word	0x00000000
  8022554:	42340000 	.word	0x42340000
 
@@ -77096,8 +77156,8 @@ t_exeStatus Search::updateMap_straight(int x, int y,t_position expand_end,int si
  80225be:	3718      	adds	r7, #24
  80225c0:	46bd      	mov	sp, r7
  80225c2:	bd80      	pop	{r7, pc}
- 80225c4:	08042cf8 	.word	0x08042cf8
- 80225c8:	08042cec 	.word	0x08042cec
+ 80225c4:	08042d08 	.word	0x08042d08
+ 80225c8:	08042cfc 	.word	0x08042cfc
  80225cc:	42b40000 	.word	0x42b40000
 
 080225d0 <_ZN6Search19updateMap_left_turnEii10t_positioniiP8make_mapP6Motion>:
@@ -77144,8 +77204,8 @@ t_exeStatus Search::updateMap_left_turn(int x, int y,t_position expand_end,int s
  8022616:	46bd      	mov	sp, r7
  8022618:	bd80      	pop	{r7, pc}
  802261a:	bf00      	nop
- 802261c:	08042cf8 	.word	0x08042cf8
- 8022620:	08042cec 	.word	0x08042cec
+ 802261c:	08042d08 	.word	0x08042d08
+ 8022620:	08042cfc 	.word	0x08042cfc
 
 08022624 <_ZN6Search20updateMap_right_turnEii10t_positioniiP8make_mapP6Motion>:
 t_exeStatus Search::updateMap_right_turn(int x, int y,t_position expand_end,int size,int mask,make_map *_map,Motion *motion)
@@ -77191,8 +77251,8 @@ t_exeStatus Search::updateMap_right_turn(int x, int y,t_position expand_end,int 
  802266a:	46bd      	mov	sp, r7
  802266c:	bd80      	pop	{r7, pc}
  802266e:	bf00      	nop
- 8022670:	08042cf8 	.word	0x08042cf8
- 8022674:	08042cec 	.word	0x08042cec
+ 8022670:	08042d08 	.word	0x08042d08
+ 8022674:	08042cfc 	.word	0x08042cfc
 
 08022678 <_ZN6Search18turn_right_processE10t_positionS0_S0_iiP10wall_classP8make_mapP6Motion>:
 
@@ -77519,8 +77579,8 @@ t_exeStatus Search::turn_right_process(t_position my_position,t_position tmp_my_
  8022962:	bf00      	nop
  8022964:	40468000 	.word	0x40468000
  8022968:	402e0000 	.word	0x402e0000
- 802296c:	08042cf8 	.word	0x08042cf8
- 8022970:	08042cec 	.word	0x08042cec
+ 802296c:	08042d08 	.word	0x08042d08
+ 8022970:	08042cfc 	.word	0x08042cfc
  8022974:	43fa0000 	.word	0x43fa0000
  8022978:	41490fda 	.word	0x41490fda
  802297c:	42fb53d0 	.word	0x42fb53d0
@@ -77643,8 +77703,8 @@ t_exeStatus Search::turn_right_process(t_position my_position,t_position tmp_my_
  8022a76:	46bd      	mov	sp, r7
  8022a78:	bdb0      	pop	{r4, r5, r7, pc}
  8022a7a:	bf00      	nop
- 8022a7c:	08042cf8 	.word	0x08042cf8
- 8022a80:	08042cec 	.word	0x08042cec
+ 8022a7c:	08042d08 	.word	0x08042d08
+ 8022a80:	08042cfc 	.word	0x08042cfc
  8022a84:	43fa0000 	.word	0x43fa0000
  8022a88:	c1490fda 	.word	0xc1490fda
  8022a8c:	c2fb53d0 	.word	0xc2fb53d0
@@ -77975,8 +78035,8 @@ t_exeStatus Search::turn_left_process (	t_position my_position,t_position tmp_my
  8022d82:	bf00      	nop
  8022d84:	40468000 	.word	0x40468000
  8022d88:	402e0000 	.word	0x402e0000
- 8022d8c:	08042cf8 	.word	0x08042cf8
- 8022d90:	08042cec 	.word	0x08042cec
+ 8022d8c:	08042d08 	.word	0x08042d08
+ 8022d90:	08042cfc 	.word	0x08042cfc
  8022d94:	43fa0000 	.word	0x43fa0000
  8022d98:	c1490fda 	.word	0xc1490fda
  8022d9c:	c2fb53d0 	.word	0xc2fb53d0
@@ -78097,8 +78157,8 @@ t_exeStatus Search::turn_left_process (	t_position my_position,t_position tmp_my
  8022e96:	46bd      	mov	sp, r7
  8022e98:	bdb0      	pop	{r4, r5, r7, pc}
  8022e9a:	bf00      	nop
- 8022e9c:	08042cf8 	.word	0x08042cf8
- 8022ea0:	08042cec 	.word	0x08042cec
+ 8022e9c:	08042d08 	.word	0x08042d08
+ 8022ea0:	08042cfc 	.word	0x08042cfc
  8022ea4:	43fa0000 	.word	0x43fa0000
  8022ea8:	41490fda 	.word	0x41490fda
  8022eac:	42fb53d0 	.word	0x42fb53d0
@@ -78458,8 +78518,8 @@ t_exeStatus Search::turn_rear_process (	t_position my_position,t_position tmp_my
  80231ae:	bdb0      	pop	{r4, r5, r7, pc}
  80231b0:	42340000 	.word	0x42340000
  80231b4:	40568000 	.word	0x40568000
- 80231b8:	08042cf8 	.word	0x08042cf8
- 80231bc:	08042cec 	.word	0x08042cec
+ 80231b8:	08042d08 	.word	0x08042d08
+ 80231bc:	08042cfc 	.word	0x08042cfc
  80231c0:	00000000 	.word	0x00000000
  80231c4:	43960000 	.word	0x43960000
  80231c8:	c1490fda 	.word	0xc1490fda
@@ -78919,8 +78979,8 @@ t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int g
  8023534:	f47f af46 	bne.w	80233c4 <_ZN6Search13search_adachiE10t_positionS0_iP10wall_classP8make_mapP6Motion+0x1dc>
  8023538:	e013      	b.n	8023562 <_ZN6Search13search_adachiE10t_positionS0_iP10wall_classP8make_mapP6Motion+0x37a>
  802353a:	bf00      	nop
- 802353c:	08042cf8 	.word	0x08042cf8
- 8023540:	08042cec 	.word	0x08042cec
+ 802353c:	08042d08 	.word	0x08042d08
+ 8023540:	08042cfc 	.word	0x08042cfc
  8023544:	c1490fda 	.word	0xc1490fda
  8023548:	c2fb53d0 	.word	0xc2fb53d0
  802354c:	bfc90fda 	.word	0xbfc90fda
@@ -79000,8 +79060,8 @@ t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int g
  80235fa:	46bd      	mov	sp, r7
  80235fc:	bd80      	pop	{r7, pc}
  80235fe:	bf00      	nop
- 8023600:	08042cf8 	.word	0x08042cf8
- 8023604:	08042cec 	.word	0x08042cec
+ 8023600:	08042d08 	.word	0x08042d08
+ 8023604:	08042cfc 	.word	0x08042cfc
  8023608:	00000000 	.word	0x00000000
  802360c:	42340000 	.word	0x42340000
 
@@ -79497,8 +79557,8 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
  80239ce:	2b80      	cmp	r3, #128	@ 0x80
  80239d0:	dadd      	bge.n	802398e <_ZN6Search17search_adachi_accE10t_positionS0_iP10wall_classP8make_mapP6Motion+0x37e>
  80239d2:	e13e      	b.n	8023c52 <_ZN6Search17search_adachi_accE10t_positionS0_iP10wall_classP8make_mapP6Motion+0x642>
- 80239d4:	08042cf8 	.word	0x08042cf8
- 80239d8:	08042cec 	.word	0x08042cec
+ 80239d4:	08042d08 	.word	0x08042d08
+ 80239d8:	08042cfc 	.word	0x08042cfc
  80239dc:	c1490fda 	.word	0xc1490fda
  80239e0:	c2fb53d0 	.word	0xc2fb53d0
  80239e4:	bfc90fda 	.word	0xbfc90fda
@@ -79844,12 +79904,12 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
  8023c88:	e013      	b.n	8023cb2 <_ZN6Search17search_adachi_accE10t_positionS0_iP10wall_classP8make_mapP6Motion+0x6a2>
  8023c8a:	bf00      	nop
  8023c8c:	000493df 	.word	0x000493df
- 8023c90:	08042d84 	.word	0x08042d84
- 8023c94:	08042d4c 	.word	0x08042d4c
- 8023c98:	08042d58 	.word	0x08042d58
+ 8023c90:	08042d94 	.word	0x08042d94
+ 8023c94:	08042d5c 	.word	0x08042d5c
+ 8023c98:	08042d68 	.word	0x08042d68
  8023c9c:	0002bf1f 	.word	0x0002bf1f
- 8023ca0:	08042cf8 	.word	0x08042cf8
- 8023ca4:	08042cec 	.word	0x08042cec
+ 8023ca0:	08042d08 	.word	0x08042d08
+ 8023ca4:	08042cfc 	.word	0x08042cfc
  8023ca8:	42b40000 	.word	0x42b40000
  8023cac:	3f19999a 	.word	0x3f19999a
 			break;
@@ -79930,8 +79990,8 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
  8023d58:	46bd      	mov	sp, r7
  8023d5a:	ecbd 8b02 	vpop	{d8}
  8023d5e:	bd90      	pop	{r4, r7, pc}
- 8023d60:	08042cf8 	.word	0x08042cf8
- 8023d64:	08042cec 	.word	0x08042cec
+ 8023d60:	08042d08 	.word	0x08042d08
+ 8023d64:	08042cfc 	.word	0x08042cfc
  8023d68:	00000000 	.word	0x00000000
  8023d6c:	42340000 	.word	0x42340000
 
@@ -81383,14 +81443,14 @@ void wall_class::indicate_wall()
  8024812:	3718      	adds	r7, #24
  8024814:	46bd      	mov	sp, r7
  8024816:	bd80      	pop	{r7, pc}
- 8024818:	08041df8 	.word	0x08041df8
- 802481c:	08041e00 	.word	0x08041e00
- 8024820:	08041e08 	.word	0x08041e08
- 8024824:	08041e10 	.word	0x08041e10
- 8024828:	08041e18 	.word	0x08041e18
- 802482c:	08041e1c 	.word	0x08041e1c
- 8024830:	08041e24 	.word	0x08041e24
- 8024834:	08041e2c 	.word	0x08041e2c
+ 8024818:	08041e08 	.word	0x08041e08
+ 802481c:	08041e10 	.word	0x08041e10
+ 8024820:	08041e18 	.word	0x08041e18
+ 8024824:	08041e20 	.word	0x08041e20
+ 8024828:	08041e28 	.word	0x08041e28
+ 802482c:	08041e2c 	.word	0x08041e2c
+ 8024830:	08041e34 	.word	0x08041e34
+ 8024834:	08041e3c 	.word	0x08041e3c
 
 08024838 <_ZN6Motion12return_irObjEv>:
 			return execute_Motion();
@@ -81893,12 +81953,12 @@ namespace Mode
  8024cf4:	401ccccc 	.word	0x401ccccc
  8024cf8:	d2f1a9fc 	.word	0xd2f1a9fc
  8024cfc:	3f80624d 	.word	0x3f80624d
- 8024d00:	08042d9c 	.word	0x08042d9c
- 8024d04:	08042d90 	.word	0x08042d90
+ 8024d00:	08042dac 	.word	0x08042dac
+ 8024d04:	08042da0 	.word	0x08042da0
  8024d08:	00000000 	.word	0x00000000
  8024d0c:	44340000 	.word	0x44340000
- 8024d10:	08042db4 	.word	0x08042db4
- 8024d14:	08042da8 	.word	0x08042da8
+ 8024d10:	08042dc4 	.word	0x08042dc4
+ 8024d14:	08042db8 	.word	0x08042db8
  8024d18:	441f1958 	.word	0x441f1958
  8024d1c:	447a0000 	.word	0x447a0000
  8024d20:	2000      	movs	r0, #0
@@ -82139,8 +82199,8 @@ namespace Mode
  8024f9c:	401ccccc 	.word	0x401ccccc
  8024fa0:	d2f1a9fc 	.word	0xd2f1a9fc
  8024fa4:	3f80624d 	.word	0x3f80624d
- 8024fa8:	08042d9c 	.word	0x08042d9c
- 8024fac:	08042d90 	.word	0x08042d90
+ 8024fa8:	08042dac 	.word	0x08042dac
+ 8024fac:	08042da0 	.word	0x08042da0
  8024fb0:	42b40000 	.word	0x42b40000
  8024fb4:	00000000 	.word	0x00000000
  8024fb8:	447a0000 	.word	0x447a0000
@@ -82374,8 +82434,8 @@ namespace Mode
  802521c:	401ccccc 	.word	0x401ccccc
  8025220:	d2f1a9fc 	.word	0xd2f1a9fc
  8025224:	3f80624d 	.word	0x3f80624d
- 8025228:	08042d9c 	.word	0x08042d9c
- 802522c:	08042d90 	.word	0x08042d90
+ 8025228:	08042dac 	.word	0x08042dac
+ 802522c:	08042da0 	.word	0x08042da0
  8025230:	43340000 	.word	0x43340000
  8025234:	00000000 	.word	0x00000000
  8025238:	447a0000 	.word	0x447a0000
@@ -82608,8 +82668,8 @@ namespace Mode
  802549c:	401ccccc 	.word	0x401ccccc
  80254a0:	d2f1a9fc 	.word	0xd2f1a9fc
  80254a4:	3f80624d 	.word	0x3f80624d
- 80254a8:	08042d9c 	.word	0x08042d9c
- 80254ac:	08042d90 	.word	0x08042d90
+ 80254a8:	08042dac 	.word	0x08042dac
+ 80254ac:	08042da0 	.word	0x08042da0
  80254b0:	42b40000 	.word	0x42b40000
  80254b4:	00000000 	.word	0x00000000
  80254b8:	42fe8ef3 	.word	0x42fe8ef3
@@ -82845,8 +82905,8 @@ namespace Mode
  8025724:	401ccccc 	.word	0x401ccccc
  8025728:	d2f1a9fc 	.word	0xd2f1a9fc
  802572c:	3f80624d 	.word	0x3f80624d
- 8025730:	08042d9c 	.word	0x08042d9c
- 8025734:	08042d90 	.word	0x08042d90
+ 8025730:	08042dac 	.word	0x08042dac
+ 8025734:	08042da0 	.word	0x08042da0
  8025738:	42b40000 	.word	0x42b40000
  802573c:	00000000 	.word	0x00000000
  8025740:	42fe8ef3 	.word	0x42fe8ef3
@@ -83081,8 +83141,8 @@ namespace Mode
  80259ac:	401ccccc 	.word	0x401ccccc
  80259b0:	d2f1a9fc 	.word	0xd2f1a9fc
  80259b4:	3f80624d 	.word	0x3f80624d
- 80259b8:	08042d9c 	.word	0x08042d9c
- 80259bc:	08042d90 	.word	0x08042d90
+ 80259b8:	08042dac 	.word	0x08042dac
+ 80259bc:	08042da0 	.word	0x08042da0
  80259c0:	42fe8ef3 	.word	0x42fe8ef3
  80259c4:	00000000 	.word	0x00000000
  80259c8:	42b40000 	.word	0x42b40000
@@ -83318,8 +83378,8 @@ namespace Mode
  8025c34:	401ccccc 	.word	0x401ccccc
  8025c38:	d2f1a9fc 	.word	0xd2f1a9fc
  8025c3c:	3f80624d 	.word	0x3f80624d
- 8025c40:	08042d9c 	.word	0x08042d9c
- 8025c44:	08042d90 	.word	0x08042d90
+ 8025c40:	08042dac 	.word	0x08042dac
+ 8025c44:	08042da0 	.word	0x08042da0
  8025c48:	42fe8ef3 	.word	0x42fe8ef3
  8025c4c:	00000000 	.word	0x00000000
  8025c50:	42b40000 	.word	0x42b40000
@@ -83573,8 +83633,8 @@ namespace Mode
  8025eec:	401ccccc 	.word	0x401ccccc
  8025ef0:	d2f1a9fc 	.word	0xd2f1a9fc
  8025ef4:	3f80624d 	.word	0x3f80624d
- 8025ef8:	08042d9c 	.word	0x08042d9c
- 8025efc:	08042d90 	.word	0x08042d90
+ 8025ef8:	08042dac 	.word	0x08042dac
+ 8025efc:	08042da0 	.word	0x08042da0
  8025f00:	42fe8ef3 	.word	0x42fe8ef3
  8025f04:	00000000 	.word	0x00000000
  8025f08:	427e8ef3 	.word	0x427e8ef3
@@ -83809,8 +83869,8 @@ namespace Mode
  8026174:	401ccccc 	.word	0x401ccccc
  8026178:	d2f1a9fc 	.word	0xd2f1a9fc
  802617c:	3f80624d 	.word	0x3f80624d
- 8026180:	08042d9c 	.word	0x08042d9c
- 8026184:	08042d90 	.word	0x08042d90
+ 8026180:	08042dac 	.word	0x08042dac
+ 8026184:	08042da0 	.word	0x08042da0
  8026188:	42fe8ef3 	.word	0x42fe8ef3
  802618c:	00000000 	.word	0x00000000
  8026190:	42b40000 	.word	0x42b40000
@@ -84046,8 +84106,8 @@ namespace Mode
  80263fc:	401ccccc 	.word	0x401ccccc
  8026400:	d2f1a9fc 	.word	0xd2f1a9fc
  8026404:	3f80624d 	.word	0x3f80624d
- 8026408:	08042d9c 	.word	0x08042d9c
- 802640c:	08042d90 	.word	0x08042d90
+ 8026408:	08042dac 	.word	0x08042dac
+ 802640c:	08042da0 	.word	0x08042da0
  8026410:	42b40000 	.word	0x42b40000
  8026414:	00000000 	.word	0x00000000
  8026418:	42fe8ef3 	.word	0x42fe8ef3
@@ -84281,8 +84341,8 @@ namespace Mode
  802667c:	401ccccc 	.word	0x401ccccc
  8026680:	d2f1a9fc 	.word	0xd2f1a9fc
  8026684:	3f80624d 	.word	0x3f80624d
- 8026688:	08042d9c 	.word	0x08042d9c
- 802668c:	08042d90 	.word	0x08042d90
+ 8026688:	08042dac 	.word	0x08042dac
+ 802668c:	08042da0 	.word	0x08042da0
  8026690:	42fe8ef3 	.word	0x42fe8ef3
  8026694:	00000000 	.word	0x00000000
  8026698:	42b40000 	.word	0x42b40000
@@ -84516,8 +84576,8 @@ namespace Mode
  80268fc:	401ccccc 	.word	0x401ccccc
  8026900:	d2f1a9fc 	.word	0xd2f1a9fc
  8026904:	3f80624d 	.word	0x3f80624d
- 8026908:	08042d9c 	.word	0x08042d9c
- 802690c:	08042d90 	.word	0x08042d90
+ 8026908:	08042dac 	.word	0x08042dac
+ 802690c:	08042da0 	.word	0x08042da0
  8026910:	42fe8ef3 	.word	0x42fe8ef3
  8026914:	00000000 	.word	0x00000000
  8026918:	42b40000 	.word	0x42b40000
@@ -84886,8 +84946,8 @@ namespace Mode
  8026c68:	cccccccd 	.word	0xcccccccd
  8026c6c:	401ccccc 	.word	0x401ccccc
  8026c70:	447a0000 	.word	0x447a0000
- 8026c74:	08042d9c 	.word	0x08042d9c
- 8026c78:	08042d90 	.word	0x08042d90
+ 8026c74:	08042dac 	.word	0x08042dac
+ 8026c78:	08042da0 	.word	0x08042da0
  8026c7c:	42fe8ef3 	.word	0x42fe8ef3
  8026c80:	00000000 	.word	0x00000000
  8026c84:	42b40000 	.word	0x42b40000
@@ -85362,9 +85422,9 @@ namespace Mode
  8026fb4:	46bd      	mov	sp, r7
  8026fb6:	f85d 7b04 	ldr.w	r7, [sp], #4
  8026fba:	4770      	bx	lr
- 8026fbc:	08043e2c 	.word	0x08043e2c
- 8026fc0:	08043dc8 	.word	0x08043dc8
- 8026fc4:	08043dd4 	.word	0x08043dd4
+ 8026fbc:	08043e3c 	.word	0x08043e3c
+ 8026fc0:	08043dd8 	.word	0x08043dd8
+ 8026fc4:	08043de4 	.word	0x08043de4
 
 08026fc8 <_ZN11calcRunTimeC1Ev>:
         	return_param.param 			  =	di_set_mode[0]->param;
@@ -85437,8 +85497,8 @@ namespace Mode
  8027034:	f85d 7b04 	ldr.w	r7, [sp], #4
  8027038:	4770      	bx	lr
  802703a:	bf00      	nop
- 802703c:	080444d8 	.word	0x080444d8
- 8027040:	080445bc 	.word	0x080445bc
+ 802703c:	080444e8 	.word	0x080444e8
+ 8027040:	080445cc 	.word	0x080445cc
 
 08027044 <_ZN8DijkstraC1EP10wall_class>:
 		uint8_t get_wall_inf(t_posDijkstra position);
@@ -85595,9 +85655,9 @@ class Search
  802714a:	f85d 7b04 	ldr.w	r7, [sp], #4
  802714e:	4770      	bx	lr
  8027150:	00057e40 	.word	0x00057e40
- 8027154:	08043e2c 	.word	0x08043e2c
- 8027158:	08043dc8 	.word	0x08043dc8
- 802715c:	08043dd4 	.word	0x08043dd4
+ 8027154:	08043e3c 	.word	0x08043e3c
+ 8027158:	08043dd8 	.word	0x08043dd8
+ 802715c:	08043de4 	.word	0x08043de4
 
 08027160 <_ZN4Mode4DemoEv>:
 
@@ -87417,10 +87477,10 @@ void Demo()
  8028374:	f102 02b8 	add.w	r2, r2, #184	@ 0xb8
  8028378:	6013      	str	r3, [r2, #0]
  802837a:	e031      	b.n	80283e0 <_ZN4Mode4DemoEv+0x1280>
- 802837c:	08043060 	.word	0x08043060
- 8028380:	08043d3c 	.word	0x08043d3c
- 8028384:	080445c0 	.word	0x080445c0
- 8028388:	080444dc 	.word	0x080444dc
+ 802837c:	08043070 	.word	0x08043070
+ 8028380:	08043d4c 	.word	0x08043d4c
+ 8028384:	080445d0 	.word	0x080445d0
+ 8028388:	080444ec 	.word	0x080444ec
 					{
 						(i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
  802838c:	f507 4309 	add.w	r3, r7, #35072	@ 0x8900
@@ -87865,16 +87925,16 @@ void Demo()
 				}
 				break;
  802878a:	e2d6      	b.n	8028d3a <_ZN4Mode4DemoEv+0x1bda>
- 802878c:	08043060 	.word	0x08043060
- 8028790:	080445cc 	.word	0x080445cc
- 8028794:	080444e8 	.word	0x080444e8
- 8028798:	08043628 	.word	0x08043628
- 802879c:	08044660 	.word	0x08044660
- 80287a0:	08044620 	.word	0x08044620
- 80287a4:	0804457c 	.word	0x0804457c
- 80287a8:	08043344 	.word	0x08043344
- 80287ac:	080445d0 	.word	0x080445d0
- 80287b0:	080444ec 	.word	0x080444ec
+ 802878c:	08043070 	.word	0x08043070
+ 8028790:	080445dc 	.word	0x080445dc
+ 8028794:	080444f8 	.word	0x080444f8
+ 8028798:	08043638 	.word	0x08043638
+ 802879c:	08044670 	.word	0x08044670
+ 80287a0:	08044630 	.word	0x08044630
+ 80287a4:	0804458c 	.word	0x0804458c
+ 80287a8:	08043354 	.word	0x08043354
+ 80287ac:	080445e0 	.word	0x080445e0
+ 80287b0:	080444fc 	.word	0x080444fc
 			case ENABLE|0x0B:
 			   if(irsens->IrSensor_Avg() > 2000)
  80287b4:	f507 4309 	add.w	r3, r7, #35072	@ 0x8900
@@ -88270,11 +88330,11 @@ void Demo()
 				}
 				break;
  8028b2e:	e10a      	b.n	8028d46 <_ZN4Mode4DemoEv+0x1be6>
- 8028b30:	08043628 	.word	0x08043628
- 8028b34:	080445e0 	.word	0x080445e0
- 8028b38:	080444fc 	.word	0x080444fc
- 8028b3c:	0804453c 	.word	0x0804453c
- 8028b40:	08044668 	.word	0x08044668
+ 8028b30:	08043638 	.word	0x08043638
+ 8028b34:	080445f0 	.word	0x080445f0
+ 8028b38:	0804450c 	.word	0x0804450c
+ 8028b3c:	0804454c 	.word	0x0804454c
+ 8028b40:	08044678 	.word	0x08044678
 			case ENABLE|0x0E:
 			   if(irsens->IrSensor_Avg() > 2000)
  8028b44:	f507 4309 	add.w	r3, r7, #35072	@ 0x8900
@@ -88545,10 +88605,10 @@ void Demo()
  8028d6a:	46bd      	mov	sp, r7
  8028d6c:	bdb0      	pop	{r4, r5, r7, pc}
  8028d6e:	bf00      	nop
- 8028d70:	08043628 	.word	0x08043628
- 8028d74:	08044670 	.word	0x08044670
- 8028d78:	080445e0 	.word	0x080445e0
- 8028d7c:	0804453c 	.word	0x0804453c
+ 8028d70:	08043638 	.word	0x08043638
+ 8028d74:	08044680 	.word	0x08044680
+ 8028d78:	080445f0 	.word	0x080445f0
+ 8028d7c:	0804454c 	.word	0x0804454c
 
 08028d80 <_ZN10ring_queueILj1024E9t_MapNodeEC1Ev>:
 		ring_queue()
@@ -89431,8 +89491,8 @@ void Demo2()
  80295ec:	4618      	mov	r0, r3
  80295ee:	f7ec f93f 	bl	8015870 <Indicate_LED>
  80295f2:	e006      	b.n	8029602 <_ZN4Mode5Demo2Ev+0x83e>
- 80295f4:	0804491c 	.word	0x0804491c
- 80295f8:	08045f34 	.word	0x08045f34
+ 80295f4:	0804492c 	.word	0x0804492c
+ 80295f8:	08045f44 	.word	0x08045f44
  80295fc:	2000      	movs	r0, #0
  80295fe:	f7ec f937 	bl	8015870 <Indicate_LED>
 						HAL_Delay(50);
@@ -89766,13 +89826,13 @@ void Demo2()
  80298f8:	4618      	mov	r0, r3
  80298fa:	f7eb ffb9 	bl	8015870 <Indicate_LED>
  80298fe:	e010      	b.n	8029922 <_ZN4Mode5Demo2Ev+0xb5e>
- 8029900:	0804491c 	.word	0x0804491c
- 8029904:	080457d4 	.word	0x080457d4
- 8029908:	08045f28 	.word	0x08045f28
- 802990c:	08045e18 	.word	0x08045e18
- 8029910:	080451c8 	.word	0x080451c8
- 8029914:	08045fac 	.word	0x08045fac
- 8029918:	08045eb4 	.word	0x08045eb4
+ 8029900:	0804492c 	.word	0x0804492c
+ 8029904:	080457e4 	.word	0x080457e4
+ 8029908:	08045f38 	.word	0x08045f38
+ 802990c:	08045e28 	.word	0x08045e28
+ 8029910:	080451d8 	.word	0x080451d8
+ 8029914:	08045fbc 	.word	0x08045fbc
+ 8029918:	08045ec4 	.word	0x08045ec4
  802991c:	2000      	movs	r0, #0
  802991e:	f7eb ffa7 	bl	8015870 <Indicate_LED>
 						HAL_Delay(50);
@@ -90130,15 +90190,15 @@ void Demo2()
 				break;
  8029c34:	e242      	b.n	802a0bc <_ZN4Mode5Demo2Ev+0x12f8>
  8029c36:	bf00      	nop
- 8029c38:	080454ac 	.word	0x080454ac
- 8029c3c:	08045fe8 	.word	0x08045fe8
- 8029c40:	08045ef0 	.word	0x08045ef0
- 8029c44:	08046020 	.word	0x08046020
- 8029c48:	08045fac 	.word	0x08045fac
- 8029c4c:	08045eb4 	.word	0x08045eb4
- 8029c50:	08044c00 	.word	0x08044c00
- 8029c54:	08045f38 	.word	0x08045f38
- 8029c58:	08045e24 	.word	0x08045e24
+ 8029c38:	080454bc 	.word	0x080454bc
+ 8029c3c:	08045ff8 	.word	0x08045ff8
+ 8029c40:	08045f00 	.word	0x08045f00
+ 8029c44:	08046030 	.word	0x08046030
+ 8029c48:	08045fbc 	.word	0x08045fbc
+ 8029c4c:	08045ec4 	.word	0x08045ec4
+ 8029c50:	08044c10 	.word	0x08044c10
+ 8029c54:	08045f48 	.word	0x08045f48
+ 8029c58:	08045e34 	.word	0x08045e34
 			case ENABLE|0x0C:
 			   if(irsens->IrSensor_Avg() > 2000)
  8029c5c:	f507 4309 	add.w	r3, r7, #35072	@ 0x8900
@@ -90552,14 +90612,14 @@ void Demo2()
  8029ffe:	6013      	str	r3, [r2, #0]
  802a000:	e03a      	b.n	802a078 <_ZN4Mode5Demo2Ev+0x12b4>
  802a002:	bf00      	nop
- 802a004:	08044ee4 	.word	0x08044ee4
- 802a008:	08044c00 	.word	0x08044c00
- 802a00c:	08045f48 	.word	0x08045f48
- 802a010:	08045e34 	.word	0x08045e34
- 802a014:	08045f78 	.word	0x08045f78
- 802a018:	08045e64 	.word	0x08045e64
- 802a01c:	08045f88 	.word	0x08045f88
- 802a020:	08045e88 	.word	0x08045e88
+ 802a004:	08044ef4 	.word	0x08044ef4
+ 802a008:	08044c10 	.word	0x08044c10
+ 802a00c:	08045f58 	.word	0x08045f58
+ 802a010:	08045e44 	.word	0x08045e44
+ 802a014:	08045f88 	.word	0x08045f88
+ 802a018:	08045e74 	.word	0x08045e74
+ 802a01c:	08045f98 	.word	0x08045f98
+ 802a020:	08045e98 	.word	0x08045e98
 					{
 					  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
  802a024:	f507 4309 	add.w	r3, r7, #35072	@ 0x8900
@@ -91266,15 +91326,15 @@ namespace Mode
  802a6b8:	4618      	mov	r0, r3
  802a6ba:	f7eb f8d9 	bl	8015870 <Indicate_LED>
  802a6be:	e014      	b.n	802a6ea <_ZN4Mode15Interface_CheckEv+0x5ca>
- 802a6c0:	08041e30 	.word	0x08041e30
- 802a6c4:	08041e4c 	.word	0x08041e4c
- 802a6c8:	08041e6c 	.word	0x08041e6c
- 802a6cc:	08041e74 	.word	0x08041e74
+ 802a6c0:	08041e40 	.word	0x08041e40
+ 802a6c4:	08041e5c 	.word	0x08041e5c
+ 802a6c8:	08041e7c 	.word	0x08041e7c
+ 802a6cc:	08041e84 	.word	0x08041e84
  802a6d0:	42340000 	.word	0x42340000
- 802a6d4:	08041e88 	.word	0x08041e88
- 802a6d8:	08041ea0 	.word	0x08041ea0
- 802a6dc:	08041eac 	.word	0x08041eac
- 802a6e0:	08041eb8 	.word	0x08041eb8
+ 802a6d4:	08041e98 	.word	0x08041e98
+ 802a6d8:	08041eb0 	.word	0x08041eb0
+ 802a6dc:	08041ebc 	.word	0x08041ebc
+ 802a6e0:	08041ec8 	.word	0x08041ec8
  802a6e4:	2000      	movs	r0, #0
  802a6e6:	f7eb f8c3 	bl	8015870 <Indicate_LED>
 									  HAL_Delay(50);
@@ -91667,14 +91727,14 @@ namespace Mode
  802aa60:	f8c7 3124 	str.w	r3, [r7, #292]	@ 0x124
  802aa64:	e04a      	b.n	802aafc <_ZN4Mode15Interface_CheckEv+0x9dc>
  802aa66:	bf00      	nop
- 802aa68:	08046034 	.word	0x08046034
- 802aa6c:	08046028 	.word	0x08046028
+ 802aa68:	08046044 	.word	0x08046044
+ 802aa6c:	08046038 	.word	0x08046038
  802aa70:	41490fda 	.word	0x41490fda
  802aa74:	433c7edc 	.word	0x433c7edc
  802aa78:	453b8000 	.word	0x453b8000
  802aa7c:	3ecccccd 	.word	0x3ecccccd
  802aa80:	42340000 	.word	0x42340000
- 802aa84:	08046070 	.word	0x08046070
+ 802aa84:	08046080 	.word	0x08046080
  802aa88:	00000000 	.word	0x00000000
  802aa8c:	3ea3d70a 	.word	0x3ea3d70a
  802aa90:	44a8c000 	.word	0x44a8c000
@@ -92058,18 +92118,18 @@ namespace Mode
  802ae00:	40000000 	.word	0x40000000
  802ae04:	400921fb 	.word	0x400921fb
  802ae08:	40668000 	.word	0x40668000
- 802ae0c:	08041ec8 	.word	0x08041ec8
+ 802ae0c:	08041ed8 	.word	0x08041ed8
  802ae10:	447a0000 	.word	0x447a0000
  802ae14:	408f4000 	.word	0x408f4000
- 802ae18:	08041ed4 	.word	0x08041ed4
- 802ae1c:	08046088 	.word	0x08046088
- 802ae20:	0804607c 	.word	0x0804607c
+ 802ae18:	08041ee4 	.word	0x08041ee4
+ 802ae1c:	08046098 	.word	0x08046098
+ 802ae20:	0804608c 	.word	0x0804608c
  802ae24:	453b8000 	.word	0x453b8000
- 802ae28:	08041ee4 	.word	0x08041ee4
- 802ae2c:	08041ef0 	.word	0x08041ef0
- 802ae30:	08041ef8 	.word	0x08041ef8
- 802ae34:	08046034 	.word	0x08046034
- 802ae38:	08046028 	.word	0x08046028
+ 802ae28:	08041ef4 	.word	0x08041ef4
+ 802ae2c:	08041f00 	.word	0x08041f00
+ 802ae30:	08041f08 	.word	0x08041f08
+ 802ae34:	08046044 	.word	0x08046044
+ 802ae38:	08046038 	.word	0x08046038
  802ae3c:	2000      	movs	r0, #0
  802ae3e:	f7ea fd17 	bl	8015870 <Indicate_LED>
 							  HAL_Delay(50);
@@ -92518,16 +92578,16 @@ namespace Mode
  802b194:	bf00      	nop
 			enable 	= Mode::Select(enable,0x01,Encoder_GetProperty_Left() );
  802b196:	e774      	b.n	802b082 <_ZN4Mode11Select_ModeEv+0x12>
- 802b198:	08046be0 	.word	0x08046be0
- 802b19c:	08046f28 	.word	0x08046f28
- 802b1a0:	08046ec4 	.word	0x08046ec4
- 802b1a4:	08046f54 	.word	0x08046f54
- 802b1a8:	08046334 	.word	0x08046334
- 802b1ac:	08046f80 	.word	0x08046f80
- 802b1b0:	08046618 	.word	0x08046618
- 802b1b4:	08046fac 	.word	0x08046fac
- 802b1b8:	080468fc 	.word	0x080468fc
- 802b1bc:	08046fd8 	.word	0x08046fd8
+ 802b198:	08046bf0 	.word	0x08046bf0
+ 802b19c:	08046f38 	.word	0x08046f38
+ 802b1a0:	08046ed4 	.word	0x08046ed4
+ 802b1a4:	08046f64 	.word	0x08046f64
+ 802b1a8:	08046344 	.word	0x08046344
+ 802b1ac:	08046f90 	.word	0x08046f90
+ 802b1b0:	08046628 	.word	0x08046628
+ 802b1b4:	08046fbc 	.word	0x08046fbc
+ 802b1b8:	0804690c 	.word	0x0804690c
+ 802b1bc:	08046fe8 	.word	0x08046fe8
 
 0802b1c0 <_ZN7LogData11set_logmodeEh>:
 					data[i][j] = float_to_half(0.0f);
@@ -92627,10 +92687,10 @@ static int usrcmd_help(int argc, char **argv)
  802b23e:	3710      	adds	r7, #16
  802b240:	46bd      	mov	sp, r7
  802b242:	bd80      	pop	{r7, pc}
- 802b244:	08046fe4 	.word	0x08046fe4
- 802b248:	08042030 	.word	0x08042030
- 802b24c:	08042038 	.word	0x08042038
- 802b250:	0804203c 	.word	0x0804203c
+ 802b244:	08046ff4 	.word	0x08046ff4
+ 802b248:	08042040 	.word	0x08042040
+ 802b24c:	08042048 	.word	0x08042048
+ 802b250:	0804204c 	.word	0x0804204c
 
 0802b254 <_ZL11usrcmd_infoiPPc>:
 
@@ -92710,13 +92770,13 @@ static int usrcmd_info(int argc, char **argv)
  802b2d2:	46bd      	mov	sp, r7
  802b2d4:	bd80      	pop	{r7, pc}
  802b2d6:	bf00      	nop
- 802b2d8:	08042040 	.word	0x08042040
- 802b2dc:	0804204c 	.word	0x0804204c
- 802b2e0:	08042058 	.word	0x08042058
- 802b2e4:	0804205c 	.word	0x0804205c
- 802b2e8:	08042068 	.word	0x08042068
- 802b2ec:	0804206c 	.word	0x0804206c
- 802b2f0:	0804207c 	.word	0x0804207c
+ 802b2d8:	08042050 	.word	0x08042050
+ 802b2dc:	0804205c 	.word	0x0804205c
+ 802b2e0:	08042068 	.word	0x08042068
+ 802b2e4:	0804206c 	.word	0x0804206c
+ 802b2e8:	08042078 	.word	0x08042078
+ 802b2ec:	0804207c 	.word	0x0804207c
+ 802b2f0:	0804208c 	.word	0x0804208c
 
 0802b2f4 <_ZL11usrcmd_dispiPPc>:
 
@@ -92798,12 +92858,12 @@ static int usrcmd_disp(int argc, char **argv)
  802b376:	3708      	adds	r7, #8
  802b378:	46bd      	mov	sp, r7
  802b37a:	bd80      	pop	{r7, pc}
- 802b37c:	08042098 	.word	0x08042098
- 802b380:	080420a4 	.word	0x080420a4
- 802b384:	080420b0 	.word	0x080420b0
- 802b388:	0804205c 	.word	0x0804205c
- 802b38c:	0804202c 	.word	0x0804202c
- 802b390:	0804207c 	.word	0x0804207c
+ 802b37c:	080420a8 	.word	0x080420a8
+ 802b380:	080420b4 	.word	0x080420b4
+ 802b384:	080420c0 	.word	0x080420c0
+ 802b388:	0804206c 	.word	0x0804206c
+ 802b38c:	0804203c 	.word	0x0804203c
+ 802b390:	0804208c 	.word	0x0804208c
 
 0802b394 <_ZL10usrcmd_endiPPc>:
 
@@ -92863,11 +92923,11 @@ static int usrcmd_end(int argc, char **argv)
  802b3ea:	46bd      	mov	sp, r7
  802b3ec:	bd80      	pop	{r7, pc}
  802b3ee:	bf00      	nop
- 802b3f0:	080420b8 	.word	0x080420b8
- 802b3f4:	080420c4 	.word	0x080420c4
+ 802b3f0:	080420c8 	.word	0x080420c8
+ 802b3f4:	080420d4 	.word	0x080420d4
  802b3f8:	2001960c 	.word	0x2001960c
- 802b3fc:	080420c8 	.word	0x080420c8
- 802b400:	0804207c 	.word	0x0804207c
+ 802b3fc:	080420d8 	.word	0x080420d8
+ 802b400:	0804208c 	.word	0x0804208c
 
 0802b404 <_ZL10usrcmd_logiPPc>:
 
@@ -92950,10 +93010,10 @@ static int usrcmd_log(int argc, char **argv)
  802b48a:	3708      	adds	r7, #8
  802b48c:	46bd      	mov	sp, r7
  802b48e:	bd80      	pop	{r7, pc}
- 802b490:	080420b8 	.word	0x080420b8
- 802b494:	080420d4 	.word	0x080420d4
- 802b498:	080420dc 	.word	0x080420dc
- 802b49c:	0804207c 	.word	0x0804207c
+ 802b490:	080420c8 	.word	0x080420c8
+ 802b494:	080420e4 	.word	0x080420e4
+ 802b498:	080420ec 	.word	0x080420ec
+ 802b49c:	0804208c 	.word	0x0804208c
 
 0802b4a0 <_Z20shell_debug_straightiPPc>:
 
@@ -93298,21 +93358,21 @@ int shell_debug_straight(int argc, char **argv)
  802b778:	f7ea f87a 	bl	8015870 <Indicate_LED>
  802b77c:	e021      	b.n	802b7c2 <_Z20shell_debug_straightiPPc+0x322>
  802b77e:	bf00      	nop
- 802b780:	080420e4 	.word	0x080420e4
+ 802b780:	080420f4 	.word	0x080420f4
  802b784:	200000f4 	.word	0x200000f4
- 802b788:	080420f0 	.word	0x080420f0
- 802b78c:	08042110 	.word	0x08042110
- 802b790:	08042118 	.word	0x08042118
- 802b794:	0804211c 	.word	0x0804211c
- 802b798:	08042120 	.word	0x08042120
- 802b79c:	08042128 	.word	0x08042128
- 802b7a0:	0804212c 	.word	0x0804212c
- 802b7a4:	08042134 	.word	0x08042134
- 802b7a8:	0804213c 	.word	0x0804213c
- 802b7ac:	08042144 	.word	0x08042144
+ 802b788:	08042100 	.word	0x08042100
+ 802b78c:	08042120 	.word	0x08042120
+ 802b790:	08042128 	.word	0x08042128
+ 802b794:	0804212c 	.word	0x0804212c
+ 802b798:	08042130 	.word	0x08042130
+ 802b79c:	08042138 	.word	0x08042138
+ 802b7a0:	0804213c 	.word	0x0804213c
+ 802b7a4:	08042144 	.word	0x08042144
+ 802b7a8:	0804214c 	.word	0x0804214c
+ 802b7ac:	08042154 	.word	0x08042154
  802b7b0:	200000e8 	.word	0x200000e8
- 802b7b4:	080420c4 	.word	0x080420c4
- 802b7b8:	08042150 	.word	0x08042150
+ 802b7b4:	080420d4 	.word	0x080420d4
+ 802b7b8:	08042160 	.word	0x08042160
  802b7bc:	2000      	movs	r0, #0
  802b7be:	f7ea f857 	bl	8015870 <Indicate_LED>
 			HAL_Delay(200);
@@ -93418,7 +93478,7 @@ int shell_debug_straight(int argc, char **argv)
  802b88c:	00000000 	.word	0x00000000
  802b890:	3f333333 	.word	0x3f333333
  802b894:	43b40000 	.word	0x43b40000
- 802b898:	0804207c 	.word	0x0804207c
+ 802b898:	0804208c 	.word	0x0804208c
 
 0802b89c <_Z20shell_debug_diagonaliPPc>:
 
@@ -93762,21 +93822,21 @@ int shell_debug_diagonal(int argc, char **argv)
  802bb74:	f7e9 fe7c 	bl	8015870 <Indicate_LED>
  802bb78:	e021      	b.n	802bbbe <_Z20shell_debug_diagonaliPPc+0x322>
  802bb7a:	bf00      	nop
- 802bb7c:	080420e4 	.word	0x080420e4
+ 802bb7c:	080420f4 	.word	0x080420f4
  802bb80:	2000010c 	.word	0x2000010c
- 802bb84:	080420f0 	.word	0x080420f0
- 802bb88:	08042110 	.word	0x08042110
- 802bb8c:	08042118 	.word	0x08042118
- 802bb90:	0804211c 	.word	0x0804211c
- 802bb94:	08042120 	.word	0x08042120
- 802bb98:	08042128 	.word	0x08042128
- 802bb9c:	0804212c 	.word	0x0804212c
- 802bba0:	08042134 	.word	0x08042134
- 802bba4:	0804213c 	.word	0x0804213c
- 802bba8:	08042144 	.word	0x08042144
+ 802bb84:	08042100 	.word	0x08042100
+ 802bb88:	08042120 	.word	0x08042120
+ 802bb8c:	08042128 	.word	0x08042128
+ 802bb90:	0804212c 	.word	0x0804212c
+ 802bb94:	08042130 	.word	0x08042130
+ 802bb98:	08042138 	.word	0x08042138
+ 802bb9c:	0804213c 	.word	0x0804213c
+ 802bba0:	08042144 	.word	0x08042144
+ 802bba4:	0804214c 	.word	0x0804214c
+ 802bba8:	08042154 	.word	0x08042154
  802bbac:	20000100 	.word	0x20000100
- 802bbb0:	080420c4 	.word	0x080420c4
- 802bbb4:	08042150 	.word	0x08042150
+ 802bbb0:	080420d4 	.word	0x080420d4
+ 802bbb4:	08042160 	.word	0x08042160
  802bbb8:	2000      	movs	r0, #0
  802bbba:	f7e9 fe59 	bl	8015870 <Indicate_LED>
 			HAL_Delay(200);
@@ -93882,7 +93942,7 @@ int shell_debug_diagonal(int argc, char **argv)
  802bc88:	00000000 	.word	0x00000000
  802bc8c:	3f333333 	.word	0x3f333333
  802bc90:	43bee3d7 	.word	0x43bee3d7
- 802bc94:	0804207c 	.word	0x0804207c
+ 802bc94:	0804208c 	.word	0x0804208c
 
 0802bc98 <_ZL12usrcmd_debugiPPc>:
 	printf("Unknown sub command found\r\n");
@@ -93979,15 +94039,15 @@ static int usrcmd_debug(int argc, char **argv)
  802bd32:	46bd      	mov	sp, r7
  802bd34:	bd80      	pop	{r7, pc}
  802bd36:	bf00      	nop
- 802bd38:	0804217c 	.word	0x0804217c
- 802bd3c:	08042190 	.word	0x08042190
- 802bd40:	080421ac 	.word	0x080421ac
- 802bd44:	080421c8 	.word	0x080421c8
- 802bd48:	080421dc 	.word	0x080421dc
- 802bd4c:	080421f8 	.word	0x080421f8
- 802bd50:	08042214 	.word	0x08042214
- 802bd54:	08042220 	.word	0x08042220
- 802bd58:	0804207c 	.word	0x0804207c
+ 802bd38:	0804218c 	.word	0x0804218c
+ 802bd3c:	080421a0 	.word	0x080421a0
+ 802bd40:	080421bc 	.word	0x080421bc
+ 802bd44:	080421d8 	.word	0x080421d8
+ 802bd48:	080421ec 	.word	0x080421ec
+ 802bd4c:	08042208 	.word	0x08042208
+ 802bd50:	08042224 	.word	0x08042224
+ 802bd54:	08042230 	.word	0x08042230
+ 802bd58:	0804208c 	.word	0x0804208c
 
 0802bd5c <_ZL9func_readPciPv>:
 
@@ -94193,8 +94253,8 @@ static int usrcmd_ntopt_callback(int argc, char **argv, void *extobj)
  802be86:	3718      	adds	r7, #24
  802be88:	46bd      	mov	sp, r7
  802be8a:	bd80      	pop	{r7, pc}
- 802be8c:	08046fe4 	.word	0x08046fe4
- 802be90:	0804222c 	.word	0x0804222c
+ 802be8c:	08046ff4 	.word	0x08046ff4
+ 802be90:	0804223c 	.word	0x0804223c
 
 0802be94 <Myshell_Initialize>:
 /* ---------------------------------------------------------------
@@ -95629,9 +95689,9 @@ void CPP_Main()
  802ca5e:	3710      	adds	r7, #16
  802ca60:	46bd      	mov	sp, r7
  802ca62:	bdb0      	pop	{r4, r5, r7, pc}
- 802ca64:	08042244 	.word	0x08042244
- 802ca68:	08042248 	.word	0x08042248
- 802ca6c:	0804225c 	.word	0x0804225c
+ 802ca64:	08042254 	.word	0x08042254
+ 802ca68:	08042258 	.word	0x08042258
+ 802ca6c:	0804226c 	.word	0x0804226c
 
 0802ca70 <_ZN4Mode17Wall_Histry_CheckEP10wall_class>:
 #define ENABLE (0x01 << 4)
@@ -110314,14 +110374,14 @@ float IrSensTask::Sensor_CalcDistance(t_sensor_dir dir, int16_t value)
  8035060:	46bd      	mov	sp, r7
  8035062:	bd80      	pop	{r7, pc}
  8035064:	40a00000 	.word	0x40a00000
- 8035068:	0804705c 	.word	0x0804705c
+ 8035068:	0804706c 	.word	0x0804706c
  803506c:	42200000 	.word	0x42200000
  8035070:	42fa0000 	.word	0x42fa0000
- 8035074:	08047080 	.word	0x08047080
- 8035078:	0804702c 	.word	0x0804702c
+ 8035074:	08047090 	.word	0x08047090
+ 8035078:	0804703c 	.word	0x0804703c
  803507c:	41c80000 	.word	0x41c80000
  8035080:	42a00000 	.word	0x42a00000
- 8035084:	08047044 	.word	0x08047044
+ 8035084:	08047054 	.word	0x08047054
  8035088:	00000000 	.word	0x00000000
 
 0803508c <_ZN10IrSensTask19IrSensorDistanceSetEP7Vehicle>:
@@ -112564,7 +112624,7 @@ float get_turn_table_value(float time_period_ms,float time_ms)
  803643c:	4770      	bx	lr
  803643e:	bf00      	nop
  8036440:	447a0000 	.word	0x447a0000
- 8036444:	080470c8 	.word	0x080470c8
+ 8036444:	080470d8 	.word	0x080470d8
 
 08036448 <_ZN6Motion21SetIdeal_wall_controlEv>:
 
@@ -114546,8 +114606,8 @@ void  Motion::SetIdeal_search_straight(){
  80376d4:	40450000 	.word	0x40450000
  80376d8:	40504000 	.word	0x40504000
  80376dc:	3e19999a 	.word	0x3e19999a
- 80376e0:	080470bc 	.word	0x080470bc
- 80376e4:	080470b0 	.word	0x080470b0
+ 80376e0:	080470cc 	.word	0x080470cc
+ 80376e4:	080470c0 	.word	0x080470c0
  80376e8:	43c80000 	.word	0x43c80000
  80376ec:	00000000 	.word	0x00000000
  80376f0:	447a0000 	.word	0x447a0000
@@ -115985,8 +116045,8 @@ void Motion::SetIdeal_straight()
  80383f0:	46bd      	mov	sp, r7
  80383f2:	ecbd 8b02 	vpop	{d8}
  80383f6:	bd90      	pop	{r4, r7, pc}
- 80383f8:	080470bc 	.word	0x080470bc
- 80383fc:	080470b0 	.word	0x080470b0
+ 80383f8:	080470cc 	.word	0x080470cc
+ 80383fc:	080470c0 	.word	0x080470c0
  8038400:	43c80000 	.word	0x43c80000
  8038404:	00000000 	.word	0x00000000
  8038408:	42480000 	.word	0x42480000
@@ -116522,8 +116582,8 @@ void Motion::SetIdeal_backward()
  803894c:	46bd      	mov	sp, r7
  803894e:	ecbd 8b02 	vpop	{d8}
  8038952:	bd90      	pop	{r4, r7, pc}
- 8038954:	080470bc 	.word	0x080470bc
- 8038958:	080470b0 	.word	0x080470b0
+ 8038954:	080470cc 	.word	0x080470cc
+ 8038958:	080470c0 	.word	0x080470c0
  803895c:	43480000 	.word	0x43480000
  8038960:	447a0000 	.word	0x447a0000
  8038964:	00000000 	.word	0x00000000
@@ -117071,8 +117131,8 @@ void Motion::SetIdeal_diagonal		( )
  8038e58:	ecbd 8b02 	vpop	{d8}
  8038e5c:	bd90      	pop	{r4, r7, pc}
  8038e5e:	bf00      	nop
- 8038e60:	080470bc 	.word	0x080470bc
- 8038e64:	080470b0 	.word	0x080470b0
+ 8038e60:	080470cc 	.word	0x080470cc
+ 8038e64:	080470c0 	.word	0x080470c0
  8038e68:	43c80000 	.word	0x43c80000
  8038e6c:	00000000 	.word	0x00000000
  8038e70:	447a0000 	.word	0x447a0000
@@ -117682,8 +117742,8 @@ void Motion::SetIdeal_pivot_turn()
  8039460:	bff00000 	.word	0xbff00000
  8039464:	3ff00000 	.word	0x3ff00000
  8039468:	00000000 	.word	0x00000000
- 803946c:	080470bc 	.word	0x080470bc
- 8039470:	080470b0 	.word	0x080470b0
+ 803946c:	080470cc 	.word	0x080470cc
+ 8039470:	080470c0 	.word	0x080470c0
  8039474:	43c80000 	.word	0x43c80000
  8039478:	447a0000 	.word	0x447a0000
 
@@ -118217,8 +118277,8 @@ void Motion::SetIdeal_fix_wall		( )
  803995c:	46bd      	mov	sp, r7
  803995e:	ecbd 8b02 	vpop	{d8}
  8039962:	bdb0      	pop	{r4, r5, r7, pc}
- 8039964:	080470bc 	.word	0x080470bc
- 8039968:	080470b0 	.word	0x080470b0
+ 8039964:	080470cc 	.word	0x080470cc
+ 8039968:	080470c0 	.word	0x080470c0
  803996c:	42c80000 	.word	0x42c80000
  8039970:	447a0000 	.word	0x447a0000
  8039974:	00000000 	.word	0x00000000
@@ -122183,11 +122243,11 @@ void Motion::SetIdeal_long_turn_v90		( )
  803be0c:	2e85a308 	.word	0x2e85a308
  803be10:	43490f80 	.word	0x43490f80
  803be14:	3f22f984 	.word	0x3f22f984
- 803be18:	0804806c 	.word	0x0804806c
+ 803be18:	0804807c 	.word	0x0804807c
  803be1c:	2e85a300 	.word	0x2e85a300
  803be20:	248d3132 	.word	0x248d3132
  803be24:	43800000 	.word	0x43800000
- 803be28:	080480ec 	.word	0x080480ec
+ 803be28:	080480fc 	.word	0x080480fc
 
 0803be2c <fabsf>:
  803be2c:	ee10 3a10 	vmov	r3, s0
@@ -122458,8 +122518,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803c11e:	ed39 7a01 	vldmdb	r9!, {s14}
  803c122:	eee6 7a87 	vfma.f32	s15, s13, s14
  803c126:	e7f0      	b.n	803c10a <__kernel_rem_pio2f+0x2ce>
- 803c128:	08048430 	.word	0x08048430
- 803c12c:	08048404 	.word	0x08048404
+ 803c128:	08048440 	.word	0x08048440
+ 803c12c:	08048414 	.word	0x08048414
  803c130:	43800000 	.word	0x43800000
  803c134:	3b800000 	.word	0x3b800000
  803c138:	00000000 	.word	0x00000000
@@ -123286,11 +123346,11 @@ void Motion::SetIdeal_long_turn_v90		( )
  803c968:	e7ee      	b.n	803c948 <_printf_float+0x2a4>
  803c96a:	bf00      	nop
  803c96c:	7fefffff 	.word	0x7fefffff
- 803c970:	08048440 	.word	0x08048440
- 803c974:	0804843c 	.word	0x0804843c
- 803c978:	08048448 	.word	0x08048448
- 803c97c:	08048444 	.word	0x08048444
- 803c980:	08048582 	.word	0x08048582
+ 803c970:	08048450 	.word	0x08048450
+ 803c974:	0804844c 	.word	0x0804844c
+ 803c978:	08048458 	.word	0x08048458
+ 803c97c:	08048454 	.word	0x08048454
+ 803c980:	08048592 	.word	0x08048592
  803c984:	6da3      	ldr	r3, [r4, #88]	@ 0x58
  803c986:	f8dd a028 	ldr.w	sl, [sp, #40]	@ 0x28
  803c98a:	4553      	cmp	r3, sl
@@ -123768,8 +123828,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803ce08:	2500      	movs	r5, #0
  803ce0a:	f104 0619 	add.w	r6, r4, #25
  803ce0e:	e7f5      	b.n	803cdfc <_printf_i+0x220>
- 803ce10:	0804844c 	.word	0x0804844c
- 803ce14:	0804845d 	.word	0x0804845d
+ 803ce10:	0804845c 	.word	0x0804845c
+ 803ce14:	0804846d 	.word	0x0804846d
 
 0803ce18 <_scanf_float>:
  803ce18:	e92d 4ff0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
@@ -124164,8 +124224,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803d226:	2700      	movs	r7, #0
  803d228:	e62e      	b.n	803ce88 <_scanf_float+0x70>
  803d22a:	bf00      	nop
- 803d22c:	0804846e 	.word	0x0804846e
- 803d230:	080485ca 	.word	0x080485ca
+ 803d22c:	0804847e 	.word	0x0804847e
+ 803d230:	080485da 	.word	0x080485da
 
 0803d234 <std>:
  803d234:	2300      	movs	r3, #0
@@ -124968,10 +125028,10 @@ void Motion::SetIdeal_long_turn_v90		( )
  803d93a:	3601      	adds	r6, #1
  803d93c:	4798      	blx	r3
  803d93e:	e7f2      	b.n	803d926 <__libc_init_array+0x1e>
- 803d940:	08048884 	.word	0x08048884
- 803d944:	08048884 	.word	0x08048884
- 803d948:	08048884 	.word	0x08048884
- 803d94c:	0804888c 	.word	0x0804888c
+ 803d940:	08048894 	.word	0x08048894
+ 803d944:	08048894 	.word	0x08048894
+ 803d948:	08048894 	.word	0x08048894
+ 803d94c:	0804889c 	.word	0x0804889c
 
 0803d950 <__retarget_lock_init_recursive>:
  803d950:	4770      	bx	lr
@@ -125472,15 +125532,15 @@ void Motion::SetIdeal_long_turn_v90		( )
  803de34:	3fc68a28 	.word	0x3fc68a28
  803de38:	509f79fb 	.word	0x509f79fb
  803de3c:	3fd34413 	.word	0x3fd34413
- 803de40:	08048480 	.word	0x08048480
- 803de44:	08048497 	.word	0x08048497
+ 803de40:	08048490 	.word	0x08048490
+ 803de44:	080484a7 	.word	0x080484a7
  803de48:	7ff00000 	.word	0x7ff00000
- 803de4c:	08048583 	.word	0x08048583
+ 803de4c:	08048593 	.word	0x08048593
  803de50:	3ff80000 	.word	0x3ff80000
- 803de54:	08048660 	.word	0x08048660
- 803de58:	080484ef 	.word	0x080484ef
- 803de5c:	0804847c 	.word	0x0804847c
- 803de60:	08048582 	.word	0x08048582
+ 803de54:	08048670 	.word	0x08048670
+ 803de58:	080484ff 	.word	0x080484ff
+ 803de5c:	0804848c 	.word	0x0804848c
+ 803de60:	08048592 	.word	0x08048592
  803de64:	f8d9 301c 	ldr.w	r3, [r9, #28]
  803de68:	6018      	str	r0, [r3, #0]
  803de6a:	9b03      	ldr	r3, [sp, #12]
@@ -125709,8 +125769,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803e0e8:	e9cd 0104 	strd	r0, r1, [sp, #16]
  803e0ec:	e7c4      	b.n	803e078 <_dtoa_r+0x508>
  803e0ee:	bf00      	nop
- 803e0f0:	08048660 	.word	0x08048660
- 803e0f4:	08048638 	.word	0x08048638
+ 803e0f0:	08048670 	.word	0x08048670
+ 803e0f4:	08048648 	.word	0x08048648
  803e0f8:	3ff00000 	.word	0x3ff00000
  803e0fc:	40240000 	.word	0x40240000
  803e100:	401c0000 	.word	0x401c0000
@@ -126340,8 +126400,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803e706:	9002      	str	r0, [sp, #8]
  803e708:	e7eb      	b.n	803e6e2 <_dtoa_r+0xb72>
  803e70a:	bf00      	nop
- 803e70c:	080484ef 	.word	0x080484ef
- 803e710:	08048473 	.word	0x08048473
+ 803e70c:	080484ff 	.word	0x080484ff
+ 803e710:	08048483 	.word	0x08048483
 
 0803e714 <_free_r>:
  803e714:	b538      	push	{r3, r4, r5, lr}
@@ -126465,8 +126525,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803e818:	e9c0 3303 	strd	r3, r3, [r0, #12]
  803e81c:	e7f7      	b.n	803e80e <_Balloc+0x66>
  803e81e:	bf00      	nop
- 803e820:	08048480 	.word	0x08048480
- 803e824:	08048500 	.word	0x08048500
+ 803e820:	08048490 	.word	0x08048490
+ 803e824:	08048510 	.word	0x08048510
 
 0803e828 <_Bfree>:
  803e828:	b570      	push	{r4, r5, r6, lr}
@@ -126494,8 +126554,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803e85c:	6021      	str	r1, [r4, #0]
  803e85e:	f843 4022 	str.w	r4, [r3, r2, lsl #2]
  803e862:	bd70      	pop	{r4, r5, r6, pc}
- 803e864:	08048480 	.word	0x08048480
- 803e868:	08048500 	.word	0x08048500
+ 803e864:	08048490 	.word	0x08048490
+ 803e868:	08048510 	.word	0x08048510
 
 0803e86c <__multadd>:
  803e86c:	e92d 41f0 	stmdb	sp!, {r4, r5, r6, r7, r8, lr}
@@ -126549,8 +126609,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803e8ec:	6125      	str	r5, [r4, #16]
  803e8ee:	4620      	mov	r0, r4
  803e8f0:	e8bd 81f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, pc}
- 803e8f4:	080484ef 	.word	0x080484ef
- 803e8f8:	08048500 	.word	0x08048500
+ 803e8f4:	080484ff 	.word	0x080484ff
+ 803e8f8:	08048510 	.word	0x08048510
 
 0803e8fc <__s2b>:
  803e8fc:	e92d 43f8 	stmdb	sp!, {r3, r4, r5, r6, r7, r8, r9, lr}
@@ -126611,8 +126671,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803e980:	f7ff ff74 	bl	803e86c <__multadd>
  803e984:	e7ee      	b.n	803e964 <__s2b+0x68>
  803e986:	bf00      	nop
- 803e988:	080484ef 	.word	0x080484ef
- 803e98c:	08048500 	.word	0x08048500
+ 803e988:	080484ff 	.word	0x080484ff
+ 803e98c:	08048510 	.word	0x08048510
 
 0803e990 <__hi0bits>:
  803e990:	f5b0 3f80 	cmp.w	r0, #65536	@ 0x10000
@@ -126702,8 +126762,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803ea46:	6103      	str	r3, [r0, #16]
  803ea48:	bd10      	pop	{r4, pc}
  803ea4a:	bf00      	nop
- 803ea4c:	080484ef 	.word	0x080484ef
- 803ea50:	08048500 	.word	0x08048500
+ 803ea4c:	080484ff 	.word	0x080484ff
+ 803ea50:	08048510 	.word	0x08048510
 
 0803ea54 <__multiply>:
  803ea54:	e92d 4ff0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
@@ -126822,8 +126882,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803eb8e:	3e01      	subs	r6, #1
  803eb90:	e79f      	b.n	803ead2 <__multiply+0x7e>
  803eb92:	bf00      	nop
- 803eb94:	080484ef 	.word	0x080484ef
- 803eb98:	08048500 	.word	0x08048500
+ 803eb94:	080484ff 	.word	0x080484ff
+ 803eb98:	08048510 	.word	0x08048510
 
 0803eb9c <__pow5mult>:
  803eb9c:	e92d 43f8 	stmdb	sp!, {r3, r4, r5, r6, r7, r8, r9, lr}
@@ -126891,9 +126951,9 @@ void Motion::SetIdeal_long_turn_v90		( )
  803ec3c:	4630      	mov	r0, r6
  803ec3e:	e8bd 83f8 	ldmia.w	sp!, {r3, r4, r5, r6, r7, r8, r9, pc}
  803ec42:	bf00      	nop
- 803ec44:	0804862c 	.word	0x0804862c
- 803ec48:	08048480 	.word	0x08048480
- 803ec4c:	08048500 	.word	0x08048500
+ 803ec44:	0804863c 	.word	0x0804863c
+ 803ec48:	08048490 	.word	0x08048490
+ 803ec4c:	08048510 	.word	0x08048510
 
 0803ec50 <__lshift>:
  803ec50:	e92d 47f0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, lr}
@@ -126972,8 +127032,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803ed1a:	d8f9      	bhi.n	803ed10 <__lshift+0xc0>
  803ed1c:	e7ea      	b.n	803ecf4 <__lshift+0xa4>
  803ed1e:	bf00      	nop
- 803ed20:	080484ef 	.word	0x080484ef
- 803ed24:	08048500 	.word	0x08048500
+ 803ed20:	080484ff 	.word	0x080484ff
+ 803ed24:	08048510 	.word	0x08048510
 
 0803ed28 <__mcmp>:
  803ed28:	4603      	mov	r3, r0
@@ -127111,8 +127171,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803ee82:	3f01      	subs	r7, #1
  803ee84:	e7e6      	b.n	803ee54 <__mdiff+0xf4>
  803ee86:	bf00      	nop
- 803ee88:	080484ef 	.word	0x080484ef
- 803ee8c:	08048500 	.word	0x08048500
+ 803ee88:	080484ff 	.word	0x080484ff
+ 803ee8c:	08048510 	.word	0x08048510
 
 0803ee90 <__ulp>:
  803ee90:	b082      	sub	sp, #8
@@ -127263,8 +127323,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803f016:	f7ff fcbb 	bl	803e990 <__hi0bits>
  803f01a:	ebc0 1042 	rsb	r0, r0, r2, lsl #5
  803f01e:	e7e5      	b.n	803efec <__d2b+0x74>
- 803f020:	080484ef 	.word	0x080484ef
- 803f024:	08048500 	.word	0x08048500
+ 803f020:	080484ff 	.word	0x080484ff
+ 803f024:	08048510 	.word	0x08048510
 
 0803f028 <__ratio>:
  803f028:	e92d 4ff0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
@@ -127663,8 +127723,8 @@ void Motion::SetIdeal_long_turn_v90		( )
  803f3d8:	f04f 0c01 	mov.w	ip, #1
  803f3dc:	e7f8      	b.n	803f3d0 <_strtod_l+0x280>
  803f3de:	bf00      	nop
- 803f3e0:	0804873c 	.word	0x0804873c
- 803f3e4:	08048559 	.word	0x08048559
+ 803f3e0:	0804874c 	.word	0x0804874c
+ 803f3e4:	08048569 	.word	0x08048569
  803f3e8:	7ff00000 	.word	0x7ff00000
  803f3ec:	9a19      	ldr	r2, [sp, #100]	@ 0x64
  803f3ee:	1c51      	adds	r1, r2, #1
@@ -127954,13 +128014,13 @@ void Motion::SetIdeal_long_turn_v90		( )
  803f6c4:	f04f 0b00 	mov.w	fp, #0
  803f6c8:	6013      	str	r3, [r2, #0]
  803f6ca:	e76b      	b.n	803f5a4 <_strtod_l+0x454>
- 803f6cc:	08048449 	.word	0x08048449
- 803f6d0:	08048728 	.word	0x08048728
- 803f6d4:	08048441 	.word	0x08048441
- 803f6d8:	08048476 	.word	0x08048476
- 803f6dc:	080485ca 	.word	0x080485ca
- 803f6e0:	08048660 	.word	0x08048660
- 803f6e4:	08048638 	.word	0x08048638
+ 803f6cc:	08048459 	.word	0x08048459
+ 803f6d0:	08048738 	.word	0x08048738
+ 803f6d4:	08048451 	.word	0x08048451
+ 803f6d8:	08048486 	.word	0x08048486
+ 803f6dc:	080485da 	.word	0x080485da
+ 803f6e0:	08048670 	.word	0x08048670
+ 803f6e4:	08048648 	.word	0x08048648
  803f6e8:	7ff00000 	.word	0x7ff00000
  803f6ec:	7ca00000 	.word	0x7ca00000
  803f6f0:	7fefffff 	.word	0x7fefffff
@@ -128247,7 +128307,7 @@ void Motion::SetIdeal_long_turn_v90		( )
  803f99e:	9a05      	ldr	r2, [sp, #20]
  803f9a0:	6013      	str	r3, [r2, #0]
  803f9a2:	e603      	b.n	803f5ac <_strtod_l+0x45c>
- 803f9a4:	08048750 	.word	0x08048750
+ 803f9a4:	08048760 	.word	0x08048760
  803f9a8:	fffffc02 	.word	0xfffffc02
  803f9ac:	39500000 	.word	0x39500000
  803f9b0:	7ff00000 	.word	0x7ff00000
@@ -128673,7 +128733,7 @@ void Motion::SetIdeal_long_turn_v90		( )
  803fe0c:	d1f6      	bne.n	803fdfc <_strtol_l.isra.0+0xd8>
  803fe0e:	f8c8 1000 	str.w	r1, [r8]
  803fe12:	e794      	b.n	803fd3e <_strtol_l.isra.0+0x1a>
- 803fe14:	08048779 	.word	0x08048779
+ 803fe14:	08048789 	.word	0x08048789
 
 0803fe18 <_strtol_r>:
  803fe18:	f7ff bf84 	b.w	803fd24 <_strtol_l.isra.0>
@@ -128953,11 +129013,11 @@ void Motion::SetIdeal_long_turn_v90		( )
  80400b0:	4b04      	ldr	r3, [pc, #16]	@ (80400c4 <_svfiprintf_r+0x1f0>)
  80400b2:	f7fc fd93 	bl	803cbdc <_printf_i>
  80400b6:	e7ed      	b.n	8040094 <_svfiprintf_r+0x1c0>
- 80400b8:	0804855b 	.word	0x0804855b
- 80400bc:	08048565 	.word	0x08048565
+ 80400b8:	0804856b 	.word	0x0804856b
+ 80400bc:	08048575 	.word	0x08048575
  80400c0:	0803c6a5 	.word	0x0803c6a5
  80400c4:	0803fe1d 	.word	0x0803fe1d
- 80400c8:	08048561 	.word	0x08048561
+ 80400c8:	08048571 	.word	0x08048571
 
 080400cc <__sfputc_r>:
  80400cc:	6893      	ldr	r3, [r2, #8]
@@ -129223,11 +129283,11 @@ void Motion::SetIdeal_long_turn_v90		( )
  8040334:	4b04      	ldr	r3, [pc, #16]	@ (8040348 <_vfiprintf_r+0x228>)
  8040336:	f7fc fc51 	bl	803cbdc <_printf_i>
  804033a:	e7e4      	b.n	8040306 <_vfiprintf_r+0x1e6>
- 804033c:	0804855b 	.word	0x0804855b
- 8040340:	08048565 	.word	0x08048565
+ 804033c:	0804856b 	.word	0x0804856b
+ 8040340:	08048575 	.word	0x08048575
  8040344:	0803c6a5 	.word	0x0803c6a5
  8040348:	080400fb 	.word	0x080400fb
- 804034c:	08048561 	.word	0x08048561
+ 804034c:	08048571 	.word	0x08048571
 
 08040350 <__svfiscanf_r>:
  8040350:	e92d 4ff0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
@@ -129516,10 +129576,10 @@ void Motion::SetIdeal_long_turn_v90		( )
  804061a:	6023      	str	r3, [r4, #0]
  804061c:	e7a9      	b.n	8040572 <__svfiscanf_r+0x222>
  804061e:	bf00      	nop
- 8040620:	08048779 	.word	0x08048779
+ 8040620:	08048789 	.word	0x08048789
  8040624:	08040db9 	.word	0x08040db9
  8040628:	08040bf1 	.word	0x08040bf1
- 804062c:	08048561 	.word	0x08048561
+ 804062c:	08048571 	.word	0x08048571
  8040630:	9ba1      	ldr	r3, [sp, #644]	@ 0x284
  8040632:	4621      	mov	r1, r4
  8040634:	4630      	mov	r0, r6
@@ -129661,7 +129721,7 @@ void Motion::SetIdeal_long_turn_v90		( )
  8040760:	6123      	str	r3, [r4, #16]
  8040762:	e8bd 83f8 	ldmia.w	sp!, {r3, r4, r5, r6, r7, r8, r9, pc}
  8040766:	bf00      	nop
- 8040768:	08048779 	.word	0x08048779
+ 8040768:	08048789 	.word	0x08048789
 
 0804076c <_scanf_i>:
  804076c:	e92d 4ff0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
@@ -129853,10 +129913,10 @@ void Motion::SetIdeal_long_turn_v90		( )
  804093a:	e7eb      	b.n	8040914 <_scanf_i+0x1a8>
  804093c:	2001      	movs	r0, #1
  804093e:	e7f2      	b.n	8040926 <_scanf_i+0x1ba>
- 8040940:	0804227c 	.word	0x0804227c
+ 8040940:	0804228c 	.word	0x0804228c
  8040944:	0803fe19 	.word	0x0803fe19
  8040948:	08041781 	.word	0x08041781
- 804094c:	0804857c 	.word	0x0804857c
+ 804094c:	0804858c 	.word	0x0804858c
 
 08040950 <__sflush_r>:
  8040950:	f9b1 200c 	ldrsh.w	r2, [r1, #12]
@@ -130565,9 +130625,9 @@ void Motion::SetIdeal_long_turn_v90		( )
  8040f7c:	e7f3      	b.n	8040f66 <__assert_func+0x12>
  8040f7e:	bf00      	nop
  8040f80:	20000124 	.word	0x20000124
- 8040f84:	0804858f 	.word	0x0804858f
- 8040f88:	0804859c 	.word	0x0804859c
- 8040f8c:	080485ca 	.word	0x080485ca
+ 8040f84:	0804859f 	.word	0x0804859f
+ 8040f88:	080485ac 	.word	0x080485ac
+ 8040f8c:	080485da 	.word	0x080485da
 
 08040f90 <_calloc_r>:
  8040f90:	b570      	push	{r4, r5, r6, lr}
@@ -130954,9 +131014,9 @@ void Motion::SetIdeal_long_turn_v90		( )
  804132a:	2b00      	cmp	r3, #0
  804132c:	d1dd      	bne.n	80412ea <__gethex+0x266>
  804132e:	e7ee      	b.n	804130e <__gethex+0x28a>
- 8041330:	08048559 	.word	0x08048559
- 8041334:	080484ef 	.word	0x080484ef
- 8041338:	080485cb 	.word	0x080485cb
+ 8041330:	08048569 	.word	0x08048569
+ 8041334:	080484ff 	.word	0x080484ff
+ 8041338:	080485db 	.word	0x080485db
  804133c:	1e6f      	subs	r7, r5, #1
  804133e:	f1b9 0f00 	cmp.w	r9, #0
  8041342:	d130      	bne.n	80413a6 <__gethex+0x322>
@@ -131091,7 +131151,7 @@ void Motion::SetIdeal_long_turn_v90		( )
  8041496:	42b0      	cmp	r0, r6
  8041498:	dbe7      	blt.n	804146a <__gethex+0x3e6>
  804149a:	e7f0      	b.n	804147e <__gethex+0x3fa>
- 804149c:	080484ef 	.word	0x080484ef
+ 804149c:	080484ff 	.word	0x080484ff
 
 080414a0 <L_shift>:
  80414a0:	f1c2 0208 	rsb	r2, r2, #8
@@ -131405,7 +131465,7 @@ void Motion::SetIdeal_long_turn_v90		( )
  8041776:	1e69      	subs	r1, r5, #1
  8041778:	6011      	str	r1, [r2, #0]
  804177a:	e7f5      	b.n	8041768 <_strtoul_l.isra.0+0xc4>
- 804177c:	08048779 	.word	0x08048779
+ 804177c:	08048789 	.word	0x08048789
 
 08041780 <_strtoul_r>:
  8041780:	f7ff bf90 	b.w	80416a4 <_strtoul_l.isra.0>

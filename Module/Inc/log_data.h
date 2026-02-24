@@ -27,6 +27,7 @@ class LogData:public Singleton<LogData>
 		uint8_t mode = 0;
 		half_float data[LOG_DATA_NUM][LOG_DATA_SIZE];
 		void indicate_data();
+		void indicate_data_binary();
 		void init_log()
 		{
 			for(int i = 0; i < data_num ;i++)
@@ -53,7 +54,11 @@ class LogData:public Singleton<LogData>
 		void logging();
 };
 
-
+typedef struct __attribute__((packed))
+{
+    uint16_t index;
+    half_float data[LOG_DATA_NUM];
+} log_frame_t;
 
 
 #endif /* CPP_INC_LOG_DATA_H_ */

@@ -1,4 +1,4 @@
-../System/Src/../../Module/Inc/log_data.h:41:8:void LogData::set_logmode(uint8_t)	2
+../System/Src/../../Module/Inc/log_data.h:42:8:void LogData::set_logmode(uint8_t)	2
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:24:15:void param_element::set(float)	1
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:144:16:virtual void Vehicle::motorSetDuty_l(int)	1
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:148:16:virtual void Vehicle::motorSetDuty_r(int)	1

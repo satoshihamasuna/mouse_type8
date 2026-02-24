@@ -118,8 +118,7 @@ void LogData::indicate_data()
 }
 */
 
-void LogData::indicate_data()
-{
+
     static const char *labels[(LOG_DATA_NUM+1)] = {
         "cnt",
         "ideal.velo", "ego.velo",
@@ -163,6 +162,10 @@ void LogData::indicate_data()
 
     };
 
+void LogData::indicate_data()
+{
+
+
     const int COLS = LOG_DATA_NUM;
 
     printf("START\r\n");
@@ -192,6 +195,41 @@ void LogData::indicate_data()
 
     /* ==== 終端 ==== */
     printf("END\r\n");
+}
+
+void LogData::indicate_data_binary()
+{
+    printf("START\r\n");
+
+    if(mode == 0)
+    {
+        printf("HEADER,");
+        for(int i = 0; i < LOG_DATA_NUM+1; i++) {
+            printf("%s", labels[i]);
+            if(i < LOG_DATA_NUM) printf(",");
+        }
+        printf("\r\n");
+    }
+
+    printf("BINARY\r\n");
+
+    log_frame_t frame;
+
+    for(int i = 0; i < 1000; i++)
+    {
+        frame.index = i;
+
+        for(int j = 0; j < LOG_DATA_NUM; j++) {
+            frame.data[j] = data[j][i];   // ★ half のまま
+        }
+
+        HAL_UART_Transmit(&huart1,
+            (uint8_t*)&frame,
+            sizeof(frame),
+            HAL_MAX_DELAY);
+    }
+
+    printf("\r\nEND\r\n");
 }
 
 void LogData::logging()
