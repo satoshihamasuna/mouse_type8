@@ -23,25 +23,25 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
   9 .ARM.attributes 00000036  00000000  00000000  0004a2e4  2**0
                   CONTENTS, READONLY
- 10 .debug_info   000f5013  00000000  00000000  0004a31a  2**0
+ 10 .debug_info   000f50df  00000000  00000000  0004a31a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 11 .debug_abbrev 000110a7  00000000  00000000  0013f32d  2**0
+ 11 .debug_abbrev 000110a7  00000000  00000000  0013f3f9  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 12 .debug_aranges 00003e38  00000000  00000000  001503d8  2**3
+ 12 .debug_aranges 00003e38  00000000  00000000  001504a0  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_rnglists 0000307c  00000000  00000000  00154210  2**0
+ 13 .debug_rnglists 0000307c  00000000  00000000  001542d8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_macro  000480e2  00000000  00000000  0015728c  2**0
+ 14 .debug_macro  000480e2  00000000  00000000  00157354  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_line   00073196  00000000  00000000  0019f36e  2**0
+ 15 .debug_line   00073197  00000000  00000000  0019f436  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_str    0015ad81  00000000  00000000  00212504  2**0
+ 16 .debug_str    0015add6  00000000  00000000  002125cd  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .comment      00000043  00000000  00000000  0036d285  2**0
+ 17 .comment      00000043  00000000  00000000  0036d3a3  2**0
                   CONTENTS, READONLY
- 18 .debug_frame  000125ac  00000000  00000000  0036d2c8  2**2
+ 18 .debug_frame  000125ac  00000000  00000000  0036d3e8  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_line_str 00000052  00000000  00000000  0037f874  2**0
+ 19 .debug_line_str 00000052  00000000  00000000  0037f994  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -70604,9 +70604,9 @@ void Dijkstra::run_Dijkstra_suction_acc(t_position start_pos,t_direction start_w
  801f41c:	e8bd 81f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, pc}
 
 0801f420 <_ZN8Dijkstra30LocalPosDir2GlobWallPos_CenterE13t_posDijkstra11t_direction11t_local_dirS2_>:
-#define DIR_TURN_DIAG_R180(x) (DIR_TURN_DIAG_R90((DIR_TURN_DIAG_R90(x))))
-#define DIR_TURN_DIAG_L180(x) (DIR_TURN_DIAG_L90((DIR_TURN_DIAG_L90(x))))
-
+    return ret_glob_pos;
+}
+*/
 
 t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalPos,t_local_dir LocalDir)
 {
@@ -71187,6 +71187,9 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_
 
 0801f8a8 <_ZN8Dijkstra28LocalPosDir2GlobWallPos_WPosE13t_posDijkstra11t_direction11t_local_dir>:
 
+    return ret;
+}
+*/
 t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_WPos(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalDir)
 {
  801f8a8:	b580      	push	{r7, lr}
@@ -72973,6 +72976,7 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_WPos(t_posDijkstra glob_pos,t_di
  802068e:	bf00      	nop
 
 08020690 <_ZN8Dijkstra15get_closure_infE13t_posDijkstra>:
+
 
 t_element* Dijkstra::get_closure_inf(t_posDijkstra position)
 {

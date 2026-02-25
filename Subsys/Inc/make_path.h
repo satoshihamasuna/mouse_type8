@@ -153,6 +153,8 @@ class Dijkstra:public calcRunTime
 		t_posDijkstra conv_t_pos2t_posDijkstra(t_position pos,t_direction wall_pos);
 		t_posDijkstra conv_t_pos2t_posDijkstra(int _x,int _y,t_direction wall_pos);
 		t_posDijkstra min_search();
+		t_posDijkstra Local2Global(t_posDijkstra base,t_direction base_dir,t_local_dir local_pos,t_local_dir local_dir);
+
 		t_posDijkstra make_path_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
 		void check_run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
 		t_bool check_DijkstraPath(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);

@@ -30,6 +30,100 @@
 #define DIR_TURN_DIAG_L180(x) (DIR_TURN_DIAG_L90((DIR_TURN_DIAG_L90(x))))
 
 
+struct Vec2 { int16_t dx, dy; };
+
+static inline Vec2 local_to_vec(t_local_dir p)
+{
+	switch(p)
+	{
+		case Front:        	return { 0,  1};
+		case Right:        	return { 1,  0};
+		case Rear:         	return { 0, -1};
+		case Left:         	return {-1,  0};
+
+		case Right_Front: 	return { 1,  1};
+		case Right_Rear:  	return { 1, -1};
+		case Left_Rear:   	return {-1, -1};
+		case Left_Front:  	return {-1,  1};
+
+		default:           	return { 0,  0};
+	}
+}
+
+static inline Vec2 dir_to_vec(t_direction dir)
+{
+	switch(dir)
+	{
+		case North: 		return { 0,  1};   // North
+		case NorthEast: 	return { 1,  1};
+		case East: 			return { 1,  0};
+		case SouthEast: 	return { 1, -1};
+		case South: 		return { 0, -1};
+		case SouthWest: 	return {-1, -1};
+		case West: 			return {-1,  0};
+		case NorthWest: 	return {-1,  1};
+		default:        	return { 0,  0};
+	}
+}
+
+static inline Vec2 rot_vec(t_local_dir p, t_direction dir)
+{
+	Vec2 v = local_to_vec(p);
+	Vec2 r = dir_to_vec(dir);
+
+    // 複素数回転: (x+iy)*(a+ib)
+    int dx = v.dx * r.dx - v.dy * r.dy;
+    int dy = v.dx * r.dy + v.dy * r.dx;
+
+    // 正規化：-1,0,1 に丸める（±2対策）
+    if(dx > 0)      dx = 1;
+    else if(dx < 0) dx = -1;
+
+    if(dy > 0)      dy = 1;
+    else if(dy < 0) dy = -1;
+
+    return { (int16_t)dx, (int16_t)dy };
+}
+
+static inline Vec2 node_offset(t_DijkstraWallPos p)
+{
+    switch(p)
+    {
+        case N_pos: return {0, 1};
+        case E_pos: return {1, 0};
+        default:    return {0, 0}; // C_pos
+    }
+}
+/*
+t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(
+    t_posDijkstra glob_pos,
+    t_direction   glob_dir,
+    t_local_dir   LocalPos,
+    t_local_dir   LocalDir)
+{
+	if(glob_pos.NodePos != C_pos) return glob_pos;
+	t_posDijkstra ret_glob_pos = glob_pos;
+	t_direction ret_glob_dir = Dir_None;
+	// ローカル → グローバル変換
+    Vec2 dp = rot_vec(LocalPos, glob_dir);
+
+    ret_glob_pos.x += dp.dx;
+    ret_glob_pos.y += dp.dy;
+
+    // 壁方向：ローカル方向をそのまま回転
+    Vec2 ddir = rot_vec(LocalDir, glob_dir);
+
+    if(ddir.dx ==  1 && ddir.dy ==  0) ret_glob_dir = East;
+    if(ddir.dx == -1 && ddir.dy ==  0) ret_glob_dir = West;
+    if(ddir.dx ==  0 && ddir.dy ==  1) ret_glob_dir = North;
+    if(ddir.dx ==  0 && ddir.dy == -1) ret_glob_dir = South;
+
+    ret_glob_pos = conv_t_pos2t_posDijkstra(ret_glob_pos.x,ret_glob_pos.y, ret_glob_dir);
+
+    return ret_glob_pos;
+}
+*/
+
 t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalPos,t_local_dir LocalDir)
 {
 	t_posDijkstra return_glob_pos = glob_pos;
@@ -103,6 +197,26 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_
 	return return_glob_pos;
 }
 
+/*
+t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_WPos(
+    t_posDijkstra glob_pos,
+    t_direction   glob_dir,
+    t_local_dir   LocalDir)
+{
+    // ① いったん Center に戻す
+    Vec2 no = node_offset(glob_pos.NodePos);
+    glob_pos.x -= no.dx;
+    glob_pos.y -= no.dy;
+    glob_pos.NodePos = C_pos;
+
+    // ② センター基準で壁座標算出
+    t_posDijkstra ret =
+        LocalPosDir2GlobWallPos_Center(
+            glob_pos, glob_dir, Front, LocalDir);
+
+    return ret;
+}
+*/
 t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_WPos(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalDir)
 {
 	t_posDijkstra return_glob_pos = glob_pos;
@@ -514,6 +628,7 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_WPos(t_posDijkstra glob_pos,t_di
 
 	return return_glob_pos;
 }
+
 
 t_element* Dijkstra::get_closure_inf(t_posDijkstra position)
 {
