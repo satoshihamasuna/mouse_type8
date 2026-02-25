@@ -217,19 +217,31 @@ void LogData::indicate_data_binary()
 
     for(int i = 0; i < 1000; i++)
     {
-        frame.index = i;
+    	frame.magic = LOG_MAGIC;
+    	frame.index = i;
 
         for(int j = 0; j < LOG_DATA_NUM; j++) {
             frame.data[j] = data[j][i];   // ★ half のまま
         }
 
+
+
+        Communicate_TxPushBuffer(
+            (uint8_t*)&frame,
+            sizeof(frame)
+        );
+        /*
         HAL_UART_Transmit(&huart1,
             (uint8_t*)&frame,
             sizeof(frame),
-            HAL_MAX_DELAY);
+            HAL_MAX_DELAY);*/
     }
 
-    printf("\r\nEND\r\n");
+    // ★ バイナリ終了マーカ（ASCIIに戻る合図）
+    frame.magic = LOG_MAGIC_END;
+    Communicate_TxPushBuffer((uint8_t*)&frame, sizeof(frame));
+
+    printf("END\r\n");
 }
 
 void LogData::logging()

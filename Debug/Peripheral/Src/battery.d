@@ -1,5 +1,5 @@
 Peripheral/Src/battery.o: ../Peripheral/Src/battery.c \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/ir_sensor.h \
  ../Core/Inc/main.h ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h \
  ../Core/Inc/stm32u5xx_hal_conf.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_rcc.h \
@@ -36,10 +36,10 @@ Peripheral/Src/battery.o: ../Peripheral/Src/battery.c \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/battery.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/interface.h \
- D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/battery.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/interface.h \
+ C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/typedef.h
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/ir_sensor.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h:
 ../Core/Inc/stm32u5xx_hal_conf.h:
@@ -77,6 +77,6 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/battery.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/interface.h:
-D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/battery.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Peripheral/Inc/interface.h:
+C:/Users/sato1/Documents/Git/STM32/program_mouse_type8/type8/Component/Inc/typedef.h:

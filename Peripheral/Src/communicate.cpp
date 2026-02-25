@@ -121,6 +121,13 @@ void Communicate_TxPushData( int8_t data )
 	__enable_irq();
 }
 
+void Communicate_TxPushBuffer(uint8_t *buf, uint16_t len)
+{
+    for(uint16_t i = 0; i < len; i++) {
+        Communicate_TxPushData(buf[i]);
+    }
+}
+
 void Communicate_TxPopData( void )
 {
 	// データがない場合

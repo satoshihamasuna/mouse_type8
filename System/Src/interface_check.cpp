@@ -300,7 +300,7 @@ namespace Mode
 						  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
 						  HAL_Delay(50);
 						}
-						LogData::getInstance().indicate_data();
+						LogData::getInstance().indicate_data_binary();
 						enable = 0x00;
 					}
 					break;

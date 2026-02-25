@@ -35,5 +35,5 @@
 ../Subsys/Src/make_path.cpp:506:6:void Dijkstra::run_Dijkstra(t_position, t_direction, t_position, uint8_t, const t_straight_param* const*, uint16_t, const t_straight_param* const*, uint16_t, const t_param* const*, Motion*)	512	static
 ../Subsys/Src/make_path.cpp:628:6:void Dijkstra::run_Dijkstra_suction(t_position, t_direction, t_position, uint8_t, int, const t_straight_param* const*, uint16_t, const t_straight_param* const*, uint16_t, const t_param* const*, Motion*)	576	static
 ../Subsys/Src/make_path.cpp:765:6:void Dijkstra::run_Dijkstra_suction_acc(t_position, t_direction, t_position, uint8_t, int, const t_straight_param* const*, uint16_t, const t_straight_param* const*, uint16_t, const t_param* const* const*, uint16_t, Motion*)	1952	static
-../Subsys/Src/../../Module/Inc/log_data.h:19:7:LogData::LogData()	16	static
+../Subsys/Src/../../Module/Inc/log_data.h:22:7:LogData::LogData()	16	static
 ../Subsys/Src/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = LogData]	8	static,ignoring_inline_asm

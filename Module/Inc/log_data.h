@@ -16,6 +16,9 @@
 #define LOG_DATA_NUM  45
 #define LOG_DATA_PRIOD 2
 
+#define LOG_MAGIC 0xA55A
+#define LOG_MAGIC_END 0xFFFF
+
 class LogData:public Singleton<LogData>
 {
 
@@ -56,9 +59,9 @@ class LogData:public Singleton<LogData>
 
 typedef struct __attribute__((packed))
 {
-    uint16_t index;
+	uint16_t magic;
+	uint16_t index;
     half_float data[LOG_DATA_NUM];
 } log_frame_t;
-
 
 #endif /* CPP_INC_LOG_DATA_H_ */

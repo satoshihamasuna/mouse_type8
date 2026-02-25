@@ -37,5 +37,5 @@ C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.external
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = IrSensTask_type7]	8	static,ignoring_inline_asm
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = Interrupt]	4	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = CtrlTask_type7]	16	static,ignoring_inline_asm
-../System/Src/../../Module/Inc/log_data.h:19:7:LogData::LogData()	16	static
+../System/Src/../../Module/Inc/log_data.h:22:7:LogData::LogData()	16	static
 ../System/Src/../../Subsys/Inc/../../Task/Inc/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = LogData]	8	static,ignoring_inline_asm

@@ -1,4 +1,4 @@
-../System/Src/../../Module/Inc/log_data.h:42:8:void LogData::set_logmode(uint8_t)	16	static
+../System/Src/../../Module/Inc/log_data.h:45:8:void LogData::set_logmode(uint8_t)	16	static
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:24:15:void param_element::set(float)	16	static
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:144:16:virtual void Vehicle::motorSetDuty_l(int)	16	static
 ../System/Src/../../Task/Inc/../../Module/Inc/vehicle.h:148:16:virtual void Vehicle::motorSetDuty_r(int)	16	static
@@ -44,6 +44,6 @@
 ../System/Src/../../Task/Inc/sensing_task.h:72:7:IrSensTask::IrSensTask()	16	static
 ../System/Src/../../Task/Inc/sensing_task.h:142:7:IrSensTask_type7::IrSensTask_type7()	16	static
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = IrSensTask_type7]	8	static,ignoring_inline_asm
-../System/Src/../../Module/Inc/log_data.h:19:7:LogData::LogData()	16	static
+../System/Src/../../Module/Inc/log_data.h:22:7:LogData::LogData()	16	static
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = LogData]	8	static,ignoring_inline_asm
 ../System/Src/../../Module/Inc/../../Component/Inc/singleton.h:15:12:static T& Singleton<T>::getInstance() [with T = CtrlTask_type7]	16	static,ignoring_inline_asm
