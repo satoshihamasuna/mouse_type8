@@ -27,6 +27,7 @@ int adachi::get_priority(t_position mypos,t_position next_pos){	//そのマス�
 	if(mypos.dir == next_pos.dir){				//行きたい方向が現在の進行方向と同じ場合
 		priority = 2;
 	}else if( ((4+mypos.dir-next_pos.dir)%4) == 2){		//行きたい方向が現在の進行方向と逆の場合
+	//}else if( ((8+mypos.dir-next_pos.dir)%8) == 4){
 		priority = 0;
 	}else{						//それ以外(左右どちらか)の場合
 		priority = 1;
@@ -48,6 +49,7 @@ int adachi::get_priority2(t_position mypos,t_position next_pos,t_position goal_p
 	if(mypos.dir == next_pos.dir){				//行きたい方向が現在の進行方向と同じ場合
 		priority = 2;
 	}else if( ((4+mypos.dir-next_pos.dir)%4) == 2){		//行きたい方向が現在の進行方向と逆の場合
+	//}else if( ((8+mypos.dir-next_pos.dir)%8) == 4){
 		priority = 0;
 	}else{						//それ以外(左右どちらか)の場合
 		priority = 1;
@@ -188,6 +190,7 @@ int adachi::get_next_dir(t_position mypos,int mask,t_position *glob_next_pos)
 	}
 
 	return ((int)((4+glob_next_pos->dir - mypos.dir)%4));
+	//return ((int)((8+glob_next_pos->dir - mypos.dir)%8));
 }
 
 int adachi::get_next_dir2(t_position mypos,t_position goal_pos,int mask,t_position *glob_next_pos)
@@ -313,4 +316,5 @@ int adachi::get_next_dir2(t_position mypos,t_position goal_pos,int mask,t_positi
 	}
 
 	return ((int)((4+glob_next_pos->dir - mypos.dir)%4));
+	//return ((int)((8+glob_next_pos->dir - mypos.dir)%8));
 }

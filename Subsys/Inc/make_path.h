@@ -37,11 +37,11 @@ typedef struct
 
 typedef struct
 {
-	t_posDijkstra parent_pos;
-	uint16_t time;
-	t_direction dir:4;
-	uint8_t run_pt:5;
-	t_bool determine:1;
+	t_posDijkstra	parent_pos;
+	uint16_t 		time;
+	t_direction 	dir:4;
+	uint8_t 		run_pt:5;
+	t_bool 			determine:1;
 }t_element;
 
 typedef struct

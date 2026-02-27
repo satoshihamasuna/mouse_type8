@@ -54653,6 +54653,7 @@ int adachi::get_priority(t_position mypos,t_position next_pos){	//そのマス�
  8016104:	4253      	negpl	r3, r2
  8016106:	2b02      	cmp	r3, #2
  8016108:	d102      	bne.n	8016110 <_ZN6adachi12get_priorityE10t_positionS0_+0x3e>
+	//}else if( ((8+mypos.dir-next_pos.dir)%8) == 4){
 		priority = 0;
  801610a:	2300      	movs	r3, #0
  801610c:	617b      	str	r3, [r7, #20]
@@ -54731,6 +54732,7 @@ int adachi::get_priority2(t_position mypos,t_position next_pos,t_position goal_p
  8016178:	4253      	negpl	r3, r2
  801617a:	2b02      	cmp	r3, #2
  801617c:	d102      	bne.n	8016184 <_ZN6adachi13get_priority2E10t_positionS0_S0_+0x40>
+	//}else if( ((8+mypos.dir-next_pos.dir)%8) == 4){
 		priority = 0;
  801617e:	2300      	movs	r3, #0
  8016180:	617b      	str	r3, [r7, #20]
@@ -55387,6 +55389,7 @@ int adachi::get_next_dir(t_position mypos,int mask,t_position *glob_next_pos)
  8016604:	f002 0203 	and.w	r2, r2, #3
  8016608:	bf58      	it	pl
  801660a:	4253      	negpl	r3, r2
+	//return ((int)((8+glob_next_pos->dir - mypos.dir)%8));
 }
  801660c:	4618      	mov	r0, r3
  801660e:	3730      	adds	r7, #48	@ 0x30
@@ -55989,6 +55992,7 @@ int adachi::get_next_dir2(t_position mypos,t_position goal_pos,int mask,t_positi
  8016a3e:	f002 0203 	and.w	r2, r2, #3
  8016a42:	bf58      	it	pl
  8016a44:	4253      	negpl	r3, r2
+	//return ((int)((8+glob_next_pos->dir - mypos.dir)%8));
 }
  8016a46:	4618      	mov	r0, r3
  8016a48:	3730      	adds	r7, #48	@ 0x30
@@ -71186,10 +71190,10 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_
  801f8a6:	bf00      	nop
 
 0801f8a8 <_ZN8Dijkstra28LocalPosDir2GlobWallPos_WPosE13t_posDijkstra11t_direction11t_local_dir>:
-
     return ret;
 }
 */
+
 t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_WPos(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalDir)
 {
  801f8a8:	b580      	push	{r7, lr}
@@ -78420,7 +78424,7 @@ t_exeStatus Search::turn_rear_process (	t_position my_position,t_position tmp_my
 
 	}
 
-	t_position r_pos = my_position;	r_pos.dir = (t_direction)(((int)(r_pos.dir) + 1) % 4);
+	t_position r_pos = my_position;	r_pos.dir = (t_direction)(((int)(r_pos.dir) + 1) % 4);//(((int)(r_pos.dir) + 2) % 8);
  80230f8:	f107 0318 	add.w	r3, r7, #24
  80230fc:	f107 0208 	add.w	r2, r7, #8
  8023100:	6812      	ldr	r2, [r2, #0]
@@ -78438,7 +78442,7 @@ t_exeStatus Search::turn_rear_process (	t_position my_position,t_position tmp_my
  802311c:	4253      	negpl	r3, r2
  802311e:	b2db      	uxtb	r3, r3
  8023120:	76bb      	strb	r3, [r7, #26]
-	t_position l_pos = my_position; l_pos.dir = (t_direction)(((int)(l_pos.dir) + 3) % 4);
+	t_position l_pos = my_position; l_pos.dir = (t_direction)(((int)(l_pos.dir) + 3) % 4);//(((int)(l_pos.dir) + 6) % 8);
  8023122:	f107 0314 	add.w	r3, r7, #20
  8023126:	f107 0208 	add.w	r2, r7, #8
  802312a:	6812      	ldr	r2, [r2, #0]

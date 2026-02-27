@@ -245,8 +245,8 @@ t_exeStatus Search::turn_rear_process (	t_position my_position,t_position tmp_my
 
 	}
 
-	t_position r_pos = my_position;	r_pos.dir = (t_direction)(((int)(r_pos.dir) + 1) % 4);
-	t_position l_pos = my_position; l_pos.dir = (t_direction)(((int)(l_pos.dir) + 3) % 4);
+	t_position r_pos = my_position;	r_pos.dir = (t_direction)(((int)(r_pos.dir) + 1) % 4);//(((int)(r_pos.dir) + 2) % 8);
+	t_position l_pos = my_position; l_pos.dir = (t_direction)(((int)(l_pos.dir) + 3) % 4);//(((int)(l_pos.dir) + 6) % 8);
 
 
 	if(_wall->get_WallState(r_pos) == WALL)

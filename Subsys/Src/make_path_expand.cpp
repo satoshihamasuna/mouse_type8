@@ -15,6 +15,12 @@
 #define DIR_TURN_NEWS_L90(x) ((x - 1 + 4) % 4)
 #define DIR_TURN_NEWS_R45(x) ((x + 4 + 8) % 8)
 #define DIR_TURN_NEWS_L45(x) (((x + 3) % 4 + 4) % 8)
+/*
+#define DIR_TURN_NEWS_R90(x) ((x + 2) + 8)% 8)
+#define DIR_TURN_NEWS_L90(x) ((x - 2) + 8)% 8)
+#define DIR_TURN_NEWS_R45(x) ((x + 1) + 8)% 8)
+#define DIR_TURN_NEWS_L45(x) ((x - 1) + 8) % 8)
+*/
 #define DIR_TURN_NEWS_R135(x) (DIR_TURN_NEWS_R45(DIR_TURN_NEWS_R90(x)))
 #define DIR_TURN_NEWS_L135(x) (DIR_TURN_NEWS_L45(DIR_TURN_NEWS_L90(x)))
 #define DIR_TURN_NEWS_R180(x) (DIR_TURN_NEWS_R90(DIR_TURN_NEWS_R90(x)))
@@ -22,6 +28,11 @@
 
 #define DIR_TURN_DIAG_R45(x) ((x - 3 + 4)%4)
 #define DIR_TURN_DIAG_L45(x) ((x - 4 + 4)%4)
+/*
+#define DIR_TURN_DIAG_R45(x) ((x + 1 + 8)%8)
+#define DIR_TURN_DIAG_L45(x) ((x - 1 + 8)%8)
+*/
+
 #define DIR_TURN_DIAG_R90(x)  (DIR_TURN_NEWS_R45((DIR_TURN_DIAG_R45(x))))
 #define DIR_TURN_DIAG_L90(x)  (DIR_TURN_NEWS_L45((DIR_TURN_DIAG_L45(x))))
 #define DIR_TURN_DIAG_R135(x) (DIR_TURN_NEWS_R90((DIR_TURN_DIAG_R45(x))))
@@ -50,6 +61,20 @@ static inline Vec2 local_to_vec(t_local_dir p)
 	}
 }
 
+static inline t_local_dir vec_to_local(Vec2 v)
+{
+    if (v.dx ==  0 && v.dy ==  1) return Front;
+    if (v.dx ==  1 && v.dy ==  1) return Right_Front;
+    if (v.dx ==  1 && v.dy ==  0) return Right;
+    if (v.dx ==  1 && v.dy == -1) return Right_Rear;
+    if (v.dx ==  0 && v.dy == -1) return Rear;
+    if (v.dx == -1 && v.dy == -1) return Left_Rear;
+    if (v.dx == -1 && v.dy ==  0) return Left;
+    if (v.dx == -1 && v.dy ==  1) return Left_Front;
+
+    return None;
+}
+
 static inline Vec2 dir_to_vec(t_direction dir)
 {
 	switch(dir)
@@ -66,34 +91,21 @@ static inline Vec2 dir_to_vec(t_direction dir)
 	}
 }
 
-static inline Vec2 rot_vec(t_local_dir p, t_direction dir)
+static inline t_direction vec_to_dir(Vec2 v)
 {
-	Vec2 v = local_to_vec(p);
-	Vec2 r = dir_to_vec(dir);
+    if (v.dx ==  0 && v.dy ==  1) return North;
+    if (v.dx ==  1 && v.dy ==  1) return NorthEast;
+    if (v.dx ==  1 && v.dy ==  0) return East;
+    if (v.dx ==  1 && v.dy == -1) return SouthEast;
+    if (v.dx ==  0 && v.dy == -1) return South;
+    if (v.dx == -1 && v.dy == -1) return SouthWest;
+    if (v.dx == -1 && v.dy ==  0) return West;
+    if (v.dx == -1 && v.dy ==  1) return NorthWest;
 
-    // 複素数回転: (x+iy)*(a+ib)
-    int dx = v.dx * r.dx - v.dy * r.dy;
-    int dy = v.dx * r.dy + v.dy * r.dx;
-
-    // 正規化：-1,0,1 に丸める（±2対策）
-    if(dx > 0)      dx = 1;
-    else if(dx < 0) dx = -1;
-
-    if(dy > 0)      dy = 1;
-    else if(dy < 0) dy = -1;
-
-    return { (int16_t)dx, (int16_t)dy };
+    return Dir_None;
 }
 
-static inline Vec2 node_offset(t_DijkstraWallPos p)
-{
-    switch(p)
-    {
-        case N_pos: return {0, 1};
-        case E_pos: return {1, 0};
-        default:    return {0, 0}; // C_pos
-    }
-}
+
 /*
 t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(
     t_posDijkstra glob_pos,
@@ -113,10 +125,7 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(
     // 壁方向：ローカル方向をそのまま回転
     Vec2 ddir = rot_vec(LocalDir, glob_dir);
 
-    if(ddir.dx ==  1 && ddir.dy ==  0) ret_glob_dir = East;
-    if(ddir.dx == -1 && ddir.dy ==  0) ret_glob_dir = West;
-    if(ddir.dx ==  0 && ddir.dy ==  1) ret_glob_dir = North;
-    if(ddir.dx ==  0 && ddir.dy == -1) ret_glob_dir = South;
+	ret_glob_dir = vec_to_dir(ddir);
 
     ret_glob_pos = conv_t_pos2t_posDijkstra(ret_glob_pos.x,ret_glob_pos.y, ret_glob_dir);
 
@@ -217,6 +226,7 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_WPos(
     return ret;
 }
 */
+
 t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_WPos(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalDir)
 {
 	t_posDijkstra return_glob_pos = glob_pos;
