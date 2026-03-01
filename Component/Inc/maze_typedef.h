@@ -22,7 +22,7 @@ typedef enum{
 }t_wall_state;
 
 
-
+/*
 typedef enum{
 	Front = 0,
 	Right = 1,
@@ -34,6 +34,18 @@ typedef enum{
 	Left_Front	= 7,
 	None	= 8,
 }t_local_dir;
+*/
+typedef enum{
+	Front 		= 0,
+	Right_Front = 1,
+	Right 		= 2,
+	Right_Rear 	= 3,
+	Rear  		= 4,
+	Left_Rear	= 5,
+	Left  		= 6,
+	Left_Front	= 7,
+	None		= 8,
+}t_local_dir;
 
 typedef enum{
 	wall_n = 0,
@@ -42,7 +54,7 @@ typedef enum{
 	wall_w = 3,
 }t_wall_pos_dir;
 
-
+/*
 typedef enum{
 	North 		= 0,
 	East		= 1,
@@ -54,7 +66,8 @@ typedef enum{
 	NorthWest 	= 7,
 	Dir_None	= 8,
 }t_direction;
-/*
+*/
+
 typedef enum{
 	North 		= 0,
 	NorthEast 	= 1,
@@ -71,8 +84,6 @@ static inline t_direction rot_dir(t_direction base,t_local_dir local)
 {
     return (t_direction)(((int)base + (int)local) % 8);
 }
-
-*/
 
 
 

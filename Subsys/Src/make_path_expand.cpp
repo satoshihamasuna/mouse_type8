@@ -11,27 +11,29 @@
 #include "typedef.h"
 #include "math_utils.h"
 
+/*
 #define DIR_TURN_NEWS_R90(x) ((x + 1 + 4) % 4)
 #define DIR_TURN_NEWS_L90(x) ((x - 1 + 4) % 4)
 #define DIR_TURN_NEWS_R45(x) ((x + 4 + 8) % 8)
 #define DIR_TURN_NEWS_L45(x) (((x + 3) % 4 + 4) % 8)
-/*
-#define DIR_TURN_NEWS_R90(x) ((x + 2) + 8)% 8)
-#define DIR_TURN_NEWS_L90(x) ((x - 2) + 8)% 8)
-#define DIR_TURN_NEWS_R45(x) ((x + 1) + 8)% 8)
-#define DIR_TURN_NEWS_L45(x) ((x - 1) + 8) % 8)
 */
+
+#define DIR_TURN_NEWS_R90(x) (((x + 2) + 8)% 8)
+#define DIR_TURN_NEWS_L90(x) (((x - 2) + 8)% 8)
+#define DIR_TURN_NEWS_R45(x) (((x + 1) + 8)% 8)
+#define DIR_TURN_NEWS_L45(x) (((x - 1) + 8)% 8)
+
 #define DIR_TURN_NEWS_R135(x) (DIR_TURN_NEWS_R45(DIR_TURN_NEWS_R90(x)))
 #define DIR_TURN_NEWS_L135(x) (DIR_TURN_NEWS_L45(DIR_TURN_NEWS_L90(x)))
 #define DIR_TURN_NEWS_R180(x) (DIR_TURN_NEWS_R90(DIR_TURN_NEWS_R90(x)))
 #define DIR_TURN_NEWS_L180(x) (DIR_TURN_NEWS_L90(DIR_TURN_NEWS_L90(x)))
 
+/*
 #define DIR_TURN_DIAG_R45(x) ((x - 3 + 4)%4)
 #define DIR_TURN_DIAG_L45(x) ((x - 4 + 4)%4)
-/*
+*/
 #define DIR_TURN_DIAG_R45(x) ((x + 1 + 8)%8)
 #define DIR_TURN_DIAG_L45(x) ((x - 1 + 8)%8)
-*/
 
 #define DIR_TURN_DIAG_R90(x)  (DIR_TURN_NEWS_R45((DIR_TURN_DIAG_R45(x))))
 #define DIR_TURN_DIAG_L90(x)  (DIR_TURN_NEWS_L45((DIR_TURN_DIAG_L45(x))))
@@ -153,7 +155,9 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_
 
 				return_glob_pos.x = (LocalPos == Left  || LocalPos == Left_Front  || LocalPos == Left_Rear)
 									? return_glob_pos.x - 1 : return_glob_pos.x;
-				if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 4);
+				//if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 4);
+				if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 8);
+
 				break;
 			case East:
 				return_glob_pos.x = (LocalPos == Front || LocalPos == Right_Front || LocalPos == Left_Front)
@@ -167,7 +171,8 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_
 
 				return_glob_pos.y = (LocalPos == Left  || LocalPos == Left_Front  || LocalPos == Left_Rear)
 									? return_glob_pos.y + 1 : return_glob_pos.y;
-				if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 4);
+				//if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 4);
+				if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 8);
 				break;
 			case South:
 				return_glob_pos.y = (LocalPos == Front || LocalPos == Right_Front || LocalPos == Left_Front)
@@ -181,7 +186,8 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_
 
 				return_glob_pos.x = (LocalPos == Left  || LocalPos == Left_Front  || LocalPos == Left_Rear)
 									? return_glob_pos.x + 1 : return_glob_pos.x;
-				if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 4);
+				//if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 4);
+				if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 8);
 				break;
 			case West:
 				return_glob_pos.x = (LocalPos == Front || LocalPos == Right_Front || LocalPos == Left_Front)
@@ -195,7 +201,8 @@ t_posDijkstra Dijkstra::LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_
 
 				return_glob_pos.y = (LocalPos == Left  || LocalPos == Left_Front  || LocalPos == Left_Rear)
 									? return_glob_pos.y - 1 : return_glob_pos.y;
-				if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 4);
+				//if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 4);
+				if(LocalDir != None) return_glob_dir   = (t_direction)((glob_dir+ (int)LocalDir) % 8);
 				break;
 			default:
 				break;
