@@ -80,12 +80,15 @@ typedef enum{
 	Dir_None	= 8,
 }t_direction;
 
-static inline t_direction rot_dir(t_direction base,t_local_dir local)
+inline t_direction rot_dir(t_direction base,t_local_dir local)
 {
     return (t_direction)(((int)base + (int)local) % 8);
 }
 
-
+inline t_local_dir rot_local(t_direction base,t_direction next)
+{
+    return (t_local_dir)((8 + (int)next - (int)base) % 8);
+}
 
 typedef struct{
 	uint8_t x;

@@ -11,8 +11,8 @@
 #include "math_utils.h"
 
 // ===== 使用するマウスを選択 =====
-//#define MOUSE_A
-#define MOUSE_B
+#define MOUSE_A
+//#define MOUSE_B
 // ================================
 
 // ===== 安全チェック =====
@@ -57,12 +57,13 @@
 	#define MOUSE_INERTIA	((1.0/1000.0))//0.001f//0.003,0.0022				//g・m^2
 	#define TIRE_RADIUS_M	(TIRE_RADIUS/1000.0)		//m
 	#define TREAD_WIDTH_M	(TREAD_WIDTH/1000.0)
-	#define MOTOR_BR		(1.0/1000000.0*0.0)			//mNm/rpm
+	#define MOTOR_BR		(1.0/1000000.0*5.0)			//mNm/rpm
 	#define L_BAR_DT		(20.0/1000.0*0.0)
 
+	#define FF_GAIN			(2.0)
 
 	#define DUTY_MIN		(50)
-	#define DEAD_V			(0.5)
+	#define DEAD_V			(0.8)
 	#define DEAD_VR			(DEAD_V)
 	#define DEAD_VL			(DEAD_V)
 
@@ -80,6 +81,8 @@
 	#define TREAD_WIDTH_M	(TREAD_WIDTH/1000.0)
 	#define MOTOR_BR		(1.0/1000000.0*0.0)			//mNm/rpm
 	#define L_BAR_DT		(20.0/1000.0*0.0)
+
+	#define FF_GAIN			(1.0)
 
 	#define DUTY_MIN		(80)
 	#define DEAD_V			(0.6)

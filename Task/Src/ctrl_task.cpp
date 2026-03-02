@@ -186,8 +186,8 @@ void CtrlTask::motion_control()
 			//vehicle->om_feedback.set( om_antiwindup );
 
 			//set & supply voltage
-			vehicle->V_r =  vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get() + om_feedforward_corr_R-om_feedforward_corr_L)*1.0 + vehicle->sp_feedback.get() + vehicle->om_feedback.get();
-			vehicle->V_l = -vehicle->sp_feedforward.get()*1.0 + (vehicle->om_feedforward.get() + om_feedforward_corr_L-om_feedforward_corr_R)*1.0 - vehicle->sp_feedback.get() + vehicle->om_feedback.get();
+			vehicle->V_r =  vehicle->sp_feedforward.get()*FF_GAIN + (vehicle->om_feedforward.get() + om_feedforward_corr_R-om_feedforward_corr_L)*FF_GAIN + vehicle->sp_feedback.get() + vehicle->om_feedback.get();
+			vehicle->V_l = -vehicle->sp_feedforward.get()*FF_GAIN + (vehicle->om_feedforward.get() + om_feedforward_corr_L-om_feedforward_corr_R)*FF_GAIN - vehicle->sp_feedback.get() + vehicle->om_feedback.get();
 
 			if(ABS(vehicle->V_r) > 0.0)
 			{
