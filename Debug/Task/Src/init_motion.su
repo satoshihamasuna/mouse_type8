@@ -24,19 +24,19 @@
 ../Task/Src/init_motion.cpp:14:6:void Motion::Motion_start()	16	static
 ../Task/Src/init_motion.cpp:31:6:void Motion::Motion_end()	16	static
 ../Task/Src/init_motion.cpp:48:6:void Motion::Motion_error_handling()	16	static
-../Task/Src/init_motion.cpp:77:6:void Motion::Init_Motion_free_rotation_set()	16	static
-../Task/Src/init_motion.cpp:113:6:void Motion::Init_Motion_search_straight(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	64	static
-../Task/Src/init_motion.cpp:183:6:void Motion::Init_Motion_search_turn(const t_param*, const t_pid_gain*, const t_pid_gain*)	64	static
-../Task/Src/init_motion.cpp:280:6:void Motion::Init_Motion_straight(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	64	static
-../Task/Src/init_motion.cpp:358:6:void Motion::Init_Motion_backward(const t_pid_gain*, const t_pid_gain*)	48	static
-../Task/Src/init_motion.cpp:429:6:void Motion::Init_Motion_diagonal(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	64	static
-../Task/Src/init_motion.cpp:499:6:void Motion::Init_Motion_pivot_turn(float, float, float, const t_pid_gain*, const t_pid_gain*)	64	static
-../Task/Src/init_motion.cpp:567:6:void Motion::Init_Motion_turn_in(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	80	static
-../Task/Src/init_motion.cpp:671:6:void Motion::Init_Motion_turn_out(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	80	static
-../Task/Src/init_motion.cpp:775:6:void Motion::Init_Motion_long_turn(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	72	static
-../Task/Src/init_motion.cpp:915:6:void Motion::Init_Motion_turn_v90(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	56	static
-../Task/Src/init_motion.cpp:1002:6:void Motion::Init_Motion_long_turn_v90(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	56	static
-../Task/Src/init_motion.cpp:1085:6:void Motion::Init_Motion_fix_wall(float, const t_pid_gain*, const t_pid_gain*)	24	static
-../Task/Src/init_motion.cpp:1148:6:void Motion::Init_Motion_suction_start(float, float, const t_pid_gain*, const t_pid_gain*)	32	static
-../Task/Src/init_motion.cpp:1216:6:void Motion::Init_Motion_stop_brake(float, const t_pid_gain*, const t_pid_gain*)	24	static
-../Task/Src/init_motion.cpp:1280:6:void Motion::Init_Motion_enkaigei(float, const t_pid_gain*, const t_pid_gain*)	24	static
+../Task/Src/init_motion.cpp:77:6:void Motion::Init_Motion_free_rotation_set(float, uint16_t)	24	static
+../Task/Src/init_motion.cpp:114:6:void Motion::Init_Motion_search_straight(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	64	static
+../Task/Src/init_motion.cpp:184:6:void Motion::Init_Motion_search_turn(const t_param*, const t_pid_gain*, const t_pid_gain*)	64	static
+../Task/Src/init_motion.cpp:281:6:void Motion::Init_Motion_straight(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	64	static
+../Task/Src/init_motion.cpp:359:6:void Motion::Init_Motion_backward(const t_pid_gain*, const t_pid_gain*)	48	static
+../Task/Src/init_motion.cpp:430:6:void Motion::Init_Motion_diagonal(float, float, float, float, const t_pid_gain*, const t_pid_gain*)	64	static
+../Task/Src/init_motion.cpp:500:6:void Motion::Init_Motion_pivot_turn(float, float, float, const t_pid_gain*, const t_pid_gain*)	64	static
+../Task/Src/init_motion.cpp:568:6:void Motion::Init_Motion_turn_in(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	80	static
+../Task/Src/init_motion.cpp:672:6:void Motion::Init_Motion_turn_out(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	80	static
+../Task/Src/init_motion.cpp:776:6:void Motion::Init_Motion_long_turn(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	72	static
+../Task/Src/init_motion.cpp:916:6:void Motion::Init_Motion_turn_v90(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	56	static
+../Task/Src/init_motion.cpp:1003:6:void Motion::Init_Motion_long_turn_v90(const t_param*, t_run_pattern, const t_pid_gain*, const t_pid_gain*)	56	static
+../Task/Src/init_motion.cpp:1086:6:void Motion::Init_Motion_fix_wall(float, const t_pid_gain*, const t_pid_gain*)	24	static
+../Task/Src/init_motion.cpp:1149:6:void Motion::Init_Motion_suction_start(float, float, const t_pid_gain*, const t_pid_gain*)	32	static
+../Task/Src/init_motion.cpp:1217:6:void Motion::Init_Motion_stop_brake(float, const t_pid_gain*, const t_pid_gain*)	24	static
+../Task/Src/init_motion.cpp:1281:6:void Motion::Init_Motion_enkaigei(float, const t_pid_gain*, const t_pid_gain*)	24	static

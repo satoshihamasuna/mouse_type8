@@ -74,7 +74,7 @@ void Motion::Motion_error_handling()
 	motion_pattern_set(No_run);
 }
 
-void Motion::Init_Motion_free_rotation_set( )
+void Motion::Init_Motion_free_rotation_set(float time,uint16_t duty)
 {
 	if(motion_exeStatus_get() == error)
 	{
@@ -106,8 +106,9 @@ void Motion::Init_Motion_free_rotation_set( )
 	motion_control_set(NOP_STATE);
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
-	run_time_limit_ms_set(500.0f);
+	run_time_limit_ms_set(time);
 
+	vehicle->motor_out_r = duty;		vehicle->motor_out_l = duty;
 }
 
 void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )

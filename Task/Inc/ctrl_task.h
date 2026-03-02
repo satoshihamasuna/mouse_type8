@@ -174,7 +174,7 @@ class Motion
 
 
 		//Initialize motion parameters
-		void Init_Motion_free_rotation_set	();
+		void Init_Motion_free_rotation_set	(float time = 500.0f,uint16_t duty = 200);
 		void Init_Motion_search_straight(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
 		void Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
 

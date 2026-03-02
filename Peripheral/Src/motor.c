@@ -24,7 +24,7 @@
 #define PCLK2			(50000000)//(HAL_RCC_GetPCLK2Freq())//50,000,000
 #define PWMFREQ			(100000)//(100000)
 #define FANPWMFREQ		(100000)
-#define MOT_DUTY_MIN	(0) // (DUTY_MIN)
+#define MOT_DUTY_MIN	(3) // (DUTY_MIN)
 #define MOT_DUTY_MAX	(1000)	   // (980)
 
 #define MOT_SET_COMPARE_R_FORWARD(x)	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, x)
@@ -38,10 +38,10 @@ void Motor_Initialize()
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
-	MOT_SET_COMPARE_L_FORWARD( 0 );
-	MOT_SET_COMPARE_L_REVERSE( 0 );
-	MOT_SET_COMPARE_R_FORWARD( 0 );
-	MOT_SET_COMPARE_R_REVERSE( 0 );
+	MOT_SET_COMPARE_L_FORWARD( MOT_DUTY_MIN );
+	MOT_SET_COMPARE_L_REVERSE( MOT_DUTY_MIN );
+	MOT_SET_COMPARE_R_FORWARD( MOT_DUTY_MIN );
+	MOT_SET_COMPARE_R_REVERSE( MOT_DUTY_MIN );
 	HAL_Delay(200);
 }
 
@@ -77,7 +77,7 @@ void Motor_SetDuty_Left( int16_t duty_l )
 	float Dout = Dmin + (Dmax - Dmin) * Din;
 
 	// PWMパルス幅計算
-	pulse_l = (uint32_t)((PCLK1 / PWMFREQ) * Dout) - 1;
+	pulse_l = (uint32_t)((SIGN(Dout))*(((PCLK1 / PWMFREQ) * ABS(Dout)) - 1));
 
 	/*
 	if( ABS(duty_l) > MOT_DUTY_MAX ) {
@@ -91,13 +91,13 @@ void Motor_SetDuty_Left( int16_t duty_l )
 
 	if( duty_l > 0 ) {
 		MOT_SET_COMPARE_L_FORWARD( pulse_l );
-		MOT_SET_COMPARE_L_REVERSE( 0 );
+		MOT_SET_COMPARE_L_REVERSE( MOT_DUTY_MIN );
 	} else if( duty_l < 0 ) {
-		MOT_SET_COMPARE_L_FORWARD( 0 );
+		MOT_SET_COMPARE_L_FORWARD( MOT_DUTY_MIN );
 		MOT_SET_COMPARE_L_REVERSE( pulse_l );
 	} else {
-		MOT_SET_COMPARE_L_FORWARD( 0 );
-		MOT_SET_COMPARE_L_REVERSE( 0 );
+		MOT_SET_COMPARE_L_FORWARD( MOT_DUTY_MIN );
+		MOT_SET_COMPARE_L_REVERSE( MOT_DUTY_MIN );
 	}
 }
 
@@ -115,7 +115,7 @@ void Motor_SetDuty_Right( int16_t duty_r )
 	float Dout = Dmin + (Dmax - Dmin) * Din;
 
 	// PWMパルス幅計算
-	pulse_r = (uint32_t)((PCLK1 / PWMFREQ) * Dout) - 1;
+	pulse_r = (uint32_t)((SIGN(Dout))*(((PCLK1 / PWMFREQ) * ABS(Dout)) - 1));
 
 	/*
 	if( ABS(duty_r) > MOT_DUTY_MAX ) {
@@ -129,13 +129,13 @@ void Motor_SetDuty_Right( int16_t duty_r )
 
 	if( duty_r > 0 ) {
 		MOT_SET_COMPARE_R_FORWARD( pulse_r );
-		MOT_SET_COMPARE_R_REVERSE( 0 );
+		MOT_SET_COMPARE_R_REVERSE( MOT_DUTY_MIN );
 	} else if( duty_r < 0 ) {
-		MOT_SET_COMPARE_R_FORWARD( 0 );
+		MOT_SET_COMPARE_R_FORWARD( MOT_DUTY_MIN );
 		MOT_SET_COMPARE_R_REVERSE( pulse_r );
 	} else {
-		MOT_SET_COMPARE_R_FORWARD( 0 );
-		MOT_SET_COMPARE_R_REVERSE( 0 );
+		MOT_SET_COMPARE_R_FORWARD( MOT_DUTY_MIN );
+		MOT_SET_COMPARE_R_REVERSE( MOT_DUTY_MIN );
 	}
 }
 

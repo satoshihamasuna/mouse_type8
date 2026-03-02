@@ -1007,7 +1007,10 @@ void Motion::SetIdeal_free_rotation_set	()
 {
 	if(run_time_ms_get() <= run_time_limit_ms_get())
 	{
+		/*
 		vehicle->motor_out_r = 500;		vehicle->motor_out_l = -500;
+		*/
+
 	}
 	else
 	{
