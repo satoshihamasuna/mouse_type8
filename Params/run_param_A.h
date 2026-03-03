@@ -22,14 +22,14 @@
 #include "../Module/Inc/vehicle.h"
 #include "typedef_run_param.h"
 
-const static t_pid_gain basic_sp_gain = {0.5,0.05,0.00};
-const static t_pid_gain basic_om_gain = {70.0f/1000.0f,2.0/1000.0f,0.0/1000.0};//{0.10f, 0.01f, 0.00f};
+const static t_pid_gain basic_sp_gain = {10.0,0.02,0.00};
+const static t_pid_gain basic_om_gain = {0.4,0.02,0.0/1000.0};//{0.10f, 0.01f, 0.00f};
 
-const static t_pid_gain search_sp_gain = {0.8,0.03,0.00};
-const static t_pid_gain search_om_gain = {70.0f/1000.0f,2.0/1000.0f,0.0/1000.0};
+const static t_pid_gain search_sp_gain = {10.0,0.02,0.00};
+const static t_pid_gain search_om_gain = {0.4,0.02,0.0/1000.0};
 
-const static t_pid_gain sp_gain_search_turn = {1.0,0.03,0.00};//{2.0,0.04};
-const static t_pid_gain om_gain_search_turn = {100.0f/1000.0f,2.0f/1000.0f,0.0};//{0.50f, 0.0005f, 0.001f};
+const static t_pid_gain sp_gain_search_turn = {10.0,0.02,0.00};//{2.0,0.04};
+const static t_pid_gain om_gain_search_turn = {0.4,0.05,0.0/1000.0};//{0.50f, 0.0005f, 0.001f};
 
 const static t_turn_param_table slalom_L90_table_400 = {0.40f, 26.00f,9.46,11.16, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_table_400 = {0.40f,-26.00f,9.46,11.16,-90.0f,Turn_R};

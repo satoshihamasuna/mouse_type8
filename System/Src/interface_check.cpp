@@ -114,10 +114,12 @@ namespace Mode
 							  HAL_Delay(50);
 						  }
 						  motion->Motion_start();
-						  motion->Init_Motion_free_rotation_set(1000.0f,200);
+						  motion->Init_Motion_free_rotation_set(1000.0f,100);
 						  LogData::getInstance().log_enable = True;
 						  while(motion->motion_exeStatus_get() == execute){
 								//printf("encoder:%ld,%ld\n",Encoder_GetProperty_Right().sp_pulse,Encoder_GetProperty_Left().sp_pulse);
+
+
 								HAL_Delay(10);
 						  }
 						  LogData::getInstance().log_enable = False;
@@ -174,14 +176,14 @@ namespace Mode
 						  motion->Motion_start();
 						  LogData::getInstance().data_count = 0;
 						  LogData::getInstance().log_enable = True;
-						  motion->Init_Motion_straight(45.0, 4.0, 0.40f, 0.40f);
+						  motion->Init_Motion_straight(45.0, 4.0, 0.32f, 0.32f);
 						  motion->execute_Motion();
 						  for(int i = 0; i< 8;i++)
 						  {
-							  motion->Init_Motion_search_turn(&param_R90_search_280 );
+							  motion->Init_Motion_search_turn(&param_R90_search_320, param_R90_search_320.sp_gain,param_R90_search_320.om_gain);
 							  motion->execute_Motion();
 						  }
-						  motion->Init_Motion_straight(45.0, 4.0, 0.40f, 0.0f);
+						  motion->Init_Motion_straight(45.0, 4.0, 0.32f, 0.0f);
 						  motion->execute_Motion();
 						  LogData::getInstance().log_enable = False;
 						  motion->Motion_end();

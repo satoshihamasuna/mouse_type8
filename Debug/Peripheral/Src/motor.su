@@ -1,7 +1,9 @@
-../Peripheral/Src/motor.c:35:6:Motor_Initialize	8	static
-../Peripheral/Src/motor.c:48:6:Motor_Stop	8	static
-../Peripheral/Src/motor.c:65:6:Motor_SetDuty_Left	40	static
-../Peripheral/Src/motor.c:104:6:Motor_SetDuty_Right	40	static
-../Peripheral/Src/motor.c:143:6:FAN_Motor_Initialize	8	static
-../Peripheral/Src/motor.c:153:6:FAN_Motor_Stop	8	static
-../Peripheral/Src/motor.c:159:6:FAN_Motor_SetDuty	24	static
+../Peripheral/Src/motor.c:47:6:PWM_ForceLow	48	static
+../Peripheral/Src/motor.c:59:6:PWM_BackToPWM2	56	static
+../Peripheral/Src/motor.c:72:6:Motor_Initialize	8	static
+../Peripheral/Src/motor.c:91:6:Motor_Stop	8	static
+../Peripheral/Src/motor.c:109:6:Motor_SetDuty_Left	40	static
+../Peripheral/Src/motor.c:141:6:Motor_SetDuty_Right	40	static
+../Peripheral/Src/motor.c:233:6:FAN_Motor_Initialize	8	static
+../Peripheral/Src/motor.c:243:6:FAN_Motor_Stop	8	static
+../Peripheral/Src/motor.c:249:6:FAN_Motor_SetDuty	24	static

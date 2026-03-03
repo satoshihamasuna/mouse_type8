@@ -27,41 +27,85 @@
 #define MOT_DUTY_MIN	(3) // (DUTY_MIN)
 #define MOT_DUTY_MAX	(1000)	   // (980)
 
+#define MOT_R_FORWARD_CH	TIM_CHANNEL_4
+#define MOT_R_REVERSE_CH	TIM_CHANNEL_3
+#define MOT_L_FORWARD_CH	TIM_CHANNEL_2
+#define MOT_L_REVERSE_CH	TIM_CHANNEL_1
+
+
 #define MOT_SET_COMPARE_R_FORWARD(x)	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, x)
 #define MOT_SET_COMPARE_R_REVERSE(x)	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, x)
 #define MOT_SET_COMPARE_L_FORWARD(x)	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, x)
 #define MOT_SET_COMPARE_L_REVERSE(x)	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, x)
 
+#define MOT_SET_L_FORWARD_START			HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2)
+#define MOT_SET_L_FORWARD_STOP			HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2)
+#define MOT_SET_L_REVERSE_START			HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1)
+#define MOT_SET_L_REVERSE_STOP			HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_1)
+
+
+void PWM_ForceLow(TIM_HandleTypeDef *htim, uint32_t channel)
+{
+    TIM_OC_InitTypeDef sConfigOC = {0};
+
+    sConfigOC.OCMode       = TIM_OCMODE_FORCED_INACTIVE; // 常時LOW
+    sConfigOC.Pulse        = 0;
+    sConfigOC.OCPolarity   = TIM_OCPOLARITY_HIGH;
+    sConfigOC.OCFastMode   = TIM_OCFAST_DISABLE;
+
+    HAL_TIM_PWM_ConfigChannel(htim, &sConfigOC, channel);
+}
+
+void PWM_BackToPWM2(TIM_HandleTypeDef *htim, uint32_t channel, uint32_t pulse)
+{
+    TIM_OC_InitTypeDef sConfigOC = {0};
+
+    sConfigOC.OCMode = TIM_OCMODE_PWM2;
+    sConfigOC.Pulse  = pulse;
+    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+
+    HAL_TIM_PWM_ConfigChannel(htim, &sConfigOC, channel);
+}
+
+
 void Motor_Initialize()
 {
+
+	//Motor_Enable();
+
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
-	MOT_SET_COMPARE_L_FORWARD( MOT_DUTY_MIN );
-	MOT_SET_COMPARE_L_REVERSE( MOT_DUTY_MIN );
-	MOT_SET_COMPARE_R_FORWARD( MOT_DUTY_MIN );
-	MOT_SET_COMPARE_R_REVERSE( MOT_DUTY_MIN );
+
+	MOT_SET_COMPARE_L_FORWARD(  0 );
+	MOT_SET_COMPARE_L_REVERSE(  0 );
+	MOT_SET_COMPARE_R_FORWARD(  0 );
+	MOT_SET_COMPARE_R_REVERSE(  0 );
+
 	HAL_Delay(200);
 }
 
+
 void Motor_Stop(){
+
+	/*
+	MOT_SET_COMPARE_L_FORWARD( TIM4->ARR );
+	MOT_SET_COMPARE_L_REVERSE( TIM4->ARR );
+	MOT_SET_COMPARE_R_FORWARD( TIM4->ARR );
+	MOT_SET_COMPARE_R_REVERSE( TIM4->ARR );
+	*/
 
 	HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_3);
 	HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
-	/*
-	MOT_SET_COMPARE_L_FORWARD( 1000-1 );
-	MOT_SET_COMPARE_L_REVERSE( 1000-1 );
-	MOT_SET_COMPARE_R_FORWARD( 1000-1 );
-	MOT_SET_COMPARE_R_REVERSE( 1000-1 );
-	*/
 	HAL_Delay(200);
-	//FAN_Motor_Stop();
+
 }
 
-
+#if defined(MOUSE_A)
 void Motor_SetDuty_Left( int16_t duty_l )
 {
 	uint32_t	pulse_l;
@@ -77,27 +121,20 @@ void Motor_SetDuty_Left( int16_t duty_l )
 	float Dout = Dmin + (Dmax - Dmin) * Din;
 
 	// PWMパルス幅計算
-	pulse_l = (uint32_t)((SIGN(Dout))*(((PCLK1 / PWMFREQ) * ABS(Dout)) - 1));
+	pulse_l = (uint32_t)(uint32_t)(((PCLK1 / PWMFREQ) * Dout) - 1);
 
-	/*
-	if( ABS(duty_l) > MOT_DUTY_MAX ) {
-		pulse_l = (uint32_t)((PCLK1) / PWMFREQ * MOT_DUTY_MAX / 1000) - 1;
-	} else if( ABS(duty_l) < MOT_DUTY_MIN ) {
-		pulse_l = (uint32_t)((PCLK1) / PWMFREQ * MOT_DUTY_MIN / 1000) - 1;
-	} else {
-		pulse_l = (uint32_t)((PCLK1) / PWMFREQ * ABS(duty_l) / 1000) - 1;
-	}
-	*/
 
-	if( duty_l > 0 ) {
-		MOT_SET_COMPARE_L_FORWARD( pulse_l );
-		MOT_SET_COMPARE_L_REVERSE( MOT_DUTY_MIN );
-	} else if( duty_l < 0 ) {
-		MOT_SET_COMPARE_L_FORWARD( MOT_DUTY_MIN );
-		MOT_SET_COMPARE_L_REVERSE( pulse_l );
+	if( duty_l < 0 ) {
+		MOT_SET_COMPARE_L_FORWARD( TIM4->ARR - pulse_l );
+		MOT_SET_COMPARE_L_REVERSE( TIM4->ARR );
+
+	} else if( duty_l > 0 ) {
+		MOT_SET_COMPARE_L_FORWARD( TIM4->ARR  );
+		MOT_SET_COMPARE_L_REVERSE( TIM4->ARR - pulse_l );
+
 	} else {
-		MOT_SET_COMPARE_L_FORWARD( MOT_DUTY_MIN );
-		MOT_SET_COMPARE_L_REVERSE( MOT_DUTY_MIN );
+		MOT_SET_COMPARE_L_FORWARD( 0 );
+		MOT_SET_COMPARE_L_REVERSE( 0 );
 	}
 }
 
@@ -115,29 +152,82 @@ void Motor_SetDuty_Right( int16_t duty_r )
 	float Dout = Dmin + (Dmax - Dmin) * Din;
 
 	// PWMパルス幅計算
-	pulse_r = (uint32_t)((SIGN(Dout))*(((PCLK1 / PWMFREQ) * ABS(Dout)) - 1));
+	pulse_r = (uint32_t)(((PCLK1 / PWMFREQ) * Dout) - 1);
 
-	/*
-	if( ABS(duty_r) > MOT_DUTY_MAX ) {
-		pulse_r = (uint32_t)((PCLK1) / PWMFREQ * MOT_DUTY_MAX / 1000) - 1;
-	} else if( ABS(duty_r) < MOT_DUTY_MIN ) {
-		pulse_r = (uint32_t)((PCLK1) / PWMFREQ * MOT_DUTY_MIN / 1000) - 1;
+
+	if( duty_r < 0 ) {
+		MOT_SET_COMPARE_R_FORWARD( TIM4->ARR - pulse_r );
+		MOT_SET_COMPARE_R_REVERSE( TIM4->ARR );
+	} else if( duty_r > 0 ) {
+		MOT_SET_COMPARE_R_FORWARD( TIM4->ARR );
+		MOT_SET_COMPARE_R_REVERSE( TIM4->ARR - pulse_r );
+
 	} else {
-		pulse_r = (uint32_t)((PCLK1) / PWMFREQ * ABS(duty_r) / 1000) - 1;
+		MOT_SET_COMPARE_R_FORWARD( 0 );
+		MOT_SET_COMPARE_R_REVERSE( 0 );
 	}
-	*/
+}
+
+#elif defined(MOUSE_B)
+void Motor_SetDuty_Left( int16_t duty_l )
+{
+	uint32_t	pulse_l;
+
+	// duty_l: -1000 ～ +1000
+	float Din = (float)ABS(duty_l) / 1000.0f;  // 0.0 ～ 1.0 に正規化
+
+	// MOT_DUTY_MIN, MOT_DUTY_MAX: 0～1000（例: 100=10%, 900=90%）
+	float Dmin = MOT_DUTY_MIN / 1000.0f;       // 0.0～1.0
+	float Dmax = MOT_DUTY_MAX / 1000.0f;       // 0.0～1.0
+
+	// 線形マッピング（上限付き）
+	float Dout = Dmin + (Dmax - Dmin) * Din;
+
+	// PWMパルス幅計算
+	pulse_l = (uint32_t)(uint32_t)(((PCLK1 / PWMFREQ) * Dout) - 1);
+
+
+	if( duty_l > 0 ) {
+		MOT_SET_COMPARE_L_FORWARD( pulse_l );
+		MOT_SET_COMPARE_L_REVERSE( 0);
+	} else if( duty_l < 0 ) {
+		MOT_SET_COMPARE_L_FORWARD( 0 );
+		MOT_SET_COMPARE_L_REVERSE( pulse_l );
+	} else {
+		MOT_SET_COMPARE_L_FORWARD( 0 );
+		MOT_SET_COMPARE_L_REVERSE( 0 );
+	}
+}
+
+void Motor_SetDuty_Right( int16_t duty_r )
+{
+	uint32_t	pulse_r;
+
+	float Din = (float)ABS(duty_r) / 1000.0f;  // 0.0 ～ 1.0 に正規化
+
+	// MOT_DUTY_MIN, MOT_DUTY_MAX: 0～1000（例: 100=10%, 900=90%）
+	float Dmin = MOT_DUTY_MIN / 1000.0f;       // 0.0～1.0
+	float Dmax = MOT_DUTY_MAX / 1000.0f;       // 0.0～1.0
+
+	// 線形マッピング（上限付き）
+	float Dout = Dmin + (Dmax - Dmin) * Din;
+
+	// PWMパルス幅計算
+	pulse_r = (uint32_t)(((PCLK1 / PWMFREQ) * Dout) - 1);
+
 
 	if( duty_r > 0 ) {
 		MOT_SET_COMPARE_R_FORWARD( pulse_r );
-		MOT_SET_COMPARE_R_REVERSE( MOT_DUTY_MIN );
+		MOT_SET_COMPARE_R_REVERSE( 0 );
 	} else if( duty_r < 0 ) {
-		MOT_SET_COMPARE_R_FORWARD( MOT_DUTY_MIN );
+		MOT_SET_COMPARE_R_FORWARD( 0 );
 		MOT_SET_COMPARE_R_REVERSE( pulse_r );
 	} else {
-		MOT_SET_COMPARE_R_FORWARD( MOT_DUTY_MIN );
-		MOT_SET_COMPARE_R_REVERSE( MOT_DUTY_MIN );
+		MOT_SET_COMPARE_R_FORWARD( 0 );
+		MOT_SET_COMPARE_R_REVERSE( 0 );
 	}
 }
+#endif
 
 
 void FAN_Motor_Initialize()

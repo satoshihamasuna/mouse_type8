@@ -399,7 +399,7 @@ void  Motion::SetIdeal_search_turn()
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*turn_motion_param.sp_gain);
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*turn_motion_param.om_gain);
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
 	}
 
