@@ -11,8 +11,8 @@
 #include "math_utils.h"
 
 // ===== 使用するマウスを選択 =====
-#define MOUSE_A
-//#define MOUSE_B
+//#define MOUSE_A
+#define MOUSE_B
 // ================================
 
 // ===== 安全チェック =====
@@ -53,8 +53,8 @@
 	#define MOTOR_K_ER		(0.08)					//mV/rpm
 	#define MOTOR_K_TR		(MOTOR_K_ER*(RADPS_2_RPM))	//0.4//0.594				//mNm/A
 	#define MOTOR_R			(3.5)//6.0
-	#define GEAR_N			(34.0/7.0)
-	#define MOUSE_INERTIA	((10.0/1000.0))//0.001f//0.003,0.0022				//g・m^2
+	#define GEAR_N			(34.0/7.0 )
+	#define MOUSE_INERTIA	((1.0/1000.0))//0.001f//0.003,0.0022				//g・m^2
 	#define TIRE_RADIUS_M	(TIRE_RADIUS/1000.0)		//m
 	#define TREAD_WIDTH_M	(TREAD_WIDTH/1000.0)
 	#define MOTOR_BR		(1.0/1000000.0*0.0)			//mNm/rpm
@@ -62,12 +62,14 @@
 
 	#define FF_GAIN			(1.0)
 
-	#define DUTY_MIN		(50)
-	#define DEAD_V			(0.2)
+	#define DUTY_MIN		(80)
+	#define DUTY_MAX		(980)
+	#define DEAD_V			(0.15)
 	#define DEAD_VR			(DEAD_V)
 	#define DEAD_VL			(DEAD_V)
 
 	#define GYRO_COR_RATE	(-1.00f)
+	#define GYRO_COR_OFF	(0.005969)
 
 
 #elif defined(MOUSE_B)
@@ -85,11 +87,13 @@
 	#define FF_GAIN			(1.0)
 
 	#define DUTY_MIN		(80)
-	#define DEAD_V			(0.6)
+	#define DUTY_MAX		(1000)
+	#define DEAD_V			(0.15)//(0.6)
 	#define DEAD_VR			(DEAD_V)
 	#define DEAD_VL			(DEAD_V)
 
 	#define GYRO_COR_RATE	(-1.015f)
+	#define GYRO_COR_OFF	(0.00)
 #else
     #error "MOUSEA または MOUSEB が定義されていません。mouse_select.h を確認してください。"
 #endif

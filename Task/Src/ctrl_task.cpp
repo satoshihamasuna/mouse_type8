@@ -326,7 +326,7 @@ void CtrlTask::motion_post_control()
 				}
 				if(ABS(vehicle->Vehicle_controller.omega_ctrl.get_I_peration()) > 2.0)
 				{
-					error_counter_set(error_counter_get() + 100);
+					//error_counter_set(error_counter_get() + 100);
 				}
 				if(error_flag == error_counter_get())
 				{

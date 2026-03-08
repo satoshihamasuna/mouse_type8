@@ -19,7 +19,7 @@
 
 #if defined(MOUSE_A)
 #define ALLOW_SIDE_DIFF 	15.0
-#define ALLOW_FRONT_DIFF 	8.0
+#define ALLOW_FRONT_DIFF 	10.0
 #elif defined(MOUSE_B)
 #define ALLOW_SIDE_DIFF		15.0
 #define ALLOW_FRONT_DIFF 	10.0

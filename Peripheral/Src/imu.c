@@ -195,7 +195,7 @@ void IMU_initialize_lsm6dsv16x()
 	HAL_Delay(5);
 
 	write_byte(LSM6DSV16X_CTRL7_C,
-				LSM6DSV16X_GY_LPF1_ENABLE );
+				LSM6DSV16X_GY_LPF1_DISABLE );
 	HAL_Delay(5);
 
 
