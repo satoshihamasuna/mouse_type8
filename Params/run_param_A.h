@@ -146,8 +146,8 @@ const static t_straight_param st_param_1500 = {&param_1500,&sp_gain_1500,&om_gai
 const static t_straight_param st_param_1500_acc2G  = {&param_1500_acc2G ,&sp_gain_1500,&om_gain_1500};
 const static t_straight_param st_param_1500_acc3G  = {&param_1500_acc3G ,&sp_gain_1500,&om_gain_1500};
 
-const static t_pid_gain sp_gain_1600 = {2.0,0.016,0.00};
-const static t_pid_gain om_gain_1600 = {0.1,0.002,0.0};
+const static t_pid_gain sp_gain_1600 = {4.0,0.05,0.00};
+const static t_pid_gain om_gain_1600 = {0.2,0.01,0.0};
 const static t_velo_param param_1600 = {1.60f,12.0f};
 const static t_velo_param param_1600_acc2G = {1.60f,20.0f};
 const static t_velo_param param_1600_acc3G = {1.60f,30.0f};

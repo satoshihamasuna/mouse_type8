@@ -62,9 +62,9 @@
 
 	#define FF_GAIN			(1.0)
 
-	#define DUTY_MIN		(80)
+	#define DUTY_MIN		(0)
 	#define DUTY_MAX		(980)
-	#define DEAD_V			(0.15)
+	#define DEAD_V			(0.05)
 	#define DEAD_VR			(DEAD_V)
 	#define DEAD_VL			(DEAD_V)
 
@@ -86,9 +86,9 @@
 
 	#define FF_GAIN			(1.0)
 
-	#define DUTY_MIN		(80)
-	#define DUTY_MAX		(1000)
-	#define DEAD_V			(0.15)//(0.6)
+	#define DUTY_MIN		(0)//(80)
+	#define DUTY_MAX		(990)//(1000)
+	#define DEAD_V			(0.0)//(0.15)//(0.6)
 	#define DEAD_VR			(DEAD_V)
 	#define DEAD_VL			(DEAD_V)
 

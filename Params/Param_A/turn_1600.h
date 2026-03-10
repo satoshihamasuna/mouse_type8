@@ -11,7 +11,7 @@
 #include "typedef_run_param.h"
 //k = 250
 const static t_pid_gain sp_gain_turn90_1600 = {2.0,0.016,0.00};
-const static t_pid_gain om_gain_turn90_1600 = {0.10,0.002,0.0};
+const static t_pid_gain om_gain_turn90_1600 = {0.20,0.01,0.0};
 //const static t_turn_param_table slalom_L90_1600_table = {1.60f, 50.50f,19.56,38.43, 90.0f,Turn_L};
 //const static t_turn_param_table slalom_R90_1600_table = {1.60f,-50.50f,19.56,38.43,-90.0f,Turn_R};
 const static t_turn_param_table slalom_L90_1600_table = {1.60f, 52.0f,14.95,30.5, 90.0f,Turn_L};
@@ -21,7 +21,7 @@ const static t_param param_R90_1600 = {&slalom_R90_1600_table,&sp_gain_turn90_16
 
 //k = 250
 const static t_pid_gain sp_gain_turn180_1600 ={2.0,0.016,0.00};
-const static t_pid_gain om_gain_turn180_1600 ={0.10,0.002,0.0};
+const static t_pid_gain om_gain_turn180_1600 ={0.20,0.012,0.0};
 const static t_turn_param_table slalom_L180_1600_table = {1.60f, 48.0f,8.80,30.10, 180.0f,Turn_L};
 const static t_turn_param_table slalom_R180_1600_table = {1.60f,-48.0f,8.80,30.10,-180.0f,Turn_R};
 //const static t_turn_param_table slalom_L180_1600_table = {1.60f,  45.0f,(15.10),(34.72), 180.0f,Turn_L};
