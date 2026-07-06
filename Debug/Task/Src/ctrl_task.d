@@ -1,6 +1,6 @@
 Task/Src/ctrl_task.o: ../Task/Src/ctrl_task.cpp \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/peripheral.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/battery.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/peripheral.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/battery.h \
  ../Core/Inc/main.h ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h \
  ../Core/Inc/stm32u5xx_hal_conf.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_rcc.h \
@@ -37,21 +37,21 @@ Task/Src/ctrl_task.o: ../Task/Src/ctrl_task.cpp \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h \
  ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/interface.h \
- D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/communicate.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/interface.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Component/Inc/typedef.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/communicate.h \
  ../Core/Inc/usart.h ../Core/Inc/main.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/encoder.h \
  ../Core/Inc/adc.h ../Core/Inc/gpdma.h ../Core/Inc/icache.h \
  ../Core/Inc/lptim.h ../Core/Inc/memorymap.h ../Core/Inc/spi.h \
  ../Core/Inc/tim.h ../Core/Inc/gpio.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
- D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h \
- D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Component/Inc/math_utils.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/mouse_config.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/imu.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/motor.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h \
  ../Task/Src/../../Component/Inc/singleton.h \
  ../Task/Src/../../Component/Inc/controller.h \
  ../Task/Src/../../Component/Inc/typedef.h \
@@ -61,33 +61,33 @@ Task/Src/ctrl_task.o: ../Task/Src/ctrl_task.cpp \
  ../Task/Src/../../Module/Inc/../../Task/Inc/run_typedef.h \
  ../Task/Src/../../Params/run_param.h \
  ../Task/Src/../../Params/mouse_config.h \
- ../Task/Src/../../Params/run_param_B.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1000.h \
- D:/mouse8/mouse_program/mouse_type8/Params/typedef_run_param.h \
- D:/mouse8/mouse_program/mouse_type8/Params/../Component/Inc/controller.h \
- D:/mouse8/mouse_program/mouse_type8/Params/../Module/Inc/vehicle.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1200.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1400.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1500.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1600.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1800.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_2000.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_300.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_500.h \
- D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_700.h \
+ ../Task/Src/../../Params/run_param_A.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1000.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/typedef_run_param.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/../Component/Inc/controller.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/../Module/Inc/vehicle.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1200.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1400.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1500.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1600.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1800.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_2000.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_300.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_500.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_700.h \
  ../Task/Src/../../Params/../Component/Inc/controller.h \
  ../Task/Src/../../Params/../Module/Inc/vehicle.h \
  ../Task/Src/../../Params/typedef_run_param.h \
  ../Task/Src/../Inc/ctrl_task.h ../Task/Src/../Inc/sensing_task.h \
  ../Task/Src/../Inc/../../Module/Inc/vehicle.h \
  ../Task/Src/../Inc/../../Component/Inc/singleton.h \
- D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Component/Inc/maze_typedef.h \
  ../Task/Src/../Inc/run_typedef.h \
  ../Task/Src/../Inc/../../Params/run_param.h \
- D:/mouse8/mouse_program/mouse_type8/Component/Inc/controller.h \
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Component/Inc/controller.h \
  ../Task/Src/../Inc/run_typedef.h ../Task/Src/../Inc/sensing_task.h
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/peripheral.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/battery.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/peripheral.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/battery.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h:
 ../Core/Inc/stm32u5xx_hal_conf.h:
@@ -125,12 +125,12 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/battery.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_uart_ex.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal_exti.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/interface.h:
-D:/mouse8/mouse_program/mouse_type8/Component/Inc/typedef.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/communicate.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/interface.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Component/Inc/typedef.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/communicate.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/main.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
 ../Core/Inc/adc.h:
 ../Core/Inc/gpdma.h:
 ../Core/Inc/icache.h:
@@ -139,13 +139,13 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/encoder.h:
 ../Core/Inc/spi.h:
 ../Core/Inc/tim.h:
 ../Core/Inc/gpio.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
-D:/mouse8/mouse_program/mouse_type8/Component/Inc/math_utils.h:
-D:/mouse8/mouse_program/mouse_type8/Params/mouse_config.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/imu.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/motor.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/ir_sensor.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Component/Inc/math_utils.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/mouse_config.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/flash_util.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/imu.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/motor.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h:
 ../Task/Src/../../Component/Inc/singleton.h:
 ../Task/Src/../../Component/Inc/controller.h:
 ../Task/Src/../../Component/Inc/typedef.h:
@@ -155,20 +155,20 @@ D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h:
 ../Task/Src/../../Module/Inc/../../Task/Inc/run_typedef.h:
 ../Task/Src/../../Params/run_param.h:
 ../Task/Src/../../Params/mouse_config.h:
-../Task/Src/../../Params/run_param_B.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1000.h:
-D:/mouse8/mouse_program/mouse_type8/Params/typedef_run_param.h:
-D:/mouse8/mouse_program/mouse_type8/Params/../Component/Inc/controller.h:
-D:/mouse8/mouse_program/mouse_type8/Params/../Module/Inc/vehicle.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1200.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1400.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1500.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1600.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_1800.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_2000.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_300.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_500.h:
-D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_700.h:
+../Task/Src/../../Params/run_param_A.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1000.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/typedef_run_param.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/../Component/Inc/controller.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/../Module/Inc/vehicle.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1200.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1400.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1500.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1600.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_1800.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_2000.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_300.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_500.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Params/Param_A/turn_700.h:
 ../Task/Src/../../Params/../Component/Inc/controller.h:
 ../Task/Src/../../Params/../Module/Inc/vehicle.h:
 ../Task/Src/../../Params/typedef_run_param.h:
@@ -176,9 +176,9 @@ D:/mouse8/mouse_program/mouse_type8/Params/Param_B/turn_700.h:
 ../Task/Src/../Inc/sensing_task.h:
 ../Task/Src/../Inc/../../Module/Inc/vehicle.h:
 ../Task/Src/../Inc/../../Component/Inc/singleton.h:
-D:/mouse8/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Component/Inc/maze_typedef.h:
 ../Task/Src/../Inc/run_typedef.h:
 ../Task/Src/../Inc/../../Params/run_param.h:
-D:/mouse8/mouse_program/mouse_type8/Component/Inc/controller.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Component/Inc/controller.h:
 ../Task/Src/../Inc/run_typedef.h:
 ../Task/Src/../Inc/sensing_task.h:

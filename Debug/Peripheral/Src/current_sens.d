@@ -38,7 +38,7 @@ Peripheral/Src/current_sens.o: ../Peripheral/Src/current_sens.c \
  ../Core/Inc/adc.h ../Core/Inc/main.h ../Core/Inc/gpdma.h \
  ../Core/Inc/icache.h ../Core/Inc/lptim.h ../Core/Inc/memorymap.h \
  ../Core/Inc/spi.h ../Core/Inc/tim.h ../Core/Inc/gpio.h \
- D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h
+ D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h
 ../Core/Inc/main.h:
 ../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_hal.h:
 ../Core/Inc/stm32u5xx_hal_conf.h:
@@ -85,4 +85,4 @@ Peripheral/Src/current_sens.o: ../Peripheral/Src/current_sens.c \
 ../Core/Inc/spi.h:
 ../Core/Inc/tim.h:
 ../Core/Inc/gpio.h:
-D:/mouse8/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h:
+D:/mouse_type8_mpq6612/mouse_program/mouse_type8/Peripheral/Inc/current_sens.h:
