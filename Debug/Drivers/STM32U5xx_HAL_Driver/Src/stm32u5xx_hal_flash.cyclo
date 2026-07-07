@@ -9,6 +9,6 @@
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.c:542:19:HAL_FLASH_OB_Lock	2
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.c:560:19:HAL_FLASH_OB_Launch	1
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.c:600:10:HAL_FLASH_GetError	1
-../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.c:624:19:FLASH_WaitForLastOperation	6
+../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.c:624:19:FLASH_WaitForLastOperation	7
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.c:687:13:FLASH_Program_QuadWord	2
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.c:727:13:FLASH_Program_Burst	2

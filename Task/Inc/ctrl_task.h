@@ -9,6 +9,7 @@
 #define CPP_TASK_INC_CTRL_TASK_H_
 
 #include <stdio.h>
+
 #include "sensing_task.h"
 
 #include "../../Params/run_param.h"

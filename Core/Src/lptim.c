@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2025 STMicroelectronics.
+  * Copyright (c) 2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -35,8 +35,6 @@ void MX_LPTIM1_Init(void)
 
   /* USER CODE END LPTIM1_Init 0 */
 
-  LPTIM_OC_ConfigTypeDef sConfig1 = {0};
-
   /* USER CODE BEGIN LPTIM1_Init 1 */
 
   /* USER CODE END LPTIM1_Init 1 */
@@ -54,17 +52,6 @@ void MX_LPTIM1_Init(void)
   {
     Error_Handler();
   }
-  sConfig1.Pulse = 5;
-  sConfig1.OCPolarity = LPTIM_OCPOLARITY_LOW;
-  if (HAL_LPTIM_OC_ConfigChannel(&hlptim1, &sConfig1, LPTIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfig1.Pulse = 40;
-  if (HAL_LPTIM_OC_ConfigChannel(&hlptim1, &sConfig1, LPTIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN LPTIM1_Init 2 */
 
   /* USER CODE END LPTIM1_Init 2 */
@@ -77,8 +64,6 @@ void MX_LPTIM3_Init(void)
   /* USER CODE BEGIN LPTIM3_Init 0 */
 
   /* USER CODE END LPTIM3_Init 0 */
-
-  LPTIM_OC_ConfigTypeDef sConfig1 = {0};
 
   /* USER CODE BEGIN LPTIM3_Init 1 */
 
@@ -94,12 +79,6 @@ void MX_LPTIM3_Init(void)
   hlptim3.Init.Input2Source = LPTIM_INPUT2SOURCE_GPIO;
   hlptim3.Init.RepetitionCounter = 0;
   if (HAL_LPTIM_Init(&hlptim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfig1.Pulse = 5;
-  sConfig1.OCPolarity = LPTIM_OCPOLARITY_LOW;
-  if (HAL_LPTIM_OC_ConfigChannel(&hlptim3, &sConfig1, LPTIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -187,3 +166,4 @@ void HAL_LPTIM_MspDeInit(LPTIM_HandleTypeDef* lptimHandle)
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
+

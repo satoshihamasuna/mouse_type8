@@ -1,5 +1,5 @@
-../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_ll_lptim.h:1016:26:LL_LPTIM_GetPrescaler	1
-../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_ll_lptim.h:1159:26:LL_LPTIM_IC_GetFilter	1
+../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_ll_lptim.h:1015:26:LL_LPTIM_GetPrescaler	1
+../Drivers/STM32U5xx_HAL_Driver/Inc/stm32u5xx_ll_lptim.h:1158:26:LL_LPTIM_IC_GetFilter	1
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_lptim.c:236:19:HAL_LPTIM_Init	18
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_lptim.c:413:19:HAL_LPTIM_DeInit	19
 ../Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_lptim.c:501:13:HAL_LPTIM_MspInit	1

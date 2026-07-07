@@ -22,7 +22,7 @@
 *****************************************************************************
 ** @attention
 **
-** Copyright (c) 2025 STMicroelectronics.
+** Copyright (c) 2026 STMicroelectronics.
 ** All rights reserved.
 **
 ** This software is licensed under terms that can be found in the LICENSE file
@@ -37,6 +37,7 @@ ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
 _estack = ORIGIN(RAM) + LENGTH(RAM);	/* end of "RAM" Ram type memory */
+_sstack = _estack - _Min_Stack_Size;
 
 _Min_Heap_Size = 0x200;	/* required amount of heap  */
 _Min_Stack_Size = 0x400;	/* required amount of stack */
@@ -48,10 +49,7 @@ MEMORY
   SRAM4	(xrw)	: ORIGIN = 0x28000000,	LENGTH = 16K
   FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 504K
   USER_FLASH (rx) : ORIGIN = 0x0807E000, LENGTH = 8K
-
 }
-
-
 
 /* Sections */
 SECTIONS
@@ -117,7 +115,6 @@ SECTIONS
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
-
 
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);

@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2025 STMicroelectronics.
+  * Copyright (c) 2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -22,7 +22,6 @@
 #include "gpdma.h"
 #include "icache.h"
 #include "lptim.h"
-#include "memorymap.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -42,7 +41,6 @@
 #include <stdio.h>
 #include "flash_util.h"
 #include "system_util.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -111,33 +109,18 @@ int main(void)
   MX_ADC4_Init();
   MX_ICACHE_Init();
   MX_LPTIM1_Init();
+  MX_LPTIM3_Init();
   MX_SPI2_Init();
+  MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM8_Init();
   MX_USART1_UART_Init();
-  MX_TIM1_Init();
-  MX_LPTIM3_Init();
   /* USER CODE BEGIN 2 */
-/*
-  for(uint32_t i = 0; i < 8*1000;i++)
-  {
-	  work_ram_set(i, (uint8_t)(i%255));
-  }
-
-  Flash_Save();
-
-  for(uint32_t i = 0; i < 8*1024;i++)
-   {
- 	  work_ram_set(i, 0);
-   }
-  Flash_Load();
-*/
 
   HAL_Delay(100);
   CPP_Main();
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -250,8 +233,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

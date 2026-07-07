@@ -117,7 +117,7 @@ namespace Mode
 						  motion->Init_Motion_free_rotation_set(1000.0f,100);
 						  LogData::getInstance().log_enable = True;
 						  while(motion->motion_exeStatus_get() == execute){
-								//printf("encoder:%ld,%ld\n",Encoder_GetProperty_Right().sp_pulse,Encoder_GetProperty_Left().sp_pulse);
+								printf("encoder:%ld,%ld\n",Encoder_GetProperty_Right().sp_pulse,Encoder_GetProperty_Left().sp_pulse);
 
 
 								HAL_Delay(10);

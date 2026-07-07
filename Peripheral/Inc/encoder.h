@@ -18,7 +18,7 @@ extern "C" {
 #include "gpdma.h"
 #include "icache.h"
 #include "lptim.h"
-#include "memorymap.h"
+//#include "memorymap.h"
 #include "spi.h"
 #include "tim.h"
 #include "gpio.h"

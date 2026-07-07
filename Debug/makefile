@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (13.3.rel1)
+# Toolchain: GNU Tools for STM32 (14.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -67,34 +67,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := type8
+BUILD_ARTIFACT_NAME := mouse_type8
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-type8.elf \
+mouse_type8.elf \
 
 MAP_FILES += \
-type8.map \
+mouse_type8.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-type8.list \
+mouse_type8.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: type8.elf secondary-outputs
+main-build: mouse_type8.elf secondary-outputs
 
 # Tool invocations
-type8.elf type8.map: $(OBJS) $(USER_OBJS) D:\mouse8\mouse_program\mouse_type8\STM32U535CETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "type8.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"D:\mouse8\mouse_program\mouse_type8\STM32U535CETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="type8.map" -Wl,--gc-sections -static -Wl,-Map=type8.map --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+mouse_type8.elf mouse_type8.map: $(OBJS) $(USER_OBJS) C:\Users\sato1\Documents\Git\STM32\program_mouse_type8_ceu\mouse_type8\STM32U535CEUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "mouse_type8.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m33 -T"C:\Users\sato1\Documents\Git\STM32\program_mouse_type8_ceu\mouse_type8\STM32U535CEUX_FLASH.ld" -Wl,-Map="mouse_type8.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -103,14 +103,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-type8.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "type8.list"
+mouse_type8.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "mouse_type8.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) default.size.stdout type8.elf type8.list type8.map
+	-$(RM) default.size.stdout mouse_type8.elf mouse_type8.list mouse_type8.map
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

@@ -11,7 +11,6 @@
 #include "gpdma.h"
 #include "icache.h"
 #include "lptim.h"
-#include "memorymap.h"
 #include "spi.h"
 #include "tim.h"
 #include "gpio.h"
@@ -59,7 +58,7 @@ uint32_t Encoder_Counts_Right(){
 }
 
 int32_t Encoder_GetPosition_Right(){
-	return (1)*((int32_t)ENC_CNT_R - (int32_t)ENC_ZERO);
+	return (-1)*((int32_t)ENC_CNT_R - (int32_t)ENC_ZERO);
 }
 
 int32_t Encoder_GetPosition_Left(){
