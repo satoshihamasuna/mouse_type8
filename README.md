@@ -179,3 +179,17 @@ cube-cmake --build --preset Release
 - ユーザー定義の CMake 設定を追加する場合は、まず `CMakeLists.txt` の `User defined` セクションを使います。
 - `.ioc` を変更した後は、生成されたソースや CMake 設定に差分が出るため、ビルド前に `CMake: Configure` を実行してください。
 - Debug/Release のビルドディレクトリは `build/Debug`、`build/Release` です。
+
+### Flash / Write to MCU
+
+Debug ビルド後、ST-LINK を接続して SWD 経由で書き込む場合:
+
+```powershell
+cube programmer -c port=SWD -d .\build\Debug\mouse_type8.elf -v -rst
+```
+
+`cube programmer` が見つからない場合は、STM32CubeProgrammer の CLI を直接指定します:
+
+```powershell
+& "C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe" -c port=SWD -d .\build\Debug\mouse_type8.elf -v -rst
+```
