@@ -1,0 +1,57 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "default",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "toolchainFile": "cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+                "CMSIS_Dvendor": "STMicroelectronics:13",
+                "CMSIS_Dname": "STM32U535CEU6",
+                "CMSIS_Dcore": "Cortex-M33",
+                "CMSIS_Dtz": "TZ",
+                "CMSIS_Dfpu": "SP_FPU",
+                "CMSIS_Ddsp": "DSP",
+                "CMSIS_Dmve": "NO_MVE",
+                "CMSIS_Dmpu": "MPU",
+                "CMSIS_Dendian": "Little-endian",
+                "CMSIS_Dsecure": "",
+                "CMSIS_Tcompiler": "GCC"
+            }
+        },
+        {
+            "name": "Debug",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CUBE_CMAKE_C_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-std=gnu11;-g3;-DDEBUG;-DUSE_HAL_DRIVER;-DSTM32U535xx;-O0;-ffunction-sections;-fdata-sections;-Wall;-fstack-usage;-fcyclomatic-complexity",
+                "CUBE_CMAKE_CXX_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-std=gnu++14;-g3;-DDEBUG;-DUSE_HAL_DRIVER;-DSTM32U535xx;-O0;-ffunction-sections;-fdata-sections;-fno-exceptions;-fno-rtti;-fno-use-cxa-atexit;-Wall;-fstack-usage;-fcyclomatic-complexity",
+                "CUBE_CMAKE_ASM_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-g3;-DDEBUG;-x;assembler-with-cpp",
+                "CUBE_CMAKE_EXE_LINKER_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-TSTM32U535CEUX_FLASH.ld;-Wl,-Map=mouse_type8.map;-Wl,--gc-sections;-static"
+            }
+        },
+        {
+            "name": "Release",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CUBE_CMAKE_C_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-std=gnu11;-DUSE_HAL_DRIVER;-DSTM32U535xx;-Os;-ffunction-sections;-fdata-sections;-Wall;-fstack-usage;-fcyclomatic-complexity",
+                "CUBE_CMAKE_CXX_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-std=gnu++14;-DUSE_HAL_DRIVER;-DSTM32U535xx;-Os;-ffunction-sections;-fdata-sections;-fno-exceptions;-fno-rtti;-fno-use-cxa-atexit;-Wall;-fstack-usage;-fcyclomatic-complexity",
+                "CUBE_CMAKE_ASM_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-x;assembler-with-cpp",
+                "CUBE_CMAKE_EXE_LINKER_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-TSTM32U535CEUX_FLASH.ld;-Wl,-Map=mouse_type8.map;-Wl,--gc-sections;-static"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "Debug",
+            "configurePreset": "Debug"
+        },
+        {
+            "name": "Release",
+            "configurePreset": "Release"
+        }
+    ]
+}

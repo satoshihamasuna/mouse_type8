@@ -1,0 +1,126 @@
+# Enable compile command to ease indexing with e.g. clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+
+# Compiler options
+target_compile_options(${BUILD_UNIT_0_NAME} PRIVATE
+    $<$<COMPILE_LANGUAGE:C>: ${CUBE_CMAKE_C_FLAGS}>
+    $<$<COMPILE_LANGUAGE:CXX>: ${CUBE_CMAKE_CXX_FLAGS}>
+    $<$<COMPILE_LANGUAGE:ASM>: ${CUBE_CMAKE_ASM_FLAGS}>
+)
+
+# Linker options
+target_link_options(${BUILD_UNIT_0_NAME} PRIVATE ${CUBE_CMAKE_EXE_LINKER_FLAGS})
+
+# Add sources to executable/library
+target_sources(${BUILD_UNIT_0_NAME} PRIVATE
+    "Component/Src/controller.cpp"
+    "Component/Src/half_float.cpp"
+    "Component/Src/path_follow.cpp"
+    "Component/codegen/rtwhalf.cpp"
+    "Component/ntshell-v0.3.1/src/lib/core/ntlibc.c"
+    "Component/ntshell-v0.3.1/src/lib/core/ntshell.c"
+    "Component/ntshell-v0.3.1/src/lib/core/text_editor.c"
+    "Component/ntshell-v0.3.1/src/lib/core/text_history.c"
+    "Component/ntshell-v0.3.1/src/lib/core/vtrecv.c"
+    "Component/ntshell-v0.3.1/src/lib/core/vtsend.c"
+    "Component/ntshell-v0.3.1/src/lib/util/ntopt.c"
+    "Component/ntshell-v0.3.1/src/lib/util/ntstdio.c"
+    "Core/Src/adc.c"
+    "Core/Src/gpdma.c"
+    "Core/Src/gpio.c"
+    "Core/Src/icache.c"
+    "Core/Src/lptim.c"
+    "Core/Src/main.c"
+    "Core/Src/spi.c"
+    "Core/Src/stm32u5xx_hal_msp.c"
+    "Core/Src/stm32u5xx_it.c"
+    "Core/Src/syscalls.c"
+    "Core/Src/sysmem.c"
+    "Core/Src/system_stm32u5xx.c"
+    "Core/Src/tim.c"
+    "Core/Src/usart.c"
+    "Core/Startup/startup_stm32u535ceux.s"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_adc.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_adc_ex.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_cortex.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_dma.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_dma_ex.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_exti.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_flash_ex.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gpio.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_gtzc.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_i2c_ex.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_icache.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_lptim.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_pwr_ex.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc_ex.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi_ex.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_tim.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_tim_ex.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart.c"
+    "Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart_ex.c"
+    "Module/Src/flash.cpp"
+    "Module/Src/interrupt.cpp"
+    "Module/Src/log_data.cpp"
+    "Peripheral/Src/battery.c"
+    "Peripheral/Src/communicate.cpp"
+    "Peripheral/Src/current_sens.c"
+    "Peripheral/Src/encoder.c"
+    "Peripheral/Src/flash_util.c"
+    "Peripheral/Src/imu.c"
+    "Peripheral/Src/interface.c"
+    "Peripheral/Src/ir_sensor.c"
+    "Peripheral/Src/motor.c"
+    "Subsys/Src/adachi.cpp"
+    "Subsys/Src/calcRunTime.cpp"
+    "Subsys/Src/make_map.cpp"
+    "Subsys/Src/make_path.cpp"
+    "Subsys/Src/make_path_expand.cpp"
+    "Subsys/Src/search.cpp"
+    "Subsys/Src/wall_class.cpp"
+    "System/Src/debug.cpp"
+    "System/Src/debug2.cpp"
+    "System/Src/debug3.cpp"
+    "System/Src/demo.cpp"
+    "System/Src/demo2.cpp"
+    "System/Src/interface_check.cpp"
+    "System/Src/mode.cpp"
+    "System/Src/myshell.cpp"
+    "System/Src/search_time_select.cpp"
+    "System/Src/system_util.cpp"
+    "System/Src/wall_histry_check.cpp"
+    "Task/Src/ctrl_task.cpp"
+    "Task/Src/init_motion.cpp"
+    "Task/Src/init_motion2.cpp"
+    "Task/Src/ir_sens_task.cpp"
+    "Task/Src/motion.cpp"
+    "Task/Src/turn_motion.cpp"
+)
+
+target_include_directories(${BUILD_UNIT_0_NAME} PRIVATE
+    "System/Inc"
+    "Core/Inc"
+    "Drivers/STM32U5xx_HAL_Driver/Inc"
+    "Drivers/STM32U5xx_HAL_Driver/Inc/Legacy"
+    "Drivers/CMSIS/Device/ST/STM32U5xx/Include"
+    "Drivers/CMSIS/Include"
+    "Params"
+    "Peripheral/Inc"
+    "Module/Inc"
+    "Task/Inc"
+    "Subsys/Inc"
+    "Component/codegen"
+    "Component/Inc"
+    "Component/ntshell-v0.3.1/src/lib"
+)
+
+configure_file("${CMAKE_SOURCE_DIR}/STM32U535CEUX_FLASH.ld" "${CMAKE_BINARY_DIR}" COPYONLY)
+
+set_target_properties(${BUILD_UNIT_0_NAME} PROPERTIES LINK_DEPENDS "STM32U535CEUX_FLASH.ld")
+
