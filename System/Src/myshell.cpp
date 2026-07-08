@@ -11,6 +11,7 @@
 #include "../Inc/myshell.h"
 #include "communicate.h"
 #include "../../Module/Inc/log_data.h"
+#include "../../Module/Inc/flash.h"
 #include "typedef.h"
 #include "../../Task/Inc/sensing_task.h"
 #include "../../Task/Inc/ctrl_task.h"
@@ -91,11 +92,25 @@ static int usrcmd_disp(int argc, char **argv)
 {
     if (argc != 2) {
     	printf("disp maze\r\n");
+    	printf("disp histry\r\n");
     	printf("disp log\r\n");
     	return 0;
     }
     if (ntlibc_strcmp(argv[1], "maze") == 0) {
-    	printf("prototype8\r\n");
+    	static wall_class wall_data(&IrSensTask_type8::getInstance());
+    	wall_data.init_maze();
+    	read_save_data(&wall_data);
+    	wall_data.histry2wall_append();
+    	printf("MAZE_START\r\n");
+    	wall_data.indicate_wall();
+    	printf("MAZE_END\r\n");
+        return 0;
+    }
+    if (ntlibc_strcmp(argv[1], "histry") == 0) {
+    	static wall_class wall_data(&IrSensTask_type8::getInstance());
+    	wall_data.init_maze();
+    	read_save_data(&wall_data);
+    	wall_data.wall_histry.histry_indicate();
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "log") == 0) {
