@@ -42,8 +42,8 @@ namespace Mode
 		uint8_t param = 0x00;
 		uint8_t enable = 0x00;
 
-		Motion *motion = &(CtrlTask_type7::getInstance());
-		IrSensTask *irsens = (CtrlTask_type7::getInstance().return_irObj());
+		Motion *motion = &(CtrlTask_type8::getInstance());
+		IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
 
 		uint32_t time = Interrupt::getInstance().return_time_count();
 		float fr,fl,sr,sl;
@@ -86,7 +86,7 @@ namespace Mode
 					 printf("fr:%4d,fl:%4d,sr:%4d,sl:%4d\n", int_fr, int_fl, int_sr, int_sl);
 					 break;
 				case ENABLE|0x02:
-					printf("gyro:%lf,accel:%lf\n",CtrlTask_type7::getInstance().return_vehicleObj()->ego.radian.get(),CtrlTask_type7::getInstance().return_vehicleObj()->ego.accel.get());
+					printf("gyro:%lf,accel:%lf\n",CtrlTask_type8::getInstance().return_vehicleObj()->ego.radian.get(),CtrlTask_type8::getInstance().return_vehicleObj()->ego.accel.get());
 					HAL_Delay(10);
 					break;
 				case ENABLE|0x03:
@@ -97,8 +97,8 @@ namespace Mode
 							float diff = - ((sl-45.0));
 							printf("\033[2A");
 							printf("sr:%f,sl:%f,diff:%f\n",sr,sl,diff);
-							printf("length:%lf,",CtrlTask_type7::getInstance().return_vehicleObj()->ego.length.get());
-							printf("angle:%lf,",CtrlTask_type7::getInstance().return_vehicleObj()->ego.radian.get());
+							printf("length:%lf,",CtrlTask_type8::getInstance().return_vehicleObj()->ego.length.get());
+							printf("angle:%lf,",CtrlTask_type8::getInstance().return_vehicleObj()->ego.radian.get());
 							printf("battery:%lf\n",Battery_GetVoltage());
 							HAL_Delay(10);
 							if(Button_Status() == 1) break;

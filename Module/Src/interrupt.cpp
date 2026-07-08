@@ -128,56 +128,56 @@ void Interrupt::preprocess()
 	float enc_velo_mean = ((Renc.wheel_speed) - (Lenc.wheel_speed))/2.0;
 	float velo			= (1.0/2.0f)*acc_mean*((float)(ACC_BUFF_SIZE))/1000.0f + enc_velo_mean;
 	float enc_velo		= ((Renc.sp_pulse ) - (Lenc.sp_pulse))*MMPP/2.0;
-	float length		= Vehicle_type7::getInstance().ego.length.get() + enc_velo;
+	float length		= Vehicle_type8::getInstance().ego.length.get() + enc_velo;
 
-	Vehicle_type7::getInstance().ego.accel.set(acc_mean);
-	Vehicle_type7::getInstance().ego.velo.set(velo);
-	Vehicle_type7::getInstance().ego.length.set(length);
+	Vehicle_type8::getInstance().ego.accel.set(acc_mean);
+	Vehicle_type8::getInstance().ego.velo.set(velo);
+	Vehicle_type8::getInstance().ego.length.set(length);
 
-	Vehicle_type7::getInstance().ego.z_accel.set(z_acc_mean);
+	Vehicle_type8::getInstance().ego.z_accel.set(z_acc_mean);
 
 	float rad_velo 		= (GYRO_COR_RATE)*(read_gyro_z_axis()*PI/180.0+GYRO_OFFSET);
-	float rad			= Vehicle_type7::getInstance().ego.radian.get() + rad_velo/1000.0f;
+	float rad			= Vehicle_type8::getInstance().ego.radian.get() + rad_velo/1000.0f;
 
-	Vehicle_type7::getInstance().ego.rad_velo.set(rad_velo);
-	Vehicle_type7::getInstance().ego.radian.set(rad);
+	Vehicle_type8::getInstance().ego.rad_velo.set(rad_velo);
+	Vehicle_type8::getInstance().ego.radian.set(rad);
 
 
 	float set_velo = velo;
 	if(set_velo == 0.0f) set_velo = 0.001;
-	float slip_theta = (Vehicle_type7::getInstance().ego.turn_slip_theta.get()*1000.0f - rad_velo)
-						/(1000.0f + Vehicle_type7::getInstance().turn_slip_k.get()/(set_velo));
+	float slip_theta = (Vehicle_type8::getInstance().ego.turn_slip_theta.get()*1000.0f - rad_velo)
+						/(1000.0f + Vehicle_type8::getInstance().turn_slip_k.get()/(set_velo));
 
-	Vehicle_type7::getInstance().ego.turn_slip_theta.set(slip_theta);
-	float slip_theta_dot = -Vehicle_type7::getInstance().turn_slip_k.get()*slip_theta/set_velo - rad_velo;
-	Vehicle_type7::getInstance().ego.turn_slip_dot.set(slip_theta_dot);
+	Vehicle_type8::getInstance().ego.turn_slip_theta.set(slip_theta);
+	float slip_theta_dot = -Vehicle_type8::getInstance().turn_slip_k.get()*slip_theta/set_velo - rad_velo;
+	Vehicle_type8::getInstance().ego.turn_slip_dot.set(slip_theta_dot);
 
 	float horizon_velo = enc_velo*slip_theta;
-	float horizon_acc  =  -Vehicle_type7::getInstance().turn_slip_k.get()*slip_theta - rad_velo*velo;
-	Vehicle_type7::getInstance().ego.horizon_accel.set(horizon_acc);
-	Vehicle_type7::getInstance().ego.horizon_velo.set(horizon_velo);
+	float horizon_acc  =  -Vehicle_type8::getInstance().turn_slip_k.get()*slip_theta - rad_velo*velo;
+	Vehicle_type8::getInstance().ego.horizon_accel.set(horizon_acc);
+	Vehicle_type8::getInstance().ego.horizon_velo.set(horizon_velo);
 
 
-	float estimate_theta = Vehicle_type7::getInstance().ego.radian.get();
+	float estimate_theta = Vehicle_type8::getInstance().ego.radian.get();
 	float turn_x_dot = velo*sin(estimate_theta);// + horizon_velo*cos(estimate_theta);
 	float turn_y_dot = velo*cos(estimate_theta);// - horizon_velo*sin(estimate_theta);
 
-	Vehicle_type7::getInstance().ego.turn_x_dash.set(turn_x_dot);
-	Vehicle_type7::getInstance().ego.turn_y_dash.set(turn_y_dot);
+	Vehicle_type8::getInstance().ego.turn_x_dash.set(turn_x_dot);
+	Vehicle_type8::getInstance().ego.turn_y_dash.set(turn_y_dot);
 
-	float turn_x = Vehicle_type7::getInstance().ego.turn_x.get() + turn_x_dot;
-	float turn_y = Vehicle_type7::getInstance().ego.turn_y.get() + turn_y_dot;
+	float turn_x = Vehicle_type8::getInstance().ego.turn_x.get() + turn_x_dot;
+	float turn_y = Vehicle_type8::getInstance().ego.turn_y.get() + turn_y_dot;
 
-	Vehicle_type7::getInstance().ego.turn_x.set(turn_x);
-	Vehicle_type7::getInstance().ego.turn_y.set(turn_y);
+	Vehicle_type8::getInstance().ego.turn_x.set(turn_x);
+	Vehicle_type8::getInstance().ego.turn_y.set(turn_y);
 
-	Vehicle_type7::getInstance().ego.x_point.set(Vehicle_type7::getInstance().ego.x_point.get() + turn_x_dot);
+	Vehicle_type8::getInstance().ego.x_point.set(Vehicle_type8::getInstance().ego.x_point.get() + turn_x_dot);
 
-	float battery_voltage = 0.98 * Vehicle_type7::getInstance().battery.get() + (0.02)*Battery_GetVoltage();
-	Vehicle_type7::getInstance().battery.set(battery_voltage);
+	float battery_voltage = 0.98 * Vehicle_type8::getInstance().battery.get() + (0.02)*Battery_GetVoltage();
+	Vehicle_type8::getInstance().battery.set(battery_voltage);
 
 	//update wall sensor information
-	IrSensTask_type7::getInstance().IrSensorSet(&Vehicle_type7::getInstance());
+	IrSensTask_type8::getInstance().IrSensorSet(&Vehicle_type8::getInstance());
 }
 
 void Interrupt::main()
@@ -187,9 +187,9 @@ void Interrupt::main()
 	controll_task::getInstance().motionControll();
 	 */
 
-	CtrlTask_type7::getInstance().motion_prev_control();
-	CtrlTask_type7::getInstance().motion_control();
-	CtrlTask_type7::getInstance().motion_post_control();
+	CtrlTask_type8::getInstance().motion_prev_control();
+	CtrlTask_type8::getInstance().motion_control();
+	CtrlTask_type8::getInstance().motion_post_control();
 }
 
 void Interrupt::postprocess()

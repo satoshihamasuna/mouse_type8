@@ -60,8 +60,8 @@ void Demo()
 	uint32_t time = Interrupt::getInstance().return_time_count();
 
 
-	Motion *motion = &(CtrlTask_type7::getInstance());
-	IrSensTask *irsens = (CtrlTask_type7::getInstance().return_irObj());
+	Motion *motion = &(CtrlTask_type8::getInstance());
+	IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
 
 	Search solve_maze;
 	solve_maze.set_search_limit_time((6*60*1000));

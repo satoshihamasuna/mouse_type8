@@ -43,8 +43,8 @@ void Demo2()
 	uint32_t time = Interrupt::getInstance().return_time_count();
 
 
-	Motion *motion = &(CtrlTask_type7::getInstance());
-	IrSensTask *irsens = (CtrlTask_type7::getInstance().return_irObj());
+	Motion *motion = &(CtrlTask_type8::getInstance());
+	IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
 
 	Search solve_maze;
 	wall_class wall_data(irsens);

@@ -134,10 +134,10 @@ class wall_class
 };
 
 /*
-class wall_class_type7: public wall_class,public Singleton<wall_class_type7>
+class wall_class_type8: public wall_class,public Singleton<wall_class_type8>
 {
 public:
-	wall_class_type7(IrSensTask *ir = &IrSensTask_type7::getInstance()):wall_class(ir){}
+	wall_class_type8(IrSensTask *ir = &IrSensTask_type8::getInstance()):wall_class(ir){}
 };
 */
 

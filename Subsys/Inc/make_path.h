@@ -178,10 +178,10 @@ class Dijkstra:public calcRunTime
 };
 
 /*
-class Dijkstra_type7: public Dijkstra,public Singleton<Dijkstra_type7>
+class Dijkstra_type8: public Dijkstra,public Singleton<Dijkstra_type8>
 {
 public:
-	Dijkstra_type7(wall_class *w = &wall_class_type7::getInstance()):Dijkstra(w){}
+	Dijkstra_type8(wall_class *w = &wall_class_type8::getInstance()):Dijkstra(w){}
 };
 */
 

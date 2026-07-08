@@ -139,7 +139,7 @@ class IrSensTask
 
 };
 
-class IrSensTask_type7: public IrSensTask,public Singleton<IrSensTask_type7>
+class IrSensTask_type8: public IrSensTask,public Singleton<IrSensTask_type8>
 {
 	public:
 		void IrSensorSet(Vehicle *vehicle) override

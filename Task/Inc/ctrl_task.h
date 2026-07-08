@@ -354,9 +354,9 @@ class CtrlTask:public Motion
 };
 
 
-class CtrlTask_type7:public CtrlTask,public Singleton<CtrlTask_type7>{
+class CtrlTask_type8:public CtrlTask,public Singleton<CtrlTask_type8>{
 	public:
-		CtrlTask_type7(Vehicle *v = &Vehicle_type7::getInstance(),IrSensTask *ir = &IrSensTask_type7::getInstance()):CtrlTask(v,ir,1){}
+		CtrlTask_type8(Vehicle *v = &Vehicle_type8::getInstance(),IrSensTask *ir = &IrSensTask_type8::getInstance()):CtrlTask(v,ir,1){}
 };
 
 #endif /* CPP_TASK_INC_CTRL_TASK_H_ */

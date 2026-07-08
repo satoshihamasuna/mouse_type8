@@ -52,7 +52,7 @@ namespace Mode
 		uint8_t param = 0x00;
 		uint8_t enable = 0x00;
 
-		IrSensTask *irsens = (CtrlTask_type7::getInstance().return_irObj());
+		IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
 		uint32_t time = Interrupt::getInstance().return_time_count();
 
 		uint32_t select_time = (6*60*1000);

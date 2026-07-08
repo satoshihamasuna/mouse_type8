@@ -186,7 +186,7 @@ class Vehicle
 		}
 };
 
-class Vehicle_type7:public Vehicle,public Singleton<Vehicle_type7>{
+class Vehicle_type8:public Vehicle,public Singleton<Vehicle_type8>{
 
 
 	void motorSetDuty_l(int out_l) override

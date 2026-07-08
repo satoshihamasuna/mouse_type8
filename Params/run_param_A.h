@@ -23,10 +23,10 @@
 #include "typedef_run_param.h"
 
 const static t_pid_gain basic_sp_gain = {2.0,0.016,0.00};//{10.0,0.05,0.00};////
-const static t_pid_gain basic_om_gain = {0.08f,0.005f,0.00f};//;{0.40f, 0.05f, 0.00f};//
+const static t_pid_gain basic_om_gain = {0.08f,0.003f,0.00f};//;{0.40f, 0.05f, 0.00f};//
 
 const static t_pid_gain search_sp_gain = {2.0,0.016,0.00};//{10.0,0.05,0.00};////
-const static t_pid_gain search_om_gain = {0.1f,0.005f,0.00f};//{0.40f, 0.05f, 0.00f};//
+const static t_pid_gain search_om_gain = {0.1f,0.003f,0.00f};//{0.40f, 0.05f, 0.00f};//
 
 const static t_pid_gain sp_gain_search_turn =  {2.0,0.016,0.00};//{10.0,0.05,0.00};////{2.0,0.04};
 const static t_pid_gain om_gain_search_turn =  {0.1f,0.005f,0.00f};//{0.60f, 0.05f, 0.000f};//{0.50f, 0.0005f, 0.001f};

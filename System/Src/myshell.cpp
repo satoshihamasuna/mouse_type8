@@ -75,7 +75,7 @@ static int usrcmd_info(int argc, char **argv)
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "sys") == 0) {
-    	printf("prototype7\r\n");
+    	printf("prototype8\r\n");
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "ver") == 0) {
@@ -95,7 +95,7 @@ static int usrcmd_disp(int argc, char **argv)
     	return 0;
     }
     if (ntlibc_strcmp(argv[1], "maze") == 0) {
-    	printf("prototype7\r\n");
+    	printf("prototype8\r\n");
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "log") == 0) {
@@ -147,8 +147,8 @@ int shell_debug_straight(int argc, char **argv)
 	static t_pid_gain debug_sp_gain = {4.0,0.05,0.00};
 	static t_pid_gain debug_om_gain = {0.1f,0.01f,0.00f};
 
-	Motion *motion = &(CtrlTask_type7::getInstance());
-	IrSensTask *irsens = (CtrlTask_type7::getInstance().return_irObj());
+	Motion *motion = &(CtrlTask_type8::getInstance());
+	IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
 
 	if (ntlibc_strcmp(argv[2], "om_params") == 0)
 	{
@@ -217,8 +217,8 @@ int shell_debug_diagonal(int argc, char **argv)
 	static t_pid_gain debug_sp_gain = {12.0,0.04,0.0};
 	static t_pid_gain debug_om_gain = {0.60f, 0.01f, 0.00f};
 
-	Motion *motion = &(CtrlTask_type7::getInstance());
-	IrSensTask *irsens = (CtrlTask_type7::getInstance().return_irObj());
+	Motion *motion = &(CtrlTask_type8::getInstance());
+	IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
 
 	if (ntlibc_strcmp(argv[2], "om_params") == 0)
 	{
@@ -291,8 +291,8 @@ int shell_debug_turn(int argc, char **argv)
 	static t_pid_gain debug_turn_om_gain = {0.60f, 0.01f, 0.00f};
 
 
-	Motion *motion = &(CtrlTask_type7::getInstance());
-	IrSensTask *irsens = (CtrlTask_type7::getInstance().return_irObj());
+	Motion *motion = &(CtrlTask_type8::getInstance());
+	IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
 
 	if (ntlibc_strcmp(argv[2], "om_params") == 0)
 	{

@@ -42,8 +42,8 @@ namespace Mode
 		uint8_t param = 0x00;
 		uint8_t enable = 0x00;
 
-		//Motion *motion = &(CtrlTask_type7::getInstance());
-		IrSensTask *irsens = (CtrlTask_type7::getInstance().return_irObj());
+		//Motion *motion = &(CtrlTask_type8::getInstance());
+		IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
 
 		//Search solve_maze;
 		//wall_class wall_data(irsens);

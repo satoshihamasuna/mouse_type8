@@ -10,7 +10,7 @@ PORT = "COM8"
 BAUD = 115200          # ★必ず上げる
 MOUSE = "type8a_MPQ"
 
-LOG_DATA_NUM = 45     # ← STM32側と一致させる
+LOG_DATA_NUM = 51     # ← STM32側と一致させる
 MAGIC = 0xA55A
 MAGIC_END = 0xFFFF
 
