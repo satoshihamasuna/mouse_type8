@@ -10,6 +10,7 @@
 #include "../Inc/wall_class.h"
 
 #include "typedef.h"
+#include "communicate.h"
 
 
 void wall_class::init_maze(){
@@ -268,6 +269,22 @@ void wall_class::indicate_wall()
 		printf("|\n");				HAL_Delay(5);
 	}
 	for(int x = 0; x < MAZE_SIZE_X ; x++)	{	printf("+---"); HAL_Delay(5);	}	printf("+\n");
+}
+
+void wall_class::indicate_wall_binary()
+{
+	for( int y = MAZE_SIZE_Y - 1 ; y >= 0 ; y-- ){
+		uint8_t row[MAZE_SIZE_X];
+		for(int x = 0; x < MAZE_SIZE_X ; x++ ){
+			uint8_t data = 0;
+			data |= (uint8_t)(wall[x][y].north & 0x03);
+			data |= (uint8_t)((wall[x][y].east  & 0x03) << 2);
+			data |= (uint8_t)((wall[x][y].south & 0x03) << 4);
+			data |= (uint8_t)((wall[x][y].west  & 0x03) << 6);
+			row[x] = data;
+		}
+		Communicate_TxPushBuffer(row, MAZE_SIZE_X);
+	}
 }
 
 

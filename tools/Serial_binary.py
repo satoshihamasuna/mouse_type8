@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 # ===== 設定 =====
-PORT = "COM8"
+PORT = "COM6"
 BAUD = 115200          # ★必ず上げる
 MOUSE = "type8a_MPQ"
 

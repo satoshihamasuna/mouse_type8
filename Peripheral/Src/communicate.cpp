@@ -93,7 +93,6 @@ void Communicate_TxPushData( int8_t data )
 		__disable_irq();
 
 		// DMAを一時的に停止
-		HAL_DMA_Abort(huart1.hdmatx);
 
 		// バッファに空きがあればループから抜ける
 		if( tx_buffer.queue_length() < TRX_BUFFER_SIZE ) {
@@ -101,21 +100,23 @@ void Communicate_TxPushData( int8_t data )
 		} else;
 
 		// DMA動作再開
-		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)(&tx_data), 1);
 
 		// 割り込み許可
 		__enable_irq();
 
 		// バッファに空きができるまで待機（この間割り込みが発生してもよい）
-		while(tx_buffer.queue_length() == TRX_BUFFER_SIZE);
+		while(tx_buffer.queue_length() >= TRX_BUFFER_SIZE);
 	}
 	// ここの時点でDMACは停止，割り込みは禁止されている
 
 	// 書き込みポインタにデータを格納
 	tx_buffer.push((uint8_t)data);
+	if(huart1.gState == HAL_UART_STATE_READY) {
+		tx_data = tx_buffer.pop();
+		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)(&tx_data), 1);
+	}
 
 	// DMA動作再開
-	HAL_UART_Transmit_DMA(&huart1, (uint8_t*)(&tx_data), 1);
 
 	// 割り込み許可
 	__enable_irq();
@@ -133,7 +134,7 @@ void Communicate_TxPopData( void )
 	// データがない場合
 	if(tx_buffer.queue_length() == 0)
 	{
-		tx_data = '\0';
+		//tx_data = '\0';
 		// DMAを停止
 		HAL_UART_DMAStop(&huart1);
 	}

@@ -92,6 +92,7 @@ static int usrcmd_disp(int argc, char **argv)
 {
     if (argc != 2) {
     	printf("disp maze\r\n");
+    	printf("disp maze_bin\r\n");
     	printf("disp histry\r\n");
     	printf("disp log\r\n");
     	return 0;
@@ -104,6 +105,16 @@ static int usrcmd_disp(int argc, char **argv)
     	printf("MAZE_START\r\n");
     	wall_data.indicate_wall();
     	printf("MAZE_END\r\n");
+        return 0;
+    }
+    if (ntlibc_strcmp(argv[1], "maze_bin") == 0) {
+    	static wall_class wall_data(&IrSensTask_type8::getInstance());
+    	wall_data.init_maze();
+    	read_save_data(&wall_data);
+    	wall_data.histry2wall_append();
+    	printf("MAZE_BIN_START\r\n");
+    	wall_data.indicate_wall_binary();
+    	printf("\r\nMAZE_BIN_END\r\n");
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "histry") == 0) {

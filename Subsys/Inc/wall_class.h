@@ -128,6 +128,7 @@ class wall_class
 		}
 		t_wall_state get_WallState(t_position pos);
 		void indicate_wall();
+		void indicate_wall_binary();
 		void histry2wall_append();
 
 
