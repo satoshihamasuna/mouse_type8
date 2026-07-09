@@ -12,6 +12,7 @@
 #include "communicate.h"
 #include "../../Module/Inc/log_data.h"
 #include "../../Module/Inc/flash.h"
+#include "../../Subsys/Inc/make_path.h"
 #include "typedef.h"
 #include "../../Task/Inc/sensing_task.h"
 #include "../../Task/Inc/ctrl_task.h"
@@ -33,6 +34,8 @@ static int usrcmd_disp(int argc, char **argv);
 static int usrcmd_end(int argc, char **argv);
 static int usrcmd_debug(int argc, char **argv);
 static int usrcmd_log(int argc, char **argv);
+static int usrcmd_load(int argc, char **argv);
+static int usrcmd_path(int argc, char **argv);
 typedef struct {
 	const char *cmd;
 	const char *desc;
@@ -45,12 +48,27 @@ static const cmd_table_t cmdlist[] = {
 	{ "disp", "This is a description text string for disp command.", usrcmd_disp },
 	{ "end",  "This is a description text string for end command.", usrcmd_end },
 	{ "debug","This is a description text string for debug command.", usrcmd_debug },
-	{ "log"  ,"This is a description text string for debug command.", usrcmd_log }
+	{ "log"  ,"This is a description text string for debug command.", usrcmd_log },
+	{ "load" ,"load saved maze data from flash.", usrcmd_load },
+	{ "path" ,"check path generation.", usrcmd_path }
 };
 
 static ntshell_t nts;
 
 t_bool	shell_end_flag;
+
+static wall_class *shell_wall_data(void)
+{
+	static wall_class wall_data(&IrSensTask_type8::getInstance());
+	return &wall_data;
+}
+
+static void shell_read_save_data(wall_class *wall_data)
+{
+	wall_data->init_maze();
+	read_save_data(wall_data);
+	wall_data->histry2wall_append();
+}
 
 /* ---------------------------------------------------------------
 	help と info
@@ -95,37 +113,80 @@ static int usrcmd_disp(int argc, char **argv)
     	printf("disp maze_bin\r\n");
     	printf("disp histry\r\n");
     	printf("disp log\r\n");
+    	printf("disp log_bin\r\n");
     	return 0;
     }
     if (ntlibc_strcmp(argv[1], "maze") == 0) {
-    	static wall_class wall_data(&IrSensTask_type8::getInstance());
-    	wall_data.init_maze();
-    	read_save_data(&wall_data);
-    	wall_data.histry2wall_append();
+    	wall_class *wall_data = shell_wall_data();
+    	shell_read_save_data(wall_data);
     	printf("MAZE_START\r\n");
-    	wall_data.indicate_wall();
+    	wall_data->indicate_wall();
     	printf("MAZE_END\r\n");
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "maze_bin") == 0) {
-    	static wall_class wall_data(&IrSensTask_type8::getInstance());
-    	wall_data.init_maze();
-    	read_save_data(&wall_data);
-    	wall_data.histry2wall_append();
+    	wall_class *wall_data = shell_wall_data();
+    	shell_read_save_data(wall_data);
     	printf("MAZE_BIN_START\r\n");
-    	wall_data.indicate_wall_binary();
+    	wall_data->indicate_wall_binary();
     	printf("\r\nMAZE_BIN_END\r\n");
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "histry") == 0) {
-    	static wall_class wall_data(&IrSensTask_type8::getInstance());
-    	wall_data.init_maze();
-    	read_save_data(&wall_data);
-    	wall_data.wall_histry.histry_indicate();
+    	wall_class *wall_data = shell_wall_data();
+    	shell_read_save_data(wall_data);
+    	wall_data->wall_histry.histry_indicate();
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "log") == 0) {
     	LogData::getInstance().indicate_data();
+        return 0;
+    }
+    if (ntlibc_strcmp(argv[1], "log_bin") == 0) {
+    	LogData::getInstance().indicate_data_binary();
+        return 0;
+    }
+    printf("Unknown sub command found\r\n");
+    return -1;
+}
+
+static int usrcmd_load(int argc, char **argv)
+{
+    if (argc != 2) {
+    	printf("load save\r\n");
+    	return 0;
+    }
+    if (ntlibc_strcmp(argv[1], "save") == 0) {
+    	wall_class *wall_data = shell_wall_data();
+    	shell_read_save_data(wall_data);
+    	printf("read_save_data done. histry_cnt:%d\r\n", wall_data->wall_histry.get_histry_cnt());
+        return 0;
+    }
+    printf("Unknown sub command found\r\n");
+    return -1;
+}
+
+static int usrcmd_path(int argc, char **argv)
+{
+    if (argc != 2) {
+    	printf("path dijkstra\r\n");
+    	return 0;
+    }
+    if (ntlibc_strcmp(argv[1], "dijkstra") == 0) {
+    	wall_class *wall_data = shell_wall_data();
+    	shell_read_save_data(wall_data);
+
+    	Dijkstra run_path(wall_data);
+    	t_position start, goal;
+    	start.x = start.y = 0;
+    	start.dir = North;
+    	goal.x = MAZE_GOAL_X;
+    	goal.y = MAZE_GOAL_Y;
+
+    	run_path.turn_time_set(mode_1000);
+    	printf("DIJKSTRA_START\r\n");
+    	run_path.check_run_Dijkstra(start, Dir_None, goal, MAZE_GOAL_SIZE);
+    	printf("DIJKSTRA_END\r\n");
         return 0;
     }
     printf("Unknown sub command found\r\n");

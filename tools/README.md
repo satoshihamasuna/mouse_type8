@@ -12,6 +12,22 @@ Install the Python packages used by the tools:
 pip install pyserial pandas numpy matplotlib
 ```
 
+## myshell GUI
+
+Open the GUI for common myshell operations:
+
+```powershell
+python tools\myshell_gui.py
+```
+
+It can send commands, receive `disp maze_bin` into a maze canvas, and save `disp log_bin` as CSV.
+
+Detailed command/protocol notes:
+
+```text
+tools/myshell_README.md
+```
+
 ## Serial Binary Log
 
 Receive binary log data from STM32 and save it as CSV under `tools/logs/`.
