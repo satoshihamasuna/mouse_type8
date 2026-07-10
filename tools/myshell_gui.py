@@ -53,6 +53,7 @@ class MyshellGui(tk.Tk):
         self.width_var = tk.IntVar(value=DEFAULT_WIDTH)
         self.height_var = tk.IntVar(value=DEFAULT_HEIGHT)
         self.timeout_var = tk.DoubleVar(value=30.0)
+        self.char_delay_var = tk.DoubleVar(value=0.08)
         self.command_var = tk.StringVar(value="help")
         self.status_var = tk.StringVar(value="Disconnected")
 
@@ -76,6 +77,8 @@ class MyshellGui(tk.Tk):
         ttk.Entry(top, textvariable=self.baud_var, width=8).pack(side=tk.LEFT, padx=(4, 8))
         ttk.Label(top, text="Timeout").pack(side=tk.LEFT)
         ttk.Entry(top, textvariable=self.timeout_var, width=6).pack(side=tk.LEFT, padx=(4, 8))
+        ttk.Label(top, text="Char delay").pack(side=tk.LEFT)
+        ttk.Entry(top, textvariable=self.char_delay_var, width=6).pack(side=tk.LEFT, padx=(4, 8))
 
         self.connect_button = ttk.Button(top, text="Connect", command=self.toggle_connection)
         self.connect_button.pack(side=tk.LEFT, padx=(8, 0))
@@ -205,8 +208,19 @@ class MyshellGui(tk.Tk):
             self._append(f"ERROR: {exc}\n")
 
     def _write_command(self, command):
-        self.serial_port.write((command + "\r").encode("ascii"))
+        for char in command + "\r":
+            self.serial_port.write(char.encode("ascii"))
+            self.serial_port.flush()
+            delay = self.char_delay_var.get()
+            if delay > 0:
+                time.sleep(delay)
         self.serial_port.flush()
+
+    def _prepare_shell(self):
+        self.serial_port.reset_input_buffer()
+        self._write_command("")
+        time.sleep(0.3)
+        self.serial_port.read(self.serial_port.in_waiting or 1)
 
     def _readline_text(self):
         raw = self.serial_port.readline()
@@ -217,7 +231,7 @@ class MyshellGui(tk.Tk):
     def _text_command_worker(self, command):
         with self.serial_lock:
             self._append(f"\n> {command}\n")
-            self.serial_port.reset_input_buffer()
+            self._prepare_shell()
             self._write_command(command)
             deadline = time.monotonic() + self.timeout_var.get()
             idle_deadline = time.monotonic() + 1.0
@@ -236,7 +250,7 @@ class MyshellGui(tk.Tk):
         payload_size = width * height
         with self.serial_lock:
             self._append("\n> disp maze_bin\n")
-            self.serial_port.reset_input_buffer()
+            self._prepare_shell()
             self._write_command("disp maze_bin")
             self._wait_for_line("MAZE_BIN_START")
             payload = self._read_exact(payload_size)
@@ -253,7 +267,7 @@ class MyshellGui(tk.Tk):
 
         with self.serial_lock:
             self._append("\n> disp log_bin\n")
-            self.serial_port.reset_input_buffer()
+            self._prepare_shell()
             self._write_command("disp log_bin")
             deadline = time.monotonic() + self.timeout_var.get()
             while time.monotonic() < deadline:

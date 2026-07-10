@@ -21,6 +21,7 @@ The default GUI settings are:
 Port: COM8
 Baud: 115200
 Line ending: CR
+Char delay: 0.08 s
 ```
 
 Change the port in the GUI if Windows assigned a different COM number.
@@ -120,6 +121,7 @@ Main functions:
 | `Save maze binary` | Save the latest received maze payload to a `.bin` file. |
 
 If the GUI shows a timeout, increase the Timeout field or press `Connect` again after resetting the mouse-side shell.
+If command text is echoed with missing characters, increase `Char delay`.
 
 ## Existing command-line tools
 
