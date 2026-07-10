@@ -136,9 +136,13 @@ class Dijkstra:public calcRunTime
 		t_element SetNode(t_posDijkstra _parent,	uint16_t _time,		t_direction _dir
 						 ,t_run_pattern _run_pt,		t_bool _determine);
 		void set_determine(t_posDijkstra set_pos);
+		uint16_t dijkstra_node_order(t_posDijkstra pos);
+		void push_open_node(t_posDijkstra pos);
+		t_bool pop_open_node(t_posDijkstra *pos);
 
 		t_element*  get_closure_inf(t_posDijkstra position);
 		uint8_t get_wall_inf(t_posDijkstra position);
+		t_bool use_priority_queue;
 	public:
 		t_MapNodeWall closure[MAZE_SIZE_X][MAZE_SIZE_Y];
 		t_posDijkstra run_pos_buff[MAZE_SIZE];
@@ -146,6 +150,7 @@ class Dijkstra:public calcRunTime
 		Dijkstra(wall_class *_wall_property)
 		{
 			wall_property = _wall_property;
+			use_priority_queue = False;
 		}
 		void init_dijkstra_map();
 		void start_node_setUp(t_posDijkstra start_pos,t_direction dir);
@@ -156,6 +161,7 @@ class Dijkstra:public calcRunTime
 		t_posDijkstra Local2Global(t_posDijkstra base,t_direction base_dir,t_local_dir local_pos,t_local_dir local_dir);
 
 		t_posDijkstra make_path_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
+		t_posDijkstra make_path_Dijkstra_priority_queue(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
 		void check_run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
 		t_bool check_DijkstraPath(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
 

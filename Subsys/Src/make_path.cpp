@@ -20,6 +20,31 @@
 
 #define DIJKSTRA_MAX_TIME (65535-1)
 
+#define DIJKSTRA_NODE_NUM (MAZE_SIZE_X * MAZE_SIZE_Y * 3)
+
+static uint16_t dijkstra_open_heap[DIJKSTRA_NODE_NUM];
+static int16_t dijkstra_heap_index[DIJKSTRA_NODE_NUM];
+static int16_t dijkstra_heap_tail = -1;
+
+static t_posDijkstra dijkstra_id_to_pos(uint16_t id)
+{
+	t_posDijkstra pos;
+	uint16_t cell = id / 3;
+	pos.x = cell / MAZE_SIZE_Y;
+	pos.y = cell % MAZE_SIZE_Y;
+	pos.NodePos = (t_DijkstraWallPos)(id % 3);
+	return pos;
+}
+
+static void dijkstra_open_queue_init()
+{
+	dijkstra_heap_tail = -1;
+	for(int i = 0;i < DIJKSTRA_NODE_NUM;i++)
+	{
+		dijkstra_heap_index[i] = -1;
+	}
+}
+
 
 void log_enable()
 {
@@ -191,6 +216,137 @@ void Dijkstra::set_determine(t_posDijkstra set_pos)
 	}
 }
 
+uint16_t Dijkstra::dijkstra_node_order(t_posDijkstra pos)
+{
+	return ((uint16_t)pos.x * MAZE_SIZE_Y + (uint16_t)pos.y) * 3 + (uint16_t)pos.NodePos;
+}
+
+static uint16_t dijkstra_node_time(Dijkstra *dijkstra, uint16_t id)
+{
+	t_posDijkstra pos = dijkstra_id_to_pos(id);
+	switch(pos.NodePos)
+	{
+		case N_pos:
+			return dijkstra->closure[pos.x][pos.y].North.time;
+		case C_pos:
+			return dijkstra->closure[pos.x][pos.y].Center.time;
+		case E_pos:
+			return dijkstra->closure[pos.x][pos.y].East.time;
+		default:
+			return DIJKSTRA_MAX_TIME;
+	}
+}
+
+static t_bool dijkstra_heap_less(Dijkstra *dijkstra, uint16_t a, uint16_t b)
+{
+	uint16_t a_time = dijkstra_node_time(dijkstra, a);
+	uint16_t b_time = dijkstra_node_time(dijkstra, b);
+	if(a_time != b_time)
+	{
+		return (a_time < b_time) ? True : False;
+	}
+	return (a < b) ? True : False;
+}
+
+static void dijkstra_heap_swap(int16_t a, int16_t b)
+{
+	uint16_t temp = dijkstra_open_heap[a];
+	dijkstra_open_heap[a] = dijkstra_open_heap[b];
+	dijkstra_open_heap[b] = temp;
+	dijkstra_heap_index[dijkstra_open_heap[a]] = a;
+	dijkstra_heap_index[dijkstra_open_heap[b]] = b;
+}
+
+static void dijkstra_heap_sift_up(Dijkstra *dijkstra, int16_t index)
+{
+	while(index > 0)
+	{
+		int16_t parent = (index - 1) / 2;
+		if(dijkstra_heap_less(dijkstra, dijkstra_open_heap[index], dijkstra_open_heap[parent]) == True)
+		{
+			dijkstra_heap_swap(index, parent);
+			index = parent;
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
+static void dijkstra_heap_sift_down(Dijkstra *dijkstra, int16_t index)
+{
+	while(1)
+	{
+		int16_t left = 2 * index + 1;
+		int16_t right = 2 * index + 2;
+		int16_t best = index;
+
+		if(left <= dijkstra_heap_tail
+		&& dijkstra_heap_less(dijkstra, dijkstra_open_heap[left], dijkstra_open_heap[best]) == True)
+		{
+			best = left;
+		}
+		if(right <= dijkstra_heap_tail
+		&& dijkstra_heap_less(dijkstra, dijkstra_open_heap[right], dijkstra_open_heap[best]) == True)
+		{
+			best = right;
+		}
+
+		if(best == index)
+		{
+			break;
+		}
+		dijkstra_heap_swap(index, best);
+		index = best;
+	}
+}
+
+void Dijkstra::push_open_node(t_posDijkstra pos)
+{
+	uint16_t id = dijkstra_node_order(pos);
+	if((*get_closure_inf(pos)).determine == True)
+	{
+		return;
+	}
+
+	if(dijkstra_heap_index[id] >= 0)
+	{
+		dijkstra_heap_sift_up(this, dijkstra_heap_index[id]);
+		return;
+	}
+	if(dijkstra_heap_tail + 1 >= DIJKSTRA_NODE_NUM)
+	{
+		return;
+	}
+
+	dijkstra_heap_tail++;
+	dijkstra_open_heap[dijkstra_heap_tail] = id;
+	dijkstra_heap_index[id] = dijkstra_heap_tail;
+	dijkstra_heap_sift_up(this, dijkstra_heap_tail);
+}
+
+t_bool Dijkstra::pop_open_node(t_posDijkstra *pos)
+{
+	if(dijkstra_heap_tail < 0)
+	{
+		return False;
+	}
+
+	uint16_t id = dijkstra_open_heap[0];
+	dijkstra_heap_index[id] = -1;
+	dijkstra_open_heap[0] = dijkstra_open_heap[dijkstra_heap_tail];
+	dijkstra_heap_tail--;
+	if(dijkstra_heap_tail >= 0)
+	{
+		dijkstra_heap_index[dijkstra_open_heap[0]] = 0;
+		dijkstra_heap_sift_down(this, 0);
+	}
+
+	*pos = dijkstra_id_to_pos(id);
+	return True;
+}
+
 t_posDijkstra Dijkstra::min_search()
 {
 	t_posDijkstra min_pos = SetNodePos(0, 0, C_pos);
@@ -219,11 +375,47 @@ t_posDijkstra Dijkstra::min_search()
 	return min_pos;
 }
 
+t_posDijkstra Dijkstra::make_path_Dijkstra_priority_queue(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size)
+{
+	t_posDijkstra min_pos = conv_t_pos2t_posDijkstra(start_pos, start_wallPos);
+	init_dijkstra_map();
+	dijkstra_open_queue_init();
+	use_priority_queue = True;
+
+	start_node_setUp(min_pos, start_pos.dir);
+	push_open_node(min_pos);
+
+	for(int i = 0; i < (MAZE_SIZE_X * MAZE_SIZE_Y * 3); i++)
+	{
+		if(pop_open_node(&min_pos) == False)
+		{
+			break;
+		}
+
+		#ifdef DEBUG_MODE
+		printf("minimum->%d,%d,%d\n",min_pos.x,min_pos.y,min_pos.NodePos);
+		#endif
+		set_determine(min_pos);
+
+		if(is_goal_Dijkstra(min_pos, goal_pos, goal_size))
+		{
+			t_direction pos_dir = (*get_closure_inf(min_pos)).dir;
+			min_pos = last_expand(min_pos,pos_dir ,goal_pos, goal_size);
+			break;
+		}
+		expand(min_pos);
+	}
+
+	use_priority_queue = False;
+	return min_pos;
+}
+
 t_posDijkstra Dijkstra::make_path_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size)
 {
 	t_posDijkstra min_pos;
 	init_dijkstra_map();
 	start_node_setUp(conv_t_pos2t_posDijkstra(start_pos, start_wallPos), start_pos.dir);
+	use_priority_queue = False;
 	for(int i = 0; i < 1000;i++)
 	{
 		min_pos = min_search();
