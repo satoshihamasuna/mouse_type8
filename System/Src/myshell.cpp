@@ -56,6 +56,10 @@ static const cmd_table_t cmdlist[] = {
 static ntshell_t nts;
 
 t_bool	shell_end_flag;
+static t_bool shell_wall_data_ready = False;
+static uint8_t shell_goal_x = MAZE_GOAL_X;
+static uint8_t shell_goal_y = MAZE_GOAL_Y;
+static uint8_t shell_goal_size = MAZE_GOAL_SIZE;
 
 static wall_class *shell_wall_data(void)
 {
@@ -68,6 +72,43 @@ static void shell_read_save_data(wall_class *wall_data)
 	wall_data->init_maze();
 	read_save_data(wall_data);
 	wall_data->histry2wall_append();
+	shell_wall_data_ready = True;
+	shell_goal_x = MAZE_GOAL_X;
+	shell_goal_y = MAZE_GOAL_Y;
+	shell_goal_size = MAZE_GOAL_SIZE;
+}
+
+static void shell_receive_maze_binary(wall_class *wall_data)
+{
+	wall_data->init_maze();
+	for( int y = MAZE_SIZE_Y - 1 ; y >= 0 ; y-- ){
+		for(int x = 0; x < MAZE_SIZE_X ; x++ ){
+			uint8_t data = Communicate_RxPopData();
+			wall_data->wall[x][y].north = (t_wall_state)(data & 0x03);
+			wall_data->wall[x][y].east  = (t_wall_state)((data >> 2) & 0x03);
+			wall_data->wall[x][y].south = (t_wall_state)((data >> 4) & 0x03);
+			wall_data->wall[x][y].west  = (t_wall_state)((data >> 6) & 0x03);
+		}
+	}
+	wall_data->wall_histry.histry_init();
+	shell_wall_data_ready = True;
+}
+
+static t_bool shell_set_goal(int x, int y, int size)
+{
+	if(size <= 0) {
+		return False;
+	}
+	if(x < 0 || y < 0) {
+		return False;
+	}
+	if((x + size) > MAZE_SIZE_X || (y + size) > MAZE_SIZE_Y) {
+		return False;
+	}
+	shell_goal_x = (uint8_t)x;
+	shell_goal_y = (uint8_t)y;
+	shell_goal_size = (uint8_t)size;
+	return True;
 }
 
 /* ---------------------------------------------------------------
@@ -152,14 +193,38 @@ static int usrcmd_disp(int argc, char **argv)
 
 static int usrcmd_load(int argc, char **argv)
 {
-    if (argc != 2) {
+    if (argc < 2) {
     	printf("load save\r\n");
+    	printf("load maze_bin\r\n");
+    	printf("load goal x y size\r\n");
     	return 0;
     }
     if (ntlibc_strcmp(argv[1], "save") == 0) {
     	wall_class *wall_data = shell_wall_data();
     	shell_read_save_data(wall_data);
     	printf("read_save_data done. histry_cnt:%d\r\n", wall_data->wall_histry.get_histry_cnt());
+        return 0;
+    }
+    if (ntlibc_strcmp(argv[1], "maze_bin") == 0) {
+    	wall_class *wall_data = shell_wall_data();
+    	printf("MAZE_BIN_READY %d\r\n", MAZE_SIZE_X * MAZE_SIZE_Y);
+    	shell_receive_maze_binary(wall_data);
+    	printf("MAZE_BIN_LOAD_DONE\r\n");
+        return 0;
+    }
+    if (ntlibc_strcmp(argv[1], "goal") == 0) {
+    	if(argc != 5) {
+    		printf("load goal x y size\r\n");
+    		return 0;
+    	}
+    	int x = ntlibc_atoi(argv[2]);
+    	int y = ntlibc_atoi(argv[3]);
+    	int size = ntlibc_atoi(argv[4]);
+    	if(shell_set_goal(x, y, size) != True) {
+    		printf("GOAL_SET_ERROR\r\n");
+    		return -1;
+    	}
+    	printf("GOAL_SET_DONE x:%d y:%d size:%d\r\n", shell_goal_x, shell_goal_y, shell_goal_size);
         return 0;
     }
     printf("Unknown sub command found\r\n");
@@ -174,18 +239,21 @@ static int usrcmd_path(int argc, char **argv)
     }
     if (ntlibc_strcmp(argv[1], "dijkstra") == 0) {
     	wall_class *wall_data = shell_wall_data();
-    	shell_read_save_data(wall_data);
+    	if(shell_wall_data_ready != True) {
+    		shell_read_save_data(wall_data);
+    	}
 
     	Dijkstra run_path(wall_data);
     	t_position start, goal;
     	start.x = start.y = 0;
     	start.dir = North;
-    	goal.x = MAZE_GOAL_X;
-    	goal.y = MAZE_GOAL_Y;
+    	goal.x = shell_goal_x;
+    	goal.y = shell_goal_y;
 
     	run_path.turn_time_set(mode_1000);
+    	printf("DIJKSTRA_GOAL x:%d y:%d size:%d\r\n", shell_goal_x, shell_goal_y, shell_goal_size);
     	printf("DIJKSTRA_START\r\n");
-    	run_path.check_run_Dijkstra(start, Dir_None, goal, MAZE_GOAL_SIZE);
+    	run_path.check_run_Dijkstra(start, Dir_None, goal, shell_goal_size);
     	printf("DIJKSTRA_END\r\n");
         return 0;
     }

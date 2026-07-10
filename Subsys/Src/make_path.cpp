@@ -651,7 +651,7 @@ void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos
 	for(int i = tail ; i >= 0;i--)
 	{
 		//#ifdef DEBUG_MODE
-			printf("x:%2d,y:%2d,d:%2d,time:%d->",run_pos_buff[i].x,run_pos_buff[i].y,run_pos_buff[i].NodePos,(*get_closure_inf(run_pos_buff[i])).time);
+			printf("x:%2d,y:%2d,d:%2d,mdir:%2d,time:%d->",run_pos_buff[i].x,run_pos_buff[i].y,run_pos_buff[i].NodePos,(*get_closure_inf(run_pos_buff[i])).dir,(*get_closure_inf(run_pos_buff[i])).time);
 		//#endif
 		switch((*get_closure_inf(run_pos_buff[i])).run_pt)
 		{
