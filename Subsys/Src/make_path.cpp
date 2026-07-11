@@ -20,7 +20,7 @@
 
 #define DIJKSTRA_MAX_TIME (65535-1)
 
-#define DIJKSTRA_NODE_NUM (MAZE_SIZE_X * MAZE_SIZE_Y * 3)
+#define DIJKSTRA_NODE_NUM (MAZE_SIZE_X * MAZE_SIZE_Y * 3 * 4)
 
 static uint16_t dijkstra_open_heap[DIJKSTRA_NODE_NUM];
 static int16_t dijkstra_heap_index[DIJKSTRA_NODE_NUM];
@@ -29,6 +29,8 @@ static int16_t dijkstra_heap_tail = -1;
 static t_posDijkstra dijkstra_id_to_pos(uint16_t id)
 {
 	t_posDijkstra pos;
+	pos.state_dir = id % 4;
+	id /= 4;
 	uint16_t cell = id / 3;
 	pos.x = cell / MAZE_SIZE_Y;
 	pos.y = cell % MAZE_SIZE_Y;
@@ -80,6 +82,7 @@ t_posDijkstra Dijkstra::conv_t_pos2t_posDijkstra(t_position pos,t_direction wall
 			position = SetNodePos(pos.x,pos.y,C_pos);
 			break;
 	}
+	position.state_dir = (((uint8_t)pos.dir) >> 1) & 0x03;
 	return position;
 }
 
@@ -109,12 +112,13 @@ t_posDijkstra Dijkstra::conv_t_pos2t_posDijkstra(int _x,int _y,t_direction wall_
 	return position;
 }
 
-t_posDijkstra Dijkstra::SetNodePos(uint8_t _x,uint8_t _y,t_DijkstraWallPos _dpos)
+t_posDijkstra Dijkstra::SetNodePos(uint8_t _x,uint8_t _y,t_DijkstraWallPos _dpos, t_direction _dir)
 {
 	t_posDijkstra pos;
 	pos.x = _x;
 	pos.y = _y;
 	pos.NodePos = _dpos;
+	pos.state_dir = (((uint8_t)_dir) >> 1) & 0x03;
 	return pos;
 }
 
@@ -138,16 +142,16 @@ void Dijkstra::init_dijkstra_map()
 		{
 			for(int d = 0; d < 3;d++)
 			{
-				switch(d)
+				for(int state = 0; state < 4; state++) switch(d)
 				{
 					case C_pos:
-						closure[i][j].Center = SetNode(SetNodePos(i,j,C_pos), DIJKSTRA_MAX_TIME, Dir_None, No_run, False);
+						closure[i][j].Center[state] = SetNode(SetNodePos(i,j,C_pos,(t_direction)(state*2)), DIJKSTRA_MAX_TIME, Dir_None, No_run, False);
 						break;
 					case N_pos:
-						closure[i][j].North = SetNode(SetNodePos(i,j,N_pos), DIJKSTRA_MAX_TIME, Dir_None, No_run, False);
+						closure[i][j].North[state] = SetNode(SetNodePos(i,j,N_pos,(t_direction)(state*2+1)), DIJKSTRA_MAX_TIME, Dir_None, No_run, False);
 						break;
 					case E_pos:
-						closure[i][j].East = SetNode(SetNodePos(i,j,E_pos), DIJKSTRA_MAX_TIME, Dir_None, No_run, False);
+						closure[i][j].East[state] = SetNode(SetNodePos(i,j,E_pos,(t_direction)(state*2+1)), DIJKSTRA_MAX_TIME, Dir_None, No_run, False);
 						break;
 				}
 			}
@@ -157,16 +161,17 @@ void Dijkstra::init_dijkstra_map()
 
 void Dijkstra::start_node_setUp(t_posDijkstra start_pos,t_direction dir)
 {
+	start_pos.state_dir = (((uint8_t)dir) >> 1) & 0x03;
 	switch(start_pos.NodePos)
 	{
 		case C_pos:
-			closure[start_pos.x][start_pos.y].Center = SetNode(SetNodePos(start_pos.x,start_pos.y,C_pos), 0, dir, No_run, False);
+			closure[start_pos.x][start_pos.y].Center[start_pos.state_dir] = SetNode(start_pos, 0, dir, No_run, False);
 			break;
 		case N_pos:
-			closure[start_pos.x][start_pos.y].North  = SetNode(SetNodePos(start_pos.x,start_pos.y,N_pos), 0, dir, No_run, False);
+			closure[start_pos.x][start_pos.y].North[start_pos.state_dir] = SetNode(start_pos, 0, dir, No_run, False);
 			break;
 		case E_pos:
-			closure[start_pos.x][start_pos.y].East  = SetNode(SetNodePos(start_pos.x,start_pos.y,E_pos), 0, dir, No_run, False);
+			closure[start_pos.x][start_pos.y].East[start_pos.state_dir] = SetNode(start_pos, 0, dir, No_run, False);
 			break;
 	}
 }
@@ -202,23 +207,12 @@ t_bool Dijkstra::is_goal_Dijkstra(t_posDijkstra check_pos,t_position goal_pos,ui
 
 void Dijkstra::set_determine(t_posDijkstra set_pos)
 {
-	switch(set_pos.NodePos)
-	{
-		case N_pos:
-			closure[set_pos.x][set_pos.y].North.determine = True;
-			break;
-		case C_pos:
-			closure[set_pos.x][set_pos.y].Center.determine = True;
-			break;
-		case E_pos:
-			closure[set_pos.x][set_pos.y].East.determine = True;
-			break;
-	}
+	get_closure_inf(set_pos)->determine = True;
 }
 
 uint16_t Dijkstra::dijkstra_node_order(t_posDijkstra pos)
 {
-	return ((uint16_t)pos.x * MAZE_SIZE_Y + (uint16_t)pos.y) * 3 + (uint16_t)pos.NodePos;
+	return (((uint16_t)pos.x * MAZE_SIZE_Y + (uint16_t)pos.y) * 3 + (uint16_t)pos.NodePos) * 4 + pos.state_dir;
 }
 
 static uint16_t dijkstra_node_time(Dijkstra *dijkstra, uint16_t id)
@@ -227,11 +221,11 @@ static uint16_t dijkstra_node_time(Dijkstra *dijkstra, uint16_t id)
 	switch(pos.NodePos)
 	{
 		case N_pos:
-			return dijkstra->closure[pos.x][pos.y].North.time;
+			return dijkstra->closure[pos.x][pos.y].North[pos.state_dir].time;
 		case C_pos:
-			return dijkstra->closure[pos.x][pos.y].Center.time;
+			return dijkstra->closure[pos.x][pos.y].Center[pos.state_dir].time;
 		case E_pos:
-			return dijkstra->closure[pos.x][pos.y].East.time;
+			return dijkstra->closure[pos.x][pos.y].East[pos.state_dir].time;
 		default:
 			return DIJKSTRA_MAX_TIME;
 	}
@@ -355,20 +349,19 @@ t_posDijkstra Dijkstra::min_search()
 	{
 		for(int j = 0;j < MAZE_SIZE_Y;j++)
 		{
-			if(closure[i][j].Center.time < min_time && closure[i][j].Center.determine == False)
+			for(int state = 0; state < 4; state++)
 			{
-				min_pos = SetNodePos(i, j, C_pos);
-				min_time = closure[i][j].Center.time;
-			}
-			if(closure[i][j].North.time < min_time && closure[i][j].North.determine == False)
-			{
-				min_pos = SetNodePos(i, j, N_pos);
-				min_time = closure[i][j].North.time;
-			}
-			if(closure[i][j].East.time < min_time && closure[i][j].East.determine == False)
-			{
-				min_pos = SetNodePos(i, j, E_pos);
-				min_time = closure[i][j].East.time;
+				for(int node = 0; node < 3; node++)
+				{
+					t_direction dir = (t_direction)(state * 2 + (node == C_pos ? 0 : 1));
+					t_posDijkstra candidate = SetNodePos(i, j, (t_DijkstraWallPos)node, dir);
+					t_element *element = get_closure_inf(candidate);
+					if(element->time < min_time && element->determine == False)
+					{
+						min_pos = candidate;
+						min_time = element->time;
+					}
+				}
 			}
 		}
 	}
@@ -385,7 +378,7 @@ t_posDijkstra Dijkstra::make_path_Dijkstra_priority_queue(t_position start_pos,t
 	start_node_setUp(min_pos, start_pos.dir);
 	push_open_node(min_pos);
 
-	for(int i = 0; i < (MAZE_SIZE_X * MAZE_SIZE_Y * 3); i++)
+	for(int i = 0; i < DIJKSTRA_NODE_NUM; i++)
 	{
 		if(pop_open_node(&min_pos) == False)
 		{
@@ -487,6 +480,7 @@ t_posDijkstra Dijkstra::last_expand(t_posDijkstra pos,t_direction m_dir,t_positi
 				int time = (*get_closure_inf(pos)) .time + diagonal_time_set(DIAG_SECTION*i);
 				if(get_wall_inf(pos1) == NOWALL && get_wall_inf(pos2) == NOWALL && is_goal_Dijkstra(next_pos, goal_pos, goal_size) == True)
 				{
+					next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 					if((*get_closure_inf(next_pos)) .determine == False )//&& (*get_closure_inf(next_pos)) .time >= time)
 					{
 						(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Diagonal, False);
@@ -514,6 +508,7 @@ t_posDijkstra Dijkstra::last_expand(t_posDijkstra pos,t_direction m_dir,t_positi
 				int time  = (*get_closure_inf(pos)) .time + straight_time_set(SECTION*i);
 				if(get_wall_inf(pos1) == NOWALL && is_goal_Dijkstra(next_pos, goal_pos, goal_size) == True)
 				{
+						next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 						if((*get_closure_inf(next_pos)) .determine == False )
 						{
 							/*
@@ -585,7 +580,7 @@ uint16_t Dijkstra::diagonal_section_num(t_posDijkstra s_pos,t_posDijkstra e_pos,
 
 t_bool Dijkstra::check_DijkstraPath(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size)
 {
-	t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
+	t_posDijkstra last_pos = make_path_Dijkstra_priority_queue(start_pos, start_wallPos, goal_pos, goal_size);
 	return is_goal_Dijkstra(last_pos,goal_pos, goal_size);
 }
 
@@ -618,7 +613,7 @@ void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos
 	t_posDijkstra tmp_pos = last_pos;
 	t_posDijkstra start = conv_t_pos2t_posDijkstra(start_pos, start_wallPos);
 	int tail = 0;;
-	for(int i = 0;;i++)
+	for(int i = 0; i < DIJKSTRA_PATH_MAX; i++)
 	{
 		#ifdef DEBUG_MODE
 			printf("x:%2d,y:%2d,d:%2d->",tmp_pos.x,tmp_pos.y,tmp_pos.NodePos);
@@ -660,7 +655,7 @@ void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos
 		}
 		run_pos_buff[i] = tmp_pos;
 		tmp_pos = (*get_closure_inf(tmp_pos)).parent_pos;
-		if(tmp_pos.x == start.x && tmp_pos.y == start.y && tmp_pos.NodePos == start.NodePos)
+		if(tmp_pos.x == start.x && tmp_pos.y == start.y && tmp_pos.NodePos == start.NodePos && tmp_pos.state_dir == start.state_dir)
 		{
 			tail = i;
 			break;
@@ -735,11 +730,11 @@ void Dijkstra::run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_pos
 	t_straight_param st_parameter ;
 
 	int tail = 0;
-	for(int i = 0;;i++)
+	for(int i = 0; i < DIJKSTRA_PATH_MAX; i++)
 	{
 		run_pos_buff[i] = tmp_pos;
 		tmp_pos = (*get_closure_inf(tmp_pos)).parent_pos;
-		if(tmp_pos.x == start.x && tmp_pos.y == start.y && tmp_pos.NodePos == start.NodePos)
+		if(tmp_pos.x == start.x && tmp_pos.y == start.y && tmp_pos.NodePos == start.NodePos && tmp_pos.state_dir == start.state_dir)
 		{
 			tail = i;
 			break;
@@ -858,11 +853,11 @@ void Dijkstra::run_Dijkstra_suction(t_position start_pos,t_direction start_wallP
 	t_straight_param st_parameter ;
 
 	int tail = 0;
-	for(int i = 0;;i++)
+	for(int i = 0; i < DIJKSTRA_PATH_MAX; i++)
 	{
 		run_pos_buff[i] = tmp_pos;
 		tmp_pos = (*get_closure_inf(tmp_pos)).parent_pos;
-		if(tmp_pos.x == start.x && tmp_pos.y == start.y && tmp_pos.NodePos == start.NodePos)
+		if(tmp_pos.x == start.x && tmp_pos.y == start.y && tmp_pos.NodePos == start.NodePos && tmp_pos.state_dir == start.state_dir)
 		{
 			tail = i;
 			break;
@@ -998,7 +993,7 @@ void Dijkstra::run_Dijkstra_suction_acc(t_position start_pos,t_direction start_w
 	uint8_t turn_select[MAZE_SIZE];
 
 	int tail = 0;
-	for(int i = 0;;i++)
+	for(int i = 0; i < DIJKSTRA_PATH_MAX; i++)
 	{
 		run_pos_buff[i] = tmp_pos;
 		turn_select [i] = 0;
@@ -1049,7 +1044,7 @@ void Dijkstra::run_Dijkstra_suction_acc(t_position start_pos,t_direction start_w
 		}
 
 
-		if(tmp_pos.x == start.x && tmp_pos.y == start.y && tmp_pos.NodePos == start.NodePos)
+		if(tmp_pos.x == start.x && tmp_pos.y == start.y && tmp_pos.NodePos == start.NodePos && tmp_pos.state_dir == start.state_dir)
 		{
 			tail = i;
 			break;

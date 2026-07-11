@@ -21,6 +21,8 @@
 #include "../../Task/Inc/sensing_task.h"
 //#define DEBUG_MODE
 
+#define DIJKSTRA_PATH_MAX 512
+
 typedef enum
 {
 	C_pos = 0,
@@ -30,9 +32,10 @@ typedef enum
 
 typedef struct
 {
-	uint8_t x:6;
-	uint8_t y:6;
-	t_DijkstraWallPos NodePos:2;
+	uint16_t x:5;
+	uint16_t y:5;
+	uint16_t NodePos:2;
+	uint16_t state_dir:2;
 }t_posDijkstra;
 
 typedef struct
@@ -40,15 +43,15 @@ typedef struct
 	t_posDijkstra	parent_pos;
 	uint16_t 		time;
 	t_direction 	dir:4;
-	uint8_t 		run_pt:5;
-	t_bool 			determine:1;
-}t_element;
+	uint16_t 		run_pt:5;
+	uint16_t 		determine:1;
+} __attribute__((packed)) t_element;
 
 typedef struct
 {
-	t_element Center;
-	t_element North;
-	t_element East;
+	t_element Center[4];
+	t_element North[4];
+	t_element East[4];
 }t_MapNodeWall;
 
 
@@ -132,7 +135,7 @@ class Dijkstra:public calcRunTime
 
 		t_posDijkstra LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalPos,t_local_dir LocalDir);
 		t_posDijkstra LocalPosDir2GlobWallPos_WPos(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalDir);
-		t_posDijkstra SetNodePos(uint8_t _x,uint8_t _y,t_DijkstraWallPos _dpos);
+		t_posDijkstra SetNodePos(uint8_t _x,uint8_t _y,t_DijkstraWallPos _dpos, t_direction _dir = North);
 		t_element SetNode(t_posDijkstra _parent,	uint16_t _time,		t_direction _dir
 						 ,t_run_pattern _run_pt,		t_bool _determine);
 		void set_determine(t_posDijkstra set_pos);
@@ -145,7 +148,7 @@ class Dijkstra:public calcRunTime
 		t_bool use_priority_queue;
 	public:
 		t_MapNodeWall closure[MAZE_SIZE_X][MAZE_SIZE_Y];
-		t_posDijkstra run_pos_buff[MAZE_SIZE];
+		t_posDijkstra run_pos_buff[DIJKSTRA_PATH_MAX];
 		wall_class *wall_property;
 		Dijkstra(wall_class *_wall_property)
 		{

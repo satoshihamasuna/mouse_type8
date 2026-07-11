@@ -13,6 +13,7 @@
 #include "turn_table.h"
 #include "controller.h"
 #define OFF_SET_LENGTH 10.0
+#define TURN_PENALTY_LENGTH 20.0f
 
 void calcRunTime::turn_time_set(const t_param *const *mode)
 {
@@ -22,36 +23,43 @@ void calcRunTime::turn_time_set(const t_param *const *mode)
 	turn_Long180_time = (mode[Long_turnL180]->param->Lstart/mode[Long_turnL180]->param->velo);
 	turn_Long180_time += (DEG2RAD(mode[Long_turnL180]->param->degree)/(accel_Integral*omega_mx)*1000.0);
 	turn_Long180_time += (mode[Long_turnL180]->param->Lend/mode[Long_turnL180]->param->velo);
+	turn_Long180_time += TURN_PENALTY_LENGTH / mode[Long_turnL180]->param->velo;
 
 	omega_mx = mode[Long_turnL90]->param->velo/(mode[Long_turnL90]->param->r_min/1000.0);
-	turn_Long90_time  = (uint16_t)(mode[Long_turnL90]->param->Lstart/mode[Long_turnL90]->param->velo);
-	turn_Long90_time += (uint16_t)(DEG2RAD(mode[Long_turnL90]->param->degree)/(accel_Integral*omega_mx)*1000.0);
-	turn_Long90_time += (uint16_t)(mode[Long_turnL90]->param->Lend/mode[Long_turnL90]->param->velo);
+	turn_Long90_time  = mode[Long_turnL90]->param->Lstart/mode[Long_turnL90]->param->velo;
+	turn_Long90_time += DEG2RAD(mode[Long_turnL90]->param->degree)/(accel_Integral*omega_mx)*1000.0;
+	turn_Long90_time += mode[Long_turnL90]->param->Lend/mode[Long_turnL90]->param->velo;
+	turn_Long90_time += TURN_PENALTY_LENGTH / mode[Long_turnL90]->param->velo;
 
 	omega_mx = mode[Turn_LV90]->param->velo/(mode[Turn_LV90]->param->r_min/1000.0);
 	turn_V90_time  = (mode[Turn_LV90]->param->Lstart/mode[Turn_LV90]->param->velo);
 	turn_V90_time += (DEG2RAD(mode[Turn_LV90]->param->degree)/(accel_Integral*omega_mx)*1000.0);
 	turn_V90_time += (mode[Turn_LV90]->param->Lend/mode[Turn_LV90]->param->velo);
+	turn_V90_time += TURN_PENALTY_LENGTH / mode[Turn_LV90]->param->velo;
 
 	omega_mx = mode[Turn_in_L45]->param->velo/(mode[Turn_in_L45]->param->r_min/1000.0);
 	turn_in45_time  = (mode[Turn_in_L45]->param->Lstart/mode[Turn_in_L45]->param->velo);
 	turn_in45_time += (DEG2RAD(mode[Turn_in_L45]->param->degree)/(accel_Integral*omega_mx)*1000.0);
 	turn_in45_time += (mode[Turn_in_L45]->param->Lend/mode[Turn_in_L45]->param->velo);
+	turn_in45_time += TURN_PENALTY_LENGTH / mode[Turn_in_L45]->param->velo;
 
 	omega_mx = mode[Turn_out_L45]->param->velo/(mode[Turn_out_L45]->param->r_min/1000.0);
-	turn_out45_time  = (uint16_t)(mode[Turn_out_L45]->param->Lstart/mode[Turn_out_L45]->param->velo);
-	turn_out45_time += (uint16_t)(DEG2RAD(mode[Turn_out_L45]->param->degree)/(accel_Integral*omega_mx)*1000.0);
-	turn_out45_time += (uint16_t)(mode[Turn_out_L45]->param->Lend/mode[Turn_out_L45]->param->velo);
+	turn_out45_time  = mode[Turn_out_L45]->param->Lstart/mode[Turn_out_L45]->param->velo;
+	turn_out45_time += DEG2RAD(mode[Turn_out_L45]->param->degree)/(accel_Integral*omega_mx)*1000.0;
+	turn_out45_time += mode[Turn_out_L45]->param->Lend/mode[Turn_out_L45]->param->velo;
+	turn_out45_time += TURN_PENALTY_LENGTH / mode[Turn_out_L45]->param->velo;
 
 	omega_mx = mode[Turn_in_L135]->param->velo/(mode[Turn_in_L135]->param->r_min/1000.0);
-	turn_in135_time  = (uint16_t)(mode[Turn_in_L135]->param->Lstart/mode[Turn_in_L135]->param->velo);
-	turn_in135_time += (uint16_t)(DEG2RAD(mode[Turn_in_L135]->param->degree)/(accel_Integral*omega_mx)*1000.0);
-	turn_in135_time += (uint16_t)(mode[Turn_in_L135]->param->Lend/mode[Turn_in_L135]->param->velo);
+	turn_in135_time  = mode[Turn_in_L135]->param->Lstart/mode[Turn_in_L135]->param->velo;
+	turn_in135_time += DEG2RAD(mode[Turn_in_L135]->param->degree)/(accel_Integral*omega_mx)*1000.0;
+	turn_in135_time += mode[Turn_in_L135]->param->Lend/mode[Turn_in_L135]->param->velo;
+	turn_in135_time += TURN_PENALTY_LENGTH / mode[Turn_in_L135]->param->velo;
 
 	omega_mx = mode[Turn_out_L135]->param->velo/(mode[Turn_out_L135]->param->r_min/1000.0);
-	turn_out135_time  = (uint16_t)(mode[Turn_out_L135]->param->Lstart/mode[Turn_out_L135]->param->velo);
-	turn_out135_time += (uint16_t)(DEG2RAD(mode[Turn_out_L135]->param->degree)/(accel_Integral*omega_mx)*1000.0);
-	turn_out135_time += (uint16_t)(mode[Turn_out_L135]->param->Lend/mode[Turn_out_L135]->param->velo);
+	turn_out135_time  = mode[Turn_out_L135]->param->Lstart/mode[Turn_out_L135]->param->velo;
+	turn_out135_time += DEG2RAD(mode[Turn_out_L135]->param->degree)/(accel_Integral*omega_mx)*1000.0;
+	turn_out135_time += mode[Turn_out_L135]->param->Lend/mode[Turn_out_L135]->param->velo;
+	turn_out135_time += TURN_PENALTY_LENGTH / mode[Turn_out_L135]->param->velo;
 }
 
 void calcRunTime::turn_time_set(const t_param *const*const *mode  ,uint16_t mode_size)
@@ -65,14 +73,16 @@ void calcRunTime::turn_time_set(const t_param *const*const *mode  ,uint16_t mode
 			turn_Long180_time = (mode[i][Long_turnL180]->param->Lstart/mode[i][Long_turnL180]->param->velo);
 			turn_Long180_time += (DEG2RAD(mode[i][Long_turnL180]->param->degree)/(accel_Integral*omega_mx)*1000.0);
 			turn_Long180_time += (mode[i][Long_turnL180]->param->Lend/mode[i][Long_turnL180]->param->velo);
+			turn_Long180_time += TURN_PENALTY_LENGTH / mode[i][Long_turnL180]->param->velo;
 		}
 
 		if(mode[i][Long_turnL90] !=NULL)
 		{
 			omega_mx = mode[i][Long_turnL90]->param->velo/(mode[i][Long_turnL90]->param->r_min/1000.0);
-			turn_Long90_time  = (uint16_t)(mode[i][Long_turnL90]->param->Lstart/mode[i][Long_turnL90]->param->velo);
-			turn_Long90_time += (uint16_t)(DEG2RAD(mode[i][Long_turnL90]->param->degree)/(accel_Integral*omega_mx)*1000.0);
-			turn_Long90_time += (uint16_t)(mode[i][Long_turnL90]->param->Lend/mode[i][Long_turnL90]->param->velo);
+			turn_Long90_time  = mode[i][Long_turnL90]->param->Lstart/mode[i][Long_turnL90]->param->velo;
+			turn_Long90_time += DEG2RAD(mode[i][Long_turnL90]->param->degree)/(accel_Integral*omega_mx)*1000.0;
+			turn_Long90_time += mode[i][Long_turnL90]->param->Lend/mode[i][Long_turnL90]->param->velo;
+			turn_Long90_time += TURN_PENALTY_LENGTH / mode[i][Long_turnL90]->param->velo;
 		}
 
 		if(mode[i][Turn_LV90] !=NULL)
@@ -81,6 +91,7 @@ void calcRunTime::turn_time_set(const t_param *const*const *mode  ,uint16_t mode
 			turn_V90_time  = (mode[i][Turn_LV90]->param->Lstart/mode[i][Turn_LV90]->param->velo);
 			turn_V90_time += (DEG2RAD(mode[i][Turn_LV90]->param->degree)/(accel_Integral*omega_mx)*1000.0);
 			turn_V90_time += (mode[i][Turn_LV90]->param->Lend/mode[i][Turn_LV90]->param->velo);
+			turn_V90_time += TURN_PENALTY_LENGTH / mode[i][Turn_LV90]->param->velo;
 		}
 
 		if(mode[i][Turn_in_L45] !=NULL)
@@ -89,30 +100,34 @@ void calcRunTime::turn_time_set(const t_param *const*const *mode  ,uint16_t mode
 			turn_in45_time  = (mode[i][Turn_in_L45]->param->Lstart/mode[i][Turn_in_L45]->param->velo);
 			turn_in45_time += (DEG2RAD(mode[i][Turn_in_L45]->param->degree)/(accel_Integral*omega_mx)*1000.0);
 			turn_in45_time += (mode[i][Turn_in_L45]->param->Lend/mode[i][Turn_in_L45]->param->velo);
+			turn_in45_time += TURN_PENALTY_LENGTH / mode[i][Turn_in_L45]->param->velo;
 		}
 
 		if(mode[i][Turn_out_L45] !=NULL)
 		{
 			omega_mx = mode[i][Turn_out_L45]->param->velo/(mode[i][Turn_out_L45]->param->r_min/1000.0);
-			turn_out45_time  = (uint16_t)(mode[i][Turn_out_L45]->param->Lstart/mode[i][Turn_out_L45]->param->velo);
-			turn_out45_time += (uint16_t)(DEG2RAD(mode[i][Turn_out_L45]->param->degree)/(accel_Integral*omega_mx)*1000.0);
-			turn_out45_time += (uint16_t)(mode[i][Turn_out_L45]->param->Lend/mode[i][Turn_out_L45]->param->velo);
+			turn_out45_time  = mode[i][Turn_out_L45]->param->Lstart/mode[i][Turn_out_L45]->param->velo;
+			turn_out45_time += DEG2RAD(mode[i][Turn_out_L45]->param->degree)/(accel_Integral*omega_mx)*1000.0;
+			turn_out45_time += mode[i][Turn_out_L45]->param->Lend/mode[i][Turn_out_L45]->param->velo;
+			turn_out45_time += TURN_PENALTY_LENGTH / mode[i][Turn_out_L45]->param->velo;
 		}
 
 		if(mode[i][Turn_in_L135] !=NULL)
 		{
 			omega_mx = mode[i][Turn_in_L135]->param->velo/(mode[i][Turn_in_L135]->param->r_min/1000.0);
-			turn_in135_time  = (uint16_t)(mode[i][Turn_in_L135]->param->Lstart/mode[i][Turn_in_L135]->param->velo);
-			turn_in135_time += (uint16_t)(DEG2RAD(mode[i][Turn_in_L135]->param->degree)/(accel_Integral*omega_mx)*1000.0);
-			turn_in135_time += (uint16_t)(mode[i][Turn_in_L135]->param->Lend/mode[i][Turn_in_L135]->param->velo);
+			turn_in135_time  = mode[i][Turn_in_L135]->param->Lstart/mode[i][Turn_in_L135]->param->velo;
+			turn_in135_time += DEG2RAD(mode[i][Turn_in_L135]->param->degree)/(accel_Integral*omega_mx)*1000.0;
+			turn_in135_time += mode[i][Turn_in_L135]->param->Lend/mode[i][Turn_in_L135]->param->velo;
+			turn_in135_time += TURN_PENALTY_LENGTH / mode[i][Turn_in_L135]->param->velo;
 		}
 
 		if(mode[i][Turn_out_L135] !=NULL)
 		{
 			omega_mx = mode[i][Turn_out_L135]->param->velo/(mode[i][Turn_out_L135]->param->r_min/1000.0);
-			turn_out135_time  = (uint16_t)(mode[i][Turn_out_L135]->param->Lstart/mode[i][Turn_out_L135]->param->velo);
-			turn_out135_time += (uint16_t)(DEG2RAD(mode[i][Turn_out_L135]->param->degree)/(accel_Integral*omega_mx)*1000.0);
-			turn_out135_time += (uint16_t)(mode[i][Turn_out_L135]->param->Lend/mode[i][Turn_out_L135]->param->velo);
+			turn_out135_time  = mode[i][Turn_out_L135]->param->Lstart/mode[i][Turn_out_L135]->param->velo;
+			turn_out135_time += DEG2RAD(mode[i][Turn_out_L135]->param->degree)/(accel_Integral*omega_mx)*1000.0;
+			turn_out135_time += mode[i][Turn_out_L135]->param->Lend/mode[i][Turn_out_L135]->param->velo;
+			turn_out135_time += TURN_PENALTY_LENGTH / mode[i][Turn_out_L135]->param->velo;
 		}
 
 	}
@@ -126,25 +141,25 @@ uint16_t calcRunTime::return_turn_time(t_run_pattern run_pt)
 	{
 		case Turn_in_L45:
 		case Turn_in_R45:
-			return (uint16_t)(turn_in45_time);
+			return (uint16_t)(turn_in45_time + 0.5f);
 		case Turn_out_L45:
 		case Turn_out_R45:
-			return (uint16_t)(turn_out45_time);
+			return (uint16_t)(turn_out45_time + 0.5f);
 		case Turn_in_L135:
 		case Turn_in_R135:
-			return (uint16_t)(turn_in135_time);
+			return (uint16_t)(turn_in135_time + 0.5f);
 		case Turn_out_L135:
 		case Turn_out_R135:
-			return (uint16_t)(turn_out135_time);
+			return (uint16_t)(turn_out135_time + 0.5f);
 		case Turn_RV90:
 		case Turn_LV90:
-			return (uint16_t)(turn_V90_time);
+			return (uint16_t)(turn_V90_time + 0.5f);
 		case Long_turnR90:
 		case Long_turnL90:
-			return (uint16_t)(turn_Long90_time);
+			return (uint16_t)(turn_Long90_time + 0.5f);
 		case Long_turnR180:
 		case Long_turnL180:
-			return (uint16_t)(turn_Long180_time);
+			return (uint16_t)(turn_Long180_time + 0.5f);
 		default:
 			return 0;
 	}
@@ -166,7 +181,10 @@ uint16_t calcRunTime::straight_time_set(float length)
         {
         	acc_time = (max_velo - start_velo)/accel * 1000.0;
         	deacc_time = (max_velo - end_velo)/accel * 1000.0;
-        	time = (uint16_t)OFF_SET_LENGTH/st_set_mode[0]->param->max_velo+(uint16_t)((length-(acc_length+deacc_length))/max_velo) + (uint16_t)acc_time + (uint16_t)deacc_time;
+			float total_time = OFF_SET_LENGTH / st_set_mode[0]->param->max_velo
+							 + (length - OFF_SET_LENGTH - (acc_length + deacc_length)) / max_velo
+							 + acc_time + deacc_time;
+			time = (uint16_t)(total_time + 0.50f);
         	break;
         }
 	}
@@ -220,7 +238,14 @@ uint16_t calcRunTime::diagonal_time_set(float length)
         {
         	acc_time = (max_velo - start_velo)/accel * 1000.0;
         	deacc_time = (max_velo - end_velo)/accel * 1000.0;
-        	time = (uint16_t)OFF_SET_LENGTH/di_set_mode[0]->param->max_velo+(uint16_t)((length-(acc_length+deacc_length))/max_velo) + (uint16_t)acc_time + (uint16_t)deacc_time;
+			float total_time = OFF_SET_LENGTH / di_set_mode[0]->param->max_velo
+							 + (length - OFF_SET_LENGTH - (acc_length + deacc_length)) / max_velo
+							 + acc_time + deacc_time;
+			time = (uint16_t)total_time;
+			if((float)time < total_time)
+			{
+				time++;
+			}
         	break;
         }
 	}

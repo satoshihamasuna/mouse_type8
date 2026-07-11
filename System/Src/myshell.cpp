@@ -248,18 +248,20 @@ static int usrcmd_path(int argc, char **argv)
     		shell_read_save_data(wall_data);
     	}
 
-    	Dijkstra run_path(wall_data);
+	Dijkstra run_path(wall_data);
     	t_position start, goal;
     	start.x = start.y = 0;
     	start.dir = North;
     	goal.x = shell_goal_x;
     	goal.y = shell_goal_y;
 
-    	run_path.turn_time_set(mode_1000);
+	run_path.st_param_set(st_mode_1000_v0, sizeof(st_mode_1000_v0) / sizeof(st_mode_1000_v0[0]));
+	run_path.di_param_set(di_mode_1000_v0, sizeof(di_mode_1000_v0) / sizeof(di_mode_1000_v0[0]));
+	run_path.turn_time_set(mode_1000);
     	printf("DIJKSTRA_GOAL x:%d y:%d size:%d\r\n", shell_goal_x, shell_goal_y, shell_goal_size);
-		printf("DIJKSTRA_MODE %s\r\n", priority_queue == True ? "PRIORITY_QUEUE" : "LINEAR_SCAN");
-    	printf("DIJKSTRA_START\r\n");
-		run_path.check_run_Dijkstra(start, Dir_None, goal, shell_goal_size, priority_queue);
+		printf("DIJKSTRA_MODE PRIORITY_QUEUE%s\r\n", priority_queue == True ? "" : " (COMPAT_ALIAS)");
+	printf("DIJKSTRA_START\r\n");
+	run_path.check_run_Dijkstra(start, Dir_None, goal, shell_goal_size, True);
     	printf("DIJKSTRA_END\r\n");
         return 0;
     }
