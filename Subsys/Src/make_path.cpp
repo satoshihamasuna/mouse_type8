@@ -416,7 +416,7 @@ t_posDijkstra Dijkstra::make_path_Dijkstra(t_position start_pos,t_direction star
 	init_dijkstra_map();
 	start_node_setUp(conv_t_pos2t_posDijkstra(start_pos, start_wallPos), start_pos.dir);
 	use_priority_queue = False;
-	for(int i = 0; i < 1000;i++)
+	for(int i = 0; i < DIJKSTRA_NODE_NUM;i++)
 	{
 		min_pos = min_search();
 		//set_determine
@@ -592,6 +592,20 @@ t_bool Dijkstra::check_DijkstraPath(t_position start_pos,t_direction start_wallP
 void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size)
 {
 	t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
+	if(is_goal_Dijkstra(last_pos, goal_pos, goal_size) != True)
+	{
+		printf("DIJKSTRA_RESULT NO_PATH last=(%2d,%2d,%2d) time:%d\r\n",
+				last_pos.x,
+				last_pos.y,
+				last_pos.NodePos,
+				(*get_closure_inf(last_pos)).time);
+		return;
+	}
+	printf("DIJKSTRA_RESULT GOAL last=(%2d,%2d,%2d) time:%d\r\n",
+			last_pos.x,
+			last_pos.y,
+			last_pos.NodePos,
+			(*get_closure_inf(last_pos)).time);
 	t_posDijkstra tmp_pos = last_pos;
 	t_posDijkstra start = conv_t_pos2t_posDijkstra(start_pos, start_wallPos);
 	int tail = 0;;
