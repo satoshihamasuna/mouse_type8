@@ -138,7 +138,7 @@ uint16_t calcRunTime::return_turn_time(t_run_pattern run_pt)
 			return (uint16_t)(turn_out135_time);
 		case Turn_RV90:
 		case Turn_LV90:
-			return (uint16_t)(turn_out135_time);
+			return (uint16_t)(turn_V90_time);
 		case Long_turnR90:
 		case Long_turnL90:
 			return (uint16_t)(turn_Long90_time);

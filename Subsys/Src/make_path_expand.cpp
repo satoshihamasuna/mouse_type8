@@ -1093,7 +1093,7 @@ void Dijkstra::longturn_L90_expand(t_posDijkstra pos,t_direction m_dir)
 	t_posDijkstra next_pos = LocalPosDir2GlobWallPos_Center(pos, m_dir, Left_Front, None);
 	if(get_wall_inf(pos1) == NOWALL  && get_wall_inf(pos2) == NOWALL)
 	{
-		int time = return_turn_time(Long_turnL180) + (*get_closure_inf(pos)) .time;
+		int time = return_turn_time(Long_turnL90) + (*get_closure_inf(pos)) .time;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
 			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Long_turnL90, False);
