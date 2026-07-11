@@ -359,6 +359,8 @@ class MyshellGui(tk.Tk):
             ("disp maze_bin", self.receive_maze_binary),
             ("disp histry", lambda: self.run_text_command("disp histry")),
             ("path dijkstra", self.run_dijkstra_path),
+            ("path queue", self.run_dijkstra_queue_path),
+            ("compare path time", self.compare_dijkstra_time),
             ("disp log", lambda: self.run_text_command("disp log")),
             ("disp log_bin -> CSV", self.receive_log_binary),
             ("end exe", lambda: self.run_text_command("end exe")),
@@ -468,7 +470,13 @@ class MyshellGui(tk.Tk):
         self._run_worker(self._log_binary_worker)
 
     def run_dijkstra_path(self):
-        self._run_worker(self._dijkstra_path_worker)
+        self._run_worker(lambda: self._dijkstra_path_worker("path dijkstra"))
+
+    def run_dijkstra_queue_path(self):
+        self._run_worker(lambda: self._dijkstra_path_worker("path dijkstra_queue"))
+
+    def compare_dijkstra_time(self):
+        self._run_worker(self._compare_dijkstra_time_worker)
 
     def upload_maze_data(self):
         if not self.last_maze_binary:
@@ -544,12 +552,13 @@ class MyshellGui(tk.Tk):
                 self.last_path_cells = path_steps
                 self.ui_queue.put(("draw_path", path_steps))
 
-    def _dijkstra_path_worker(self):
+    def _dijkstra_path_worker(self, command="path dijkstra"):
         path_steps = [self._start_path_step()]
         with self.serial_lock:
-            self._append("\n> path dijkstra\n")
+            self._append(f"\n> {command}\n")
             self._prepare_shell()
-            self._write_command("path dijkstra")
+            self._write_command(command)
+            started_at = time.monotonic()
             deadline = time.monotonic() + self.timeout_var.get()
             while time.monotonic() < deadline:
                 line = self._readline_text()
@@ -558,10 +567,21 @@ class MyshellGui(tk.Tk):
                 self._append(line + "\n")
                 self._collect_dijkstra_line(line, path_steps)
                 if line == "DIJKSTRA_END":
+                    elapsed_ms = (time.monotonic() - started_at) * 1000.0
+                    self._append(f"ROUND_TRIP_TIME {command}: {elapsed_ms:.3f} ms\n")
                     self.last_path_cells = path_steps
                     self.ui_queue.put(("draw_path", path_steps))
-                    return
+                    return elapsed_ms
         raise TimeoutError("Timed out waiting for DIJKSTRA_END")
+
+    def _compare_dijkstra_time_worker(self):
+        linear_ms = self._dijkstra_path_worker("path dijkstra")
+        queue_ms = self._dijkstra_path_worker("path dijkstra_queue")
+        ratio = linear_ms / queue_ms if queue_ms > 0 else float("inf")
+        self._append(
+            f"PATH_TIME_COMPARE linear={linear_ms:.3f} ms, "
+            f"queue={queue_ms:.3f} ms, linear/queue={ratio:.3f}x\n"
+        )
 
     def _start_path_step(self):
         start_x, start_y = self.last_maze_start_cells[0]

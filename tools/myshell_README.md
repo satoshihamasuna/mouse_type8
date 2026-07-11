@@ -83,6 +83,8 @@ python tools\myshell_gui.py
 | `Upload maze_data` | 読み込んだ迷路とゴール位置をマイコン側 RAM に送ります。 |
 | `disp histry` | flash 側の壁履歴を表示します。 |
 | `path dijkstra` | 現在 RAM 上にある迷路で Dijkstra の経路確認を実行し、迷路上にシミュレータ風の走行軌跡を表示します。 |
+| `path queue` | 同じ条件で優先度付きキュー版の Dijkstra を実行し、送信完了から応答完了までの時間を表示します。 |
+| `compare path time` | 通常版と優先度付きキュー版を連続実行し、シリアル往復時間と比率を表示します。 |
 | `disp log` | ログをテキスト表示します。 |
 | `disp log_bin -> CSV` | バイナリログを受信して `tools/logs/` に CSV 保存します。 |
 | `end exe` | myshell を終了します。 |
@@ -105,6 +107,7 @@ python tools\myshell_gui.py
 | `disp log` | ログデータを CSV 風テキストで表示します。 |
 | `disp log_bin` | ログデータを高速受信用のバイナリフレームで出力します。 |
 | `path dijkstra` | 現在 RAM 上にある迷路とゴール設定で `check_run_Dijkstra()` を実行します。未ロードの場合は flash の保存迷路と既定ゴールを読みます。 |
+| `path dijkstra_queue` | 同じ迷路・開始地点・ゴールで優先度付きキュー版を実行します。 |
 | `log mode0` | ログヘッダ出力を有効にします。 |
 | `log mode1` | ログヘッダ出力を無効にします。 |
 | `end exe` | myshell を終了します。 |

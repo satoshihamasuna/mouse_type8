@@ -589,9 +589,18 @@ t_bool Dijkstra::check_DijkstraPath(t_position start_pos,t_direction start_wallP
 	return is_goal_Dijkstra(last_pos,goal_pos, goal_size);
 }
 
-void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size)
+void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,
+		t_bool priority_queue)
 {
-	t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
+	t_posDijkstra last_pos;
+	if(priority_queue == True)
+	{
+		last_pos = make_path_Dijkstra_priority_queue(start_pos, start_wallPos, goal_pos, goal_size);
+	}
+	else
+	{
+		last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
+	}
 	if(is_goal_Dijkstra(last_pos, goal_pos, goal_size) != True)
 	{
 		printf("DIJKSTRA_RESULT NO_PATH last=(%2d,%2d,%2d) time:%d\r\n",
@@ -718,7 +727,9 @@ void Dijkstra::run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_pos
 	st_param_set(st_mode, size_st_mode);
 	di_param_set(di_mode, size_di_mode);
 
-	t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
+	//t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
+	t_posDijkstra last_pos = make_path_Dijkstra_priority_queue(start_pos, start_wallPos, goal_pos, goal_size);
+	
 	t_posDijkstra tmp_pos = last_pos;
 	t_posDijkstra start = conv_t_pos2t_posDijkstra(start_pos, start_wallPos);
 	t_straight_param st_parameter ;
@@ -840,7 +851,8 @@ void Dijkstra::run_Dijkstra_suction(t_position start_pos,t_direction start_wallP
 	st_param_set(st_mode, size_st_mode);
 	di_param_set(di_mode, size_di_mode);
 
-	t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
+	//t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
+	t_posDijkstra last_pos = make_path_Dijkstra_priority_queue(start_pos, start_wallPos, goal_pos, goal_size);
 	t_posDijkstra tmp_pos = last_pos;
 	t_posDijkstra start = conv_t_pos2t_posDijkstra(start_pos, start_wallPos);
 	t_straight_param st_parameter ;
@@ -977,7 +989,8 @@ void Dijkstra::run_Dijkstra_suction_acc(t_position start_pos,t_direction start_w
 	st_param_set(st_mode, size_st_mode);
 	di_param_set(di_mode, size_di_mode);
 
-	t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
+	//t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
+	t_posDijkstra last_pos = make_path_Dijkstra_priority_queue(start_pos, start_wallPos, goal_pos, goal_size);
 	t_posDijkstra tmp_pos = last_pos;
 	t_posDijkstra start = conv_t_pos2t_posDijkstra(start_pos, start_wallPos);
 	t_straight_param st_parameter ;

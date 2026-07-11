@@ -162,7 +162,8 @@ class Dijkstra:public calcRunTime
 
 		t_posDijkstra make_path_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
 		t_posDijkstra make_path_Dijkstra_priority_queue(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
-		void check_run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
+		void check_run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,
+								t_bool priority_queue = False);
 		t_bool check_DijkstraPath(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
 
 		void run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,

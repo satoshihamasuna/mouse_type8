@@ -235,9 +235,14 @@ static int usrcmd_path(int argc, char **argv)
 {
     if (argc != 2) {
     	printf("path dijkstra\r\n");
+		printf("path dijkstra_queue\r\n");
     	return 0;
     }
-    if (ntlibc_strcmp(argv[1], "dijkstra") == 0) {
+	t_bool priority_queue = False;
+	if (ntlibc_strcmp(argv[1], "dijkstra_queue") == 0) {
+		priority_queue = True;
+	}
+	if (ntlibc_strcmp(argv[1], "dijkstra") == 0 || priority_queue == True) {
     	wall_class *wall_data = shell_wall_data();
     	if(shell_wall_data_ready != True) {
     		shell_read_save_data(wall_data);
@@ -252,8 +257,9 @@ static int usrcmd_path(int argc, char **argv)
 
     	run_path.turn_time_set(mode_1000);
     	printf("DIJKSTRA_GOAL x:%d y:%d size:%d\r\n", shell_goal_x, shell_goal_y, shell_goal_size);
+		printf("DIJKSTRA_MODE %s\r\n", priority_queue == True ? "PRIORITY_QUEUE" : "LINEAR_SCAN");
     	printf("DIJKSTRA_START\r\n");
-    	run_path.check_run_Dijkstra(start, Dir_None, goal, shell_goal_size);
+		run_path.check_run_Dijkstra(start, Dir_None, goal, shell_goal_size, priority_queue);
     	printf("DIJKSTRA_END\r\n");
         return 0;
     }
