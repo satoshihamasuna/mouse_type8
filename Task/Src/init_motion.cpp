@@ -202,12 +202,13 @@ void Motion::Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain
 	motion_plan.rad_accel.set		(0.0f);//計算できないわけではない
 	motion_plan.rad_deccel.set		(0.0f);//計算できないわけではない
 	motion_plan.rad_max_velo.set		(turn_param->param->velo/(turn_param->param->r_min/1000.0f));
-	motion_plan.end_radian.set		(turn_param->param->degree/180*PI);
+	const float motion_degree = turn_param->param->degree + turn_param->param->degree_correction;
+	motion_plan.end_radian.set		(motion_degree/180*PI);
 	motion_plan.radian_accel.set		(0.0f);//計算できないわけではない
 	motion_plan.radian_deccel.set	(0.0f);//計算できないわけではない
 	motion_plan.turn_r_min.set		(turn_param->param->r_min);
 	motion_plan.turn_state.set			(Prev_Turn);
-	motion_plan.turn_time_ms.set		( ABS(DEG2RAD(turn_param->param->degree)/(accel_Integral*motion_plan.rad_max_velo.get()))*1000.0f);
+	motion_plan.turn_time_ms.set		( ABS(DEG2RAD(motion_degree)/(accel_Integral*motion_plan.rad_max_velo.get()))*1000.0f);
 
 	//Set control gain & turn_param
 	straight_motion_param.sp_gain = sp_gain;

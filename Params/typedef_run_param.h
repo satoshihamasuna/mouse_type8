@@ -18,6 +18,9 @@ typedef struct{
 	float Lend;
 	float degree;
 	t_turn_dir turn_dir;
+	// Logical degree is kept for path/type decisions. This offset is used only
+	// when generating the physical turn motion (zero keeps legacy behaviour).
+	float degree_correction;
 }t_turn_param_table;
 
 typedef struct{

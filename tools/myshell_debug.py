@@ -25,15 +25,15 @@ LOG_FRAME_SIZE = struct.calcsize(LOG_FRAME_FORMAT)
 LOG_DIR = Path(__file__).resolve().parent / "logs"
 TURN_PRESET_SPEEDS = (300, 500, 700, 1000, 1200, 1400, 1500, 1600, 1800, 2000)
 TURN_PARAM_RE = re.compile(
-    r"velo:(-?\d+) r_min:(-?\d+) Lstart:(-?\d+) Lend:(-?\d+) degree:(-?\d+) "
+    r"velo:(-?\d+) r_min:(-?\d+) Lstart:(-?\d+) Lend:(-?\d+) degree:(-?\d+) correction:(-?\d+) "
     r"sp_u:(-?\d+),(-?\d+),(-?\d+) om_u:(-?\d+),(-?\d+),(-?\d+) "
     r"suction:(\d+) duty:(\d+) preset:(\d+)"
 )
 
 
 DEFAULTS = {
-    "straight": (360.0, 6.5, 0.7, 0.0, 0.0, 4.0, 0.05, 0.0, 0.1, 0.01, 0.0),
-    "diagonal": (381.78, 6.5, 0.7, 0.0, 0.0, 12.0, 0.04, 0.0, 0.6, 0.01, 0.0),
+    "straight": (360.0, 6.5, 0.7, 0.0, 0.0, 0.0, 4.0, 0.05, 0.0, 0.1, 0.01, 0.0),
+    "diagonal": (381.78, 6.5, 0.7, 0.0, 0.0, 0.0, 12.0, 0.04, 0.0, 0.6, 0.01, 0.0),
 }
 TURN_DEFAULTS = {
     "long_r90": (0.70, -42.5, 29.97, 38.86, -90.0), "long_l90": (0.70, 42.5, 29.97, 38.86, 90.0),
@@ -50,6 +50,7 @@ FIELDS = (
     ("Max velocity / turn Lstart", "max_velo"),
     ("End velocity / turn Lend", "end_velo"),
     ("Degree (turn only)", "degree"),
+    ("Degree correction [deg]", "degree_correction"),
     ("SP Kp", "sp_kp"),
     ("SP Ki", "sp_ki"),
     ("SP Kd", "sp_kd"),
@@ -207,10 +208,10 @@ class DebugGui(tk.Tk):
                          ("max_velo", "Max velocity"), ("end_velo", "End velocity")),
             "turn": (("distance", "Velocity"), ("acc", "Radius r_min [mm]"),
                      ("max_velo", "Lstart [mm]"), ("end_velo", "Lend [mm]"),
-                     ("degree", "Angle [deg]")),
+                     ("degree", "Logical angle [deg]"), ("degree_correction", "Motion correction [deg]")),
             "search_turn": (("distance", "Velocity"), ("acc", "Radius r_min [mm]"),
                             ("max_velo", "Lstart [mm]"), ("end_velo", "Lend [mm]"),
-                            ("degree", "Angle [deg]")),
+                            ("degree", "Logical angle [deg]"), ("degree_correction", "Motion correction [deg]")),
             "pivot_turn": (("distance", "Angle [deg]"), ("acc", "Angular acceleration [rad/s²]"),
                            ("max_velo", "Angular velocity [rad/s]")),
         }
@@ -254,15 +255,16 @@ class DebugGui(tk.Tk):
                 self.pending_suction_override = (self.suction_enable.get(), self.suction_duty.get())
                 self._start(f"debug turn {self.turn_type.get()} preset {self.turn_preset_speed.get()}")
                 return
-            defaults = TURN_DEFAULTS[self.turn_type.get()] + (2.0, 0.05, 0.0, 0.1, 0.01, 0.0)
+            defaults = TURN_DEFAULTS[self.turn_type.get()] + (0.0, 2.0, 0.05, 0.0, 0.1, 0.01, 0.0)
         elif self.motion.get() == "search_turn":
             sign = -1.0 if self.direction.get() == "right" else 1.0
-            defaults = (0.32, sign * 26.0, 9.46, 11.16, sign * 90.0, 2.0, 0.016, 0.0, 0.1, 0.005, 0.0)
+            defaults = (0.32, sign * 26.0, 9.46, 11.16, sign * 90.0, -sign * 1.5,
+                        2.0, 0.016, 0.0, 0.1, 0.005, 0.0)
         elif self.motion.get() == "pivot_turn":
             sign = -1.0 if self.direction.get() == "right" else 1.0
             defaults = (sign * 90.0, sign * 40.0 * 3.141592653589793,
                         sign * 4.0 * 3.141592653589793, 0.0, 0.0,
-                        2.0, 0.016, 0.0, 0.1, 0.005, 0.0)
+                        0.0, 2.0, 0.016, 0.0, 0.1, 0.005, 0.0)
         else:
             defaults = DEFAULTS[self.motion.get()]
         for (_, name), value in zip(FIELDS, defaults):
@@ -300,7 +302,7 @@ class DebugGui(tk.Tk):
                 int(self.suction_enable.get()), self._suction_duty_value(), turn_count
             )
         if self.motion.get() == "pivot_turn":
-            pivot_values = values[:3] + values[5:]
+            pivot_values = values[:3] + values[6:]
             right = self.direction.get() == "right"
             if (right and any(value >= 0 for value in pivot_values[:3])) or (not right and any(value <= 0 for value in pivot_values[:3])):
                 raise ValueError("右はdegree/rad_acc/rad_veloを負、左は正にしてください。")
@@ -310,7 +312,7 @@ class DebugGui(tk.Tk):
             )
         if values[0] <= 0 or values[1] <= 0 or values[2] <= 0 or values[3] < 0 or values[3] > values[2]:
             raise ValueError("distance/acc/max は正、end velocity は 0 以上 max 以下にしてください。")
-        straight_values = values[:4] + values[5:]
+        straight_values = values[:4] + values[6:]
         return "debug {} set {} {} {}".format(
             self.motion.get(), " ".join(f"{v:.7g}" for v in straight_values),
             int(self.suction_enable.get()), self._suction_duty_value()
@@ -509,15 +511,15 @@ class DebugGui(tk.Tk):
         match = TURN_PARAM_RE.search(line)
         if not match:
             return
-        suction_enable = bool(int(match.group(12)))
-        suction_duty = int(match.group(13))
+        suction_enable = bool(int(match.group(13)))
+        suction_duty = int(match.group(14))
         if self.pending_suction_override is not None:
             suction_enable, suction_duty = self.pending_suction_override
             self.pending_suction_override = None
-        physical_values = [int(value) / 1000.0 for value in match.groups()[:5]]
-        gain_values = [int(value) / 1000000.0 for value in match.groups()[5:11]]
+        physical_values = [int(value) / 1000.0 for value in match.groups()[:6]]
+        gain_values = [int(value) / 1000000.0 for value in match.groups()[6:12]]
         self.events.put(("turn_params", physical_values + gain_values,
-                         suction_enable, suction_duty, int(match.group(14))))
+                         suction_enable, suction_duty, int(match.group(15))))
 
     def _drain(self):
         try:

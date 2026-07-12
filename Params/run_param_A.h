@@ -41,8 +41,8 @@ const static t_turn_param_table slalom_R90_table_350 = {0.35f,-26.00f,9.46,11.16
 const static t_param param_L90_search_350 = {&slalom_L90_table_350 ,&sp_gain_search_turn,&om_gain_search_turn};
 const static t_param param_R90_search_350 = {&slalom_R90_table_350, &sp_gain_search_turn,&om_gain_search_turn};
 
-const static t_turn_param_table slalom_L90_table_320 = {0.32f, 26.00f,9.46,11.16, 90.0f,Turn_L};
-const static t_turn_param_table slalom_R90_table_320 = {0.32f,-26.00f,9.46,11.16,-90.0f,Turn_R};
+const static t_turn_param_table slalom_L90_table_320 = {0.32f, 26.00f,9.46,11.16, 90.0f,Turn_L,-1.5f};
+const static t_turn_param_table slalom_R90_table_320 = {0.32f,-26.00f,9.46,11.16,-90.0f,Turn_R,1.5f};
 const static t_param param_L90_search_320 = {&slalom_L90_table_320 ,&sp_gain_search_turn,&om_gain_search_turn};
 const static t_param param_R90_search_320 = {&slalom_R90_table_320, &sp_gain_search_turn,&om_gain_search_turn};
 

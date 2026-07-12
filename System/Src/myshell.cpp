@@ -484,11 +484,11 @@ static shell_debug_turn_param_t *shell_debug_turn_get(t_run_pattern pattern, int
 
 static void shell_debug_turn_show(const char *name, const shell_debug_turn_param_t *debug)
 {
-	printf("DEBUG_TURN_PARAM_X1000 %s velo:%ld r_min:%ld Lstart:%ld Lend:%ld degree:%ld "
+	printf("DEBUG_TURN_PARAM_X1000 %s velo:%ld r_min:%ld Lstart:%ld Lend:%ld degree:%ld correction:%ld "
 		   "sp_u:%ld,%ld,%ld om_u:%ld,%ld,%ld suction:%d duty:%d preset:%d\r\n",
 		   name, (long)(debug->table.velo * 1000.0f), (long)(debug->table.r_min * 1000.0f),
 		   (long)(debug->table.Lstart * 1000.0f), (long)(debug->table.Lend * 1000.0f),
-		   (long)(debug->table.degree * 1000.0f),
+		   (long)(debug->table.degree * 1000.0f), (long)(debug->table.degree_correction * 1000.0f),
 		   (long)(debug->sp_gain.Kp * 1000000.0f), (long)(debug->sp_gain.Ki * 1000000.0f),
 		   (long)(debug->sp_gain.Kd * 1000000.0f), (long)(debug->om_gain.Kp * 1000000.0f),
 		   (long)(debug->om_gain.Ki * 1000000.0f), (long)(debug->om_gain.Kd * 1000000.0f),
@@ -608,15 +608,15 @@ static int shell_debug_turn_command(int argc, char **argv)
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[3], "set") == 0) {
-		if (argc != 17) {
-			printf("debug turn %s set velo r_min Lstart Lend degree sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty\r\n", argv[2]);
+		if (argc != 18) {
+			printf("debug turn %s set velo r_min Lstart Lend degree degree_correction sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty\r\n", argv[2]);
 			return -1;
 		}
 		shell_debug_turn_param_t next = *debug;
 		float *values[] = {&next.table.velo, &next.table.r_min, &next.table.Lstart,
-			&next.table.Lend, &next.table.degree, &next.sp_gain.Kp, &next.sp_gain.Ki,
+			&next.table.Lend, &next.table.degree, &next.table.degree_correction, &next.sp_gain.Kp, &next.sp_gain.Ki,
 			&next.sp_gain.Kd, &next.om_gain.Kp, &next.om_gain.Ki, &next.om_gain.Kd};
-		for (int i = 0; i < 11; i++) {
+		for (int i = 0; i < 12; i++) {
 			if (shell_parse_float(argv[i + 4], values[i]) != True) {
 				printf("DEBUG_TURN_ERROR invalid_number:%s\r\n", argv[i + 4]);
 				return -1;
@@ -624,7 +624,7 @@ static int shell_debug_turn_command(int argc, char **argv)
 		}
 		int suction_enable;
 		int suction_duty;
-		if (sscanf(argv[15], "%d", &suction_enable) != 1 || sscanf(argv[16], "%d", &suction_duty) != 1 ||
+		if (sscanf(argv[16], "%d", &suction_enable) != 1 || sscanf(argv[17], "%d", &suction_duty) != 1 ||
 			(suction_enable != 0 && suction_enable != 1) || suction_duty < 0 || suction_duty > 990) {
 			printf("DEBUG_TURN_ERROR suction\r\n");
 			return -1;
@@ -793,14 +793,14 @@ static int shell_debug_search_command(int argc, char **argv)
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[3], "set") == 0) {
-		if (argc != 18) { printf("debug search_turn %s set velo r_min Lstart Lend degree sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty turn_count\r\n", argv[2]); return -1; }
+		if (argc != 19) { printf("debug search_turn %s set velo r_min Lstart Lend degree degree_correction sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty turn_count\r\n", argv[2]); return -1; }
 		shell_debug_turn_param_t next = *debug;
 		float *values[] = {&next.table.velo, &next.table.r_min, &next.table.Lstart, &next.table.Lend,
-			&next.table.degree, &next.sp_gain.Kp, &next.sp_gain.Ki, &next.sp_gain.Kd,
+			&next.table.degree, &next.table.degree_correction, &next.sp_gain.Kp, &next.sp_gain.Ki, &next.sp_gain.Kd,
 			&next.om_gain.Kp, &next.om_gain.Ki, &next.om_gain.Kd};
-		for (int i = 0; i < 11; i++) if (shell_parse_float(argv[i + 4], values[i]) != True) { printf("DEBUG_SEARCH_ERROR number\r\n"); return -1; }
+		for (int i = 0; i < 12; i++) if (shell_parse_float(argv[i + 4], values[i]) != True) { printf("DEBUG_SEARCH_ERROR number\r\n"); return -1; }
 		int enable, duty, count;
-		if (sscanf(argv[15], "%d", &enable) != 1 || sscanf(argv[16], "%d", &duty) != 1 || sscanf(argv[17], "%d", &count) != 1 ||
+		if (sscanf(argv[16], "%d", &enable) != 1 || sscanf(argv[17], "%d", &duty) != 1 || sscanf(argv[18], "%d", &count) != 1 ||
 			(enable != 0 && enable != 1) || duty < 0 || duty > 990 || next.table.velo <= 0.0f ||
 			next.table.Lstart < 0.0f || next.table.Lend < 0.0f || count < 1 || count > 100) { printf("DEBUG_SEARCH_ERROR range\r\n"); return -1; }
 		if ((right == True && (next.table.r_min >= 0.0f || next.table.degree >= 0.0f)) ||
