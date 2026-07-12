@@ -69,7 +69,7 @@
 	#define DEAD_VL			(DEAD_V)
 
 	#define GYRO_COR_RATE	(-1.00f)
-	#define GYRO_COR_OFF	(0.005969)
+	#define GYRO_COR_OFF	(0.0)//(0.005969)
 
 
 #elif defined(MOUSE_B)
