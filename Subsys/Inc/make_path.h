@@ -42,10 +42,11 @@ typedef struct
 {
 	t_posDijkstra	parent_pos;
 	uint16_t 		time;
-	t_direction 	dir:4;
-	uint16_t 		run_pt:5;
-	uint16_t 		determine:1;
+	uint8_t 		run_pt:5;
+	uint8_t 		determine:1;
 } __attribute__((packed)) t_element;
+
+static_assert(sizeof(t_element) == 5, "t_element packing changed; Dijkstra RAM usage will increase");
 
 typedef struct
 {
@@ -136,8 +137,8 @@ class Dijkstra:public calcRunTime
 		t_posDijkstra LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalPos,t_local_dir LocalDir);
 		t_posDijkstra LocalPosDir2GlobWallPos_WPos(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalDir);
 		t_posDijkstra SetNodePos(uint8_t _x,uint8_t _y,t_DijkstraWallPos _dpos, t_direction _dir = North);
-		t_element SetNode(t_posDijkstra _parent,	uint16_t _time,		t_direction _dir
-						 ,t_run_pattern _run_pt,		t_bool _determine);
+		t_element SetNode(t_posDijkstra _parent, uint16_t _time,
+						 t_run_pattern _run_pt, t_bool _determine);
 		void set_determine(t_posDijkstra set_pos);
 		uint16_t dijkstra_node_order(t_posDijkstra pos);
 		void push_open_node(t_posDijkstra pos);

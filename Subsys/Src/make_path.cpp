@@ -38,6 +38,11 @@ static t_posDijkstra dijkstra_id_to_pos(uint16_t id)
 	return pos;
 }
 
+static t_direction dijkstra_pos_dir(t_posDijkstra pos)
+{
+	return (t_direction)(pos.state_dir * 2 + (pos.NodePos == C_pos ? 0 : 1));
+}
+
 static void dijkstra_open_queue_init()
 {
 	dijkstra_heap_tail = -1;
@@ -122,13 +127,12 @@ t_posDijkstra Dijkstra::SetNodePos(uint8_t _x,uint8_t _y,t_DijkstraWallPos _dpos
 	return pos;
 }
 
-t_element Dijkstra::SetNode(t_posDijkstra _parent,	uint16_t _time,		t_direction _dir
-				 ,t_run_pattern _run_pt,		t_bool _determine)
+t_element Dijkstra::SetNode(t_posDijkstra _parent, uint16_t _time,
+				 t_run_pattern _run_pt, t_bool _determine)
 {
 	t_element node;
 	node.parent_pos = _parent;
 	node.time		= _time;
-	node.dir		= _dir;
 	node.run_pt		= _run_pt;
 	node.determine  = _determine;
 	return node;
@@ -145,13 +149,13 @@ void Dijkstra::init_dijkstra_map()
 				for(int state = 0; state < 4; state++) switch(d)
 				{
 					case C_pos:
-						closure[i][j].Center[state] = SetNode(SetNodePos(i,j,C_pos,(t_direction)(state*2)), DIJKSTRA_MAX_TIME, Dir_None, No_run, False);
+						closure[i][j].Center[state] = SetNode(SetNodePos(i,j,C_pos,(t_direction)(state*2)), DIJKSTRA_MAX_TIME, No_run, False);
 						break;
 					case N_pos:
-						closure[i][j].North[state] = SetNode(SetNodePos(i,j,N_pos,(t_direction)(state*2+1)), DIJKSTRA_MAX_TIME, Dir_None, No_run, False);
+						closure[i][j].North[state] = SetNode(SetNodePos(i,j,N_pos,(t_direction)(state*2+1)), DIJKSTRA_MAX_TIME, No_run, False);
 						break;
 					case E_pos:
-						closure[i][j].East[state] = SetNode(SetNodePos(i,j,E_pos,(t_direction)(state*2+1)), DIJKSTRA_MAX_TIME, Dir_None, No_run, False);
+						closure[i][j].East[state] = SetNode(SetNodePos(i,j,E_pos,(t_direction)(state*2+1)), DIJKSTRA_MAX_TIME, No_run, False);
 						break;
 				}
 			}
@@ -165,13 +169,13 @@ void Dijkstra::start_node_setUp(t_posDijkstra start_pos,t_direction dir)
 	switch(start_pos.NodePos)
 	{
 		case C_pos:
-			closure[start_pos.x][start_pos.y].Center[start_pos.state_dir] = SetNode(start_pos, 0, dir, No_run, False);
+			closure[start_pos.x][start_pos.y].Center[start_pos.state_dir] = SetNode(start_pos, 0, No_run, False);
 			break;
 		case N_pos:
-			closure[start_pos.x][start_pos.y].North[start_pos.state_dir] = SetNode(start_pos, 0, dir, No_run, False);
+			closure[start_pos.x][start_pos.y].North[start_pos.state_dir] = SetNode(start_pos, 0, No_run, False);
 			break;
 		case E_pos:
-			closure[start_pos.x][start_pos.y].East[start_pos.state_dir] = SetNode(start_pos, 0, dir, No_run, False);
+			closure[start_pos.x][start_pos.y].East[start_pos.state_dir] = SetNode(start_pos, 0, No_run, False);
 			break;
 	}
 }
@@ -392,7 +396,7 @@ t_posDijkstra Dijkstra::make_path_Dijkstra_priority_queue(t_position start_pos,t
 
 		if(is_goal_Dijkstra(min_pos, goal_pos, goal_size))
 		{
-			t_direction pos_dir = (*get_closure_inf(min_pos)).dir;
+						t_direction pos_dir = dijkstra_pos_dir(min_pos);
 			min_pos = last_expand(min_pos,pos_dir ,goal_pos, goal_size);
 			break;
 		}
@@ -421,7 +425,7 @@ t_posDijkstra Dijkstra::make_path_Dijkstra(t_position start_pos,t_direction star
 		if(is_goal_Dijkstra(min_pos, goal_pos, goal_size))
 		{
 			//last_expand(min_pos,goal_pos,(int)goal_size);
-			t_direction pos_dir = (*get_closure_inf(min_pos)).dir;
+			t_direction pos_dir = dijkstra_pos_dir(min_pos);
 			min_pos = last_expand(min_pos,pos_dir ,goal_pos, goal_size);
 			break;
 		}
@@ -432,7 +436,7 @@ t_posDijkstra Dijkstra::make_path_Dijkstra(t_position start_pos,t_direction star
 
 void Dijkstra::expand(t_posDijkstra pos)
 {
-	t_direction pos_dir = (*get_closure_inf(pos)).dir;
+	t_direction pos_dir = dijkstra_pos_dir(pos);
 	switch(pos.NodePos)
 	{
 		case N_pos:
@@ -483,7 +487,7 @@ t_posDijkstra Dijkstra::last_expand(t_posDijkstra pos,t_direction m_dir,t_positi
 					next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 					if((*get_closure_inf(next_pos)) .determine == False )//&& (*get_closure_inf(next_pos)) .time >= time)
 					{
-						(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Diagonal, False);
+						(*get_closure_inf(next_pos)) = SetNode(pos, time, Diagonal, False);
 						#ifdef DEBUG_MODE
 						printf("Diagonal_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
 						HAL_Delay(10);
@@ -517,7 +521,7 @@ t_posDijkstra Dijkstra::last_expand(t_posDijkstra pos,t_direction m_dir,t_positi
 								parent = (*get_closure_inf(pos)).parent_pos;
 							}
 							*/
-							(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Straight, False);
+							(*get_closure_inf(next_pos)) = SetNode(pos, time, Straight, False);
 							#ifdef DEBUG_MODE
 							printf("Straight_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
 							HAL_Delay(10);
@@ -669,17 +673,17 @@ void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos
 	for(int i = tail ; i >= 0;i--)
 	{
 		//#ifdef DEBUG_MODE
-			printf("x:%2d,y:%2d,d:%2d,mdir:%2d,time:%d->",run_pos_buff[i].x,run_pos_buff[i].y,run_pos_buff[i].NodePos,(*get_closure_inf(run_pos_buff[i])).dir,(*get_closure_inf(run_pos_buff[i])).time);
+			printf("x:%2d,y:%2d,d:%2d,mdir:%2d,time:%d->",run_pos_buff[i].x,run_pos_buff[i].y,run_pos_buff[i].NodePos,dijkstra_pos_dir(run_pos_buff[i]),(*get_closure_inf(run_pos_buff[i])).time);
 		//#endif
 		switch((*get_closure_inf(run_pos_buff[i])).run_pt)
 		{
 			//#ifdef DEBUG_MODE
 			case No_run: 			printf("No_run\n"); 			break;
 			case Straight:
-				printf("count->%2d",straight_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], (*get_closure_inf(run_pos_buff[i])).dir));
+				printf("count->%2d",straight_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], dijkstra_pos_dir(run_pos_buff[i])));
 				printf("Straight\n"); 			break;
 			case Diagonal:
-				printf("count->%2d",diagonal_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], (*get_closure_inf(run_pos_buff[i])).dir));
+				printf("count->%2d",diagonal_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], dijkstra_pos_dir(run_pos_buff[i])));
 				printf("Diagonal\n"); 			break;
 			case Long_turnR90: 		printf("Long_turnR90\n"); 		break;
 			case Long_turnL90: 		printf("Long_turnL90\n"); 		break;
@@ -752,7 +756,7 @@ void Dijkstra::run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_pos
 			//#ifdef DEBUG_MODE
 			case No_run: 	break;
 			case Straight:
-				section_count = straight_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], (*get_closure_inf(run_pos_buff[i])).dir);
+				section_count = straight_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], dijkstra_pos_dir(run_pos_buff[i]));
 				st_parameter =  calc_end_straight_max_velo(SECTION * section_count);
 				if(i == 0)
 					motion->exe_Motion_straight(  SECTION * section_count, st_parameter.param->acc, st_parameter.param->max_velo, 0.0f,st_parameter.sp_gain,st_parameter.om_gain);
@@ -760,7 +764,7 @@ void Dijkstra::run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_pos
 					motion->exe_Motion_straight(  SECTION * section_count, st_parameter.param->acc, st_parameter.param->max_velo, straight_base_velo().param->max_velo,st_parameter.sp_gain,st_parameter.om_gain);
 				break;
 			case Diagonal:
-				section_count = diagonal_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], (*get_closure_inf(run_pos_buff[i])).dir);
+				section_count = diagonal_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], dijkstra_pos_dir(run_pos_buff[i]));
 				st_parameter =  calc_end_diagonal_max_velo(DIAG_SECTION * section_count);
 				if(i == 0)
 					motion->exe_Motion_diagonal(  DIAG_SECTION * section_count, st_parameter.param->acc, st_parameter.param->max_velo, 0.0f,st_parameter.sp_gain,st_parameter.om_gain);
@@ -889,7 +893,7 @@ void Dijkstra::run_Dijkstra_suction(t_position start_pos,t_direction start_wallP
 			//#ifdef DEBUG_MODE
 			case No_run: 	break;
 			case Straight:
-				section_count = straight_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], (*get_closure_inf(run_pos_buff[i])).dir);
+				section_count = straight_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], dijkstra_pos_dir(run_pos_buff[i]));
 				st_parameter =  calc_end_straight_max_velo(SECTION * section_count);
 				if(i == 0)
 					motion->exe_Motion_straight(  SECTION * section_count, st_parameter.param->acc, st_parameter.param->max_velo, 0.0f,st_parameter.sp_gain,st_parameter.om_gain);
@@ -897,7 +901,7 @@ void Dijkstra::run_Dijkstra_suction(t_position start_pos,t_direction start_wallP
 					motion->exe_Motion_straight(  SECTION * section_count, st_parameter.param->acc, st_parameter.param->max_velo, straight_base_velo().param->max_velo,st_parameter.sp_gain,st_parameter.om_gain);
 				break;
 			case Diagonal:
-				section_count = diagonal_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], (*get_closure_inf(run_pos_buff[i])).dir);
+				section_count = diagonal_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], dijkstra_pos_dir(run_pos_buff[i]));
 				st_parameter =  calc_end_diagonal_max_velo(DIAG_SECTION * section_count);
 				if(i == 0)
 					motion->exe_Motion_diagonal(  DIAG_SECTION * section_count, st_parameter.param->acc, st_parameter.param->max_velo, 0.0f,st_parameter.sp_gain,st_parameter.om_gain);
@@ -1101,7 +1105,7 @@ void Dijkstra::run_Dijkstra_suction_acc(t_position start_pos,t_direction start_w
 			//#ifdef DEBUG_MODE
 			case No_run: 	break;
 			case Straight:
-				section_count = straight_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], (*get_closure_inf(run_pos_buff[i])).dir);
+				section_count = straight_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], dijkstra_pos_dir(run_pos_buff[i]));
 				st_parameter =  calc_end_straight_max_velo(SECTION * section_count);
 				if(i == 0)
 					motion->exe_Motion_straight(  SECTION * section_count, st_parameter.param->acc, st_parameter.param->max_velo, 0.0f,st_parameter.sp_gain,st_parameter.om_gain);
@@ -1112,7 +1116,7 @@ void Dijkstra::run_Dijkstra_suction_acc(t_position start_pos,t_direction start_w
 						motion->exe_Motion_straight(  SECTION * section_count, st_parameter.param->acc, end_velo					, end_velo,st_parameter.sp_gain,st_parameter.om_gain);
 				break;
 			case Diagonal:
-				section_count = diagonal_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], (*get_closure_inf(run_pos_buff[i])).dir);
+				section_count = diagonal_section_num((*get_closure_inf(run_pos_buff[i])).parent_pos, run_pos_buff[i], dijkstra_pos_dir(run_pos_buff[i]));
 				st_parameter =  calc_end_diagonal_max_velo(DIAG_SECTION * section_count);
 				if(i == 0)
 					motion->exe_Motion_diagonal(  DIAG_SECTION * section_count, st_parameter.param->acc, st_parameter.param->max_velo, 0.0f,st_parameter.sp_gain,st_parameter.om_gain);

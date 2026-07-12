@@ -707,7 +707,7 @@ void Dijkstra::straight_expand(t_posDijkstra pos,t_direction m_dir)
 				next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 				if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time > time)
 				{
-					(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Straight, False);
+					(*get_closure_inf(next_pos)) = SetNode(pos, time, Straight, False);
 					if(use_priority_queue == True) push_open_node(next_pos);
 					#ifdef DEBUG_MODE
 					printf("Straight_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -739,7 +739,7 @@ void Dijkstra::diagonal_expand(t_posDijkstra pos,t_direction m_dir)
 			next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time > time)
 			{
-				(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Diagonal, False);
+				(*get_closure_inf(next_pos)) = SetNode(pos, time, Diagonal, False);
 				if(use_priority_queue == True) push_open_node(next_pos);
 				#ifdef DEBUG_MODE
 				printf("Diagonal_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -770,7 +770,7 @@ void Dijkstra::turn_inR45_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Turn_in_R45, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Turn_in_R45, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("turn_inR45_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -794,7 +794,7 @@ void Dijkstra::turn_inL45_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Turn_in_L45, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Turn_in_L45, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("turn_inL45_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -843,7 +843,7 @@ void Dijkstra::turn_outR45_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Turn_out_R45, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Turn_out_R45, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("turn_outR45_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -893,7 +893,7 @@ void Dijkstra::turn_outL45_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Turn_out_L45, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Turn_out_L45, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("turn_outL45_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -933,7 +933,7 @@ void Dijkstra::turn_inR135_expand(t_posDijkstra pos,t_direction m_dir)
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
 
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Turn_in_R135, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Turn_in_R135, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("turn_inR135_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -957,7 +957,7 @@ void Dijkstra::turn_inL135_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Turn_in_L135, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Turn_in_L135, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("turn_inL135_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -1008,7 +1008,7 @@ void Dijkstra::turn_outR135_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Turn_out_R135, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Turn_out_R135, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("turn_outR135_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -1060,7 +1060,7 @@ void Dijkstra::turn_outL135_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Turn_out_L135, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Turn_out_L135, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("turn_outL135_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -1084,7 +1084,7 @@ void Dijkstra::longturn_R90_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Long_turnR90, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Long_turnR90, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("longturn_R90_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -1108,7 +1108,7 @@ void Dijkstra::longturn_L90_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Long_turnL90, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Long_turnL90, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("longturn_L90_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -1133,7 +1133,7 @@ void Dijkstra::longturn_R180_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Long_turnR180, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Long_turnR180, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("longturn_R180_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -1157,7 +1157,7 @@ void Dijkstra::longturn_L180_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Long_turnL180, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Long_turnL180, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("longturn_L180_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -1196,7 +1196,7 @@ void Dijkstra::turn_vR90_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Turn_RV90, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Turn_RV90, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("turn_vR90_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
@@ -1236,7 +1236,7 @@ void Dijkstra::turn_vL90_expand(t_posDijkstra pos,t_direction m_dir)
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
-			(*get_closure_inf(next_pos)) = SetNode(pos, time, next_dir, Turn_LV90, False);
+			(*get_closure_inf(next_pos)) = SetNode(pos, time, Turn_LV90, False);
 			if(use_priority_queue == True) push_open_node(next_pos);
 			#ifdef DEBUG_MODE
 			printf("turn_vL90_expand_Set->x:%2d,y:%2d,d:%2d\n",next_pos.x,next_pos.y,next_pos.NodePos);
