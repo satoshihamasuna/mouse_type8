@@ -97,11 +97,12 @@ debug pivot_turn right|left show|reset|set|exe
 debug pivot_turn right|left set degree rad_acc rad_velo sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty
 
 debug search_turn right|left show|reset|set|exe
-debug search_turn right|left set velo r_min Lstart Lend degree sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty
+debug search_turn right|left set velo r_min Lstart Lend degree sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty turn_count
 ```
 
 `pivot_turn` の角度は度、角加速度と角速度はそれぞれrad/s²、rad/sで指定します。
 `search_turn` の実行時は、探索スラロームの前後に45 mmの直進加速・減速区間が入ります。
+`turn_count` は1～100で指定します。前加速と後減速はそれぞれ1回だけ実行し、その間で探索ターンを指定回数繰り返します。
 右旋回の角度・角加速度・角速度・旋回半径は負、左旋回は正で指定します。
 
 ### デバッグログのCSV保存
@@ -168,6 +169,37 @@ tools/logs/20260708_2340_type8a_MPQ.csv
 `tools/logs/` はgitの管理対象外であるため、生成されたCSVファイルはpushされません。
 
 ## ログ解析
+
+### 目標値・測定値・位置軌跡の比較
+
+`tools/logs/` 内の最新CSVを解析します。
+
+```powershell
+python tools\log_compare.py
+```
+
+CSVを指定する場合:
+
+```powershell
+python tools\log_compare.py tools\logs\20260712_141937_myshell_debug_log_long_r90.csv
+```
+
+画面を開かずPNGへ保存する場合:
+
+```powershell
+python tools\log_compare.py --no-show --save tools\logs\log_compare.png
+```
+
+次の目標値・測定値・誤差を時系列で比較します。
+
+- 速度
+- 角速度
+- 走行距離
+- 角度
+- 加速度
+- 横位置
+
+さらに速度・角速度をログ周期で積分し、目標位置と測定位置を算出します。算出した2次元軌跡を比較し、ログに保存された `turn_x / turn_y` も破線で重ねます。各比較グラフにはRMSEも表示されます。
 
 次のNotebookを開きます。
 

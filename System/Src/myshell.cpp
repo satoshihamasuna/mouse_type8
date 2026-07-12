@@ -688,6 +688,8 @@ static shell_debug_pivot_param_t shell_debug_pivot_left = {
 };
 static shell_debug_turn_param_t shell_debug_search_right;
 static shell_debug_turn_param_t shell_debug_search_left;
+static int shell_debug_search_right_count = 1;
+static int shell_debug_search_left_count = 1;
 
 static t_bool shell_debug_is_right(const char *direction, t_bool *right)
 {
@@ -730,29 +732,36 @@ static int shell_debug_search_command(int argc, char **argv)
 	if (shell_debug_is_right(argv[2], &right) != True) { printf("DEBUG_SEARCH_ERROR direction\r\n"); return -1; }
 	t_bool reset = (ntlibc_strcmp(argv[3], "reset") == 0) ? True : False;
 	shell_debug_turn_param_t *debug = shell_debug_search_get(right, reset);
+	int *turn_count = right ? &shell_debug_search_right_count : &shell_debug_search_left_count;
 	if (ntlibc_strcmp(argv[3], "show") == 0 || reset == True) {
-		if (reset == True) printf("DEBUG_SEARCH_RESET_DONE\r\n");
+		if (reset == True) {
+			*turn_count = 1;
+			printf("DEBUG_SEARCH_RESET_DONE\r\n");
+		}
 		shell_debug_turn_show(argv[2], debug);
+		printf("DEBUG_SEARCH_COUNT %d\r\n", *turn_count);
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[3], "set") == 0) {
-		if (argc != 17) { printf("debug search_turn %s set velo r_min Lstart Lend degree sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty\r\n", argv[2]); return -1; }
+		if (argc != 18) { printf("debug search_turn %s set velo r_min Lstart Lend degree sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty turn_count\r\n", argv[2]); return -1; }
 		float *values[] = {&debug->table.velo, &debug->table.r_min, &debug->table.Lstart, &debug->table.Lend,
 			&debug->table.degree, &debug->sp_gain.Kp, &debug->sp_gain.Ki, &debug->sp_gain.Kd,
 			&debug->om_gain.Kp, &debug->om_gain.Ki, &debug->om_gain.Kd};
 		for (int i = 0; i < 11; i++) if (shell_parse_float(argv[i + 4], values[i]) != True) { printf("DEBUG_SEARCH_ERROR number\r\n"); return -1; }
-		int enable, duty;
-		if (sscanf(argv[15], "%d", &enable) != 1 || sscanf(argv[16], "%d", &duty) != 1 ||
+		int enable, duty, count;
+		if (sscanf(argv[15], "%d", &enable) != 1 || sscanf(argv[16], "%d", &duty) != 1 || sscanf(argv[17], "%d", &count) != 1 ||
 			(enable != 0 && enable != 1) || duty < 0 || duty > 990 || debug->table.velo <= 0.0f ||
-			debug->table.Lstart < 0.0f || debug->table.Lend < 0.0f) { printf("DEBUG_SEARCH_ERROR range\r\n"); return -1; }
+			debug->table.Lstart < 0.0f || debug->table.Lend < 0.0f || count < 1 || count > 100) { printf("DEBUG_SEARCH_ERROR range\r\n"); return -1; }
 		if ((right == True && (debug->table.r_min >= 0.0f || debug->table.degree >= 0.0f)) ||
 			(right != True && (debug->table.r_min <= 0.0f || debug->table.degree <= 0.0f))) { printf("DEBUG_SEARCH_ERROR direction_sign\r\n"); return -1; }
 		debug->table.turn_dir = right ? Turn_R : Turn_L;
 		debug->suction_enable = enable ? True : False;
 		debug->suction_duty = duty;
 		debug->preset_speed = 0;
+		*turn_count = count;
 		printf("DEBUG_SEARCH_SET_DONE\r\n");
 		shell_debug_turn_show(argv[2], debug);
+		printf("DEBUG_SEARCH_COUNT %d\r\n", *turn_count);
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[3], "exe") == 0) {
@@ -766,7 +775,9 @@ static int shell_debug_search_command(int argc, char **argv)
 		LogData::getInstance().log_enable = True;
 		motion->exe_Motion_straight(45.0f, shell_debug_straight_param.acc, debug->table.velo,
 			debug->table.velo, &shell_debug_straight_param.sp_gain, &shell_debug_straight_param.om_gain);
-		motion->exe_Motion_search_turn(&debug->param, &debug->sp_gain, &debug->om_gain);
+		for (int i = 0; i < *turn_count; i++) {
+			motion->exe_Motion_search_turn(&debug->param, &debug->sp_gain, &debug->om_gain);
+		}
 		motion->exe_Motion_straight(45.0f, shell_debug_straight_param.acc, debug->table.velo,
 			0.0f, &shell_debug_straight_param.sp_gain, &shell_debug_straight_param.om_gain);
 		LogData::getInstance().log_enable = False;

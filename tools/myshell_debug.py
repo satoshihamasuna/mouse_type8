@@ -75,6 +75,7 @@ class DebugGui(tk.Tk):
         self.turn_type = tk.StringVar(value="long_r90")
         self.direction = tk.StringVar(value="right")
         self.turn_preset_speed = tk.IntVar(value=700)
+        self.search_turn_count = tk.IntVar(value=1)
         self.suction_enable = tk.BooleanVar(value=False)
         self.suction_duty = tk.IntVar(value=650)
         self.pending_suction_override = None
@@ -131,6 +132,11 @@ class DebugGui(tk.Tk):
         preset_box.pack(side=tk.LEFT, padx=5)
         preset_box.bind("<<ComboboxSelected>>", lambda _event: self._load_defaults())
 
+        self.search_count_selector = ttk.Frame(selectors)
+        ttk.Label(self.search_count_selector, text="Turn count").pack(side=tk.LEFT)
+        ttk.Spinbox(self.search_count_selector, textvariable=self.search_turn_count,
+                    from_=1, to=100, width=6).pack(side=tk.LEFT, padx=5)
+
         parameter_area = ttk.Frame(root)
         parameter_area.pack(fill=tk.X, pady=5)
         motion_params = ttk.LabelFrame(parameter_area, text="動作固有パラメータ", padding=8)
@@ -185,11 +191,14 @@ class DebugGui(tk.Tk):
         self.turn_selector.grid_remove()
         self.direction_selector.grid_remove()
         self.preset_selector.grid_remove()
+        self.search_count_selector.grid_remove()
         if motion == "turn":
             self.turn_selector.grid(row=0, column=2, sticky=tk.W, padx=(15, 0))
             self.preset_selector.grid(row=0, column=3, sticky=tk.W, padx=(15, 0))
         elif motion in ("pivot_turn", "search_turn"):
             self.direction_selector.grid(row=0, column=2, sticky=tk.W, padx=(15, 0))
+            if motion == "search_turn":
+                self.search_count_selector.grid(row=0, column=3, sticky=tk.W, padx=(15, 0))
 
         schemas = {
             "straight": (("distance", "Distance [mm]"), ("acc", "Acceleration"),
@@ -280,9 +289,15 @@ class DebugGui(tk.Tk):
                 raise ValueError("veloは正、Lstart/Lendは0以上にしてください。")
             if (right and (values[1] >= 0 or values[4] >= 0)) or (not right and (values[1] <= 0 or values[4] <= 0)):
                 raise ValueError("右はr_min/degreeを負、左は正にしてください。")
-            return "debug search_turn {} set {} {} {}".format(
+            try:
+                turn_count = self.search_turn_count.get()
+            except tk.TclError as exc:
+                raise ValueError("ターン回数には整数を入力してください。") from exc
+            if not 1 <= turn_count <= 100:
+                raise ValueError("ターン回数は1～100にしてください。")
+            return "debug search_turn {} set {} {} {} {}".format(
                 self.direction.get(), " ".join(f"{v:.7g}" for v in values),
-                int(self.suction_enable.get()), self._suction_duty_value()
+                int(self.suction_enable.get()), self._suction_duty_value(), turn_count
             )
         if self.motion.get() == "pivot_turn":
             pivot_values = values[:3] + values[5:]
@@ -471,6 +486,11 @@ class DebugGui(tk.Tk):
                         self._append(line + "\n")
                         if line.startswith("DEBUG_TURN_PARAM_X1000"):
                             self._queue_turn_params(line)
+                        if line.startswith("DEBUG_SEARCH_COUNT "):
+                            try:
+                                self.events.put(("search_count", int(line.split()[-1])))
+                            except ValueError:
+                                pass
                         idle = time.monotonic() + 1.0
                         if (line.startswith("DEBUG_RUN_DONE") or line.startswith("DEBUG_PARAM_SET_DONE")
                                 or line.startswith("DEBUG_TURN_SET_DONE")
@@ -509,6 +529,8 @@ class DebugGui(tk.Tk):
                     self.suction_duty.set(suction_duty)
                     if preset_speed in TURN_PRESET_SPEEDS:
                         self.turn_preset_speed.set(preset_speed)
+                elif isinstance(item, tuple) and item[0] == "search_count":
+                    self.search_turn_count.set(item[1])
                 else:
                     self.output.insert(tk.END, item)
                     self.output.see(tk.END)
