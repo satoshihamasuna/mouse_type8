@@ -89,6 +89,7 @@ target_sources(${BUILD_UNIT_0_NAME} PRIVATE
     "System/Src/debug3.cpp"
     "System/Src/demo.cpp"
     "System/Src/demo2.cpp"
+    "System/Src/demo_util.cpp"
     "System/Src/interface_check.cpp"
     "System/Src/mode.cpp"
     "System/Src/myshell.cpp"
