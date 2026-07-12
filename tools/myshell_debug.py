@@ -26,7 +26,7 @@ LOG_DIR = Path(__file__).resolve().parent / "logs"
 TURN_PRESET_SPEEDS = (300, 500, 700, 1000, 1200, 1400, 1500, 1600, 1800, 2000)
 TURN_PARAM_RE = re.compile(
     r"velo:(-?\d+) r_min:(-?\d+) Lstart:(-?\d+) Lend:(-?\d+) degree:(-?\d+) "
-    r"sp:(-?\d+),(-?\d+),(-?\d+) om:(-?\d+),(-?\d+),(-?\d+) "
+    r"sp_u:(-?\d+),(-?\d+),(-?\d+) om_u:(-?\d+),(-?\d+),(-?\d+) "
     r"suction:(\d+) duty:(\d+) preset:(\d+)"
 )
 
@@ -514,7 +514,9 @@ class DebugGui(tk.Tk):
         if self.pending_suction_override is not None:
             suction_enable, suction_duty = self.pending_suction_override
             self.pending_suction_override = None
-        self.events.put(("turn_params", [int(value) / 1000.0 for value in match.groups()[:11]],
+        physical_values = [int(value) / 1000.0 for value in match.groups()[:5]]
+        gain_values = [int(value) / 1000000.0 for value in match.groups()[5:11]]
+        self.events.put(("turn_params", physical_values + gain_values,
                          suction_enable, suction_duty, int(match.group(14))))
 
     def _drain(self):

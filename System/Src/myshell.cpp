@@ -363,8 +363,58 @@ static const shell_debug_turn_name_t shell_debug_turn_names[] = {
 
 static t_bool shell_parse_float(const char *text, float *value)
 {
-	char tail;
-	return (sscanf(text, "%f%c", value, &tail) == 1) ? True : False;
+	if (text == NULL || value == NULL || *text == '\0') return False;
+
+	const char *p = text;
+	float sign = 1.0f;
+	if (*p == '-' || *p == '+') {
+		if (*p == '-') sign = -1.0f;
+		p++;
+	}
+
+	float result = 0.0f;
+	int digits = 0;
+	while (*p >= '0' && *p <= '9') {
+		result = result * 10.0f + (float)(*p - '0');
+		p++;
+		digits++;
+	}
+	if (*p == '.') {
+		float place = 0.1f;
+		p++;
+		while (*p >= '0' && *p <= '9') {
+			result += (float)(*p - '0') * place;
+			place *= 0.1f;
+			p++;
+			digits++;
+		}
+	}
+	if (digits == 0) return False;
+
+	int exponent = 0;
+	if (*p == 'e' || *p == 'E') {
+		p++;
+		int exponent_sign = 1;
+		if (*p == '-' || *p == '+') {
+			if (*p == '-') exponent_sign = -1;
+			p++;
+		}
+		int exponent_digits = 0;
+		while (*p >= '0' && *p <= '9') {
+			exponent = exponent * 10 + (*p - '0');
+			p++;
+			exponent_digits++;
+			if (exponent > 38) return False;
+		}
+		if (exponent_digits == 0) return False;
+		exponent *= exponent_sign;
+	}
+	if (*p != '\0') return False;
+
+	while (exponent > 0) { result *= 10.0f; exponent--; }
+	while (exponent < 0) { result *= 0.1f; exponent++; }
+	*value = sign * result;
+	return True;
 }
 
 static void shell_debug_wait_sensor(IrSensTask *irsens)
@@ -435,13 +485,13 @@ static shell_debug_turn_param_t *shell_debug_turn_get(t_run_pattern pattern, int
 static void shell_debug_turn_show(const char *name, const shell_debug_turn_param_t *debug)
 {
 	printf("DEBUG_TURN_PARAM_X1000 %s velo:%ld r_min:%ld Lstart:%ld Lend:%ld degree:%ld "
-		   "sp:%ld,%ld,%ld om:%ld,%ld,%ld suction:%d duty:%d preset:%d\r\n",
+		   "sp_u:%ld,%ld,%ld om_u:%ld,%ld,%ld suction:%d duty:%d preset:%d\r\n",
 		   name, (long)(debug->table.velo * 1000.0f), (long)(debug->table.r_min * 1000.0f),
 		   (long)(debug->table.Lstart * 1000.0f), (long)(debug->table.Lend * 1000.0f),
 		   (long)(debug->table.degree * 1000.0f),
-		   (long)(debug->sp_gain.Kp * 1000.0f), (long)(debug->sp_gain.Ki * 1000.0f),
-		   (long)(debug->sp_gain.Kd * 1000.0f), (long)(debug->om_gain.Kp * 1000.0f),
-		   (long)(debug->om_gain.Ki * 1000.0f), (long)(debug->om_gain.Kd * 1000.0f),
+		   (long)(debug->sp_gain.Kp * 1000000.0f), (long)(debug->sp_gain.Ki * 1000000.0f),
+		   (long)(debug->sp_gain.Kd * 1000000.0f), (long)(debug->om_gain.Kp * 1000000.0f),
+		   (long)(debug->om_gain.Ki * 1000000.0f), (long)(debug->om_gain.Kd * 1000000.0f),
 		   debug->suction_enable, debug->suction_duty, debug->preset_speed);
 }
 
@@ -597,8 +647,8 @@ static int shell_debug_turn_command(int argc, char **argv)
 		debug->param.param = &debug->table;
 		debug->param.sp_gain = &debug->sp_gain;
 		debug->param.om_gain = &debug->om_gain;
-		printf("DEBUG_TURN_SET_DONE\r\n");
 		shell_debug_turn_show(argv[2], debug);
+		printf("DEBUG_TURN_SET_DONE\r\n");
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[3], "exe") == 0) {
@@ -744,24 +794,29 @@ static int shell_debug_search_command(int argc, char **argv)
 	}
 	if (ntlibc_strcmp(argv[3], "set") == 0) {
 		if (argc != 18) { printf("debug search_turn %s set velo r_min Lstart Lend degree sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty turn_count\r\n", argv[2]); return -1; }
-		float *values[] = {&debug->table.velo, &debug->table.r_min, &debug->table.Lstart, &debug->table.Lend,
-			&debug->table.degree, &debug->sp_gain.Kp, &debug->sp_gain.Ki, &debug->sp_gain.Kd,
-			&debug->om_gain.Kp, &debug->om_gain.Ki, &debug->om_gain.Kd};
+		shell_debug_turn_param_t next = *debug;
+		float *values[] = {&next.table.velo, &next.table.r_min, &next.table.Lstart, &next.table.Lend,
+			&next.table.degree, &next.sp_gain.Kp, &next.sp_gain.Ki, &next.sp_gain.Kd,
+			&next.om_gain.Kp, &next.om_gain.Ki, &next.om_gain.Kd};
 		for (int i = 0; i < 11; i++) if (shell_parse_float(argv[i + 4], values[i]) != True) { printf("DEBUG_SEARCH_ERROR number\r\n"); return -1; }
 		int enable, duty, count;
 		if (sscanf(argv[15], "%d", &enable) != 1 || sscanf(argv[16], "%d", &duty) != 1 || sscanf(argv[17], "%d", &count) != 1 ||
-			(enable != 0 && enable != 1) || duty < 0 || duty > 990 || debug->table.velo <= 0.0f ||
-			debug->table.Lstart < 0.0f || debug->table.Lend < 0.0f || count < 1 || count > 100) { printf("DEBUG_SEARCH_ERROR range\r\n"); return -1; }
-		if ((right == True && (debug->table.r_min >= 0.0f || debug->table.degree >= 0.0f)) ||
-			(right != True && (debug->table.r_min <= 0.0f || debug->table.degree <= 0.0f))) { printf("DEBUG_SEARCH_ERROR direction_sign\r\n"); return -1; }
-		debug->table.turn_dir = right ? Turn_R : Turn_L;
-		debug->suction_enable = enable ? True : False;
-		debug->suction_duty = duty;
-		debug->preset_speed = 0;
+			(enable != 0 && enable != 1) || duty < 0 || duty > 990 || next.table.velo <= 0.0f ||
+			next.table.Lstart < 0.0f || next.table.Lend < 0.0f || count < 1 || count > 100) { printf("DEBUG_SEARCH_ERROR range\r\n"); return -1; }
+		if ((right == True && (next.table.r_min >= 0.0f || next.table.degree >= 0.0f)) ||
+			(right != True && (next.table.r_min <= 0.0f || next.table.degree <= 0.0f))) { printf("DEBUG_SEARCH_ERROR direction_sign\r\n"); return -1; }
+		next.table.turn_dir = right ? Turn_R : Turn_L;
+		next.suction_enable = enable ? True : False;
+		next.suction_duty = duty;
+		next.preset_speed = 0;
+		*debug = next;
+		debug->param.param = &debug->table;
+		debug->param.sp_gain = &debug->sp_gain;
+		debug->param.om_gain = &debug->om_gain;
 		*turn_count = count;
-		printf("DEBUG_SEARCH_SET_DONE\r\n");
 		shell_debug_turn_show(argv[2], debug);
 		printf("DEBUG_SEARCH_COUNT %d\r\n", *turn_count);
+		printf("DEBUG_SEARCH_SET_DONE\r\n");
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[3], "exe") == 0) {
