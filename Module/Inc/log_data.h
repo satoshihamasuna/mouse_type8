@@ -33,6 +33,8 @@ class LogData:public Singleton<LogData>
 		void indicate_data_binary();
 		void init_log()
 		{
+			log_enable = False;
+			data_count = 0;
 			for(int i = 0; i < data_num ;i++)
 			{
 				for(int j = 0;j < data_size;j++)
