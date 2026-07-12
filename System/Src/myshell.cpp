@@ -342,6 +342,8 @@ typedef struct {
 	t_bool suction_enable;
 	int suction_duty;
 	int preset_speed;
+	int turn_count;
+	float pre_accel;
 } shell_debug_turn_param_t;
 
 static shell_debug_turn_param_t shell_debug_turn_params[Turn_LV90 + 1];
@@ -460,6 +462,21 @@ static const t_param *const *shell_debug_turn_mode(int speed)
 	}
 }
 
+static float shell_debug_turn_default_pre_accel(t_run_pattern pattern)
+{
+	switch (pattern) {
+	case Turn_out_R45:
+	case Turn_out_L45:
+	case Turn_out_R135:
+	case Turn_out_L135:
+	case Turn_RV90:
+	case Turn_LV90:
+		return shell_debug_diagonal_param.acc;
+	default:
+		return shell_debug_straight_param.acc;
+	}
+}
+
 static shell_debug_turn_param_t *shell_debug_turn_get(t_run_pattern pattern, int preset_speed, t_bool reset)
 {
 	const t_param *const *turn_mode = shell_debug_turn_mode(preset_speed);
@@ -477,6 +494,8 @@ static shell_debug_turn_param_t *shell_debug_turn_get(t_run_pattern pattern, int
 		debug->suction_enable = False;
 		debug->suction_duty = 650;
 		debug->preset_speed = preset_speed;
+		debug->turn_count = 1;
+		debug->pre_accel = shell_debug_turn_default_pre_accel(pattern);
 		debug->initialized = True;
 	}
 	return debug;
@@ -484,15 +503,16 @@ static shell_debug_turn_param_t *shell_debug_turn_get(t_run_pattern pattern, int
 
 static void shell_debug_turn_show(const char *name, const shell_debug_turn_param_t *debug)
 {
-	printf("DEBUG_TURN_PARAM_X1000 %s velo:%ld r_min:%ld Lstart:%ld Lend:%ld degree:%ld correction:%ld "
-		   "sp_u:%ld,%ld,%ld om_u:%ld,%ld,%ld suction:%d duty:%d preset:%d\r\n",
+	printf("DEBUG_TURN_PARAM_X1000 %s velo:%ld r_min:%ld Lstart:%ld Lend:%ld degree:%ld correction:%ld pre_accel:%ld "
+		   "sp_u:%ld,%ld,%ld om_u:%ld,%ld,%ld suction:%d duty:%d preset:%d count:%d\r\n",
 		   name, (long)(debug->table.velo * 1000.0f), (long)(debug->table.r_min * 1000.0f),
 		   (long)(debug->table.Lstart * 1000.0f), (long)(debug->table.Lend * 1000.0f),
 		   (long)(debug->table.degree * 1000.0f), (long)(debug->table.degree_correction * 1000.0f),
+		   (long)(debug->pre_accel * 1000.0f),
 		   (long)(debug->sp_gain.Kp * 1000000.0f), (long)(debug->sp_gain.Ki * 1000000.0f),
 		   (long)(debug->sp_gain.Kd * 1000000.0f), (long)(debug->om_gain.Kp * 1000000.0f),
 		   (long)(debug->om_gain.Ki * 1000000.0f), (long)(debug->om_gain.Kd * 1000000.0f),
-		   debug->suction_enable, debug->suction_duty, debug->preset_speed);
+		   debug->suction_enable, debug->suction_duty, debug->preset_speed, debug->turn_count);
 }
 
 static void shell_debug_suction_start(Motion *motion, t_bool enable, int duty)
@@ -503,12 +523,20 @@ static void shell_debug_suction_start(Motion *motion, t_bool enable, int duty)
 	motion->exe_Motion_suction_start(suction_voltage, stay_time);
 }
 
-static t_bool shell_debug_turn_pre_run(Motion *motion, t_run_pattern pattern, float turn_velo)
+static float shell_debug_accel_in_length(float target_velo, float length_mm, float configured_accel)
+{
+	if (target_velo <= 0.0f || length_mm <= 0.0f) return configured_accel;
+	const float required_accel = target_velo * target_velo / (2.0f * length_mm / 1000.0f);
+	return (required_accel > configured_accel) ? required_accel : configured_accel;
+}
+
+static t_bool shell_debug_turn_pre_run(Motion *motion, t_run_pattern pattern, float turn_velo, float configured_accel)
 {
 	switch (pattern) {
 	case Long_turnR90:
 	case Long_turnL90:
-		motion->exe_Motion_straight(SECTION * 2.0f, shell_debug_straight_param.acc,
+		motion->exe_Motion_straight(SECTION * 2.0f,
+			shell_debug_accel_in_length(turn_velo, SECTION * 2.0f, configured_accel),
 			turn_velo, turn_velo, &shell_debug_straight_param.sp_gain, &shell_debug_straight_param.om_gain);
 		return True;
 
@@ -518,7 +546,8 @@ static t_bool shell_debug_turn_pre_run(Motion *motion, t_run_pattern pattern, fl
 	case Turn_in_L45:
 	case Turn_in_R135:
 	case Turn_in_L135:
-		motion->exe_Motion_straight(SECTION, shell_debug_straight_param.acc,
+		motion->exe_Motion_straight(SECTION,
+			shell_debug_accel_in_length(turn_velo, SECTION, configured_accel),
 			turn_velo, turn_velo, &shell_debug_straight_param.sp_gain, &shell_debug_straight_param.om_gain);
 		return True;
 
@@ -528,7 +557,8 @@ static t_bool shell_debug_turn_pre_run(Motion *motion, t_run_pattern pattern, fl
 	case Turn_out_L135:
 	case Turn_RV90:
 	case Turn_LV90:
-		motion->exe_Motion_diagonal(DIAG_SECTION * 2.0f, shell_debug_diagonal_param.acc,
+		motion->exe_Motion_diagonal(DIAG_SECTION * 2.0f,
+			shell_debug_accel_in_length(turn_velo, DIAG_SECTION * 2.0f, configured_accel),
 			turn_velo, turn_velo, &shell_debug_diagonal_param.sp_gain, &shell_debug_diagonal_param.om_gain);
 		return True;
 
@@ -608,15 +638,15 @@ static int shell_debug_turn_command(int argc, char **argv)
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[3], "set") == 0) {
-		if (argc != 18) {
-			printf("debug turn %s set velo r_min Lstart Lend degree degree_correction sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty\r\n", argv[2]);
+		if (argc != 20) {
+			printf("debug turn %s set velo r_min Lstart Lend degree degree_correction pre_accel sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty turn_count\r\n", argv[2]);
 			return -1;
 		}
 		shell_debug_turn_param_t next = *debug;
 		float *values[] = {&next.table.velo, &next.table.r_min, &next.table.Lstart,
-			&next.table.Lend, &next.table.degree, &next.table.degree_correction, &next.sp_gain.Kp, &next.sp_gain.Ki,
+			&next.table.Lend, &next.table.degree, &next.table.degree_correction, &next.pre_accel, &next.sp_gain.Kp, &next.sp_gain.Ki,
 			&next.sp_gain.Kd, &next.om_gain.Kp, &next.om_gain.Ki, &next.om_gain.Kd};
-		for (int i = 0; i < 12; i++) {
+		for (int i = 0; i < 13; i++) {
 			if (shell_parse_float(argv[i + 4], values[i]) != True) {
 				printf("DEBUG_TURN_ERROR invalid_number:%s\r\n", argv[i + 4]);
 				return -1;
@@ -624,14 +654,17 @@ static int shell_debug_turn_command(int argc, char **argv)
 		}
 		int suction_enable;
 		int suction_duty;
-		if (sscanf(argv[16], "%d", &suction_enable) != 1 || sscanf(argv[17], "%d", &suction_duty) != 1 ||
-			(suction_enable != 0 && suction_enable != 1) || suction_duty < 0 || suction_duty > 990) {
-			printf("DEBUG_TURN_ERROR suction\r\n");
+		int turn_count;
+		if (sscanf(argv[17], "%d", &suction_enable) != 1 || sscanf(argv[18], "%d", &suction_duty) != 1 ||
+			sscanf(argv[19], "%d", &turn_count) != 1 || (suction_enable != 0 && suction_enable != 1) ||
+			suction_duty < 0 || suction_duty > 990 || turn_count < 1 || turn_count > 100) {
+			printf("DEBUG_TURN_ERROR option\r\n");
 			return -1;
 		}
 		next.suction_enable = suction_enable ? True : False;
 		next.suction_duty = suction_duty;
-		if (next.table.velo <= 0.0f || next.table.r_min == 0.0f ||
+		next.turn_count = turn_count;
+		if (next.table.velo <= 0.0f || next.pre_accel <= 0.0f || next.table.r_min == 0.0f ||
 			next.table.Lstart < 0.0f || next.table.Lend < 0.0f || next.table.degree == 0.0f) {
 			printf("DEBUG_TURN_ERROR range\r\n");
 			return -1;
@@ -664,46 +697,48 @@ static int shell_debug_turn_command(int argc, char **argv)
 		shell_debug_suction_start(motion, debug->suction_enable, debug->suction_duty);
 		LogData::getInstance().data_count = 0;
 		LogData::getInstance().log_enable = True;
-		if (shell_debug_turn_pre_run(motion, pattern, debug->table.velo) != True) {
+		if (shell_debug_turn_pre_run(motion, pattern, debug->table.velo, debug->pre_accel) != True) {
 			printf("DEBUG_TURN_ERROR unsupported_pre_run:%d\r\n", pattern);
 			LogData::getInstance().log_enable = False;
 			motion->Motion_end();
 			return -1;
 		}
-		switch (pattern) {
-		case Long_turnR90:
-		case Long_turnL90:
-		case Long_turnR180:
-		case Long_turnL180:
-			motion->Init_Motion_long_turn(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
-			break;
+		for (int turn_index = 0; turn_index < debug->turn_count; turn_index++) {
+			switch (pattern) {
+			case Long_turnR90:
+			case Long_turnL90:
+			case Long_turnR180:
+			case Long_turnL180:
+				motion->Init_Motion_long_turn(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
+				break;
 
-		case Turn_in_R45:
-		case Turn_in_L45:
-		case Turn_in_R135:
-		case Turn_in_L135:
-			motion->Init_Motion_turn_in(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
-			break;
+			case Turn_in_R45:
+			case Turn_in_L45:
+			case Turn_in_R135:
+			case Turn_in_L135:
+				motion->Init_Motion_turn_in(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
+				break;
 
-		case Turn_out_R45:
-		case Turn_out_L45:
-		case Turn_out_R135:
-		case Turn_out_L135:
-			motion->Init_Motion_turn_out(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
-			break;
+			case Turn_out_R45:
+			case Turn_out_L45:
+			case Turn_out_R135:
+			case Turn_out_L135:
+				motion->Init_Motion_turn_out(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
+				break;
 
-		case Turn_RV90:
-		case Turn_LV90:
-			motion->Init_Motion_turn_v90(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
-			break;
+			case Turn_RV90:
+			case Turn_LV90:
+				motion->Init_Motion_turn_v90(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
+				break;
 
-		default:
-			printf("DEBUG_TURN_ERROR unsupported_pattern:%d\r\n", pattern);
-			LogData::getInstance().log_enable = False;
-			motion->Motion_end();
-			return -1;
+			default:
+				printf("DEBUG_TURN_ERROR unsupported_pattern:%d\r\n", pattern);
+				LogData::getInstance().log_enable = False;
+				motion->Motion_end();
+				return -1;
+			}
+			motion->execute_Motion();
 		}
-		motion->execute_Motion();
 		if (shell_debug_turn_post_run(motion, pattern, debug->table.velo) != True) {
 			printf("DEBUG_TURN_ERROR unsupported_post_run:%d\r\n", pattern);
 			LogData::getInstance().log_enable = False;
@@ -738,8 +773,6 @@ static shell_debug_pivot_param_t shell_debug_pivot_left = {
 };
 static shell_debug_turn_param_t shell_debug_search_right;
 static shell_debug_turn_param_t shell_debug_search_left;
-static int shell_debug_search_right_count = 1;
-static int shell_debug_search_left_count = 1;
 
 static t_bool shell_debug_is_right(const char *direction, t_bool *right)
 {
@@ -770,6 +803,8 @@ static shell_debug_turn_param_t *shell_debug_search_get(t_bool right, t_bool res
 		debug->param.om_gain = &debug->om_gain;
 		debug->suction_enable = False;
 		debug->suction_duty = 650;
+		debug->turn_count = 1;
+		debug->pre_accel = shell_debug_straight_param.acc;
 		debug->initialized = True;
 	}
 	return debug;
@@ -782,27 +817,26 @@ static int shell_debug_search_command(int argc, char **argv)
 	if (shell_debug_is_right(argv[2], &right) != True) { printf("DEBUG_SEARCH_ERROR direction\r\n"); return -1; }
 	t_bool reset = (ntlibc_strcmp(argv[3], "reset") == 0) ? True : False;
 	shell_debug_turn_param_t *debug = shell_debug_search_get(right, reset);
-	int *turn_count = right ? &shell_debug_search_right_count : &shell_debug_search_left_count;
 	if (ntlibc_strcmp(argv[3], "show") == 0 || reset == True) {
 		if (reset == True) {
-			*turn_count = 1;
+			debug->turn_count = 1;
 			printf("DEBUG_SEARCH_RESET_DONE\r\n");
 		}
 		shell_debug_turn_show(argv[2], debug);
-		printf("DEBUG_SEARCH_COUNT %d\r\n", *turn_count);
+		printf("DEBUG_SEARCH_COUNT %d\r\n", debug->turn_count);
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[3], "set") == 0) {
-		if (argc != 19) { printf("debug search_turn %s set velo r_min Lstart Lend degree degree_correction sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty turn_count\r\n", argv[2]); return -1; }
+		if (argc != 20) { printf("debug search_turn %s set velo r_min Lstart Lend degree degree_correction pre_accel sp_kp sp_ki sp_kd om_kp om_ki om_kd suction_enable suction_duty turn_count\r\n", argv[2]); return -1; }
 		shell_debug_turn_param_t next = *debug;
 		float *values[] = {&next.table.velo, &next.table.r_min, &next.table.Lstart, &next.table.Lend,
-			&next.table.degree, &next.table.degree_correction, &next.sp_gain.Kp, &next.sp_gain.Ki, &next.sp_gain.Kd,
+			&next.table.degree, &next.table.degree_correction, &next.pre_accel, &next.sp_gain.Kp, &next.sp_gain.Ki, &next.sp_gain.Kd,
 			&next.om_gain.Kp, &next.om_gain.Ki, &next.om_gain.Kd};
-		for (int i = 0; i < 12; i++) if (shell_parse_float(argv[i + 4], values[i]) != True) { printf("DEBUG_SEARCH_ERROR number\r\n"); return -1; }
+		for (int i = 0; i < 13; i++) if (shell_parse_float(argv[i + 4], values[i]) != True) { printf("DEBUG_SEARCH_ERROR number\r\n"); return -1; }
 		int enable, duty, count;
-		if (sscanf(argv[16], "%d", &enable) != 1 || sscanf(argv[17], "%d", &duty) != 1 || sscanf(argv[18], "%d", &count) != 1 ||
+		if (sscanf(argv[17], "%d", &enable) != 1 || sscanf(argv[18], "%d", &duty) != 1 || sscanf(argv[19], "%d", &count) != 1 ||
 			(enable != 0 && enable != 1) || duty < 0 || duty > 990 || next.table.velo <= 0.0f ||
-			next.table.Lstart < 0.0f || next.table.Lend < 0.0f || count < 1 || count > 100) { printf("DEBUG_SEARCH_ERROR range\r\n"); return -1; }
+			next.pre_accel <= 0.0f || next.table.Lstart < 0.0f || next.table.Lend < 0.0f || count < 1 || count > 100) { printf("DEBUG_SEARCH_ERROR range\r\n"); return -1; }
 		if ((right == True && (next.table.r_min >= 0.0f || next.table.degree >= 0.0f)) ||
 			(right != True && (next.table.r_min <= 0.0f || next.table.degree <= 0.0f))) { printf("DEBUG_SEARCH_ERROR direction_sign\r\n"); return -1; }
 		next.table.turn_dir = right ? Turn_R : Turn_L;
@@ -813,9 +847,9 @@ static int shell_debug_search_command(int argc, char **argv)
 		debug->param.param = &debug->table;
 		debug->param.sp_gain = &debug->sp_gain;
 		debug->param.om_gain = &debug->om_gain;
-		*turn_count = count;
+		debug->turn_count = count;
 		shell_debug_turn_show(argv[2], debug);
-		printf("DEBUG_SEARCH_COUNT %d\r\n", *turn_count);
+		printf("DEBUG_SEARCH_COUNT %d\r\n", debug->turn_count);
 		printf("DEBUG_SEARCH_SET_DONE\r\n");
 		return 0;
 	}
@@ -828,9 +862,10 @@ static int shell_debug_search_command(int argc, char **argv)
 		shell_debug_suction_start(motion, debug->suction_enable, debug->suction_duty);
 		LogData::getInstance().data_count = 0;
 		LogData::getInstance().log_enable = True;
-		motion->exe_Motion_straight(45.0f, shell_debug_straight_param.acc, debug->table.velo,
+		motion->exe_Motion_straight(45.0f,
+			shell_debug_accel_in_length(debug->table.velo, 45.0f, debug->pre_accel), debug->table.velo,
 			debug->table.velo, &shell_debug_straight_param.sp_gain, &shell_debug_straight_param.om_gain);
-		for (int i = 0; i < *turn_count; i++) {
+		for (int i = 0; i < debug->turn_count; i++) {
 			motion->exe_Motion_search_turn(&debug->param, &debug->sp_gain, &debug->om_gain);
 		}
 		motion->exe_Motion_straight(45.0f, shell_debug_straight_param.acc, debug->table.velo,

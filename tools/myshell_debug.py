@@ -25,9 +25,9 @@ LOG_FRAME_SIZE = struct.calcsize(LOG_FRAME_FORMAT)
 LOG_DIR = Path(__file__).resolve().parent / "logs"
 TURN_PRESET_SPEEDS = (300, 500, 700, 1000, 1200, 1400, 1500, 1600, 1800, 2000)
 TURN_PARAM_RE = re.compile(
-    r"velo:(-?\d+) r_min:(-?\d+) Lstart:(-?\d+) Lend:(-?\d+) degree:(-?\d+) correction:(-?\d+) "
+    r"velo:(-?\d+) r_min:(-?\d+) Lstart:(-?\d+) Lend:(-?\d+) degree:(-?\d+) correction:(-?\d+) pre_accel:(-?\d+) "
     r"sp_u:(-?\d+),(-?\d+),(-?\d+) om_u:(-?\d+),(-?\d+),(-?\d+) "
-    r"suction:(\d+) duty:(\d+) preset:(\d+)"
+    r"suction:(\d+) duty:(\d+) preset:(\d+) count:(\d+)"
 )
 
 
@@ -76,7 +76,8 @@ class DebugGui(tk.Tk):
         self.turn_type = tk.StringVar(value="long_r90")
         self.direction = tk.StringVar(value="right")
         self.turn_preset_speed = tk.IntVar(value=700)
-        self.search_turn_count = tk.IntVar(value=1)
+        self.turn_count = tk.IntVar(value=1)
+        self.pre_accel = tk.DoubleVar(value=6.5)
         self.suction_enable = tk.BooleanVar(value=False)
         self.suction_duty = tk.IntVar(value=650)
         self.pending_suction_override = None
@@ -133,9 +134,9 @@ class DebugGui(tk.Tk):
         preset_box.pack(side=tk.LEFT, padx=5)
         preset_box.bind("<<ComboboxSelected>>", lambda _event: self._load_defaults())
 
-        self.search_count_selector = ttk.Frame(selectors)
-        ttk.Label(self.search_count_selector, text="Turn count").pack(side=tk.LEFT)
-        ttk.Spinbox(self.search_count_selector, textvariable=self.search_turn_count,
+        self.turn_count_selector = ttk.Frame(selectors)
+        ttk.Label(self.turn_count_selector, text="Turn count").pack(side=tk.LEFT)
+        ttk.Spinbox(self.turn_count_selector, textvariable=self.turn_count,
                     from_=1, to=100, width=6).pack(side=tk.LEFT, padx=5)
 
         parameter_area = ttk.Frame(root)
@@ -148,9 +149,10 @@ class DebugGui(tk.Tk):
         suction_params.pack(side=tk.LEFT, fill=tk.BOTH, padx=(5, 0))
 
         self.motion_param_widgets = {}
-        for row, name in enumerate(("distance", "acc", "max_velo", "end_velo", "degree")):
+        for row, name in enumerate(("distance", "acc", "max_velo", "end_velo", "degree", "pre_accel")):
             label = ttk.Label(motion_params, text=name)
-            entry = ttk.Entry(motion_params, textvariable=self.values[name], width=14)
+            variable = self.pre_accel if name == "pre_accel" else self.values[name]
+            entry = ttk.Entry(motion_params, textvariable=variable, width=14)
             label.grid(row=row, column=0, sticky=tk.W, pady=2)
             entry.grid(row=row, column=1, sticky=tk.EW, padx=5, pady=2)
             self.motion_param_widgets[name] = (label, entry)
@@ -192,14 +194,15 @@ class DebugGui(tk.Tk):
         self.turn_selector.grid_remove()
         self.direction_selector.grid_remove()
         self.preset_selector.grid_remove()
-        self.search_count_selector.grid_remove()
+        self.turn_count_selector.grid_remove()
         if motion == "turn":
             self.turn_selector.grid(row=0, column=2, sticky=tk.W, padx=(15, 0))
             self.preset_selector.grid(row=0, column=3, sticky=tk.W, padx=(15, 0))
+            self.turn_count_selector.grid(row=0, column=4, sticky=tk.W, padx=(15, 0))
         elif motion in ("pivot_turn", "search_turn"):
             self.direction_selector.grid(row=0, column=2, sticky=tk.W, padx=(15, 0))
             if motion == "search_turn":
-                self.search_count_selector.grid(row=0, column=3, sticky=tk.W, padx=(15, 0))
+                self.turn_count_selector.grid(row=0, column=3, sticky=tk.W, padx=(15, 0))
 
         schemas = {
             "straight": (("distance", "Distance [mm]"), ("acc", "Acceleration"),
@@ -208,10 +211,12 @@ class DebugGui(tk.Tk):
                          ("max_velo", "Max velocity"), ("end_velo", "End velocity")),
             "turn": (("distance", "Velocity"), ("acc", "Radius r_min [mm]"),
                      ("max_velo", "Lstart [mm]"), ("end_velo", "Lend [mm]"),
-                     ("degree", "Logical angle [deg]"), ("degree_correction", "Motion correction [deg]")),
+                     ("degree", "Logical angle [deg]"), ("degree_correction", "Motion correction [deg]"),
+                     ("pre_accel", "Pre-run acceleration [m/s²]")),
             "search_turn": (("distance", "Velocity"), ("acc", "Radius r_min [mm]"),
                             ("max_velo", "Lstart [mm]"), ("end_velo", "Lend [mm]"),
-                            ("degree", "Logical angle [deg]"), ("degree_correction", "Motion correction [deg]")),
+                            ("degree", "Logical angle [deg]"), ("degree_correction", "Motion correction [deg]"),
+                            ("pre_accel", "Pre-run acceleration [m/s²]")),
             "pivot_turn": (("distance", "Angle [deg]"), ("acc", "Angular acceleration [rad/s²]"),
                            ("max_velo", "Angular velocity [rad/s]")),
         }
@@ -256,10 +261,12 @@ class DebugGui(tk.Tk):
                 self._start(f"debug turn {self.turn_type.get()} preset {self.turn_preset_speed.get()}")
                 return
             defaults = TURN_DEFAULTS[self.turn_type.get()] + (0.0, 2.0, 0.05, 0.0, 0.1, 0.01, 0.0)
+            self.pre_accel.set(6.5)
         elif self.motion.get() == "search_turn":
             sign = -1.0 if self.direction.get() == "right" else 1.0
             defaults = (0.32, sign * 26.0, 9.46, 11.16, sign * 90.0, -sign * 1.5,
                         2.0, 0.016, 0.0, 0.1, 0.005, 0.0)
+            self.pre_accel.set(6.5)
         elif self.motion.get() == "pivot_turn":
             sign = -1.0 if self.direction.get() == "right" else 1.0
             defaults = (sign * 90.0, sign * 40.0 * 3.141592653589793,
@@ -281,9 +288,12 @@ class DebugGui(tk.Tk):
             right_turn = "_r" in self.turn_type.get() or self.turn_type.get().startswith("r_")
             if (right_turn and (values[1] > 0 or values[4] > 0)) or (not right_turn and (values[1] < 0 or values[4] < 0)):
                 raise ValueError("右ターンのr_min/degreeは負、左ターンは正にしてください。")
-            return "debug turn {} set {} {} {}".format(
-                self.turn_type.get(), " ".join(f"{v:.7g}" for v in values),
-                int(self.suction_enable.get()), self._suction_duty_value()
+            turn_count = self._turn_count_value()
+            pre_accel = self._pre_accel_value()
+            turn_values = values[:6] + [pre_accel] + values[6:]
+            return "debug turn {} set {} {} {} {}".format(
+                self.turn_type.get(), " ".join(f"{v:.7g}" for v in turn_values),
+                int(self.suction_enable.get()), self._suction_duty_value(), turn_count
             )
         if self.motion.get() == "search_turn":
             right = self.direction.get() == "right"
@@ -292,13 +302,15 @@ class DebugGui(tk.Tk):
             if (right and (values[1] >= 0 or values[4] >= 0)) or (not right and (values[1] <= 0 or values[4] <= 0)):
                 raise ValueError("右はr_min/degreeを負、左は正にしてください。")
             try:
-                turn_count = self.search_turn_count.get()
+                turn_count = self.turn_count.get()
             except tk.TclError as exc:
                 raise ValueError("ターン回数には整数を入力してください。") from exc
             if not 1 <= turn_count <= 100:
                 raise ValueError("ターン回数は1～100にしてください。")
+            pre_accel = self._pre_accel_value()
+            turn_values = values[:6] + [pre_accel] + values[6:]
             return "debug search_turn {} set {} {} {} {}".format(
-                self.direction.get(), " ".join(f"{v:.7g}" for v in values),
+                self.direction.get(), " ".join(f"{v:.7g}" for v in turn_values),
                 int(self.suction_enable.get()), self._suction_duty_value(), turn_count
             )
         if self.motion.get() == "pivot_turn":
@@ -326,6 +338,24 @@ class DebugGui(tk.Tk):
         if not 0 <= duty <= 990:
             raise ValueError("吸引値は0～990にしてください。")
         return duty
+
+    def _turn_count_value(self):
+        try:
+            count = self.turn_count.get()
+        except tk.TclError as exc:
+            raise ValueError("ターン回数には整数を入力してください。") from exc
+        if not 1 <= count <= 100:
+            raise ValueError("ターン回数は1～100にしてください。")
+        return count
+
+    def _pre_accel_value(self):
+        try:
+            accel = self.pre_accel.get()
+        except tk.TclError as exc:
+            raise ValueError("前走行加速度には数値を入力してください。") from exc
+        if accel <= 0:
+            raise ValueError("前走行加速度は0より大きくしてください。")
+        return accel
 
     def show_values(self):
         if self.motion.get() == "turn":
@@ -511,30 +541,33 @@ class DebugGui(tk.Tk):
         match = TURN_PARAM_RE.search(line)
         if not match:
             return
-        suction_enable = bool(int(match.group(13)))
-        suction_duty = int(match.group(14))
+        suction_enable = bool(int(match.group(14)))
+        suction_duty = int(match.group(15))
         if self.pending_suction_override is not None:
             suction_enable, suction_duty = self.pending_suction_override
             self.pending_suction_override = None
         physical_values = [int(value) / 1000.0 for value in match.groups()[:6]]
-        gain_values = [int(value) / 1000000.0 for value in match.groups()[6:12]]
+        pre_accel = int(match.group(7)) / 1000.0
+        gain_values = [int(value) / 1000000.0 for value in match.groups()[7:13]]
         self.events.put(("turn_params", physical_values + gain_values,
-                         suction_enable, suction_duty, int(match.group(15))))
+                         suction_enable, suction_duty, int(match.group(16)), int(match.group(17)), pre_accel))
 
     def _drain(self):
         try:
             while True:
                 item = self.events.get_nowait()
                 if isinstance(item, tuple) and item[0] == "turn_params":
-                    _, values, suction_enable, suction_duty, preset_speed = item
+                    _, values, suction_enable, suction_duty, preset_speed, turn_count, pre_accel = item
                     for (_, name), value in zip(FIELDS, values):
                         self.values[name].set(value)
                     self.suction_enable.set(suction_enable)
                     self.suction_duty.set(suction_duty)
                     if preset_speed in TURN_PRESET_SPEEDS:
                         self.turn_preset_speed.set(preset_speed)
+                    self.turn_count.set(turn_count)
+                    self.pre_accel.set(pre_accel)
                 elif isinstance(item, tuple) and item[0] == "search_count":
-                    self.search_turn_count.set(item[1])
+                    self.turn_count.set(item[1])
                 else:
                     self.output.insert(tk.END, item)
                     self.output.see(tk.END)
