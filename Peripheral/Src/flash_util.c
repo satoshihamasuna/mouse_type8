@@ -17,7 +17,10 @@ extern uint8_t _user_data_end[];   // 終了アドレス
 #define USER_DATA_START_ADDRESS (0x0807E000)
 #define USER_DATA_SIZE          (0x2000)
 
-uint8_t store_ram[USER_DATA_SIZE];
+/* Flash work buffer. SRAM4 is independent from the main RAM used by the
+ * Dijkstra workspace and stack. Flash_Load() initializes the contents. */
+uint8_t store_ram[USER_DATA_SIZE]
+    __attribute__((section(".sram4"), aligned(16)));
 
 void eraseFlash() {
     FLASH_EraseInitTypeDef erase;

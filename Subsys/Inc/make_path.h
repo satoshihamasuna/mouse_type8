@@ -40,13 +40,15 @@ typedef struct
 
 typedef struct
 {
-	t_posDijkstra	parent_pos;
-	uint16_t 		time;
-	uint8_t 		run_pt:5;
-	uint8_t 		determine:1;
+	uint32_t parent_x:5;
+	uint32_t parent_y:5;
+	uint32_t parent_NodePos:2;
+	uint32_t parent_state_dir:2;
+	uint32_t determine:1;
+	uint32_t time:17;
 } __attribute__((packed)) t_element;
 
-static_assert(sizeof(t_element) == 5, "t_element packing changed; Dijkstra RAM usage will increase");
+static_assert(sizeof(t_element) == 4, "t_element must remain 4 bytes");
 
 typedef struct
 {
@@ -137,8 +139,9 @@ class Dijkstra:public calcRunTime
 		t_posDijkstra LocalPosDir2GlobWallPos_Center(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalPos,t_local_dir LocalDir);
 		t_posDijkstra LocalPosDir2GlobWallPos_WPos(t_posDijkstra glob_pos,t_direction glob_dir,t_local_dir LocalDir);
 		t_posDijkstra SetNodePos(uint8_t _x,uint8_t _y,t_DijkstraWallPos _dpos, t_direction _dir = North);
-		t_element SetNode(t_posDijkstra _parent, uint16_t _time,
-						 t_run_pattern _run_pt, t_bool _determine);
+		t_element SetNode(t_posDijkstra _parent, uint32_t _time, t_bool _determine);
+		t_posDijkstra get_parent(const t_element *element) const;
+		t_run_pattern get_run_pattern(t_posDijkstra current) const;
 		void set_determine(t_posDijkstra set_pos);
 		uint16_t dijkstra_node_order(t_posDijkstra pos);
 		void push_open_node(t_posDijkstra pos);
@@ -150,6 +153,7 @@ class Dijkstra:public calcRunTime
 	public:
 		t_MapNodeWall closure[MAZE_SIZE_X][MAZE_SIZE_Y];
 		t_posDijkstra run_pos_buff[DIJKSTRA_PATH_MAX];
+		uint8_t run_pt_buff[DIJKSTRA_PATH_MAX];
 		wall_class *wall_property;
 		Dijkstra(wall_class *_wall_property)
 		{

@@ -145,6 +145,17 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM
 
+  /* SRAM4 work area. NOLOAD because its contents are initialized at runtime. */
+  .sram4 (NOLOAD) :
+  {
+    . = ALIGN(16);
+    _ssram4 = .;
+    *(.sram4)
+    *(.sram4*)
+    . = ALIGN(16);
+    _esram4 = .;
+  } >SRAM4
+
   /* User_heap_stack section, used to check that there is enough "RAM" Ram type memory left */
   ._user_heap_stack :
   {
