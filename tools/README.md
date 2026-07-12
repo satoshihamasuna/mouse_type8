@@ -33,6 +33,9 @@ tools/myshell_README.md
 
 myshellを経由して、直進・斜め走行の走行パラメータとPIDゲインを調整し、実走行できます。
 
+入力画面は「動作固有パラメータ」「PIDゲイン」「吸引設定」に分かれています。Motionを変更すると、その動作で使用する項目だけが表示されます。
+吸引設定は動作パラメータから独立しており、Motion・ターン種別・速度プリセットを変更してもチェック状態と吸引値を保持します。
+
 ```powershell
 python tools\myshell_debug.py
 ```
@@ -106,8 +109,19 @@ debug search_turn right|left set velo r_min Lstart Lend degree sp_kp sp_ki sp_kd
 `Get log CSV` を押すと `disp log_bin` を送信し、バイナリログを受信して次のディレクトリへ保存します。
 
 ```text
-tools/logs/YYYYMMDD_HHMMSS_myshell_debug_log.csv
+tools/logs/YYYYMMDD_HHMMSS_myshell_debug_log_動作名.csv
 ```
+
+動作名には、最後に `Apply and execute` で実行した内容が入ります。
+
+```text
+20260712_153000_myshell_debug_log_straight.csv
+20260712_153100_myshell_debug_log_long_r90.csv
+20260712_153200_myshell_debug_log_pivot_turn_right.csv
+20260712_153300_myshell_debug_log_search_turn_left.csv
+```
+
+GUI起動後にまだ動作を実行していない場合は、動作名が `unknown` になります。
 
 CSVの列名はファームウェアが送信する `HEADER` を使用します。ログフレームは半精度浮動小数点から通常の数値へ変換して保存されます。
 
@@ -131,6 +145,8 @@ log init
 コマンドは受信の確実性を優先して1文字ずつ送信します。既定の `Char delay` は `0.005` 秒です。
 以前の `0.08` 秒より約16倍高速で、マイコン側の受信処理にも文字間隔を確保できます。
 文字欠けが発生する環境では `Char delay` を `0.01`、`0.02` の順に大きくしてください。
+
+ターンの一括設定コマンドに対応するため、マイコン側NTShellのコマンド最大長は192文字です。
 
 `exe` を送信すると前センサの反応待ちになり、前センサをかざすと走行を開始します。
 設定したパラメータはRAM上に保持され、マイコンをリセットすると初期値へ戻ります。

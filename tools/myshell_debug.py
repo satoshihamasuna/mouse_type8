@@ -63,7 +63,7 @@ class DebugGui(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("myshell debug parameter tuner")
-        self.geometry("760x620")
+        self.geometry("1050x700")
         self.ser = None
         self.lock = threading.Lock()
         self.events = queue.Queue()
@@ -77,6 +77,8 @@ class DebugGui(tk.Tk):
         self.turn_preset_speed = tk.IntVar(value=700)
         self.suction_enable = tk.BooleanVar(value=False)
         self.suction_duty = tk.IntVar(value=650)
+        self.pending_suction_override = None
+        self.last_motion_name = "unknown"
         self.values = {name: tk.DoubleVar() for _, name in FIELDS}
         self._build()
         self._load_defaults()
@@ -99,36 +101,66 @@ class DebugGui(tk.Tk):
         self.connect_button = ttk.Button(conn, text="Connect", command=self._toggle)
         self.connect_button.pack(side=tk.LEFT, padx=8)
 
-        params = ttk.LabelFrame(root, text="Debug parameters", padding=8)
-        params.pack(fill=tk.X, pady=10)
-        ttk.Label(params, text="Motion").grid(row=0, column=0, sticky=tk.W)
-        motion_box = ttk.Combobox(params, textvariable=self.motion, values=("straight", "diagonal", "turn", "pivot_turn", "search_turn"), state="readonly")
-        motion_box.grid(row=0, column=1, sticky=tk.EW, padx=5, pady=3)
-        motion_box.bind("<<ComboboxSelected>>", lambda _event: self._load_defaults())
-        ttk.Label(params, text="Turn type").grid(row=1, column=0, sticky=tk.W)
-        turn_box = ttk.Combobox(params, textvariable=self.turn_type, values=tuple(TURN_DEFAULTS), state="readonly")
-        turn_box.grid(row=1, column=1, sticky=tk.EW, padx=5, pady=3)
+        selectors = ttk.LabelFrame(root, text="動作選択", padding=8)
+        selectors.pack(fill=tk.X, pady=(10, 5))
+        ttk.Label(selectors, text="Motion").grid(row=0, column=0, sticky=tk.W)
+        motion_box = ttk.Combobox(selectors, textvariable=self.motion,
+                                  values=("straight", "diagonal", "turn", "pivot_turn", "search_turn"),
+                                  state="readonly", width=16)
+        motion_box.grid(row=0, column=1, sticky=tk.W, padx=5)
+        motion_box.bind("<<ComboboxSelected>>", self._on_motion_changed)
+
+        self.turn_selector = ttk.Frame(selectors)
+        ttk.Label(self.turn_selector, text="Turn type").pack(side=tk.LEFT)
+        turn_box = ttk.Combobox(self.turn_selector, textvariable=self.turn_type,
+                                values=tuple(TURN_DEFAULTS), state="readonly", width=16)
+        turn_box.pack(side=tk.LEFT, padx=5)
         turn_box.bind("<<ComboboxSelected>>", lambda _event: self._load_defaults())
-        ttk.Label(params, text="Direction").grid(row=2, column=0, sticky=tk.W)
-        direction_box = ttk.Combobox(params, textvariable=self.direction, values=("right", "left"), state="readonly")
-        direction_box.grid(row=2, column=1, sticky=tk.EW, padx=5, pady=3)
+
+        self.direction_selector = ttk.Frame(selectors)
+        ttk.Label(self.direction_selector, text="Direction").pack(side=tk.LEFT)
+        direction_box = ttk.Combobox(self.direction_selector, textvariable=self.direction,
+                                     values=("right", "left"), state="readonly", width=10)
+        direction_box.pack(side=tk.LEFT, padx=5)
         direction_box.bind("<<ComboboxSelected>>", lambda _event: self._load_defaults())
-        ttk.Label(params, text="Turn preset speed").grid(row=3, column=0, sticky=tk.W)
-        preset_box = ttk.Combobox(params, textvariable=self.turn_preset_speed, values=TURN_PRESET_SPEEDS, state="readonly")
-        preset_box.grid(row=3, column=1, sticky=tk.EW, padx=5, pady=3)
+
+        self.preset_selector = ttk.Frame(selectors)
+        ttk.Label(self.preset_selector, text="Preset speed").pack(side=tk.LEFT)
+        preset_box = ttk.Combobox(self.preset_selector, textvariable=self.turn_preset_speed,
+                                  values=TURN_PRESET_SPEEDS, state="readonly", width=10)
+        preset_box.pack(side=tk.LEFT, padx=5)
         preset_box.bind("<<ComboboxSelected>>", lambda _event: self._load_defaults())
-        for index, (label, name) in enumerate(FIELDS, start=4):
-            ttk.Label(params, text=label).grid(row=index, column=0, sticky=tk.W, pady=2)
-            ttk.Entry(params, textvariable=self.values[name]).grid(row=index, column=1, sticky=tk.EW, padx=5, pady=2)
-        suction_row = len(FIELDS) + 4
-        ttk.Checkbutton(params, text="吸引を使用する", variable=self.suction_enable).grid(
-            row=suction_row, column=0, sticky=tk.W, pady=3
-        )
-        suction_frame = ttk.Frame(params)
-        suction_frame.grid(row=suction_row, column=1, sticky=tk.EW, padx=5, pady=3)
-        ttk.Label(suction_frame, text="吸引値 (0～990)").pack(side=tk.LEFT)
-        ttk.Entry(suction_frame, textvariable=self.suction_duty, width=8).pack(side=tk.LEFT, padx=5)
-        params.columnconfigure(1, weight=1)
+
+        parameter_area = ttk.Frame(root)
+        parameter_area.pack(fill=tk.X, pady=5)
+        motion_params = ttk.LabelFrame(parameter_area, text="動作固有パラメータ", padding=8)
+        motion_params.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        pid_params = ttk.LabelFrame(parameter_area, text="PIDゲイン", padding=8)
+        pid_params.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
+        suction_params = ttk.LabelFrame(parameter_area, text="吸引設定", padding=8)
+        suction_params.pack(side=tk.LEFT, fill=tk.BOTH, padx=(5, 0))
+
+        self.motion_param_widgets = {}
+        for row, name in enumerate(("distance", "acc", "max_velo", "end_velo", "degree")):
+            label = ttk.Label(motion_params, text=name)
+            entry = ttk.Entry(motion_params, textvariable=self.values[name], width=14)
+            label.grid(row=row, column=0, sticky=tk.W, pady=2)
+            entry.grid(row=row, column=1, sticky=tk.EW, padx=5, pady=2)
+            self.motion_param_widgets[name] = (label, entry)
+        motion_params.columnconfigure(1, weight=1)
+
+        for row, (label_text, name) in enumerate(FIELDS[5:]):
+            ttk.Label(pid_params, text=label_text).grid(row=row, column=0, sticky=tk.W, pady=2)
+            ttk.Entry(pid_params, textvariable=self.values[name], width=10).grid(
+                row=row, column=1, sticky=tk.EW, padx=5, pady=2
+            )
+        pid_params.columnconfigure(1, weight=1)
+
+        ttk.Checkbutton(suction_params, text="吸引を使用する", variable=self.suction_enable).pack(anchor=tk.W)
+        ttk.Label(suction_params, text="吸引値 (0～990)").pack(anchor=tk.W, pady=(8, 0))
+        ttk.Entry(suction_params, textvariable=self.suction_duty, width=10).pack(anchor=tk.W, pady=3)
+
+        self._update_motion_fields()
 
         actions = ttk.Frame(root)
         actions.pack(fill=tk.X)
@@ -143,6 +175,46 @@ class DebugGui(tk.Tk):
         self.output = tk.Text(root, height=13, wrap=tk.WORD)
         self.output.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
         self._refresh()
+
+    def _on_motion_changed(self, _event=None):
+        self._update_motion_fields()
+        self._load_defaults()
+
+    def _update_motion_fields(self):
+        motion = self.motion.get()
+        self.turn_selector.grid_remove()
+        self.direction_selector.grid_remove()
+        self.preset_selector.grid_remove()
+        if motion == "turn":
+            self.turn_selector.grid(row=0, column=2, sticky=tk.W, padx=(15, 0))
+            self.preset_selector.grid(row=0, column=3, sticky=tk.W, padx=(15, 0))
+        elif motion in ("pivot_turn", "search_turn"):
+            self.direction_selector.grid(row=0, column=2, sticky=tk.W, padx=(15, 0))
+
+        schemas = {
+            "straight": (("distance", "Distance [mm]"), ("acc", "Acceleration"),
+                         ("max_velo", "Max velocity"), ("end_velo", "End velocity")),
+            "diagonal": (("distance", "Distance [mm]"), ("acc", "Acceleration"),
+                         ("max_velo", "Max velocity"), ("end_velo", "End velocity")),
+            "turn": (("distance", "Velocity"), ("acc", "Radius r_min [mm]"),
+                     ("max_velo", "Lstart [mm]"), ("end_velo", "Lend [mm]"),
+                     ("degree", "Angle [deg]")),
+            "search_turn": (("distance", "Velocity"), ("acc", "Radius r_min [mm]"),
+                            ("max_velo", "Lstart [mm]"), ("end_velo", "Lend [mm]"),
+                            ("degree", "Angle [deg]")),
+            "pivot_turn": (("distance", "Angle [deg]"), ("acc", "Angular acceleration [rad/s²]"),
+                           ("max_velo", "Angular velocity [rad/s]")),
+        }
+        visible = {name for name, _label in schemas[motion]}
+        labels = dict(schemas[motion])
+        for name, (label, entry) in self.motion_param_widgets.items():
+            if name in visible:
+                label.configure(text=labels[name])
+                label.grid()
+                entry.grid()
+            else:
+                label.grid_remove()
+                entry.grid_remove()
 
     def _refresh(self):
         ports = [p.device for p in list_ports.comports()] if list_ports else []
@@ -170,6 +242,7 @@ class DebugGui(tk.Tk):
     def _load_defaults(self):
         if self.motion.get() == "turn":
             if self.ser and self.ser.is_open:
+                self.pending_suction_override = (self.suction_enable.get(), self.suction_duty.get())
                 self._start(f"debug turn {self.turn_type.get()} preset {self.turn_preset_speed.get()}")
                 return
             defaults = TURN_DEFAULTS[self.turn_type.get()] + (2.0, 0.05, 0.0, 0.1, 0.01, 0.0)
@@ -185,8 +258,6 @@ class DebugGui(tk.Tk):
             defaults = DEFAULTS[self.motion.get()]
         for (_, name), value in zip(FIELDS, defaults):
             self.values[name].set(value)
-        self.suction_enable.set(False)
-        self.suction_duty.set(650)
 
     def _set_command(self):
         try:
@@ -267,16 +338,21 @@ class DebugGui(tk.Tk):
         if not messagebox.askyesno("Execute motion", "機体を安全な場所に置きましたか？\nApply後、前センサをかざすと走行します。"):
             return
         try:
+            set_command = self._set_command()
             if self.motion.get() == "turn":
                 exe_command = f"debug turn {self.turn_type.get()} exe"
+                motion_name = self.turn_type.get()
             elif self.motion.get() in ("pivot_turn", "search_turn"):
                 exe_command = f"debug {self.motion.get()} {self.direction.get()} exe"
+                motion_name = f"{self.motion.get()}_{self.direction.get()}"
             else:
                 exe_command = f"debug {self.motion.get()} exe"
-            commands = (self._set_command(), exe_command)
+                motion_name = self.motion.get()
+            commands = (set_command, exe_command)
         except ValueError as exc:
             messagebox.showerror("Invalid parameter", str(exc))
             return
+        self.last_motion_name = motion_name
         self._start(*commands)
 
     def receive_log_csv(self):
@@ -316,7 +392,9 @@ class DebugGui(tk.Tk):
     def _log_binary_worker(self):
         try:
             LOG_DIR.mkdir(exist_ok=True)
-            output_path = LOG_DIR / datetime.now().strftime("%Y%m%d_%H%M%S_myshell_debug_log.csv")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            motion_name = re.sub(r"[^A-Za-z0-9_-]+", "_", self.last_motion_name).strip("_") or "unknown"
+            output_path = LOG_DIR / f"{timestamp}_myshell_debug_log_{motion_name}.csv"
             frame_count = 0
             drop_count = 0
             labels = None
@@ -411,8 +489,13 @@ class DebugGui(tk.Tk):
         match = TURN_PARAM_RE.search(line)
         if not match:
             return
+        suction_enable = bool(int(match.group(12)))
+        suction_duty = int(match.group(13))
+        if self.pending_suction_override is not None:
+            suction_enable, suction_duty = self.pending_suction_override
+            self.pending_suction_override = None
         self.events.put(("turn_params", [int(value) / 1000.0 for value in match.groups()[:11]],
-                         bool(int(match.group(12))), int(match.group(13)), int(match.group(14))))
+                         suction_enable, suction_duty, int(match.group(14))))
 
     def _drain(self):
         try:
