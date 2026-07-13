@@ -34,6 +34,7 @@ static int usrcmd_info(int argc, char **argv);
 static int usrcmd_disp(int argc, char **argv);
 static int usrcmd_end(int argc, char **argv);
 static int usrcmd_debug(int argc, char **argv);
+static int usrcmd_turnpattern(int argc, char **argv);
 static int usrcmd_log(int argc, char **argv);
 static int usrcmd_load(int argc, char **argv);
 static int usrcmd_path(int argc, char **argv);
@@ -49,6 +50,7 @@ static const cmd_table_t cmdlist[] = {
 	{ "disp", "This is a description text string for disp command.", usrcmd_disp },
 	{ "end",  "This is a description text string for end command.", usrcmd_end },
 	{ "debug","This is a description text string for debug command.", usrcmd_debug },
+	{ "turnpattern", "Build and execute a turn pattern (max 20).", usrcmd_turnpattern },
 	{ "log"  ,"This is a description text string for debug command.", usrcmd_log },
 	{ "load" ,"load saved maze data from flash.", usrcmd_load },
 	{ "path" ,"check path generation.", usrcmd_path }
@@ -362,6 +364,73 @@ static const shell_debug_turn_name_t shell_debug_turn_names[] = {
 	{"out_r135", Turn_out_R135}, {"out_l135", Turn_out_L135},
 	{"r_v90", Turn_RV90}, {"l_v90", Turn_LV90}
 };
+
+#define SHELL_TURNPATTERN_MAX 20
+
+typedef struct {
+	t_run_pattern turns[SHELL_TURNPATTERN_MAX];
+	uint8_t count;
+	int preset_speed;
+	float turn_velo;
+	float pre_accel;
+	float post_accel;
+	t_bool suction_enable;
+	int suction_duty;
+} shell_turnpattern_t;
+
+static shell_turnpattern_t shell_turnpattern = {
+	{No_run}, 0, 700, 0.7f, 6.5f, 6.5f, False, 650
+};
+
+static const char *shell_debug_turn_name(t_run_pattern pattern)
+{
+	for (uint16_t i = 0; i < sizeof(shell_debug_turn_names) / sizeof(shell_debug_turn_names[0]); i++) {
+		if (shell_debug_turn_names[i].pattern == pattern) return shell_debug_turn_names[i].name;
+	}
+	return "unknown";
+}
+
+// 0: straight, 1: diagonal, -1: unsupported
+static int shell_turnpattern_input_state(t_run_pattern pattern)
+{
+	switch (pattern) {
+	case Long_turnR90: case Long_turnL90: case Long_turnR180: case Long_turnL180:
+	case Turn_in_R45: case Turn_in_L45: case Turn_in_R135: case Turn_in_L135:
+		return 0;
+	case Turn_out_R45: case Turn_out_L45: case Turn_out_R135: case Turn_out_L135:
+	case Turn_RV90: case Turn_LV90:
+		return 1;
+	default:
+		return -1;
+	}
+}
+
+static int shell_turnpattern_output_state(t_run_pattern pattern)
+{
+	switch (pattern) {
+	case Turn_in_R45: case Turn_in_L45: case Turn_in_R135: case Turn_in_L135:
+	case Turn_RV90: case Turn_LV90:
+		return 1;
+	case Long_turnR90: case Long_turnL90: case Long_turnR180: case Long_turnL180:
+	case Turn_out_R45: case Turn_out_L45: case Turn_out_R135: case Turn_out_L135:
+		return 0;
+	default:
+		return -1;
+	}
+}
+
+static t_bool shell_turnpattern_validate(void)
+{
+	if (shell_turnpattern.count == 0 || shell_turnpattern.count > SHELL_TURNPATTERN_MAX) return False;
+	int state = shell_turnpattern_input_state(shell_turnpattern.turns[0]);
+	if (state < 0) return False;
+	for (uint8_t i = 0; i < shell_turnpattern.count; i++) {
+		if (shell_turnpattern_input_state(shell_turnpattern.turns[i]) != state) return False;
+		state = shell_turnpattern_output_state(shell_turnpattern.turns[i]);
+		if (state < 0) return False;
+	}
+	return True;
+}
 
 static t_bool shell_parse_float(const char *text, float *value)
 {
@@ -1033,6 +1102,194 @@ static int usrcmd_debug(int argc, char **argv)
 	if (ntlibc_strcmp(argv[1], "search_turn") == 0) return shell_debug_search_command(argc, argv);
     printf("Unknown sub command found\r\n");
     return -1;
+}
+
+static t_bool shell_turnpattern_init_turn(Motion *motion, t_run_pattern pattern, shell_debug_turn_param_t *debug)
+{
+	switch (pattern) {
+	case Long_turnR90: case Long_turnL90: case Long_turnR180: case Long_turnL180:
+		motion->Init_Motion_long_turn(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
+		return True;
+	case Turn_in_R45: case Turn_in_L45: case Turn_in_R135: case Turn_in_L135:
+		motion->Init_Motion_turn_in(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
+		return True;
+	case Turn_out_R45: case Turn_out_L45: case Turn_out_R135: case Turn_out_L135:
+		motion->Init_Motion_turn_out(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
+		return True;
+	case Turn_RV90: case Turn_LV90:
+		motion->Init_Motion_turn_v90(&debug->param, pattern, &debug->sp_gain, &debug->om_gain);
+		return True;
+	default:
+		return False;
+	}
+}
+
+static t_bool shell_turnpattern_post_run(Motion *motion, t_run_pattern pattern, float turn_velo, float configured_accel)
+{
+	float length;
+	if (pattern == Long_turnR90 || pattern == Long_turnL90) {
+		length = SECTION * 2.0f;
+	} else if (pattern == Turn_in_R45 || pattern == Turn_in_L45 ||
+			   pattern == Turn_in_R135 || pattern == Turn_in_L135) {
+		length = DIAG_SECTION * 2.0f;
+	} else if (pattern == Turn_RV90 || pattern == Turn_LV90) {
+		length = DIAG_SECTION;
+	} else {
+		length = SECTION;
+	}
+	const float accel = shell_debug_accel_in_length(turn_velo, length, configured_accel);
+	if (shell_turnpattern_output_state(pattern) == 1) {
+		motion->exe_Motion_diagonal(length, accel, turn_velo, 0.0f,
+			&shell_debug_diagonal_param.sp_gain, &shell_debug_diagonal_param.om_gain);
+		return True;
+	}
+	if (shell_turnpattern_output_state(pattern) == 0) {
+		motion->exe_Motion_straight(length, accel, turn_velo, 0.0f,
+			&shell_debug_straight_param.sp_gain, &shell_debug_straight_param.om_gain);
+		return True;
+	}
+	return False;
+}
+
+static void shell_turnpattern_show(void)
+{
+	printf("TURNPATTERN_CONFIG preset:%d velo_x1000:%ld pre_accel_x1000:%ld post_accel_x1000:%ld suction:%d duty:%d count:%d max:%d\r\n",
+		shell_turnpattern.preset_speed, (long)(shell_turnpattern.turn_velo * 1000.0f),
+		(long)(shell_turnpattern.pre_accel * 1000.0f), (long)(shell_turnpattern.post_accel * 1000.0f),
+		shell_turnpattern.suction_enable, shell_turnpattern.suction_duty,
+		shell_turnpattern.count, SHELL_TURNPATTERN_MAX);
+	for (uint8_t i = 0; i < shell_turnpattern.count; i++) {
+		printf("TURNPATTERN_ITEM %d %s\r\n", i, shell_debug_turn_name(shell_turnpattern.turns[i]));
+	}
+	printf("TURNPATTERN_SHOW_DONE valid:%d\r\n", shell_turnpattern_validate());
+}
+
+static int shell_turnpattern_execute(void)
+{
+	if (shell_turnpattern_validate() != True) {
+		printf("TURNPATTERN_ERROR invalid_sequence\r\n");
+		return -1;
+	}
+	const t_param *const *turn_mode = shell_debug_turn_mode(shell_turnpattern.preset_speed);
+	for (uint8_t i = 0; i < shell_turnpattern.count; i++) {
+		if (turn_mode == NULL || turn_mode[shell_turnpattern.turns[i]] == NULL) {
+			printf("TURNPATTERN_ERROR no_default index:%d\r\n", i);
+			return -1;
+		}
+	}
+	Motion *motion = &CtrlTask_type8::getInstance();
+	IrSensTask *irsens = CtrlTask_type8::getInstance().return_irObj();
+	printf("TURNPATTERN_WAIT_SENSOR\r\n");
+	shell_debug_wait_sensor(irsens);
+	for (int i = 0; i < 21; i++) {
+		Indicate_LED((i % 2 == 0) ? 0xff : 0x00);
+		HAL_Delay(50);
+	}
+
+	motion->Motion_start();
+	shell_debug_suction_start(motion, shell_turnpattern.suction_enable, shell_turnpattern.suction_duty);
+	LogData::getInstance().data_count = 0;
+	LogData::getInstance().log_enable = True;
+	if (shell_debug_turn_pre_run(motion, shell_turnpattern.turns[0],
+			shell_turnpattern.turn_velo, shell_turnpattern.pre_accel) != True) {
+		printf("TURNPATTERN_ERROR pre_run\r\n");
+		LogData::getInstance().log_enable = False;
+		motion->Motion_end();
+		return -1;
+	}
+
+	for (uint8_t i = 0; i < shell_turnpattern.count; i++) {
+		t_run_pattern pattern = shell_turnpattern.turns[i];
+		shell_debug_turn_param_t *debug = shell_debug_turn_get(pattern, shell_turnpattern.preset_speed, True);
+		if (debug == NULL) {
+			printf("TURNPATTERN_ERROR no_default index:%d\r\n", i);
+			LogData::getInstance().log_enable = False;
+			motion->Motion_end();
+			return -1;
+		}
+		debug->table.velo = shell_turnpattern.turn_velo;
+		if (shell_turnpattern_init_turn(motion, pattern, debug) != True || motion->execute_Motion() != complete) {
+			printf("TURNPATTERN_ERROR motion index:%d\r\n", i);
+			LogData::getInstance().log_enable = False;
+			motion->Motion_end();
+			return -1;
+		}
+	}
+
+	if (shell_turnpattern_post_run(motion, shell_turnpattern.turns[shell_turnpattern.count - 1],
+			shell_turnpattern.turn_velo, shell_turnpattern.post_accel) != True) {
+		printf("TURNPATTERN_ERROR post_run\r\n");
+		LogData::getInstance().log_enable = False;
+		motion->Motion_end();
+		return -1;
+	}
+	LogData::getInstance().log_enable = False;
+	motion->Motion_end();
+	Indicate_LED(0x03 << 4);
+	HAL_Delay(500);
+	printf("TURNPATTERN_RUN_DONE\r\n");
+	return 0;
+}
+
+static int usrcmd_turnpattern(int argc, char **argv)
+{
+	if (argc < 2) {
+		printf("turnpattern clear|config|add|show|exe\r\n");
+		return 0;
+	}
+	if (ntlibc_strcmp(argv[1], "clear") == 0) {
+		shell_turnpattern.count = 0;
+		for (int i = 0; i < SHELL_TURNPATTERN_MAX; i++) shell_turnpattern.turns[i] = No_run;
+		printf("TURNPATTERN_CLEAR_DONE\r\n");
+		return 0;
+	}
+	if (ntlibc_strcmp(argv[1], "config") == 0) {
+		if (argc != 8) {
+			printf("turnpattern config preset_speed turn_velo pre_accel post_accel suction_enable suction_duty\r\n");
+			return -1;
+		}
+		int preset_speed, suction_enable, suction_duty;
+		float turn_velo, pre_accel, post_accel;
+		if (sscanf(argv[2], "%d", &preset_speed) != 1 || shell_parse_float(argv[3], &turn_velo) != True ||
+			shell_parse_float(argv[4], &pre_accel) != True || shell_parse_float(argv[5], &post_accel) != True ||
+			sscanf(argv[6], "%d", &suction_enable) != 1 || sscanf(argv[7], "%d", &suction_duty) != 1 ||
+			shell_debug_turn_mode(preset_speed) == NULL || turn_velo <= 0.0f || pre_accel <= 0.0f ||
+			post_accel <= 0.0f || (suction_enable != 0 && suction_enable != 1) ||
+			suction_duty < 0 || suction_duty > 990) {
+			printf("TURNPATTERN_ERROR config\r\n");
+			return -1;
+		}
+		shell_turnpattern.preset_speed = preset_speed;
+		shell_turnpattern.turn_velo = turn_velo;
+		shell_turnpattern.pre_accel = pre_accel;
+		shell_turnpattern.post_accel = post_accel;
+		shell_turnpattern.suction_enable = suction_enable ? True : False;
+		shell_turnpattern.suction_duty = suction_duty;
+		printf("TURNPATTERN_CONFIG_DONE\r\n");
+		return 0;
+	}
+	if (ntlibc_strcmp(argv[1], "add") == 0) {
+		if (argc != 3) { printf("turnpattern add type\r\n"); return -1; }
+		if (shell_turnpattern.count >= SHELL_TURNPATTERN_MAX) {
+			printf("TURNPATTERN_ERROR full\r\n");
+			return -1;
+		}
+		t_run_pattern pattern = shell_debug_turn_pattern(argv[2]);
+		if (pattern == No_run) {
+			printf("TURNPATTERN_ERROR unknown_type:%s\r\n", argv[2]);
+			return -1;
+		}
+		shell_turnpattern.turns[shell_turnpattern.count++] = pattern;
+		printf("TURNPATTERN_ADD_DONE count:%d\r\n", shell_turnpattern.count);
+		return 0;
+	}
+	if (ntlibc_strcmp(argv[1], "show") == 0) {
+		shell_turnpattern_show();
+		return 0;
+	}
+	if (ntlibc_strcmp(argv[1], "exe") == 0) return shell_turnpattern_execute();
+	printf("TURNPATTERN_ERROR unknown_command\r\n");
+	return -1;
 }
 
 /* ---------------------------------------------------------------

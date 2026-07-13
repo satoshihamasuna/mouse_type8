@@ -193,3 +193,19 @@ cube programmer -c port=SWD -d .\build\Debug\mouse_type8.elf -v -rst
 ```powershell
 & "C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe" -c port=SWD -d .\build\Debug\mouse_type8.elf -v -rst
 ```
+
+## turnpattern GUI
+
+最大20個のターンを組み合わせて本体へ送信するGUIは、次のコマンドで起動します。
+
+```powershell
+python .\tools\turnpattern.py
+```
+
+初回のみ `pyserial` が必要です。
+
+```powershell
+pip install pyserial
+```
+
+GUIでは走行パターンをJSONファイルとして保存・再読込でき、ターン速度、前走加速度、後走減速度、吸引を設定できます。`Apply & exe` は設定とパターンを送信した後、前センサ待ちで走行を開始します。ログは `tools/logs`、保存したパターンは既定で `tools/turnpatterns` に出力されます。
