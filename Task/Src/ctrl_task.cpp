@@ -114,9 +114,11 @@ void CtrlTask::motion_control()
 			vehicle->V_r = 0.0f;			vehicle->V_l = 0.0f;
 			vehicle->motor_out_r = 0;		vehicle->motor_out_l = 0;
 
+			// Legacy motor-constant feedforward model. Kept for comparison.
+#if 0
 			//calc motor speed(rpm)
 			float motor_r_rpm = (1.0f)*RADPS_2_RPM *GEAR_N*(vehicle->ideal.velo.get()*1000/TIRE_RADIUS
-														+ 1.0f*TREAD_WIDTH*vehicle->ideal.rad_velo.get()/(2*TIRE_RADIUS));
+													+ 1.0f*TREAD_WIDTH*vehicle->ideal.rad_velo.get()/(2*TIRE_RADIUS));
 
 			float motor_l_rpm = (1.0f)*RADPS_2_RPM *GEAR_N*(vehicle->ideal.velo.get()*1000/TIRE_RADIUS
 														- 1.0f*TREAD_WIDTH*vehicle->ideal.rad_velo.get()/(2*TIRE_RADIUS));
@@ -135,6 +137,28 @@ void CtrlTask::motion_control()
 			//calc motor induce voltage
 			float sp_FF_control_r =  MOTOR_R*motor_r_ampere + MOTOR_K_ER*motor_r_rpm/1000 + motor_r_Idot*L_BAR_DT;
 			float sp_FF_control_l =  MOTOR_R*motor_l_ampere + MOTOR_K_ER*motor_l_rpm/1000 + motor_l_Idot*L_BAR_DT ;
+#endif
+
+			// Feedforward model identified from logs.
+			const t_ff_gain *ff_gain = active_ff_gain_get();
+			const float ideal_velo = vehicle->ideal.velo.get();
+			const float ideal_accel = vehicle->ideal.accel.get();
+			const float ego_velo = vehicle->ego.velo.get();
+			float sp_bias_direction = 0.0f;
+			if (ABS(ideal_velo) > 0.001f) {
+				sp_bias_direction = SIGN(ideal_velo);
+			} else if (ABS(ego_velo) > 0.001f) {
+				// Keep the travelling direction while the target reaches zero during braking.
+				sp_bias_direction = SIGN(ego_velo);
+			} else if (ABS(ideal_accel) > 0.001f) {
+				// At launch both target and measured velocities can still be zero.
+				sp_bias_direction = SIGN(ideal_accel);
+			}
+			float sp_FF_control = ff_gain->sp_bias * sp_bias_direction
+								+ ff_gain->sp_velo * ideal_velo
+								+ ff_gain->sp_accel * ideal_accel;
+			float om_FF_control = ff_gain->om_velo * vehicle->ideal.rad_velo.get()
+								+ ff_gain->om_accel * vehicle->ideal.rad_accel.get();
 
 
 			//feedback controll
@@ -142,8 +166,8 @@ void CtrlTask::motion_control()
 			vehicle->om_feedback.set(vehicle->Vehicle_controller.omega_ctrl.Control(vehicle->ideal.rad_velo.get() 	,vehicle->ego.rad_velo.get(), (float)ctr_deltaT_ms));
 
 			//feedforward controll
-			vehicle->sp_feedforward.set((sp_FF_control_r + sp_FF_control_l)/2.0);
-			vehicle->om_feedforward.set((sp_FF_control_r - sp_FF_control_l)/2.0);
+			vehicle->sp_feedforward.set(sp_FF_control);
+			vehicle->om_feedforward.set(om_FF_control);
 
 			//feedforward
 			float om_feedforward_corr_R = 0.0f;

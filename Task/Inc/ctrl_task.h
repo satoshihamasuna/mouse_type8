@@ -69,6 +69,7 @@ class Motion
 	    t_param				turn_motion_param;
 		t_straight_param 	straight_motion_param;
 		motion_plan_params  motion_plan;
+		const t_ff_gain     *active_ff_gain = &ff_gain_default;
 
 		//define error counter
 		int error_cnt = 0;
@@ -123,6 +124,12 @@ class Motion
 
 		void Adjust_wall_corner();
 
+		inline void active_ff_gain_set(const t_ff_gain *ff_gain)
+		{
+			active_ff_gain = (ff_gain != nullptr) ? ff_gain : &ff_gain_default;
+		}
+		inline const t_ff_gain *active_ff_gain_get() const { return active_ff_gain; }
+
 
 		//set & get status
 		inline void run_time_ms_reset()											{	run_time_ms = 0.0f;					}
@@ -176,14 +183,14 @@ class Motion
 
 		//Initialize motion parameters
 		void Init_Motion_free_rotation_set	(float time = 500.0f,uint16_t duty = 200);
-		void Init_Motion_search_straight(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
+		void Init_Motion_search_straight(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
 		void Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
 
-		void Init_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
-		void Init_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
-		void Init_Motion_backward		(const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
+		void Init_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
+		void Init_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
+		void Init_Motion_backward		(const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
 
-		void Init_Motion_pivot_turn		(float rad_target,float rad_acc,float rad_velo,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
+		void Init_Motion_pivot_turn		(float rad_target,float rad_acc,float rad_velo,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
 
 		void Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_pt,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
 		void Init_Motion_turn_out		(const t_param *turn_param,t_run_pattern run_pt,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain);
@@ -215,29 +222,29 @@ class Motion
 			return execute_Motion();
 		}
 
-		inline t_exeStatus exe_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain)
+		inline t_exeStatus exe_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default)
 		{
-			Init_Motion_straight(len_target,acc,max_sp,end_sp,sp_gain,om_gain);
+			Init_Motion_straight(len_target,acc,max_sp,end_sp,sp_gain,om_gain,ff_gain);
 			return execute_Motion();
 		}
 
-		inline t_exeStatus exe_Motion_backward		(const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain)
+		inline t_exeStatus exe_Motion_backward		(const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default)
 		{
-			Init_Motion_backward(sp_gain,om_gain);
+			Init_Motion_backward(sp_gain,om_gain,ff_gain);
 			return execute_Motion();
 		}
 
-		inline t_exeStatus exe_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain)
+		inline t_exeStatus exe_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default)
 		{
-			Init_Motion_diagonal(len_target,acc,max_sp,end_sp,sp_gain,om_gain);
+			Init_Motion_diagonal(len_target,acc,max_sp,end_sp,sp_gain,om_gain,ff_gain);
 			return execute_Motion();
 		}
 
 
 
-		inline t_exeStatus exe_Motion_pivot_turn		(float rad_target,float rad_acc,float rad_velo,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain)
+		inline t_exeStatus exe_Motion_pivot_turn		(float rad_target,float rad_acc,float rad_velo,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default)
 		{
-			Init_Motion_pivot_turn		(rad_target,rad_acc,rad_velo,sp_gain,om_gain);
+			Init_Motion_pivot_turn		(rad_target,rad_acc,rad_velo,sp_gain,om_gain,ff_gain);
 			return execute_Motion();
 		}
 

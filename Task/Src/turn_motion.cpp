@@ -46,6 +46,7 @@ void Motion::handleTurnPrev_Straight()
 
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*turn_motion_param.sp_gain);
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*turn_motion_param.om_gain);
+			active_ff_gain_set(turn_motion_param.ff_gain);
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
@@ -108,6 +109,7 @@ void Motion::handleTurnPrev_Diagonal()
 
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*turn_motion_param.sp_gain);
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*turn_motion_param.om_gain);
+			active_ff_gain_set(turn_motion_param.ff_gain);
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
@@ -304,6 +306,7 @@ void Motion::handleTurnMain()
 
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*straight_motion_param.sp_gain);
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*straight_motion_param.om_gain);
+			active_ff_gain_set(straight_motion_param.ff_gain);
 
 			ir_sens->Division_Wall_Correction_Reset();
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();

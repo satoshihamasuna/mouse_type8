@@ -25,9 +25,36 @@ LOG_FRAME_SIZE = struct.calcsize(LOG_FRAME_FORMAT)
 LOG_DIR = Path(__file__).resolve().parent / "logs"
 TURN_PRESET_SPEEDS = (300, 500, 700, 1000, 1200, 1400, 1500, 1600, 1800, 2000)
 TURN_PARAM_RE = re.compile(
-    r"velo:(-?\d+) r_min:(-?\d+) Lstart:(-?\d+) Lend:(-?\d+) degree:(-?\d+) correction:(-?\d+) pre_accel:(-?\d+) "
-    r"sp_u:(-?\d+),(-?\d+),(-?\d+) om_u:(-?\d+),(-?\d+),(-?\d+) "
-    r"suction:(\d+) duty:(\d+) preset:(\d+) count:(\d+)"
+    r"velo:(?P<velo>-?\d+) r_min:(?P<r_min>-?\d+) Lstart:(?P<lstart>-?\d+) "
+    r"Lend:(?P<lend>-?\d+) degree:(?P<degree>-?\d+) correction:(?P<correction>-?\d+) "
+    r"pre_accel:(?P<pre_accel>-?\d+) "
+    r"sp_u:(?P<sp_kp>-?\d+),(?P<sp_ki>-?\d+),(?P<sp_kd>-?\d+) "
+    r"om_u:(?P<om_kp>-?\d+),(?P<om_ki>-?\d+),(?P<om_kd>-?\d+) "
+    r"(?:ff_u:(?P<ff_sp_velo>-?\d+),(?P<ff_sp_accel>-?\d+),"
+    r"(?P<ff_om_velo>-?\d+),(?P<ff_om_accel>-?\d+)"
+    r"(?:,(?P<ff_sp_bias>-?\d+))? )?"
+    r"suction:(?P<suction>\d+) duty:(?P<duty>\d+) preset:(?P<preset>\d+) count:(?P<count>\d+)"
+)
+FLOAT_PATTERN = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
+PARAM_RE = re.compile(
+    rf"distance:(?P<distance>{FLOAT_PATTERN}) acc:(?P<acc>{FLOAT_PATTERN}) "
+    rf"max_velo:(?P<max_velo>{FLOAT_PATTERN}) end_velo:(?P<end_velo>{FLOAT_PATTERN}) "
+    rf"sp:(?P<sp_kp>{FLOAT_PATTERN}),(?P<sp_ki>{FLOAT_PATTERN}),(?P<sp_kd>{FLOAT_PATTERN}) "
+    rf"om:(?P<om_kp>{FLOAT_PATTERN}),(?P<om_ki>{FLOAT_PATTERN}),(?P<om_kd>{FLOAT_PATTERN}) "
+    rf"ff:(?P<ff_sp_velo>{FLOAT_PATTERN}),(?P<ff_sp_accel>{FLOAT_PATTERN}),"
+    rf"(?P<ff_om_velo>{FLOAT_PATTERN}),(?P<ff_om_accel>{FLOAT_PATTERN})"
+    rf"(?:,(?P<ff_sp_bias>{FLOAT_PATTERN}))? "
+    r"suction:(?P<suction>\d+) duty:(?P<duty>\d+)"
+)
+PIVOT_PARAM_RE = re.compile(
+    rf"degree:(?P<degree>{FLOAT_PATTERN}) rad_acc:(?P<rad_acc>{FLOAT_PATTERN}) "
+    rf"rad_velo:(?P<rad_velo>{FLOAT_PATTERN}) "
+    rf"sp:(?P<sp_kp>{FLOAT_PATTERN}),(?P<sp_ki>{FLOAT_PATTERN}),(?P<sp_kd>{FLOAT_PATTERN}) "
+    rf"om:(?P<om_kp>{FLOAT_PATTERN}),(?P<om_ki>{FLOAT_PATTERN}),(?P<om_kd>{FLOAT_PATTERN}) "
+    rf"ff:(?P<ff_sp_velo>{FLOAT_PATTERN}),(?P<ff_sp_accel>{FLOAT_PATTERN}),"
+    rf"(?P<ff_om_velo>{FLOAT_PATTERN}),(?P<ff_om_accel>{FLOAT_PATTERN})"
+    rf"(?:,(?P<ff_sp_bias>{FLOAT_PATTERN}))? "
+    r"suction:(?P<suction>\d+) duty:(?P<duty>\d+)"
 )
 
 
@@ -58,13 +85,21 @@ FIELDS = (
     ("OM Ki", "om_ki"),
     ("OM Kd", "om_kd"),
 )
+FF_FIELDS = (
+    ("SP velocity", "ff_sp_velo"),
+    ("SP acceleration", "ff_sp_accel"),
+    ("OM velocity", "ff_om_velo"),
+    ("OM acceleration", "ff_om_accel"),
+    ("SP signed bias", "ff_sp_bias"),
+)
+FF_DEFAULTS = (0.4239, 0.09665, 0.00602, 0.00110, 0.3017)
 
 
 class DebugGui(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("myshell debug parameter tuner")
-        self.geometry("1050x700")
+        self.geometry("1250x720")
         self.ser = None
         self.lock = threading.Lock()
         self.events = queue.Queue()
@@ -82,7 +117,7 @@ class DebugGui(tk.Tk):
         self.suction_duty = tk.IntVar(value=650)
         self.pending_suction_override = None
         self.last_motion_name = "unknown"
-        self.values = {name: tk.DoubleVar() for _, name in FIELDS}
+        self.values = {name: tk.DoubleVar() for _, name in FIELDS + FF_FIELDS}
         self._build()
         self._load_defaults()
         self.after(50, self._drain)
@@ -145,6 +180,8 @@ class DebugGui(tk.Tk):
         motion_params.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
         pid_params = ttk.LabelFrame(parameter_area, text="PIDゲイン", padding=8)
         pid_params.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
+        ff_params = ttk.LabelFrame(parameter_area, text="Feedforward", padding=8)
+        ff_params.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
         suction_params = ttk.LabelFrame(parameter_area, text="吸引設定", padding=8)
         suction_params.pack(side=tk.LEFT, fill=tk.BOTH, padx=(5, 0))
 
@@ -164,6 +201,13 @@ class DebugGui(tk.Tk):
                 row=row, column=1, sticky=tk.EW, padx=5, pady=2
             )
         pid_params.columnconfigure(1, weight=1)
+
+        for row, (label_text, name) in enumerate(FF_FIELDS):
+            ttk.Label(ff_params, text=label_text).grid(row=row, column=0, sticky=tk.W, pady=2)
+            ttk.Entry(ff_params, textvariable=self.values[name], width=10).grid(
+                row=row, column=1, sticky=tk.EW, padx=5, pady=2
+            )
+        ff_params.columnconfigure(1, weight=1)
 
         ttk.Checkbutton(suction_params, text="吸引を使用する", variable=self.suction_enable).pack(anchor=tk.W)
         ttk.Label(suction_params, text="吸引値 (0～990)").pack(anchor=tk.W, pady=(8, 0))
@@ -276,12 +320,15 @@ class DebugGui(tk.Tk):
             defaults = DEFAULTS[self.motion.get()]
         for (_, name), value in zip(FIELDS, defaults):
             self.values[name].set(value)
+        for (_, name), value in zip(FF_FIELDS, FF_DEFAULTS):
+            self.values[name].set(value)
 
     def _set_command(self):
         try:
             values = [self.values[name].get() for _, name in FIELDS]
         except tk.TclError as exc:
             raise ValueError("全パラメータに数値を入力してください。") from exc
+        ff_values = self._ff_values()
         if self.motion.get() == "turn":
             if values[0] <= 0 or values[1] == 0 or values[2] < 0 or values[3] < 0 or values[4] == 0:
                 raise ValueError("veloは正、r_minとdegreeは0以外、Lstart/Lendは0以上にしてください。")
@@ -290,7 +337,7 @@ class DebugGui(tk.Tk):
                 raise ValueError("右ターンのr_min/degreeは負、左ターンは正にしてください。")
             turn_count = self._turn_count_value()
             pre_accel = self._pre_accel_value()
-            turn_values = values[:6] + [pre_accel] + values[6:]
+            turn_values = values[:6] + [pre_accel] + values[6:] + ff_values
             return "debug turn {} set {} {} {} {}".format(
                 self.turn_type.get(), " ".join(f"{v:.7g}" for v in turn_values),
                 int(self.suction_enable.get()), self._suction_duty_value(), turn_count
@@ -308,13 +355,13 @@ class DebugGui(tk.Tk):
             if not 1 <= turn_count <= 100:
                 raise ValueError("ターン回数は1～100にしてください。")
             pre_accel = self._pre_accel_value()
-            turn_values = values[:6] + [pre_accel] + values[6:]
+            turn_values = values[:6] + [pre_accel] + values[6:] + ff_values
             return "debug search_turn {} set {} {} {} {}".format(
                 self.direction.get(), " ".join(f"{v:.7g}" for v in turn_values),
                 int(self.suction_enable.get()), self._suction_duty_value(), turn_count
             )
         if self.motion.get() == "pivot_turn":
-            pivot_values = values[:3] + values[6:]
+            pivot_values = values[:3] + values[6:] + ff_values
             right = self.direction.get() == "right"
             if (right and any(value >= 0 for value in pivot_values[:3])) or (not right and any(value <= 0 for value in pivot_values[:3])):
                 raise ValueError("右はdegree/rad_acc/rad_veloを負、左は正にしてください。")
@@ -324,11 +371,20 @@ class DebugGui(tk.Tk):
             )
         if values[0] <= 0 or values[1] <= 0 or values[2] <= 0 or values[3] < 0 or values[3] > values[2]:
             raise ValueError("distance/acc/max は正、end velocity は 0 以上 max 以下にしてください。")
-        straight_values = values[:4] + values[6:]
+        straight_values = values[:4] + values[6:] + ff_values
         return "debug {} set {} {} {}".format(
             self.motion.get(), " ".join(f"{v:.7g}" for v in straight_values),
             int(self.suction_enable.get()), self._suction_duty_value()
         )
+
+    def _ff_values(self):
+        try:
+            values = [self.values[name].get() for _, name in FF_FIELDS]
+        except tk.TclError as exc:
+            raise ValueError("FF係数には数値を入力してください。") from exc
+        if any(value < 0 for value in values):
+            raise ValueError("FF係数は0以上にしてください。")
+        return values
 
     def _suction_duty_value(self):
         try:
@@ -518,6 +574,13 @@ class DebugGui(tk.Tk):
                         self._append(line + "\n")
                         if line.startswith("DEBUG_TURN_PARAM_X1000"):
                             self._queue_turn_params(line)
+                        elif line.startswith("DEBUG_PIVOT_PARAM"):
+                            self._queue_float_params(line, PIVOT_PARAM_RE, ("degree", "rad_acc", "rad_velo"),
+                                                     ("distance", "acc", "max_velo"))
+                        elif line.startswith("DEBUG_PARAM "):
+                            self._queue_float_params(line, PARAM_RE,
+                                                     ("distance", "acc", "max_velo", "end_velo"),
+                                                     ("distance", "acc", "max_velo", "end_velo"))
                         if line.startswith("DEBUG_SEARCH_COUNT "):
                             try:
                                 self.events.put(("search_count", int(line.split()[-1])))
@@ -541,24 +604,52 @@ class DebugGui(tk.Tk):
         match = TURN_PARAM_RE.search(line)
         if not match:
             return
-        suction_enable = bool(int(match.group(14)))
-        suction_duty = int(match.group(15))
+        suction_enable = bool(int(match.group("suction")))
+        suction_duty = int(match.group("duty"))
         if self.pending_suction_override is not None:
             suction_enable, suction_duty = self.pending_suction_override
             self.pending_suction_override = None
-        physical_values = [int(value) / 1000.0 for value in match.groups()[:6]]
-        pre_accel = int(match.group(7)) / 1000.0
-        gain_values = [int(value) / 1000000.0 for value in match.groups()[7:13]]
-        self.events.put(("turn_params", physical_values + gain_values,
-                         suction_enable, suction_duty, int(match.group(16)), int(match.group(17)), pre_accel))
+        physical_names = ("velo", "r_min", "lstart", "lend", "degree", "correction")
+        gain_names = ("sp_kp", "sp_ki", "sp_kd", "om_kp", "om_ki", "om_kd")
+        ff_names = ("ff_sp_velo", "ff_sp_accel", "ff_om_velo", "ff_om_accel")
+        physical_values = [int(match.group(name)) / 1000.0 for name in physical_names]
+        pre_accel = int(match.group("pre_accel")) / 1000.0
+        gain_values = [int(match.group(name)) / 1000000.0 for name in gain_names]
+        if match.group("ff_sp_velo") is None:
+            ff_values = list(FF_DEFAULTS)
+        else:
+            ff_values = [int(match.group(name)) / 1000000.0 for name in ff_names]
+            ff_values.append(int(match.group("ff_sp_bias")) / 1000000.0
+                             if match.group("ff_sp_bias") is not None else 0.0)
+        self.events.put(("turn_params", physical_values + gain_values, ff_values,
+                         suction_enable, suction_duty, int(match.group("preset")),
+                         int(match.group("count")), pre_accel))
+
+    def _queue_float_params(self, line, pattern, physical_groups, physical_fields):
+        match = pattern.search(line)
+        if not match:
+            return
+        updates = {
+            field: float(match.group(group))
+            for group, field in zip(physical_groups, physical_fields)
+        }
+        for name in ("sp_kp", "sp_ki", "sp_kd", "om_kp", "om_ki", "om_kd",
+                     "ff_sp_velo", "ff_sp_accel", "ff_om_velo", "ff_om_accel"):
+            updates[name] = float(match.group(name))
+        updates["ff_sp_bias"] = (float(match.group("ff_sp_bias"))
+                                 if match.group("ff_sp_bias") is not None else 0.0)
+        self.events.put(("float_params", updates, bool(int(match.group("suction"))),
+                         int(match.group("duty"))))
 
     def _drain(self):
         try:
             while True:
                 item = self.events.get_nowait()
                 if isinstance(item, tuple) and item[0] == "turn_params":
-                    _, values, suction_enable, suction_duty, preset_speed, turn_count, pre_accel = item
+                    _, values, ff_values, suction_enable, suction_duty, preset_speed, turn_count, pre_accel = item
                     for (_, name), value in zip(FIELDS, values):
+                        self.values[name].set(value)
+                    for (_, name), value in zip(FF_FIELDS, ff_values):
                         self.values[name].set(value)
                     self.suction_enable.set(suction_enable)
                     self.suction_duty.set(suction_duty)
@@ -568,6 +659,12 @@ class DebugGui(tk.Tk):
                     self.pre_accel.set(pre_accel)
                 elif isinstance(item, tuple) and item[0] == "search_count":
                     self.turn_count.set(item[1])
+                elif isinstance(item, tuple) and item[0] == "float_params":
+                    _, updates, suction_enable, suction_duty = item
+                    for name, value in updates.items():
+                        self.values[name].set(value)
+                    self.suction_enable.set(suction_enable)
+                    self.suction_duty.set(suction_duty)
                 else:
                     self.output.insert(tk.END, item)
                     self.output.see(tk.END)

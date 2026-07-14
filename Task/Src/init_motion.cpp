@@ -111,7 +111,7 @@ void Motion::Init_Motion_free_rotation_set(float time,uint16_t duty)
 	vehicle->motor_out_r = duty;		vehicle->motor_out_l = duty;
 }
 
-void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
+void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain, const t_ff_gain *ff_gain)
 {
 	if(motion_exeStatus_get() == error)
 	{
@@ -140,6 +140,8 @@ void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp
 	//Set control gain
 	straight_motion_param.sp_gain = sp_gain;
 	straight_motion_param.om_gain = om_gain;
+	straight_motion_param.ff_gain = ff_gain;
+	active_ff_gain_set(ff_gain);
 	turn_motion_param.sp_gain = sp_gain;
 	turn_motion_param.om_gain = om_gain;
 
@@ -279,7 +281,7 @@ void Motion::Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain
 
 }
 
-void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
+void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain, const t_ff_gain *ff_gain)
 {
 	if(motion_exeStatus_get() == error)
 	{
@@ -316,6 +318,8 @@ void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,floa
 	//Set control gain
 	straight_motion_param.sp_gain = sp_gain;
 	straight_motion_param.om_gain = om_gain;
+	straight_motion_param.ff_gain = ff_gain;
+	active_ff_gain_set(ff_gain);
 	turn_motion_param.sp_gain = sp_gain;
 	turn_motion_param.om_gain = om_gain;
 
@@ -357,7 +361,7 @@ void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,floa
 
 }
 
-void Motion::Init_Motion_backward		(const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
+void Motion::Init_Motion_backward		(const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain, const t_ff_gain *ff_gain)
 {
 	if(motion_exeStatus_get() == error)
 	{
@@ -389,6 +393,8 @@ void Motion::Init_Motion_backward		(const t_pid_gain *sp_gain  ,const t_pid_gain
 	//Set control gain
 	straight_motion_param.sp_gain = sp_gain;
 	straight_motion_param.om_gain = om_gain;
+	straight_motion_param.ff_gain = ff_gain;
+	active_ff_gain_set(ff_gain);
 	turn_motion_param.sp_gain = sp_gain;
 	turn_motion_param.om_gain = om_gain;
 
@@ -428,7 +434,7 @@ void Motion::Init_Motion_backward		(const t_pid_gain *sp_gain  ,const t_pid_gain
 }
 
 
-void Motion::Init_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
+void Motion::Init_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain, const t_ff_gain *ff_gain)
 {
 	if(motion_exeStatus_get() == error)
 	{
@@ -460,6 +466,8 @@ void Motion::Init_Motion_diagonal		(float len_target,float acc,float max_sp,floa
 	//Set control gain & turn_param
 	straight_motion_param.sp_gain = sp_gain;
 	straight_motion_param.om_gain = om_gain;
+	straight_motion_param.ff_gain = ff_gain;
+	active_ff_gain_set(ff_gain);
 	turn_motion_param.sp_gain = sp_gain;
 	turn_motion_param.om_gain = om_gain;
 
@@ -498,7 +506,7 @@ void Motion::Init_Motion_diagonal		(float len_target,float acc,float max_sp,floa
 	error_counter_reset();
 }
 
-void Motion::Init_Motion_pivot_turn	(float rad_target,float rad_acc,float rad_velo,const t_pid_gain *sp_gain ,const t_pid_gain *om_gain  )
+void Motion::Init_Motion_pivot_turn	(float rad_target,float rad_acc,float rad_velo,const t_pid_gain *sp_gain ,const t_pid_gain *om_gain, const t_ff_gain *ff_gain)
 {
 	if(motion_exeStatus_get() == error)
 	{
@@ -530,6 +538,8 @@ void Motion::Init_Motion_pivot_turn	(float rad_target,float rad_acc,float rad_ve
 	//Set control gain
 	straight_motion_param.sp_gain = sp_gain;
 	straight_motion_param.om_gain = om_gain;
+	straight_motion_param.ff_gain = ff_gain;
+	active_ff_gain_set(ff_gain);
 	turn_motion_param.sp_gain = sp_gain;
 	turn_motion_param.om_gain = om_gain;
 

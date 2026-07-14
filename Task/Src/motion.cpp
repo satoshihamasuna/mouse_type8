@@ -398,6 +398,7 @@ void  Motion::SetIdeal_search_turn()
 			turn_start_time_ms = run_time_ms_get();
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*turn_motion_param.sp_gain);
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*turn_motion_param.om_gain);
+			active_ff_gain_set(turn_motion_param.ff_gain);
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
@@ -446,6 +447,7 @@ void  Motion::SetIdeal_search_turn()
 
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*straight_motion_param.sp_gain);
 			vehicle->Vehicle_controller.omega_ctrl.Gain_Set(*straight_motion_param.om_gain);
+			active_ff_gain_set(straight_motion_param.ff_gain);
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		}
