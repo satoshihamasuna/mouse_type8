@@ -50,11 +50,11 @@
 
 #if defined(MOUSE_A)
 	#define WEIGHT			(20.0)					//g
-	#define MOTOR_K_ER		(0.08)					//mV/rpm
+	#define MOTOR_K_ER		(0.08)					//mV/rpm 0.08
 	#define MOTOR_K_TR		(MOTOR_K_ER*(RADPS_2_RPM))	//0.4//0.594				//mNm/A
 	#define MOTOR_R			(3.5)//6.0
 	#define GEAR_N			(34.0/7.0 )
-	#define MOUSE_INERTIA	((1.0/1000.0))//0.001f//0.003,0.0022				//g・m^2
+	#define MOUSE_INERTIA	((1.5/1000.0))//0.001f//0.003,0.0022				//g・m^2
 	#define TIRE_RADIUS_M	(TIRE_RADIUS/1000.0)		//m
 	#define TREAD_WIDTH_M	(TREAD_WIDTH/1000.0)
 	#define MOTOR_BR		(1.0/1000000.0*0.0)			//mNm/rpm
@@ -62,9 +62,9 @@
 
 	#define FF_GAIN			(1.0)
 
-	#define DUTY_MIN		(20)
-	#define DUTY_MAX		(980)
-	#define DEAD_V			(0.05)
+	#define DUTY_MIN		(0)
+	#define DUTY_MAX		(999)
+	#define DEAD_V			(0.2)
 	#define DEAD_VR			(DEAD_V)
 	#define DEAD_VL			(DEAD_V)
 

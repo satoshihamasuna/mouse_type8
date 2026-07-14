@@ -18,7 +18,7 @@
 #include "math_utils.h"
 #include "motor.h"
 #include "mouse_config.h"
-#include "max22201_dutytable.h"
+#include "mpq6612_dutytable.h"
 
 #define PCLK1			(50000000)//(HAL_RCC_GetPCLK1Freq())//25,000,000
 #define PCLK2			(50000000)//(HAL_RCC_GetPCLK2Freq())//50,000,000
@@ -97,9 +97,9 @@ void Motor_SetDuty_Left( int16_t duty_l )
 	float Dout = Dmin + (Dmax - Dmin) * Din;
 
 	// PWMパルス幅計算
-	pulse_l = (uint32_t)(uint32_t)(((PCLK1 / PWMFREQ) * Dout) - 1);
-	//uint32_t pulse = (uint32_t)(((1000.0f) * Dout) - 1);
-	//pulse_l = duty_table[pulse];
+	//pulse_l = (uint32_t)(uint32_t)(((PCLK1 / PWMFREQ) * Dout) - 1);
+	uint32_t pulse = (uint32_t)(((1000.0f) * Dout) - 1);
+	pulse_l = duty_table_mpq[pulse];
 
 
 	if( duty_l > 0 ) {
@@ -128,9 +128,9 @@ void Motor_SetDuty_Right( int16_t duty_r )
 	float Dout = Dmin + (Dmax - Dmin) * Din;
 
 	// PWMパルス幅計算
-	pulse_r = (uint32_t)(((PCLK1 / PWMFREQ) * Dout) - 1);
-	//uint32_t pulse = (uint32_t)(((1000.0f) * Dout) - 1);
-	//pulse_r = duty_table[pulse];
+	//pulse_r = (uint32_t)(((PCLK1 / PWMFREQ) * Dout) - 1);
+	uint32_t pulse = (uint32_t)(((1000.0f) * Dout) - 1);
+	pulse_r = duty_table_mpq[pulse];
 
 	if( duty_r > 0 ) {
 		MOT_SET_COMPARE_R_FORWARD( pulse_r );
