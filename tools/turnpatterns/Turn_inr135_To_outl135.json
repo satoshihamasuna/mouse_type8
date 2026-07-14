@@ -1,0 +1,16 @@
+{
+  "format": "myshell-turnpattern",
+  "version": 1,
+  "pattern": [
+    "in_r135",
+    "out_l135"
+  ],
+  "settings": {
+    "preset_speed": 700,
+    "turn_speed": 0.7,
+    "pre_accel": 6.5,
+    "post_accel": 6.5,
+    "suction_enable": false,
+    "suction_duty": 650
+  }
+}

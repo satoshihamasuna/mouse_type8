@@ -1,0 +1,20 @@
+{
+  "format": "myshell-turnpattern",
+  "version": 1,
+  "pattern": [
+    "long_r90",
+    "long_r90",
+    "long_r90",
+    "long_r90",
+    "long_r90",
+    "long_r90"
+  ],
+  "settings": {
+    "preset_speed": 1600,
+    "turn_speed": 1.6,
+    "pre_accel": 15.0,
+    "post_accel": 15.0,
+    "suction_enable": true,
+    "suction_duty": 650
+  }
+}
