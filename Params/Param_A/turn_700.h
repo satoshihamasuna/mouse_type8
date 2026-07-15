@@ -15,47 +15,41 @@
 const static t_ff_gain ff_gain_turn_R_700 = {0.8402035f, 0.1023965f, 0.006272998f, 0.001307563f, 0.05932111f, 0.0f};
 const static t_ff_gain ff_gain_turn_L_700 = {0.8402035f, 0.1023965f, 0.008161633f, 0.001264778f, 0.05932111f, 0.0f};
 
-// Long-turn angular FF identified from logs captured at and after
-// 20260715_230033. Translational excitation is insufficient in these logs, so
-// the existing SP coefficients are retained. The right-turn fit intercept is
-// stored as a positive magnitude because ctrl_task applies the turn sign.
+// Identified jointly from the 500 and 700 mm/s turn logs. Velocity and
+// acceleration coefficients use both speed conditions, while the fitted bias
+// is separated by speed; only the 700 mm/s bias is stored here.
 const static t_ff_gain ff_gain_long_turn_R_700 = {
-	0.8402035f, 0.1023965f, 0.0007211697f, 0.001284795f, 0.05932111f, 0.06836919f
+	0.8700466f, 0.1147426f, 0.0006231482f, 0.001185694f, 0.07730041f, 0.06181237f
 };
 const static t_ff_gain ff_gain_long_turn_L_700 = {
-	0.8402035f, 0.1023965f, 0.006238113f, 0.001717517f, 0.05932111f, 0.005627389f
+	0.8700466f, 0.1147426f, 0.004464340f, 0.001461646f, 0.07730041f, 0.02024842f
 };
-// Long 180-degree turns use a separately identified angular profile. The SP
-// coefficients remain shared because the 700 mm/s logs do not independently
-// excite translational velocity, acceleration, and bias.
 const static t_ff_gain ff_gain_long_turn_180_R_700 = {
-	0.8402035f, 0.1023965f, 0.002812576f, 0.001087378f, 0.05932111f, 0.04031926f
+	0.8700466f, 0.1147426f, 0.005721272f, 0.001043587f, 0.07730041f, 0.01295160f
 };
 const static t_ff_gain ff_gain_long_turn_180_L_700 = {
-	0.8402035f, 0.1023965f, 0.003852828f, 0.0009826615f, 0.05932111f, 0.07636162f
+	0.8700466f, 0.1147426f, 0.006079761f, 0.0009266070f, 0.07730041f, 0.06087458f
 };
-// In-turn profiles identified with non-negative angular coefficients. The
-// corresponding out-turn uses the same angular profile and therefore shares
-// the same direction-specific FF gain.
+// The joint 500/700 fits for 45-degree and V90 turns produce negative
+// angular-velocity gains. Constrain those terms to zero and refit angular
+// acceleration and the speed-specific signed biases.
 const static t_ff_gain ff_gain_in_out_45_R_700 = {
-	0.8402035f, 0.1023965f, 0.0f, 0.001473453f, 0.05932111f, 0.0286144f
+	0.8700466f, 0.1147426f, 0.0f, 0.001417219f, 0.07730041f, 0.04041701f
 };
 const static t_ff_gain ff_gain_in_out_45_L_700 = {
-	0.8402035f, 0.1023965f, 0.0f, 0.001453745f, 0.05932111f, 0.0624212f
+	0.8700466f, 0.1147426f, 0.0f, 0.001390124f, 0.07730041f, 0.07084210f
 };
 const static t_ff_gain ff_gain_in_out_135_R_700 = {
-	0.8402035f, 0.1023965f, 0.000363061f, 0.0009672584f, 0.05932111f, 0.09356412f
+	0.8700466f, 0.1147426f, 0.001214761f, 0.001018063f, 0.07730041f, 0.08342324f
 };
 const static t_ff_gain ff_gain_in_out_135_L_700 = {
-	0.8402035f, 0.1023965f, 0.001555407f, 0.0009930935f, 0.05932111f, 0.1081254f
+	0.8700466f, 0.1147426f, 0.002087457f, 0.001058758f, 0.07730041f, 0.1018680f
 };
-// V90 has no sufficiently independent constant-angular-velocity excitation at
-// this speed. Use the best non-negative fit for its fixed 700 mm/s profile.
 const static t_ff_gain ff_gain_v90_R_700 = {
-	0.8402035f, 0.1023965f, 0.0f, 0.001440462f, 0.05932111f, 0.0667248f
+	0.8700466f, 0.1147426f, 0.0f, 0.001258248f, 0.07730041f, 0.07607347f
 };
 const static t_ff_gain ff_gain_v90_L_700 = {
-	0.8402035f, 0.1023965f, 0.0f, 0.001410377f, 0.05932111f, 0.1119027f
+	0.8700466f, 0.1147426f, 0.0f, 0.001265949f, 0.07730041f, 0.1155889f
 };
 
 
