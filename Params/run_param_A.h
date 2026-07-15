@@ -31,30 +31,36 @@ const static t_pid_gain search_om_gain = {0.1f,0.003f,0.00f};//{0.40f, 0.05f, 0.
 const static t_pid_gain sp_gain_search_turn =  {2.0,0.016,0.00};//{10.0,0.05,0.00};////{2.0,0.04};
 const static t_pid_gain om_gain_search_turn =  {0.1f,0.005f,0.00f};//{0.60f, 0.05f, 0.000f};//{0.50f, 0.0005f, 0.001f};
 
+// Search-turn feedforward identified independently for each direction.
+// SP and angular-acceleration terms remain common; only the angular-velocity
+// term is split because the left turn requires more steady turning voltage.
+const static t_ff_gain ff_gain_search_turn_R = {FF_SP_VELO_COEF,	FF_SP_ACCEL_COEF,	0.0063f,	FF_OM_ACCEL_COEF,	FF_SP_BIAS_COEF};
+const static t_ff_gain ff_gain_search_turn_L = {FF_SP_VELO_COEF,	FF_SP_ACCEL_COEF,	0.0073f,	FF_OM_ACCEL_COEF,	FF_SP_BIAS_COEF};
+
 const static t_turn_param_table slalom_L90_table_400 = {0.40f, 26.00f,9.46,11.16, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_table_400 = {0.40f,-26.00f,9.46,11.16,-90.0f,Turn_R};
-const static t_param param_L90_search_400 = {&slalom_L90_table_400 ,&sp_gain_search_turn,&om_gain_search_turn};
-const static t_param param_R90_search_400 = {&slalom_R90_table_400, &sp_gain_search_turn,&om_gain_search_turn};
+const static t_param param_L90_search_400 = {&slalom_L90_table_400 ,&sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_L};
+const static t_param param_R90_search_400 = {&slalom_R90_table_400, &sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_R};
 
 const static t_turn_param_table slalom_L90_table_350 = {0.35f, 26.00f,9.46,11.16, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_table_350 = {0.35f,-26.00f,9.46,11.16,-90.0f,Turn_R};
-const static t_param param_L90_search_350 = {&slalom_L90_table_350 ,&sp_gain_search_turn,&om_gain_search_turn};
-const static t_param param_R90_search_350 = {&slalom_R90_table_350, &sp_gain_search_turn,&om_gain_search_turn};
+const static t_param param_L90_search_350 = {&slalom_L90_table_350 ,&sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_L};
+const static t_param param_R90_search_350 = {&slalom_R90_table_350, &sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_R};
 
 const static t_turn_param_table slalom_L90_table_320 = {0.32f, 26.00f,9.46,11.16, 90.0f,Turn_L,0.0f};
 const static t_turn_param_table slalom_R90_table_320 = {0.32f,-26.00f,9.46,11.16,-90.0f,Turn_R,0.0f};
-const static t_param param_L90_search_320 = {&slalom_L90_table_320 ,&sp_gain_search_turn,&om_gain_search_turn};
-const static t_param param_R90_search_320 = {&slalom_R90_table_320, &sp_gain_search_turn,&om_gain_search_turn};
+const static t_param param_L90_search_320 = {&slalom_L90_table_320 ,&sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_L};
+const static t_param param_R90_search_320 = {&slalom_R90_table_320, &sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_R};
 
 const static t_turn_param_table slalom_L90_table_300 = {0.30f, 26.00f,9.46,11.16, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_table_300 = {0.30f,-26.00f,9.46,11.16,-90.0f,Turn_R};
-const static t_param param_L90_search_300 = {&slalom_L90_table_300 ,&sp_gain_search_turn,&om_gain_search_turn};
-const static t_param param_R90_search_300 = {&slalom_R90_table_300, &sp_gain_search_turn,&om_gain_search_turn};
+const static t_param param_L90_search_300 = {&slalom_L90_table_300 ,&sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_L};
+const static t_param param_R90_search_300 = {&slalom_R90_table_300, &sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_R};
 
 const static t_turn_param_table slalom_L90_table_280 = {0.28f, 26.00f,9.49,11.16, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_table_280 = {0.28f,-26.00f,9.49,11.16,-90.0f,Turn_R};
-const static t_param param_L90_search_280 = {&slalom_L90_table_280 ,&sp_gain_search_turn,&om_gain_search_turn};
-const static t_param param_R90_search_280 = {&slalom_R90_table_280, &sp_gain_search_turn,&om_gain_search_turn};
+const static t_param param_L90_search_280 = {&slalom_L90_table_280 ,&sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_L};
+const static t_param param_R90_search_280 = {&slalom_R90_table_280, &sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_R};
 
 const static t_pid_gain sp_gain_280 = {2.00,0.03,0.00};//{10.0,0.05,0.00};//
 const static t_pid_gain om_gain_280 = {0.1f,0.005f,0.00f};//{0.40f, 0.05f, 0.00f};//

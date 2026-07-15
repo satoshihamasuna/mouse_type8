@@ -62,11 +62,11 @@
 
 	#define FF_GAIN			(1.0)
 	// Feedforward coefficients identified from the 2026-07-15 MOUSE_A logs.
-	#define FF_SP_VELO_COEF	(0.4239f)	// V / (m/s)
+	#define FF_SP_VELO_COEF		(0.4239f)	// V / (m/s)
 	#define FF_SP_ACCEL_COEF	(0.09665f)	// V / (m/s^2)
-	#define FF_OM_VELO_COEF	(0.00602f)	// V / (rad/s)
+	#define FF_OM_VELO_COEF		(0.00602f)	// V / (rad/s)
 	#define FF_OM_ACCEL_COEF	(0.00110f)	// V / (rad/s^2)
-	#define FF_SP_BIAS_COEF	(0.3017f)	// V (signed Coulomb-friction compensation)
+	#define FF_SP_BIAS_COEF		(0.3017f)	// V (signed Coulomb-friction compensation)
 
 	#define DUTY_MIN		(0)
 	#define DUTY_MAX		(999)

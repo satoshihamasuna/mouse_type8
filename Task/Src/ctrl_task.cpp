@@ -143,15 +143,11 @@ void CtrlTask::motion_control()
 			const t_ff_gain *ff_gain = active_ff_gain_get();
 			const float ideal_velo = vehicle->ideal.velo.get();
 			const float ideal_accel = vehicle->ideal.accel.get();
-			const float ego_velo = vehicle->ego.velo.get();
 			float sp_bias_direction = 0.0f;
 			if (ABS(ideal_velo) > 0.001f) {
 				sp_bias_direction = SIGN(ideal_velo);
-			} else if (ABS(ego_velo) > 0.001f) {
-				// Keep the travelling direction while the target reaches zero during braking.
-				sp_bias_direction = SIGN(ego_velo);
 			} else if (ABS(ideal_accel) > 0.001f) {
-				// At launch both target and measured velocities can still be zero.
+				// At launch the target velocity can still be zero.
 				sp_bias_direction = SIGN(ideal_accel);
 			}
 			float sp_FF_control = ff_gain->sp_bias * sp_bias_direction
