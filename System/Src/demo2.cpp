@@ -166,7 +166,7 @@ void Demo2()
 				}
 				break;
 			case ENABLE|0x06:
-			   if(irsens->IrSensor_Avg() > 2000*4)
+			   if(irsens->IrSensor_Avg() > 2000)
 			   {
 					for(int i = 0;i < 11;i++)
 					{
