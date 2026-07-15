@@ -10,7 +10,11 @@
 
 #include "typedef_run_param.h"
 
-//-----------velo = 500 mm/s parameters
+const static t_ff_gain ff_gain_turn_R_700 = {FF_SP_VELO_COEF,	FF_SP_ACCEL_COEF,	FF_OM_VELO_COEF,	FF_OM_ACCEL_COEF,	FF_SP_BIAS_COEF};
+const static t_ff_gain ff_gain_turn_L_700 = {FF_SP_VELO_COEF,	FF_SP_ACCEL_COEF,	FF_OM_VELO_COEF,	FF_OM_ACCEL_COEF,	FF_SP_BIAS_COEF};
+
+
+//-----------velo = 700 mm/s parameters
 const static t_pid_gain sp_gain_turn90_700 = {2.0,0.016,0.00};
 const static t_pid_gain om_gain_turn90_700 = {0.10f,0.01f,0.0f};
 const static t_turn_param_table slalom_L90_700_table = {0.70f, 42.5f,29.97,38.86, 90.0f,Turn_L};// k= 100

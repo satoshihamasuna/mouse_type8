@@ -60,7 +60,7 @@ PIVOT_PARAM_RE = re.compile(
 
 DEFAULTS = {
     "straight": (360.0, 6.5, 0.7, 0.0, 0.0, 0.0, 4.0, 0.05, 0.0, 0.1, 0.01, 0.0),
-    "diagonal": (381.78, 6.5, 0.7, 0.0, 0.0, 0.0, 12.0, 0.04, 0.0, 0.6, 0.01, 0.0),
+    "diagonal": (381.78, 6.5, 0.7, 0.0, 0.0, 0.0, 4.0, 0.05, 0.0, 0.1, 0.01, 0.0),
 }
 TURN_DEFAULTS = {
     "long_r90": (0.70, -42.5, 29.97, 38.86, -90.0), "long_l90": (0.70, 42.5, 29.97, 38.86, 90.0),
@@ -93,6 +93,7 @@ FF_FIELDS = (
     ("SP signed bias", "ff_sp_bias"),
 )
 FF_DEFAULTS = (0.4239, 0.09665, 0.00602, 0.00110, 0.3017)
+SEARCH_FF_OM_VELO_DEFAULTS = {"right": 0.0063, "left": 0.0073}
 
 
 class DebugGui(tk.Tk):
@@ -299,6 +300,7 @@ class DebugGui(tk.Tk):
             messagebox.showerror("Connect failed", str(exc))
 
     def _load_defaults(self):
+        ff_defaults = FF_DEFAULTS
         if self.motion.get() == "turn":
             if self.ser and self.ser.is_open:
                 self.pending_suction_override = (self.suction_enable.get(), self.suction_duty.get())
@@ -308,8 +310,9 @@ class DebugGui(tk.Tk):
             self.pre_accel.set(6.5)
         elif self.motion.get() == "search_turn":
             sign = -1.0 if self.direction.get() == "right" else 1.0
-            defaults = (0.32, sign * 26.0, 9.46, 11.16, sign * 90.0, -sign * 1.5,
+            defaults = (0.32, sign * 26.0, 9.46, 11.16, sign * 90.0, 0.0,
                         2.0, 0.016, 0.0, 0.1, 0.005, 0.0)
+            ff_defaults = FF_DEFAULTS[:2] + (SEARCH_FF_OM_VELO_DEFAULTS[self.direction.get()],) + FF_DEFAULTS[3:]
             self.pre_accel.set(6.5)
         elif self.motion.get() == "pivot_turn":
             sign = -1.0 if self.direction.get() == "right" else 1.0
@@ -320,7 +323,7 @@ class DebugGui(tk.Tk):
             defaults = DEFAULTS[self.motion.get()]
         for (_, name), value in zip(FIELDS, defaults):
             self.values[name].set(value)
-        for (_, name), value in zip(FF_FIELDS, FF_DEFAULTS):
+        for (_, name), value in zip(FF_FIELDS, ff_defaults):
             self.values[name].set(value)
 
     def _set_command(self):

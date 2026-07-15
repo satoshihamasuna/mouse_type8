@@ -334,7 +334,7 @@ static shell_debug_param_t shell_debug_straight_param = {
 };
 static shell_debug_param_t shell_debug_diagonal_param = {
 	63.63f * 6.0f, 6.5f, 0.7f, 0.0f,
-	{12.0f, 0.04f, 0.0f}, {0.60f, 0.01f, 0.0f},
+	{4.0f, 0.05f, 0.0f}, {0.1f, 0.01f, 0.0f},
 	{FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_OM_VELO_COEF, FF_OM_ACCEL_COEF, FF_SP_BIAS_COEF}, False, 650
 };
 
