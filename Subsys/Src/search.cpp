@@ -127,11 +127,11 @@ t_exeStatus Search::turn_right_process(t_position my_position,t_position tmp_my_
 			result = motion->exe_Motion_fix_wall(500);
 		}
 
-		result = motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 
 		result = motion->exe_Motion_fix_wall(500);
 
-		result = motion->exe_Motion_pivot_turn(DEG2RAD(-180.0f), -40.0*PI, -4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(-180.0f), -40.0*PI, -4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_R);
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
@@ -144,7 +144,7 @@ t_exeStatus Search::turn_right_process(t_position my_position,t_position tmp_my_
 			result = motion->exe_Motion_fix_wall(500);
 		}
 
-		result = motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_R);
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
@@ -157,7 +157,7 @@ t_exeStatus Search::turn_right_process(t_position my_position,t_position tmp_my_
 				result = motion->exe_Motion_fix_wall(500);
 			}
 
-			result = motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI);
+			result = motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_R);
 
 			result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 		}
@@ -183,11 +183,11 @@ t_exeStatus Search::turn_left_process (	t_position my_position,t_position tmp_my
 			result = motion->exe_Motion_fix_wall(500);
 		}
 
-		result = motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_R);
 
 		result = motion->exe_Motion_fix_wall(500);
 
-		result = motion->exe_Motion_pivot_turn( DEG2RAD(180.0f), 40.0*PI, 4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(180.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
@@ -199,7 +199,7 @@ t_exeStatus Search::turn_left_process (	t_position my_position,t_position tmp_my
 		{
 			result = motion->exe_Motion_fix_wall(500);
 		}
-		result = motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
@@ -211,7 +211,7 @@ t_exeStatus Search::turn_left_process (	t_position my_position,t_position tmp_my
 		{
 			result = motion->exe_Motion_fix_wall(500);
 		}
-		result = motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
@@ -257,24 +257,24 @@ t_exeStatus Search::turn_rear_process (	t_position my_position,t_position tmp_my
 
 	if(_wall->get_WallState(r_pos) == WALL)
 	{
-		result = motion->exe_Motion_pivot_turn( DEG2RAD(-90.0f), -40.0*PI, -4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_R);
 
 		result = motion->exe_Motion_fix_wall( 300);
 
-		result = motion->exe_Motion_pivot_turn( DEG2RAD(-90.0f), -40.0*PI, -4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_R);
 	}
 	else if(_wall->get_WallState(l_pos) == WALL)
 	{
-		result = motion->exe_Motion_pivot_turn( DEG2RAD(90.0f), 40.0*PI, 4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 
 		result = motion->exe_Motion_fix_wall( 300);
 
-		result = motion->exe_Motion_pivot_turn( DEG2RAD(90.0f), 40.0*PI, 4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 
 	}
 	else{
 
-		result = motion->exe_Motion_pivot_turn( DEG2RAD(180.0f), 40.0*PI, 4.0*PI);
+		result = motion->exe_Motion_pivot_turn(DEG2RAD(180.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 	}
 
 	if(_wall->get_WallState(r_pos) == WALL && _wall->get_WallState(l_pos) == WALL)
@@ -323,16 +323,16 @@ t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int g
 			updateMap_half_straight(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 			break;
 		case Right:
-			motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI);
+			motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_R);
 			updateMap_half_straight(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 			break;
 		case Left:
-			motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI);
+			motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 			updateMap_half_straight(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 
 			break;
 		case Rear:
-			motion->exe_Motion_pivot_turn(DEG2RAD(180.0f), 40.0*PI, 4.0*PI);
+			motion->exe_Motion_pivot_turn(DEG2RAD(180.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 			updateMap_half_straight(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 			break;
 
@@ -431,16 +431,16 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
 			updateMap_half_straight(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 			break;
 		case Right:
-			motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI);
+			motion->exe_Motion_pivot_turn(DEG2RAD(-90.0f), -40.0*PI, -4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_R);
 			updateMap_half_straight(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 			break;
 		case Left:
-			motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI);
+			motion->exe_Motion_pivot_turn(DEG2RAD(90.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 			updateMap_half_straight(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 
 			break;
 		case Rear:
-			motion->exe_Motion_pivot_turn(DEG2RAD(180.0f), 40.0*PI, 4.0*PI);
+			motion->exe_Motion_pivot_turn(DEG2RAD(180.0f), 40.0*PI, 4.0*PI, &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 			updateMap_half_straight(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 			break;
 

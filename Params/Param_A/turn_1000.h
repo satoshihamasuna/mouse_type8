@@ -19,7 +19,8 @@ const static t_ff_gain ff_gain_turn_1000 = {
 	0.09665f,
 	0.00602f,
 	0.00110f,
-	0.3017f
+	0.3017f,
+	0.0f
 };
 
 const static t_pid_gain sp_gain_turn90_1000 = {2.0,0.016,0.00};

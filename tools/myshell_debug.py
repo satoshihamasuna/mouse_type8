@@ -32,7 +32,7 @@ TURN_PARAM_RE = re.compile(
     r"om_u:(?P<om_kp>-?\d+),(?P<om_ki>-?\d+),(?P<om_kd>-?\d+) "
     r"(?:ff_u:(?P<ff_sp_velo>-?\d+),(?P<ff_sp_accel>-?\d+),"
     r"(?P<ff_om_velo>-?\d+),(?P<ff_om_accel>-?\d+)"
-    r"(?:,(?P<ff_sp_bias>-?\d+))? )?"
+    r"(?:,(?P<ff_sp_bias>-?\d+)(?:,(?P<ff_om_bias>-?\d+))?)? )?"
     r"suction:(?P<suction>\d+) duty:(?P<duty>\d+) preset:(?P<preset>\d+) count:(?P<count>\d+)"
 )
 FLOAT_PATTERN = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
@@ -43,7 +43,7 @@ PARAM_RE = re.compile(
     rf"om:(?P<om_kp>{FLOAT_PATTERN}),(?P<om_ki>{FLOAT_PATTERN}),(?P<om_kd>{FLOAT_PATTERN}) "
     rf"ff:(?P<ff_sp_velo>{FLOAT_PATTERN}),(?P<ff_sp_accel>{FLOAT_PATTERN}),"
     rf"(?P<ff_om_velo>{FLOAT_PATTERN}),(?P<ff_om_accel>{FLOAT_PATTERN})"
-    rf"(?:,(?P<ff_sp_bias>{FLOAT_PATTERN}))? "
+    rf"(?:,(?P<ff_sp_bias>{FLOAT_PATTERN})(?:,(?P<ff_om_bias>{FLOAT_PATTERN}))?)? "
     r"suction:(?P<suction>\d+) duty:(?P<duty>\d+)"
 )
 PIVOT_PARAM_RE = re.compile(
@@ -53,7 +53,7 @@ PIVOT_PARAM_RE = re.compile(
     rf"om:(?P<om_kp>{FLOAT_PATTERN}),(?P<om_ki>{FLOAT_PATTERN}),(?P<om_kd>{FLOAT_PATTERN}) "
     rf"ff:(?P<ff_sp_velo>{FLOAT_PATTERN}),(?P<ff_sp_accel>{FLOAT_PATTERN}),"
     rf"(?P<ff_om_velo>{FLOAT_PATTERN}),(?P<ff_om_accel>{FLOAT_PATTERN})"
-    rf"(?:,(?P<ff_sp_bias>{FLOAT_PATTERN}))? "
+    rf"(?:,(?P<ff_sp_bias>{FLOAT_PATTERN})(?:,(?P<ff_om_bias>{FLOAT_PATTERN}))?)? "
     r"suction:(?P<suction>\d+) duty:(?P<duty>\d+)"
 )
 
@@ -91,9 +91,14 @@ FF_FIELDS = (
     ("OM velocity", "ff_om_velo"),
     ("OM acceleration", "ff_om_accel"),
     ("SP signed bias", "ff_sp_bias"),
+    ("OM signed bias", "ff_om_bias"),
 )
-FF_DEFAULTS = (0.4239, 0.09665, 0.00602, 0.00110, 0.3017)
+FF_DEFAULTS = (0.4239, 0.09665, 0.00602, 0.00110, 0.3017, 0.0)
 SEARCH_FF_OM_VELO_DEFAULTS = {"right": 0.0063, "left": 0.0073}
+PIVOT_FF_DEFAULTS = {
+    "right": (0.4239, 0.09665, 0.00602, 0.001043436, 0.3017, 0.3704708),
+    "left": (0.4239, 0.09665, 0.00602, 0.001002870, 0.3017, 0.3616070),
+}
 
 
 class DebugGui(tk.Tk):
@@ -319,6 +324,7 @@ class DebugGui(tk.Tk):
             defaults = (sign * 90.0, sign * 40.0 * 3.141592653589793,
                         sign * 4.0 * 3.141592653589793, 0.0, 0.0,
                         0.0, 2.0, 0.016, 0.0, 0.1, 0.005, 0.0)
+            ff_defaults = PIVOT_FF_DEFAULTS[self.direction.get()]
         else:
             defaults = DEFAULTS[self.motion.get()]
         for (_, name), value in zip(FIELDS, defaults):
@@ -624,6 +630,8 @@ class DebugGui(tk.Tk):
             ff_values = [int(match.group(name)) / 1000000.0 for name in ff_names]
             ff_values.append(int(match.group("ff_sp_bias")) / 1000000.0
                              if match.group("ff_sp_bias") is not None else 0.0)
+            ff_values.append(int(match.group("ff_om_bias")) / 1000000.0
+                             if match.group("ff_om_bias") is not None else 0.0)
         self.events.put(("turn_params", physical_values + gain_values, ff_values,
                          suction_enable, suction_duty, int(match.group("preset")),
                          int(match.group("count")), pre_accel))
@@ -641,6 +649,8 @@ class DebugGui(tk.Tk):
             updates[name] = float(match.group(name))
         updates["ff_sp_bias"] = (float(match.group("ff_sp_bias"))
                                  if match.group("ff_sp_bias") is not None else 0.0)
+        updates["ff_om_bias"] = (float(match.group("ff_om_bias"))
+                                 if match.group("ff_om_bias") is not None else 0.0)
         self.events.put(("float_params", updates, bool(int(match.group("suction"))),
                          int(match.group("duty"))))
 

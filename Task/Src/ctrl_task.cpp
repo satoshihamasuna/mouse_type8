@@ -153,8 +153,18 @@ void CtrlTask::motion_control()
 			float sp_FF_control = ff_gain->sp_bias * sp_bias_direction
 								+ ff_gain->sp_velo * ideal_velo
 								+ ff_gain->sp_accel * ideal_accel;
-			float om_FF_control = ff_gain->om_velo * vehicle->ideal.rad_velo.get()
-								+ ff_gain->om_accel * vehicle->ideal.rad_accel.get();
+			const float ideal_rad_velo = vehicle->ideal.rad_velo.get();
+			const float ideal_rad_accel = vehicle->ideal.rad_accel.get();
+			float om_bias_direction = 0.0f;
+			if (ABS(ideal_rad_velo) > 0.001f) {
+				om_bias_direction = SIGN(ideal_rad_velo);
+			} else if (ABS(ideal_rad_accel) > 0.001f) {
+				// At turn launch the target angular velocity can still be zero.
+				om_bias_direction = SIGN(ideal_rad_accel);
+			}
+			float om_FF_control = ff_gain->om_bias * om_bias_direction
+								+ ff_gain->om_velo * ideal_rad_velo
+								+ ff_gain->om_accel * ideal_rad_accel;
 
 
 			//feedback controll

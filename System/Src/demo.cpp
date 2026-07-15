@@ -293,8 +293,8 @@ void Demo()
 					Dijkstra run_path(&wall_data);
 					run_path.turn_time_set(mode_1000);
 					run_path.run_Dijkstra(		start, Dir_None, goal,MAZE_GOAL_SIZE,
-														st_mode_500_v0, (int)(sizeof(st_mode_500_v0)/sizeof(t_straight_param *const)),
-														di_mode_500_v0, (int)(sizeof(di_mode_500_v0)/sizeof(t_straight_param *const)), mode_500,motion);
+														st_mode_700_v0, (int)(sizeof(st_mode_700_v0)/sizeof(t_straight_param *const)),
+														di_mode_700_v0, (int)(sizeof(di_mode_700_v0)/sizeof(t_straight_param *const)), mode_700,motion);
 
 
 					if(motion->motion_exeStatus_get() == error)

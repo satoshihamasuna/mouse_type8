@@ -12,8 +12,8 @@
 
 // Identified from the 700 mm/s turn logs captured on 2026-07-15.
 // Translational gains are shared; angular gains are fitted per turn direction.
-const static t_ff_gain ff_gain_turn_R_700 = {0.8402035f, 0.1023965f, 0.006272998f, 0.001307563f, 0.05932111f};
-const static t_ff_gain ff_gain_turn_L_700 = {0.8402035f, 0.1023965f, 0.008161633f, 0.001264778f, 0.05932111f};
+const static t_ff_gain ff_gain_turn_R_700 = {0.8402035f, 0.1023965f, 0.006272998f, 0.001307563f, 0.05932111f, 0.0f};
+const static t_ff_gain ff_gain_turn_L_700 = {0.8402035f, 0.1023965f, 0.008161633f, 0.001264778f, 0.05932111f, 0.0f};
 
 
 //-----------velo = 700 mm/s parameters

@@ -381,7 +381,9 @@ def main() -> int:
     if args.with_intercept:
         if sp_fit:
             print(f"#define FF_SP_BIAS_COEF ({sp_fit[0].intercept:.7g}f)")
-        print("// Apply FF_SP_BIAS_COEF with the sign of velocity (or acceleration at launch).")
+        if om_fit:
+            print(f"#define FF_OM_BIAS_COEF ({om_fit[0].intercept:.7g}f)")
+        print("// Apply each BIAS coefficient with the sign of its velocity (or acceleration at launch).")
     condition_numbers = [fit[0].condition_number for fit in (sp_fit, om_fit) if fit]
     if max(condition_numbers) > 30:
         print("\nWARNING: condition number is high. Use logs with independent steady and accel/decel phases.")

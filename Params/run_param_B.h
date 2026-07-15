@@ -28,6 +28,18 @@ const static t_pid_gain basic_om_gain = {0.1f,0.005f,0.00f};//{0.05f, 0.001f, 0.
 const static t_pid_gain search_sp_gain = {1.200,0.02,0.0};
 const static t_pid_gain search_om_gain = {0.1f,0.005f,0.00f};
 
+// Feedback gains used exclusively by pivot turns.
+const static t_pid_gain sp_gain_pivot_turn = {1.20f, 0.02f, 0.0f};
+const static t_pid_gain om_gain_pivot_turn = {0.1f, 0.005f, 0.0f};
+
+// MOUSE_B pivot feedforward has not been identified from logs yet.
+const static t_ff_gain ff_gain_pivot_turn_R = {
+	FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_OM_VELO_COEF, FF_OM_ACCEL_COEF, FF_SP_BIAS_COEF, FF_OM_BIAS_COEF
+};
+const static t_ff_gain ff_gain_pivot_turn_L = {
+	FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_OM_VELO_COEF, FF_OM_ACCEL_COEF, FF_SP_BIAS_COEF, FF_OM_BIAS_COEF
+};
+
 const static t_pid_gain sp_gain_search_turn = {1.200,0.02,0.0};//{1.0,0.04,0.05};;//{2.0,0.04};
 const static t_pid_gain om_gain_search_turn = {0.1f,0.0015f,0.00f};//{0.50f, 0.0005f, 0.001f};
 const static t_turn_param_table slalom_L90_table_320 = {0.32f, 26.00f,9.46,11.16, 90.0f,Turn_L};

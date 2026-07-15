@@ -140,7 +140,8 @@ namespace Mode
 								  motion->Motion_start();
 								  LogData::getInstance().data_count = 0;
 								  LogData::getInstance().log_enable = True;
-								  motion->exe_Motion_pivot_turn(DEG2RAD(90.0f*8.0), 60.0*PI, 4.0*PI);
+								  motion->exe_Motion_pivot_turn(DEG2RAD(90.0f*8.0), 60.0*PI, 4.0*PI,
+									  &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
 								  LogData::getInstance().log_enable = False;
 								  motion->Motion_end();
 								  enable = 0x00;

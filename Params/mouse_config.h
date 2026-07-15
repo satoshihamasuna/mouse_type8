@@ -67,6 +67,7 @@
 	#define FF_OM_VELO_COEF		(0.00602f)	// V / (rad/s)
 	#define FF_OM_ACCEL_COEF	(0.00110f)	// V / (rad/s^2)
 	#define FF_SP_BIAS_COEF		(0.3017f)	// V (signed Coulomb-friction compensation)
+	#define FF_OM_BIAS_COEF		(0.0f)		// V (signed angular-friction compensation)
 
 	#define DUTY_MIN		(0)
 	#define DUTY_MAX		(999)
@@ -97,6 +98,7 @@
 	#define FF_OM_VELO_COEF	(MOTOR_K_ER*RADPS_2_RPM*GEAR_N*TREAD_WIDTH/(2.0f*TIRE_RADIUS*1000.0f))
 	#define FF_OM_ACCEL_COEF	(MOTOR_R/(MOTOR_K_TR*GEAR_N)*(MOUSE_INERTIA*TIRE_RADIUS/(TREAD_WIDTH/2.0f)))
 	#define FF_SP_BIAS_COEF	(0.0f)	// MOUSE_B has not been identified from logs yet.
+	#define FF_OM_BIAS_COEF	(0.0f)	// MOUSE_B has not been identified from logs yet.
 
 	#define DUTY_MIN		(0)//(80)
 	#define DUTY_MAX		(990)//(1000)
