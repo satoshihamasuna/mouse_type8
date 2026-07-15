@@ -62,6 +62,10 @@ const static t_turn_param_table slalom_R90_table_280 = {0.28f,-26.00f,9.49,11.16
 const static t_param param_L90_search_280 = {&slalom_L90_table_280 ,&sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_L};
 const static t_param param_R90_search_280 = {&slalom_R90_table_280, &sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_R};
 
+
+// Straight motion parameters for each velocity setting. The acceleration is
+// determined by the velocity and the desired motion profile.
+
 const static t_pid_gain sp_gain_280 = {2.00,0.03,0.00};//{10.0,0.05,0.00};//
 const static t_pid_gain om_gain_280 = {0.1f,0.005f,0.00f};//{0.40f, 0.05f, 0.00f};//
 const static t_velo_param param_280 = {0.28f,4.0f};
