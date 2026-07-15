@@ -7,41 +7,41 @@
 
 #define BATTRY_REFERENCE	(3.25f)
 #define BATTERY_LIMIT		(3.5f)
+#define BATTERY_CELL_COUNT	(2)
+#define BATTERY_SAMPLE_COUNT	(10)
 
 #include "ir_sensor.h"
 #include "battery.h"
 #include "interface.h"
 
-float Battery_GetVoltage(){
+float Battery_GetVoltage(void){
 	return (BATTRY_REFERENCE * (143.0f+10.0f)/(10.0f) * (float)Sensor_GetBatteryValue())/(4096.f);
 }
 
-void Battery_LimiterVoltage()
+float Battery_GetAverageVoltage(void)
 {
-	volatile int	i;
-	volatile float	battery_voltage_average;
+	float battery_voltage_average = 0.0f;
 
-	for( i = 0; i < 10; i++) {
+	for(int i = 0; i < BATTERY_SAMPLE_COUNT; i++) {
 		HAL_Delay(5);
 		battery_voltage_average += Battery_GetVoltage();
 	}
-	battery_voltage_average /= 10;
+	return battery_voltage_average / BATTERY_SAMPLE_COUNT;
+}
 
-	int battery_cell = 2;
+float Battery_GetLimitVoltage(void)
+{
+	return BATTERY_LIMIT * BATTERY_CELL_COUNT;
+}
 
-	/*
-	if( battery_voltage_average > 8.40 )
-	{
-		battery_cell = 3;
-	}
-	else if( battery_voltage_average > 4.20 )
-	{
-		battery_cell = 2;
-	}
-	else ;
-*/
+int Battery_IsVoltageError(float voltage)
+{
+	return voltage < Battery_GetLimitVoltage();
+}
 
-	if( battery_voltage_average < BATTERY_LIMIT*battery_cell ) {
+void Battery_LimiterVoltage(void)
+{
+	if(Battery_IsVoltageError(Battery_GetAverageVoltage())) {
 		while( 1 ) {
 			Indicate_LED(0x01);
 			HAL_Delay(200);

@@ -93,6 +93,15 @@ FF_FIELDS = (
     ("SP signed bias", "ff_sp_bias"),
     ("OM signed bias", "ff_om_bias"),
 )
+BATTERY_RE = re.compile(
+    r"BATTERY voltage_mv:(?P<voltage_mv>\d+) limit_mv:(?P<limit_mv>\d+) "
+    r"status:(?P<status>OK|ERROR)"
+)
+BATTERY_COMMAND = "info battery"
+
+
+class BatteryMonitorError(RuntimeError):
+    pass
 FF_DEFAULTS = (0.4239, 0.09665, 0.00602, 0.00110, 0.3017, 0.0)
 SEARCH_FF_OM_VELO_DEFAULTS = {"right": 0.0063, "left": 0.0073}
 PIVOT_FF_DEFAULTS = {
@@ -113,6 +122,7 @@ class DebugGui(tk.Tk):
         self.baud = tk.IntVar(value=115200)
         self.char_delay = tk.DoubleVar(value=0.005)
         self.timeout = tk.DoubleVar(value=60.0)
+        self.battery_status = tk.StringVar(value="Battery: --")
         self.motion = tk.StringVar(value="straight")
         self.turn_type = tk.StringVar(value="long_r90")
         self.direction = tk.StringVar(value="right")
@@ -144,6 +154,7 @@ class DebugGui(tk.Tk):
         ttk.Entry(conn, textvariable=self.char_delay, width=6).pack(side=tk.LEFT, padx=4)
         self.connect_button = ttk.Button(conn, text="Connect", command=self._toggle)
         self.connect_button.pack(side=tk.LEFT, padx=8)
+        ttk.Label(conn, textvariable=self.battery_status).pack(side=tk.LEFT, padx=8)
 
         selectors = ttk.LabelFrame(root, text="動作選択", padding=8)
         selectors.pack(fill=tk.X, pady=(10, 5))
@@ -491,6 +502,35 @@ class DebugGui(tk.Tk):
             if delay > 0:
                 time.sleep(delay)
 
+    def _check_battery_voltage(self):
+        self.ser.reset_input_buffer()
+        self._write_command(BATTERY_COMMAND)
+        deadline = time.monotonic() + 5.0
+
+        while time.monotonic() < deadline:
+            raw = self.ser.readline()
+            if not raw:
+                continue
+            line = raw.decode(errors="ignore").replace("\x00", "").strip()
+            match = BATTERY_RE.search(line)
+            if not match:
+                continue
+
+            voltage = int(match.group("voltage_mv")) / 1000.0
+            limit = int(match.group("limit_mv")) / 1000.0
+            self.events.put(("battery_status", voltage, limit))
+            if match.group("status") == "ERROR" or voltage < limit:
+                raise BatteryMonitorError(
+                    f"Battery voltage is too low: {voltage:.3f} V (limit: {limit:.3f} V). "
+                    "Command transmission was cancelled."
+                )
+            return
+
+        raise BatteryMonitorError(
+            "Battery voltage check timed out. Flash firmware that supports 'info battery' "
+            "and check the serial connection. Command transmission was cancelled."
+        )
+
     def _read_exact(self, size, deadline):
         data = bytearray()
         while len(data) < size and time.monotonic() < deadline:
@@ -512,6 +552,7 @@ class DebugGui(tk.Tk):
             labels = None
 
             with self.lock:
+                self._check_battery_voltage()
                 self._append("\n> disp log_bin\n")
                 self.ser.reset_input_buffer()
                 self._write_command("disp log_bin")
@@ -552,6 +593,9 @@ class DebugGui(tk.Tk):
 
             self._append(f"CSV保存完了: {output_path}\n")
             self._append(f"受信: {frame_count} frames / drop: {drop_count}\n")
+        except BatteryMonitorError as exc:
+            self._append(f"ERROR: {exc}\n")
+            self.events.put(("battery_error", str(exc)))
         except Exception as exc:
             self._append(f"ERROR: {exc}\n")
 
@@ -565,6 +609,7 @@ class DebugGui(tk.Tk):
         try:
             with self.lock:
                 for command in commands:
+                    self._check_battery_voltage()
                     self._append(f"\n> {command}\n")
                     self.ser.reset_input_buffer()
                     self._write_command(command)
@@ -603,6 +648,9 @@ class DebugGui(tk.Tk):
                                 or line == "LOG_INIT_DONE"):
                             if " set " in command or command == "log init":
                                 break
+        except BatteryMonitorError as exc:
+            self._append(f"ERROR: {exc}\n")
+            self.events.put(("battery_error", str(exc)))
         except Exception as exc:
             self._append(f"ERROR: {exc}\n")
 
@@ -678,6 +726,12 @@ class DebugGui(tk.Tk):
                         self.values[name].set(value)
                     self.suction_enable.set(suction_enable)
                     self.suction_duty.set(suction_duty)
+                elif isinstance(item, tuple) and item[0] == "battery_status":
+                    _, voltage, limit = item
+                    self.battery_status.set(f"Battery: {voltage:.3f} V (limit {limit:.3f} V)")
+                elif isinstance(item, tuple) and item[0] == "battery_error":
+                    self.battery_status.set("Battery: ERROR")
+                    messagebox.showerror("Battery voltage error", item[1])
                 else:
                     self.output.insert(tk.END, item)
                     self.output.see(tk.END)

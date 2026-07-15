@@ -18,6 +18,7 @@
 #include "../../Task/Inc/sensing_task.h"
 #include "../../Task/Inc/ctrl_task.h"
 #include "../../Params/run_param.h"
+#include "../../Peripheral/Inc/battery.h"
 
 #include <stdio.h>
 
@@ -135,6 +136,7 @@ static int usrcmd_info(int argc, char **argv)
     if (argc != 2) {
     	printf("info sys\r\n");
     	printf("info ver\r\n");
+    	printf("info battery\r\n");
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "sys") == 0) {
@@ -143,6 +145,14 @@ static int usrcmd_info(int argc, char **argv)
     }
     if (ntlibc_strcmp(argv[1], "ver") == 0) {
     	printf("Version 0.0.0\r\n");
+        return 0;
+    }
+    if (ntlibc_strcmp(argv[1], "battery") == 0) {
+    	const float voltage = Battery_GetAverageVoltage();
+    	const float limit = Battery_GetLimitVoltage();
+    	printf("BATTERY voltage_mv:%ld limit_mv:%ld status:%s\r\n",
+				(long)(voltage * 1000.0f), (long)(limit * 1000.0f),
+				Battery_IsVoltageError(voltage) ? "ERROR" : "OK");
         return 0;
     }
     printf("Unknown sub command found\r\n");
