@@ -1,4 +1,5 @@
 import csv
+import json
 import queue
 import re
 import struct
@@ -544,18 +545,134 @@ class DebugGui(tk.Tk):
             raise TimeoutError(f"バイナリログ受信タイムアウト: {len(data)}/{size} bytes")
         return bytes(data)
 
+    @staticmethod
+    def _device_show_command(motion_name):
+        if motion_name in TURN_DEFAULTS:
+            return f"debug turn {motion_name} show"
+        for motion in ("pivot_turn", "search_turn"):
+            prefix = motion + "_"
+            if motion_name.startswith(prefix):
+                direction = motion_name[len(prefix):]
+                if direction in ("right", "left"):
+                    return f"debug {motion} {direction} show"
+        if motion_name in ("straight", "diagonal"):
+            return f"debug {motion_name} show"
+        return None
+
+    @staticmethod
+    def _parse_device_settings(line, motion_name, command):
+        base = {
+            "schema_version": 1,
+            "captured_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+            "source": "device_show",
+            "motion_name": motion_name,
+            "command": command,
+            "raw_response": line,
+        }
+
+        turn_match = TURN_PARAM_RE.search(line) if line.startswith("DEBUG_TURN_PARAM_X1000") else None
+        if turn_match:
+            physical_names = ("velo", "r_min", "lstart", "lend", "degree", "correction", "pre_accel")
+            gain_names = ("sp_kp", "sp_ki", "sp_kd", "om_kp", "om_ki", "om_kd")
+            ff_names = tuple(name for _, name in FF_FIELDS)
+            base["parameters"] = {
+                name: int(turn_match.group(name)) / 1000.0
+                for name in physical_names
+            }
+            base["pid"] = {
+                name: int(turn_match.group(name)) / 1000000.0
+                for name in gain_names
+            }
+            if turn_match.group("ff_sp_velo") is not None:
+                base["feedforward"] = {
+                    name: int(turn_match.group(name)) / 1000000.0
+                    for name in ff_names
+                }
+            base["suction"] = {
+                "enabled": bool(int(turn_match.group("suction"))),
+                "duty": int(turn_match.group("duty")),
+            }
+            base["preset_speed_mm_s"] = int(turn_match.group("preset"))
+            base["turn_count"] = int(turn_match.group("count"))
+            return base
+
+        patterns = (
+            ("DEBUG_PIVOT_PARAM", PIVOT_PARAM_RE, ("degree", "rad_acc", "rad_velo")),
+            ("DEBUG_PARAM ", PARAM_RE, ("distance", "acc", "max_velo", "end_velo")),
+        )
+        for prefix, pattern, physical_names in patterns:
+            if not line.startswith(prefix):
+                continue
+            match = pattern.search(line)
+            if not match:
+                break
+            base["parameters"] = {
+                name: float(match.group(name))
+                for name in physical_names
+            }
+            base["pid"] = {
+                name: float(match.group(name))
+                for name in ("sp_kp", "sp_ki", "sp_kd", "om_kp", "om_ki", "om_kd")
+            }
+            base["feedforward"] = {
+                name: float(match.group(name))
+                for _, name in FF_FIELDS
+            }
+            base["suction"] = {
+                "enabled": bool(int(match.group("suction"))),
+                "duty": int(match.group("duty")),
+            }
+            return base
+        return None
+
+    def _query_device_settings(self, motion_name):
+        command = self._device_show_command(motion_name)
+        if command is None:
+            return {
+                "schema_version": 1,
+                "captured_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+                "source": "device_show",
+                "motion_name": motion_name,
+                "error": "The motion type is unknown; no device show command is available.",
+            }
+
+        self._append(f"\n> {command}\n")
+        self.ser.reset_input_buffer()
+        self._write_command(command)
+        deadline = time.monotonic() + min(5.0, self.timeout.get())
+        while time.monotonic() < deadline:
+            raw = self.ser.readline()
+            if not raw:
+                continue
+            line = raw.decode(errors="ignore").replace("\x00", "").strip()
+            self._append(line + "\n")
+            settings = self._parse_device_settings(line, motion_name, command)
+            if settings is not None:
+                return settings
+        return {
+            "schema_version": 1,
+            "captured_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+            "source": "device_show",
+            "motion_name": motion_name,
+            "command": command,
+            "error": "Timed out while waiting for the device settings response.",
+        }
+
     def _log_binary_worker(self):
         try:
             LOG_DIR.mkdir(exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             motion_name = re.sub(r"[^A-Za-z0-9_-]+", "_", self.last_motion_name).strip("_") or "unknown"
             output_path = LOG_DIR / f"{timestamp}_myshell_debug_log_{motion_name}.csv"
+            settings_path = output_path.with_suffix(".settings.json")
             frame_count = 0
             drop_count = 0
             labels = None
+            device_settings = None
 
             with self.lock:
                 self._check_battery_voltage()
+                device_settings = self._query_device_settings(motion_name)
                 self._append("\n> disp log_bin\n")
                 self.ser.reset_input_buffer()
                 self._write_command("disp log_bin")
@@ -596,6 +713,17 @@ class DebugGui(tk.Tk):
 
             self._append(f"CSV保存完了: {output_path}\n")
             self._append(f"受信: {frame_count} frames / drop: {drop_count}\n")
+            device_settings["log"] = {
+                "csv": output_path.name,
+                "saved_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+                "frame_count": frame_count,
+                "drop_count": drop_count,
+                "columns": labels or [],
+            }
+            with settings_path.open("w", encoding="utf-8") as handle:
+                json.dump(device_settings, handle, ensure_ascii=False, indent=2)
+                handle.write("\n")
+            self._append(f"Settings saved: {settings_path}\n")
         except BatteryMonitorError as exc:
             self._append(f"ERROR: {exc}\n")
             self.events.put(("battery_error", str(exc)))

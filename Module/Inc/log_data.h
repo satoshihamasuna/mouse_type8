@@ -14,7 +14,7 @@
 
 #define LOG_DATA_SIZE 1000
 #define LOG_DATA_NUM  51
-#define LOG_DATA_PRIOD 2
+#define LOG_DATA_PRIOD 1
 
 #define LOG_MAGIC 0xA55A
 #define LOG_MAGIC_END 0xFFFF

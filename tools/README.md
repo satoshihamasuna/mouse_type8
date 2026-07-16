@@ -114,7 +114,14 @@ debug search_turn right|left set velo r_min Lstart Lend degree sp_kp sp_ki sp_kd
 
 ```text
 tools/logs/YYYYMMDD_HHMMSS_myshell_debug_log_動作名.csv
+tools/logs/YYYYMMDD_HHMMSS_myshell_debug_log_動作名.settings.json
 ```
+
+CSV取得前に、最後に実行した動作に対応する `debug ... show` をデバイスへ送信します。
+`.settings.json` には、デバイスから取得した走行パラメータ、PIDゲイン、FFゲイン、
+吸引設定、preset速度、ターン回数、および元の応答行を保存します。CSV本体の形式は
+変更しないため、既存のログ解析ツールをそのまま使用できます。設定取得がタイムアウト
+した場合もCSV取得は継続し、JSONの `error` に理由を記録します。
 
 動作名には、最後に `Apply and execute` で実行した内容が入ります。
 

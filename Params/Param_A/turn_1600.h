@@ -43,19 +43,21 @@ const static t_ff_gain ff_gain_v90_R_1600 = {
 const static t_ff_gain ff_gain_v90_L_1600 = {
 	0.9030126f, 0.07681955f, 0.2104154f, 0.0f, 0.001230464f, 0.001230464f, 0.3006865f
 };
-// in45 uses independently identified angular acceleration/deceleration gains
-// from the five verification logs per direction captured after 045955.
+// Right in45 FF verified with the three 1600 mm/s logs captured at 221653,
+// 221732, and 221815. Their fitted angular plant has a 3 ms input delay.
+// Acceleration/deceleration gains prioritize peak-overshoot suppression with
+// the 0.20/0.005 PI gains and battery-voltage saturation included.
 const static t_ff_gain ff_gain_in45_R_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.00140f, 0.00152f, 0.0f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.000825f, 0.000625f, 0.0f
 };
 const static t_ff_gain ff_gain_in45_L_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.001216597f, 0.001596254f, 0.0f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.000825f, 0.000625f, 0.0f
 };
 const static t_ff_gain ff_gain_out45_R_1600 = {
-	0.9030126f, 0.09295480f, 0.04174514f, 0.0f, 0.001595584f, 0.001595584f, 0.01796226f
+	0.9030126f, 0.09295480f, 0.04174514f, 0.0f, 0.000825f, 0.000625f, 0.0f
 };
 const static t_ff_gain ff_gain_out45_L_1600 = {
-	0.9030126f, 0.09295480f, 0.04174514f, 0.004865608f, 0.001721591f, 0.001721591f, 0.0f
+	0.9030126f, 0.09295480f, 0.04174514f, 0.004865608f, 0.000825f, 0.000625f, 0.0f
 };
 const static t_ff_gain ff_gain_in135_R_1600 = {
 	0.9030126f, 0.08105824f, 0.1159204f, 0.0f, 0.001069892f, 0.001069892f, 0.3761218f
@@ -102,7 +104,7 @@ const static t_param param_RV90_1600 = {&slalom_RV90_1600_table,&sp_gain_turnV90
 
 //k = 250
 const static t_pid_gain sp_gain_turnIn45_1600 = {2.0,0.016,0.00};
-const static t_pid_gain om_gain_turnIn45_1600 = {0.20,0.01,0.0};
+const static t_pid_gain om_gain_turnIn45_1600 = {0.120,0.004,0.0};
 //const static t_turn_param_table slalom_inL45_1600_table = {1.60f, 53.0f,9.84,41.94, 45.0f,Turn_L};
 //const static t_turn_param_table slalom_inR45_1600_table = {1.60f,-53.0f,9.84,41.94,-45.0f,Turn_R};
 const static t_turn_param_table slalom_inL45_1600_table = {1.60f, 55.0f,7.52,39.62, 45.0f,Turn_L,0.0f};
@@ -112,7 +114,7 @@ const static t_param param_inR45_1600 = {&slalom_inR45_1600_table,&sp_gain_turnI
 
 //k = 250
 const static t_pid_gain sp_gain_turnOut45_1600 = {2.0,0.016,0.00};
-const static t_pid_gain om_gain_turnOut45_1600 = {0.2,0.01,0.0};
+const static t_pid_gain om_gain_turnOut45_1600 = {0.12,0.004,0.0};
 //const static t_turn_param_table slalom_outL45_1600_table = {1.60f, 55.0f,18.235,20.24, 45.0f,Turn_L};
 //const static t_turn_param_table slalom_outR45_1600_table = {1.60f,-55.0f,18.235,20.24,-45.0f,Turn_R};
 const static t_turn_param_table slalom_outL45_1600_table = {1.60f, 60.0f,21.06,20.07, 45.0f,Turn_L,0.0f};
