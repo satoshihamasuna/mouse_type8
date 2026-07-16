@@ -162,9 +162,11 @@ void CtrlTask::motion_control()
 				// At turn launch the target angular velocity can still be zero.
 				om_bias_direction = SIGN(ideal_rad_accel);
 			}
+			const bool is_om_decelerating = (ideal_rad_velo * ideal_rad_accel) < 0.0f;
+			const float om_accel_gain = is_om_decelerating ? ff_gain->om_decel : ff_gain->om_accel;
 			float om_FF_control = ff_gain->om_bias * om_bias_direction
 								+ ff_gain->om_velo * ideal_rad_velo
-								+ ff_gain->om_accel * ideal_rad_accel;
+								+ om_accel_gain * ideal_rad_accel;
 
 
 			//feedback controll

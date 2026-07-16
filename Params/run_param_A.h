@@ -36,10 +36,10 @@ const static t_pid_gain om_gain_pivot_turn = {0.1f, 0.005f, 0.0f};
 // Keep the physical angular-velocity coefficient fixed because it is strongly
 // correlated with the signed bias in a single-speed pivot profile.
 const static t_ff_gain ff_gain_pivot_turn_R = {
-	FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, 0.00602f, 0.001043436f, FF_SP_BIAS_COEF, 0.3704708f
+	FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_SP_BIAS_COEF, 0.00602f, 0.001043436f, 0.001043436f, 0.3704708f
 };
 const static t_ff_gain ff_gain_pivot_turn_L = {
-	FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, 0.00602f, 0.001002870f, FF_SP_BIAS_COEF, 0.3616070f
+	FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_SP_BIAS_COEF, 0.00602f, 0.001002870f, 0.001002870f, 0.3616070f
 };
 
 const static t_pid_gain sp_gain_search_turn =  {2.0,0.016,0.00};//{10.0,0.05,0.00};////{2.0,0.04};
@@ -48,8 +48,8 @@ const static t_pid_gain om_gain_search_turn =  {0.1f,0.005f,0.00f};//{0.60f, 0.0
 // Search-turn feedforward identified independently for each direction.
 // SP and angular-acceleration terms remain common; only the angular-velocity
 // term is split because the left turn requires more steady turning voltage.
-const static t_ff_gain ff_gain_search_turn_R = {FF_SP_VELO_COEF,	FF_SP_ACCEL_COEF,	0.0063f,	FF_OM_ACCEL_COEF,	FF_SP_BIAS_COEF,	FF_OM_BIAS_COEF};
-const static t_ff_gain ff_gain_search_turn_L = {FF_SP_VELO_COEF,	FF_SP_ACCEL_COEF,	0.0073f,	FF_OM_ACCEL_COEF,	FF_SP_BIAS_COEF,	FF_OM_BIAS_COEF};
+const static t_ff_gain ff_gain_search_turn_R = {FF_SP_VELO_COEF,	FF_SP_ACCEL_COEF,	FF_SP_BIAS_COEF,	0.0063f,	FF_OM_ACCEL_COEF,	FF_OM_ACCEL_COEF,	FF_OM_BIAS_COEF};
+const static t_ff_gain ff_gain_search_turn_L = {FF_SP_VELO_COEF,	FF_SP_ACCEL_COEF,	FF_SP_BIAS_COEF,	0.0073f,	FF_OM_ACCEL_COEF,	FF_OM_ACCEL_COEF,	FF_OM_BIAS_COEF};
 
 const static t_turn_param_table slalom_L90_table_400 = {0.40f, 26.00f,9.46,11.16, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_table_400 = {0.40f,-26.00f,9.46,11.16,-90.0f,Turn_R};

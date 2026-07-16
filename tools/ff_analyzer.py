@@ -9,7 +9,9 @@ Then the two independent models below are fitted with iterative MAD clipping.
 Use --with-intercept to identify the forward-run magnitude of signed_bias:
 
     required_sp = signed_bias + K_sp_velo * ideal.velo + K_sp_accel * ideal.accel
-    required_om = K_om_velo * ideal.rad_velo + K_om_accel * ideal.rad_accel
+    required_om = K_om_velo * ideal.rad_velo
+                + K_om_accel * ideal.rad_accel  (angular-speed magnitude increasing)
+                + K_om_decel * ideal.rad_accel  (angular-speed magnitude decreasing)
 
 If ideal.rad_accel is not logged, it is derived from ideal.rad_velo per input file.
 """
@@ -28,6 +30,10 @@ import pandas as pd
 
 
 LOG_DIR = Path(__file__).resolve().parent / "logs"
+T_FF_GAIN_ORDER = (
+    "sp_velo", "sp_accel", "sp_bias",
+    "om_velo", "om_accel", "om_decel", "om_bias",
+)
 REQUIRED_COLUMNS = (
     "ideal.velo",
     "ideal.accel",
@@ -41,7 +47,7 @@ REQUIRED_COLUMNS = (
 
 @dataclass
 class FitResult:
-    names: tuple[str, str]
+    names: tuple[str, ...]
     coefficients: np.ndarray
     sample_count: int
     rejected_count: int
@@ -53,8 +59,8 @@ class FitResult:
     def as_dict(self) -> dict[str, object]:
         return {
             "coefficients": {
-                self.names[0]: float(self.coefficients[0]),
-                self.names[1]: float(self.coefficients[1]),
+                name: float(coefficient)
+                for name, coefficient in zip(self.names, self.coefficients)
             },
             "intercept": self.intercept,
             "sample_count": self.sample_count,
@@ -149,7 +155,7 @@ def robust_fit(
     predictors: np.ndarray,
     target: np.ndarray,
     base_mask: np.ndarray,
-    names: tuple[str, str],
+    names: tuple[str, ...],
     sigma: float,
     iterations: int,
     with_intercept: bool,
@@ -194,8 +200,8 @@ def robust_fit(
     condition_number = float(np.linalg.cond(design[mask] / scale))
     result = FitResult(
         names=names,
-        coefficients=coefficients[:2],
-        intercept=float(coefficients[2]) if with_intercept else 0.0,
+        coefficients=coefficients[:len(names)],
+        intercept=float(coefficients[len(names)]) if with_intercept else 0.0,
         sample_count=int(np.count_nonzero(mask)),
         rejected_count=initial_count - int(np.count_nonzero(mask)),
         rmse=rmse,
@@ -211,12 +217,15 @@ def excitation_mask(first: np.ndarray, second: np.ndarray, first_min: float, sec
 
 def phase_summary(frame: pd.DataFrame, usable: np.ndarray) -> None:
     acceleration = frame["ideal.accel"].to_numpy(dtype=float)
+    angular_velocity = frame["ideal.rad_velo"].to_numpy(dtype=float)
     angular_acceleration = frame["ideal.rad_accel"].to_numpy(dtype=float)
+    angular_decelerating = angular_velocity * angular_acceleration < 0.0
     groups = (
         ("SP steady", usable & (np.abs(acceleration) < 0.2), "sp_feedback"),
         ("SP accel/decel", usable & (np.abs(acceleration) >= 0.2), "sp_feedback"),
         ("OM steady", usable & (np.abs(angular_acceleration) < 2.0), "om_feedback"),
-        ("OM accel/decel", usable & (np.abs(angular_acceleration) >= 2.0), "om_feedback"),
+        ("OM acceleration", usable & ~angular_decelerating & (np.abs(angular_acceleration) >= 2.0), "om_feedback"),
+        ("OM deceleration", usable & angular_decelerating & (np.abs(angular_acceleration) >= 2.0), "om_feedback"),
     )
     print("\nResidual feedback by phase (before refitting):")
     for label, mask, column in groups:
@@ -232,11 +241,13 @@ def excitation_warnings(frame: pd.DataFrame, usable: np.ndarray) -> list[str]:
     acceleration = frame["ideal.accel"].to_numpy(dtype=float)
     omega = frame["ideal.rad_velo"].to_numpy(dtype=float)
     alpha = frame["ideal.rad_accel"].to_numpy(dtype=float)
+    angular_decelerating = omega * alpha < 0.0
     checks = (
         ("SP velocity", usable & (np.abs(velocity) >= 0.03) & (np.abs(acceleration) < 0.2)),
         ("SP acceleration", usable & (np.abs(acceleration) >= 0.2)),
         ("OM velocity", usable & (np.abs(omega) >= 0.1) & (np.abs(alpha) < 2.0)),
-        ("OM acceleration", usable & (np.abs(alpha) >= 2.0)),
+        ("OM acceleration", usable & ~angular_decelerating & (np.abs(alpha) >= 2.0)),
+        ("OM deceleration", usable & angular_decelerating & (np.abs(alpha) >= 2.0)),
     )
     return [f"{name} excitation is sparse ({np.count_nonzero(mask)} samples)" for name, mask in checks
             if np.count_nonzero(mask) < 100]
@@ -244,8 +255,8 @@ def excitation_warnings(frame: pd.DataFrame, usable: np.ndarray) -> list[str]:
 
 def print_result(title: str, result: FitResult) -> None:
     print(f"\n{title}")
-    print(f"  {result.names[0]:18s} = {result.coefficients[0]:.7g}")
-    print(f"  {result.names[1]:18s} = {result.coefficients[1]:.7g}")
+    for name, coefficient in zip(result.names, result.coefficients):
+        print(f"  {name:18s} = {coefficient:.7g}")
     if result.intercept:
         print(f"  intercept          = {result.intercept:+.7g} V")
     print(
@@ -331,6 +342,9 @@ def main() -> int:
     acceleration = frame["ideal.accel"].to_numpy(dtype=float)
     angular_velocity = frame["ideal.rad_velo"].to_numpy(dtype=float)
     angular_acceleration = frame["ideal.rad_accel"].to_numpy(dtype=float)
+    angular_decelerating = angular_velocity * angular_acceleration < 0.0
+    angular_accel_term = np.where(angular_decelerating, 0.0, angular_acceleration)
+    angular_decel_term = np.where(angular_decelerating, angular_acceleration, 0.0)
     sp_mask = usable & excitation_mask(velocity, acceleration, 0.03, 0.2)
     om_mask = usable & excitation_mask(angular_velocity, angular_acceleration, 0.1, 2.0)
 
@@ -344,10 +358,10 @@ def main() -> int:
         args.with_intercept,
     )
     om_fit, om_error = fit_or_none(
-        np.column_stack((angular_velocity, angular_acceleration)),
+        np.column_stack((angular_velocity, angular_accel_term, angular_decel_term)),
         frame["required_om"].to_numpy(dtype=float),
         om_mask,
-        ("FF_OM_VELO_COEF", "FF_OM_ACCEL_COEF"),
+        ("FF_OM_VELO_COEF", "FF_OM_ACCEL_COEF", "FF_OM_DECEL_COEF"),
         args.sigma,
         args.iterations,
         args.with_intercept,
@@ -369,21 +383,44 @@ def main() -> int:
         print_result("Angular feedforward", om_fit[0])
     else:
         print(f"\nAngular feedforward\n  unavailable: {om_error}")
+    suggested_values = None
+    if sp_fit and om_fit:
+        sp_result = sp_fit[0]
+        om_result = om_fit[0]
+        raw_values = (
+            sp_result.coefficients[0], sp_result.coefficients[1],
+            sp_result.intercept if args.with_intercept else 0.0,
+            om_result.coefficients[0], om_result.coefficients[1], om_result.coefficients[2],
+            om_result.intercept if args.with_intercept else 0.0,
+        )
+        suggested_values = tuple(max(0.0, float(value)) for value in raw_values)
     print("\nSuggested definitions:")
     if sp_fit:
-        sp_result = sp_fit[0]
-        print(f"#define FF_SP_VELO_COEF  ({sp_result.coefficients[0]:.7g}f)")
-        print(f"#define FF_SP_ACCEL_COEF ({sp_result.coefficients[1]:.7g}f)")
+        sp_velo = suggested_values[0] if suggested_values else max(0.0, float(sp_fit[0].coefficients[0]))
+        sp_accel = suggested_values[1] if suggested_values else max(0.0, float(sp_fit[0].coefficients[1]))
+        print(f"#define FF_SP_VELO_COEF  ({sp_velo:.7g}f)")
+        print(f"#define FF_SP_ACCEL_COEF ({sp_accel:.7g}f)")
+        if args.with_intercept:
+            sp_bias = suggested_values[2] if suggested_values else max(0.0, float(sp_fit[0].intercept))
+            print(f"#define FF_SP_BIAS_COEF  ({sp_bias:.7g}f)")
     if om_fit:
-        om_result = om_fit[0]
-        print(f"#define FF_OM_VELO_COEF  ({om_result.coefficients[0]:.7g}f)")
-        print(f"#define FF_OM_ACCEL_COEF ({om_result.coefficients[1]:.7g}f)")
+        om_velo = suggested_values[3] if suggested_values else max(0.0, float(om_fit[0].coefficients[0]))
+        om_accel = suggested_values[4] if suggested_values else max(0.0, float(om_fit[0].coefficients[1]))
+        om_decel = suggested_values[5] if suggested_values else max(0.0, float(om_fit[0].coefficients[2]))
+        print(f"#define FF_OM_VELO_COEF  ({om_velo:.7g}f)")
+        print(f"#define FF_OM_ACCEL_COEF ({om_accel:.7g}f)")
+        print(f"#define FF_OM_DECEL_COEF ({om_decel:.7g}f)")
     if args.with_intercept:
-        if sp_fit:
-            print(f"#define FF_SP_BIAS_COEF ({sp_fit[0].intercept:.7g}f)")
         if om_fit:
-            print(f"#define FF_OM_BIAS_COEF ({om_fit[0].intercept:.7g}f)")
+            om_bias = suggested_values[6] if suggested_values else max(0.0, float(om_fit[0].intercept))
+            print(f"#define FF_OM_BIAS_COEF  ({om_bias:.7g}f)")
         print("// Apply each BIAS coefficient with the sign of its velocity (or acceleration at launch).")
+    if suggested_values:
+        print("// t_ff_gain order: sp_velo, sp_accel, sp_bias, om_velo, om_accel, om_decel, om_bias")
+        print("{" + ", ".join(f"{value:.7g}f" for value in suggested_values) + "};")
+        clamped_names = [name for name, raw in zip(T_FF_GAIN_ORDER, raw_values) if raw < 0.0]
+        if clamped_names:
+            print(f"WARNING: negative suggested coefficients were constrained to zero: {', '.join(clamped_names)}")
     condition_numbers = [fit[0].condition_number for fit in (sp_fit, om_fit) if fit]
     if max(condition_numbers) > 30:
         print("\nWARNING: condition number is high. Use logs with independent steady and accel/decel phases.")
@@ -402,9 +439,10 @@ def main() -> int:
             sp_mask, ("FF_SP_VELO_COEF", "FF_SP_ACCEL_COEF"), args.sigma, args.iterations, True,
         )
         om_intercept_fit, _ = fit_or_none(
-            np.column_stack((angular_velocity, angular_acceleration)),
+            np.column_stack((angular_velocity, angular_accel_term, angular_decel_term)),
             frame["required_om"].to_numpy(dtype=float), om_mask,
-            ("FF_OM_VELO_COEF", "FF_OM_ACCEL_COEF"), args.sigma, args.iterations, True,
+            ("FF_OM_VELO_COEF", "FF_OM_ACCEL_COEF", "FF_OM_DECEL_COEF"),
+            args.sigma, args.iterations, True,
         )
         sp_bias = bias_diagnostic("SP", sp_fit, sp_intercept_fit)
         om_bias = bias_diagnostic("OM", om_fit, om_intercept_fit)
@@ -413,12 +451,18 @@ def main() -> int:
         if om_bias:
             bias_report["angular"] = om_bias
 
+    suggested_t_ff_gain = (
+        {name: value for name, value in zip(T_FF_GAIN_ORDER, suggested_values)}
+        if suggested_values else None
+    )
     report = {
         "files": [str(path) for path in loaded_paths],
         "skipped_files": [{"path": str(path), "reason": reason} for path, reason in skipped],
         "period_ms": args.period_ms,
         "translational": sp_fit[0].as_dict() if sp_fit else {"error": sp_error},
         "angular": om_fit[0].as_dict() if om_fit else {"error": om_error},
+        "t_ff_gain_order": list(T_FF_GAIN_ORDER),
+        "suggested_t_ff_gain": suggested_t_ff_gain,
         "bias_diagnostic": bias_report,
     }
     if args.json:

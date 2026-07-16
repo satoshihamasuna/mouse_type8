@@ -34,10 +34,10 @@ const static t_pid_gain om_gain_pivot_turn = {0.1f, 0.005f, 0.0f};
 
 // MOUSE_B pivot feedforward has not been identified from logs yet.
 const static t_ff_gain ff_gain_pivot_turn_R = {
-	FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_OM_VELO_COEF, FF_OM_ACCEL_COEF, FF_SP_BIAS_COEF, FF_OM_BIAS_COEF
+	FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_SP_BIAS_COEF, FF_OM_VELO_COEF, FF_OM_ACCEL_COEF, FF_OM_ACCEL_COEF, FF_OM_BIAS_COEF
 };
 const static t_ff_gain ff_gain_pivot_turn_L = {
-	FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_OM_VELO_COEF, FF_OM_ACCEL_COEF, FF_SP_BIAS_COEF, FF_OM_BIAS_COEF
+	FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_SP_BIAS_COEF, FF_OM_VELO_COEF, FF_OM_ACCEL_COEF, FF_OM_ACCEL_COEF, FF_OM_BIAS_COEF
 };
 
 const static t_pid_gain sp_gain_search_turn = {1.200,0.02,0.0};//{1.0,0.04,0.05};;//{2.0,0.04};

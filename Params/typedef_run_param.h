@@ -15,18 +15,20 @@
 typedef struct{
 	float sp_velo;
 	float sp_accel;
-	float om_velo;
-	float om_accel;
 	float sp_bias;
+	float om_velo;
+	float om_accel;  // Used while angular speed magnitude is increasing.
+	float om_decel;  // Used while angular speed magnitude is decreasing.
 	float om_bias;
 }t_ff_gain;
 
 const static t_ff_gain ff_gain_default = {
 	FF_SP_VELO_COEF,
 	FF_SP_ACCEL_COEF,
+	FF_SP_BIAS_COEF,
 	FF_OM_VELO_COEF,
 	FF_OM_ACCEL_COEF,
-	FF_SP_BIAS_COEF,
+	FF_OM_ACCEL_COEF,
 	FF_OM_BIAS_COEF
 };
 

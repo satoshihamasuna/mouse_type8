@@ -31,8 +31,8 @@ TURN_PARAM_RE = re.compile(
     r"sp_u:(?P<sp_kp>-?\d+),(?P<sp_ki>-?\d+),(?P<sp_kd>-?\d+) "
     r"om_u:(?P<om_kp>-?\d+),(?P<om_ki>-?\d+),(?P<om_kd>-?\d+) "
     r"(?:ff_u:(?P<ff_sp_velo>-?\d+),(?P<ff_sp_accel>-?\d+),"
-    r"(?P<ff_om_velo>-?\d+),(?P<ff_om_accel>-?\d+)"
-    r"(?:,(?P<ff_sp_bias>-?\d+)(?:,(?P<ff_om_bias>-?\d+))?)? )?"
+    r"(?P<ff_sp_bias>-?\d+),(?P<ff_om_velo>-?\d+),"
+    r"(?P<ff_om_accel>-?\d+),(?P<ff_om_decel>-?\d+),(?P<ff_om_bias>-?\d+) )?"
     r"suction:(?P<suction>\d+) duty:(?P<duty>\d+) preset:(?P<preset>\d+) count:(?P<count>\d+)"
 )
 FLOAT_PATTERN = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
@@ -42,8 +42,9 @@ PARAM_RE = re.compile(
     rf"sp:(?P<sp_kp>{FLOAT_PATTERN}),(?P<sp_ki>{FLOAT_PATTERN}),(?P<sp_kd>{FLOAT_PATTERN}) "
     rf"om:(?P<om_kp>{FLOAT_PATTERN}),(?P<om_ki>{FLOAT_PATTERN}),(?P<om_kd>{FLOAT_PATTERN}) "
     rf"ff:(?P<ff_sp_velo>{FLOAT_PATTERN}),(?P<ff_sp_accel>{FLOAT_PATTERN}),"
-    rf"(?P<ff_om_velo>{FLOAT_PATTERN}),(?P<ff_om_accel>{FLOAT_PATTERN})"
-    rf"(?:,(?P<ff_sp_bias>{FLOAT_PATTERN})(?:,(?P<ff_om_bias>{FLOAT_PATTERN}))?)? "
+    rf"(?P<ff_sp_bias>{FLOAT_PATTERN}),(?P<ff_om_velo>{FLOAT_PATTERN}),"
+    rf"(?P<ff_om_accel>{FLOAT_PATTERN}),(?P<ff_om_decel>{FLOAT_PATTERN}),"
+    rf"(?P<ff_om_bias>{FLOAT_PATTERN}) "
     r"suction:(?P<suction>\d+) duty:(?P<duty>\d+)"
 )
 PIVOT_PARAM_RE = re.compile(
@@ -52,8 +53,9 @@ PIVOT_PARAM_RE = re.compile(
     rf"sp:(?P<sp_kp>{FLOAT_PATTERN}),(?P<sp_ki>{FLOAT_PATTERN}),(?P<sp_kd>{FLOAT_PATTERN}) "
     rf"om:(?P<om_kp>{FLOAT_PATTERN}),(?P<om_ki>{FLOAT_PATTERN}),(?P<om_kd>{FLOAT_PATTERN}) "
     rf"ff:(?P<ff_sp_velo>{FLOAT_PATTERN}),(?P<ff_sp_accel>{FLOAT_PATTERN}),"
-    rf"(?P<ff_om_velo>{FLOAT_PATTERN}),(?P<ff_om_accel>{FLOAT_PATTERN})"
-    rf"(?:,(?P<ff_sp_bias>{FLOAT_PATTERN})(?:,(?P<ff_om_bias>{FLOAT_PATTERN}))?)? "
+    rf"(?P<ff_sp_bias>{FLOAT_PATTERN}),(?P<ff_om_velo>{FLOAT_PATTERN}),"
+    rf"(?P<ff_om_accel>{FLOAT_PATTERN}),(?P<ff_om_decel>{FLOAT_PATTERN}),"
+    rf"(?P<ff_om_bias>{FLOAT_PATTERN}) "
     r"suction:(?P<suction>\d+) duty:(?P<duty>\d+)"
 )
 
@@ -88,9 +90,10 @@ FIELDS = (
 FF_FIELDS = (
     ("SP velocity", "ff_sp_velo"),
     ("SP acceleration", "ff_sp_accel"),
+    ("SP signed bias", "ff_sp_bias"),
     ("OM velocity", "ff_om_velo"),
     ("OM acceleration", "ff_om_accel"),
-    ("SP signed bias", "ff_sp_bias"),
+    ("OM deceleration", "ff_om_decel"),
     ("OM signed bias", "ff_om_bias"),
 )
 BATTERY_RE = re.compile(
@@ -102,11 +105,11 @@ BATTERY_COMMAND = "info battery"
 
 class BatteryMonitorError(RuntimeError):
     pass
-FF_DEFAULTS = (0.4239, 0.09665, 0.00602, 0.00110, 0.3017, 0.0)
+FF_DEFAULTS = (0.4239, 0.09665, 0.3017, 0.00602, 0.00110, 0.00110, 0.0)
 SEARCH_FF_OM_VELO_DEFAULTS = {"right": 0.0063, "left": 0.0073}
 PIVOT_FF_DEFAULTS = {
-    "right": (0.4239, 0.09665, 0.00602, 0.001043436, 0.3017, 0.3704708),
-    "left": (0.4239, 0.09665, 0.00602, 0.001002870, 0.3017, 0.3616070),
+    "right": (0.4239, 0.09665, 0.3017, 0.00602, 0.001043436, 0.001043436, 0.3704708),
+    "left": (0.4239, 0.09665, 0.3017, 0.00602, 0.001002870, 0.001002870, 0.3616070),
 }
 
 
@@ -668,7 +671,7 @@ class DebugGui(tk.Tk):
             self.pending_suction_override = None
         physical_names = ("velo", "r_min", "lstart", "lend", "degree", "correction")
         gain_names = ("sp_kp", "sp_ki", "sp_kd", "om_kp", "om_ki", "om_kd")
-        ff_names = ("ff_sp_velo", "ff_sp_accel", "ff_om_velo", "ff_om_accel")
+        ff_names = tuple(name for _, name in FF_FIELDS)
         physical_values = [int(match.group(name)) / 1000.0 for name in physical_names]
         pre_accel = int(match.group("pre_accel")) / 1000.0
         gain_values = [int(match.group(name)) / 1000000.0 for name in gain_names]
@@ -676,10 +679,6 @@ class DebugGui(tk.Tk):
             ff_values = list(FF_DEFAULTS)
         else:
             ff_values = [int(match.group(name)) / 1000000.0 for name in ff_names]
-            ff_values.append(int(match.group("ff_sp_bias")) / 1000000.0
-                             if match.group("ff_sp_bias") is not None else 0.0)
-            ff_values.append(int(match.group("ff_om_bias")) / 1000000.0
-                             if match.group("ff_om_bias") is not None else 0.0)
         self.events.put(("turn_params", physical_values + gain_values, ff_values,
                          suction_enable, suction_duty, int(match.group("preset")),
                          int(match.group("count")), pre_accel))
@@ -692,13 +691,9 @@ class DebugGui(tk.Tk):
             field: float(match.group(group))
             for group, field in zip(physical_groups, physical_fields)
         }
-        for name in ("sp_kp", "sp_ki", "sp_kd", "om_kp", "om_ki", "om_kd",
-                     "ff_sp_velo", "ff_sp_accel", "ff_om_velo", "ff_om_accel"):
+        for name in (("sp_kp", "sp_ki", "sp_kd", "om_kp", "om_ki", "om_kd")
+                     + tuple(field for _, field in FF_FIELDS)):
             updates[name] = float(match.group(name))
-        updates["ff_sp_bias"] = (float(match.group("ff_sp_bias"))
-                                 if match.group("ff_sp_bias") is not None else 0.0)
-        updates["ff_om_bias"] = (float(match.group("ff_om_bias"))
-                                 if match.group("ff_om_bias") is not None else 0.0)
         self.events.put(("float_params", updates, bool(int(match.group("suction"))),
                          int(match.group("duty"))))
 
