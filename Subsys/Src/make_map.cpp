@@ -53,7 +53,7 @@ void make_map::expand(t_MapNode n,int mask){
 
 	if(n.st_y < MAZE_SIZE_Y-1)					//範囲チェック
 	{
-		if( (wall_property->wall[n.st_x][n.st_y].north & mask) == NOWALL)	//壁がなければ(maskの意味はstatic_parametersを参照)
+		if(wall_property->is_open(n.st_x,n.st_y,North,mask) == True)	//実壁と仮想壁の両方を参照
 		{
 			if(map[n.st_x][n.st_y+1] == MAZE_SIZE)			//まだ値が入っていなければ
 			{
@@ -65,7 +65,7 @@ void make_map::expand(t_MapNode n,int mask){
 
 	if(n.st_x < MAZE_SIZE_X-1)					//範囲チェック
 	{
-		if( (wall_property->wall[n.st_x][n.st_y].east & mask) == NOWALL)		//壁がなければ
+		if(wall_property->is_open(n.st_x,n.st_y,East,mask) == True)		//実壁と仮想壁の両方を参照
 		{
 			if(map[n.st_x+1][n.st_y] == MAZE_SIZE)			//値が入っていなければ
 			{
@@ -77,7 +77,7 @@ void make_map::expand(t_MapNode n,int mask){
 
 	if(n.st_y > 0)						//範囲チェック
 	{
-		if( (wall_property->wall[n.st_x][n.st_y].south & mask) == NOWALL)	//壁がなければ
+		if(wall_property->is_open(n.st_x,n.st_y,South,mask) == True)	//実壁と仮想壁の両方を参照
 		{
 			if(map[n.st_x][n.st_y-1] == MAZE_SIZE)			//値が入っていなければ
 			{
@@ -89,7 +89,7 @@ void make_map::expand(t_MapNode n,int mask){
 
 	if(n.st_x > 0)						//範囲チェック
 	{
-		if( (wall_property->wall[n.st_x][n.st_y].west & mask) == NOWALL)		//壁がなければ
+		if(wall_property->is_open(n.st_x,n.st_y,West,mask) == True)		//実壁と仮想壁の両方を参照
 		{
 			if(map[n.st_x-1][n.st_y] == MAZE_SIZE)			//値が入っていなければ
 			{

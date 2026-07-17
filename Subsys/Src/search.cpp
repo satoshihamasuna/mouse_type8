@@ -13,6 +13,7 @@
 #include "peripheral.h"
 #include "../Inc/search_class.h"
 #include "../Inc/adachi_class.h"
+#include "../Inc/virtual_wall_class.h"
 #include "../../Params/run_param.h"
 #include "../../Task/Inc/ctrl_task.h"
 //#include "glob_var_machine.h"
@@ -55,7 +56,10 @@ t_bool Search::i_am_goal(t_position pos,t_position g_pos,int goal_size)
 
 void Search::update_map(int x, int y,t_position expand_end,int size,int mask,make_map *_map)
 {
-	_map->make_map_queue_closeWall();
+	t_virtual_wall_context context = {{0, 0, North}, expand_end,
+		{(uint8_t)x, (uint8_t)y, North}, (uint8_t)size};
+	virtual_wall_class virtual_walls(_map->wall_property);
+	virtual_walls.update(context);
 	if(full_search == True)
 		_map->make_map_queue_zenmen(x, y, expand_end, size, mask);
 	else
@@ -296,7 +300,6 @@ t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int g
 	t_position my_position = tmp_my_pos;
 
 	adachi search_algolithm(_wall,_map);
-	_wall->goal_set_vwall(goal_pos.x, goal_pos.y, goal_size);
 	//IrSensTask *ir_sens = (_wall->return_irObj());
 	uint8_t mask = 0x01;
 	_map->init_map(goal_pos.x, goal_pos.y, goal_size);
@@ -394,7 +397,6 @@ t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int g
 	}
 	HAL_Delay(100);
 	motion->Motion_end();
-	_wall->goal_clear_vwall(goal_pos.x, goal_pos.y, goal_size);
 	return my_position;
 }
 
@@ -405,7 +407,6 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
 	t_position my_position = tmp_my_pos;
 
 	adachi search_algolithm(_wall,_map);
-	_wall->goal_set_vwall(goal_pos.x, goal_pos.y, goal_size);
 	//IrSensTask *ir_sens = (_wall->return_irObj());
 	uint8_t mask = 0x01;
 
@@ -577,7 +578,6 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
 	}
 	HAL_Delay(100);
 	motion->Motion_end();
-	_wall->goal_clear_vwall(goal_pos.x, goal_pos.y, goal_size);
 	return my_position;
 }
 

@@ -83,6 +83,7 @@ target_sources(${BUILD_UNIT_0_NAME} PRIVATE
     "Subsys/Src/make_path.cpp"
     "Subsys/Src/make_path_expand.cpp"
     "Subsys/Src/search.cpp"
+    "Subsys/Src/virtual_wall.cpp"
     "Subsys/Src/wall_class.cpp"
     "System/Src/debug.cpp"
     "System/Src/debug2.cpp"

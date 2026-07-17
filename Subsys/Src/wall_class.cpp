@@ -36,7 +36,71 @@ void wall_class::init_maze(){
 			wall[0][0].east = wall[1][0].west = WALL;				//スタートの東側の壁を追加
 
 	wall_histry.histry_init();
+	clear_virtual_wall();
 
+}
+
+void wall_class::clear_virtual_wall()
+{
+	for(int x = 0; x < MAZE_SIZE_X; x++) {
+		for(int y = 0; y < MAZE_SIZE_Y; y++) {
+			virtual_wall[x][y].north = NOWALL;
+			virtual_wall[x][y].east  = NOWALL;
+			virtual_wall[x][y].south = NOWALL;
+			virtual_wall[x][y].west  = NOWALL;
+		}
+	}
+}
+
+t_bool wall_class::get_virtual_wall(uint16_t x,uint16_t y,t_direction dir) const
+{
+	if(x >= MAZE_SIZE_X || y >= MAZE_SIZE_Y) return True;
+	switch(dir) {
+		case North: return virtual_wall[x][y].north == VWALL ? True : False;
+		case East:  return virtual_wall[x][y].east  == VWALL ? True : False;
+		case South: return virtual_wall[x][y].south == VWALL ? True : False;
+		case West:  return virtual_wall[x][y].west  == VWALL ? True : False;
+		default:    return True;
+	}
+}
+
+t_bool wall_class::set_virtual_wall(uint16_t x,uint16_t y,t_direction dir)
+{
+	if(x >= MAZE_SIZE_X || y >= MAZE_SIZE_Y || get_virtual_wall(x, y, dir) == True) return False;
+	switch(dir) {
+		case North:
+			virtual_wall[x][y].north = VWALL;
+			if(y + 1 < MAZE_SIZE_Y) virtual_wall[x][y + 1].south = VWALL;
+			break;
+		case East:
+			virtual_wall[x][y].east = VWALL;
+			if(x + 1 < MAZE_SIZE_X) virtual_wall[x + 1][y].west = VWALL;
+			break;
+		case South:
+			virtual_wall[x][y].south = VWALL;
+			if(y > 0) virtual_wall[x][y - 1].north = VWALL;
+			break;
+		case West:
+			virtual_wall[x][y].west = VWALL;
+			if(x > 0) virtual_wall[x - 1][y].east = VWALL;
+			break;
+		default: return False;
+	}
+	return True;
+}
+
+t_bool wall_class::is_open(uint16_t x,uint16_t y,t_direction dir,int mask) const
+{
+	if(x >= MAZE_SIZE_X || y >= MAZE_SIZE_Y || get_virtual_wall(x, y, dir) == True) return False;
+	t_wall_state state;
+	switch(dir) {
+		case North: state = (t_wall_state)wall[x][y].north; break;
+		case East:  state = (t_wall_state)wall[x][y].east;  break;
+		case South: state = (t_wall_state)wall[x][y].south; break;
+		case West:  state = (t_wall_state)wall[x][y].west;  break;
+		default: return False;
+	}
+	return ((state & mask) == NOWALL) ? True : False;
 }
 
 t_bool wall_class::is_unknown(uint16_t x,uint16_t y)

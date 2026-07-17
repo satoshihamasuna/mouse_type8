@@ -108,7 +108,14 @@ class wall_class
 		}
 		IrSensTask *return_irObj() {return ir_sens;};
 		t_wall wall[MAZE_SIZE_X][MAZE_SIZE_Y];
+		// Keep inferred closures separate from sensor observations.  They are
+		// rebuilt when the protected mouse position changes.
+		t_wall virtual_wall[MAZE_SIZE_X][MAZE_SIZE_Y];
 		void init_maze();
+		void clear_virtual_wall();
+		t_bool get_virtual_wall(uint16_t x,uint16_t y,t_direction dir) const;
+		t_bool set_virtual_wall(uint16_t x,uint16_t y,t_direction dir);
+		t_bool is_open(uint16_t x,uint16_t y,t_direction dir,int mask) const;
 		void set_wall(t_position pos);
 		t_bool is_unknown(uint16_t x,uint16_t y);
 		void goal_set_vwall(int gx,int gy,int goal_size){
