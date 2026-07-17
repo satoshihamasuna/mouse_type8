@@ -16,10 +16,10 @@
 // refitted. Both free angular fits are negative, so OM velocity is constrained
 // to zero before refitting angular acceleration and signed bias per direction.
 const static t_ff_gain ff_gain_long_turn_R_1600 = {
-	0.9030126f, 0.08183161f, 0.1190275f, 0.0f, 0.001122085f, 0.001122085f, 0.2972200f
+	0.9030126f, 0.08183161f, 0.1190275f, 0.002f, 0.00096f, 0.00098f, 0.2972200f
 };
 const static t_ff_gain ff_gain_long_turn_L_1600 = {
-	0.9030126f, 0.08183161f, 0.1190275f, 0.0f, 0.001091707f, 0.001091707f, 0.3467440f
+	0.9030126f, 0.08183161f, 0.1190275f, 0.002f, 0.00085f, 0.00106f, 0.43f
 };
 
 // Second-pass long-180 identification from the suction-run verification logs
@@ -38,10 +38,10 @@ const static t_ff_gain ff_gain_long_turn_180_L_1600 = {
 // velocity coefficient is retained because these are single-speed logs.
 // Negative free OM velocity fits are constrained to zero and then refitted.
 const static t_ff_gain ff_gain_v90_R_1600 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0f, 0.001210309f, 0.001210309f, 0.2644789f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0f, 0.00085f, 0.00065f, 0.250f
 };
 const static t_ff_gain ff_gain_v90_L_1600 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0f, 0.001230464f, 0.001230464f, 0.3006865f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0f, 0.00091f, 0.00102f, 0.40f
 };
 // Right in45 FF verified with the three 1600 mm/s logs captured at 221653,
 // 221732, and 221815. Their fitted angular plant has a 3 ms input delay.
@@ -51,25 +51,25 @@ const static t_ff_gain ff_gain_in45_R_1600 = {
 	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.000825f, 0.000625f, 0.0f
 };
 const static t_ff_gain ff_gain_in45_L_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.000825f, 0.000625f, 0.0f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.00092f, 0.00070f, 0.04f
 };
 const static t_ff_gain ff_gain_out45_R_1600 = {
 	0.9030126f, 0.09295480f, 0.04174514f, 0.0f, 0.000825f, 0.000625f, 0.0f
 };
 const static t_ff_gain ff_gain_out45_L_1600 = {
-	0.9030126f, 0.09295480f, 0.04174514f, 0.004865608f, 0.000825f, 0.000625f, 0.0f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.00092f, 0.00070f, 0.04f
 };
 const static t_ff_gain ff_gain_in135_R_1600 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.0f, 0.001069892f, 0.001069892f, 0.3761218f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.004f, 0.001069892f, 0.001069892f, 0.3761218f
 };
 const static t_ff_gain ff_gain_in135_L_1600 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.0f, 0.001034468f, 0.001034468f, 0.4167005f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.004f, 0.00086f, 0.00113f, 0.485f
 };
 const static t_ff_gain ff_gain_out135_R_1600 = {
-	0.9030126f, 0.08607196f, 0.09289980f, 0.0f, 0.001072700f, 0.001072700f, 0.4105345f
+	0.9030126f, 0.08607196f, 0.09289980f, 0.004f, 0.001069892f, 0.001069892f, 0.3761218f
 };
 const static t_ff_gain ff_gain_out135_L_1600 = {
-	0.9030126f, 0.08607196f, 0.09289980f, 0.0f, 0.001053752f, 0.001053752f, 0.4117755f
+	0.9030126f, 0.08607196f, 0.09289980f, 0.004f, 0.00086f, 0.00113f, 0.485f
 };
 
 //k = 250
@@ -94,7 +94,7 @@ const static t_param param_R180_1600 = {&slalom_R180_1600_table,&sp_gain_turn180
 
 //k = 250
 const static t_pid_gain sp_gain_turnV90_1600 = {2.0,0.016,0.00};
-const static t_pid_gain om_gain_turnV90_1600 = {0.2,0.01,0.0};
+const static t_pid_gain om_gain_turnV90_1600 = {0.12,0.004,0.0};
 //const static t_turn_param_table slalom_LV90_1600_table = {1.60f, 38.0f,9.50,29.66, 90.0f,Turn_L};
 //const static t_turn_param_table slalom_RV90_1600_table = {1.60f,-38.0f,9.50,29.66,-90.0f,Turn_R};
 const static t_turn_param_table slalom_LV90_1600_table = {1.60f, 40.0f,4.79,24.95-10.0, 90.0f,Turn_L,0.0f};
