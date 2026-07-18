@@ -83,7 +83,7 @@ void Search::update_map(int x, int y,t_position expand_end,int size,int mask,mak
 {
 	t_position goal = {(uint8_t)x, (uint8_t)y, North};
 	t_virtual_wall_context context = {virtual_wall_maze_start, virtual_wall_mouse,
-		virtual_wall_maze_goal, virtual_wall_maze_goal_size};
+		virtual_wall_maze_goal, virtual_wall_maze_goal_size, virtual_wall_branch_mode};
 	Search_UpdateMap(_map->wall_property, _map, context, expand_end,
 		goal, size, full_search, mask);
 

@@ -43,6 +43,7 @@ class Search
 		t_position virtual_wall_maze_start = {0, 0, North};
 		t_position virtual_wall_maze_goal = {MAZE_GOAL_X, MAZE_GOAL_Y, North};
 		uint8_t virtual_wall_maze_goal_size = MAZE_GOAL_SIZE;
+		t_virtual_branch_mode virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
 		t_position virtual_wall_mouse;
 
 		t_exeStatus updateMap_half_straight	(int x, int y,t_position expand_end,int size,int mask,make_map *_map,Motion *motion);
@@ -79,6 +80,10 @@ class Search
 			virtual_wall_maze_goal = maze_goal;
 			virtual_wall_maze_goal_size = maze_goal_size;
 		}
+		void set_virtual_wall_branch_mode(t_virtual_branch_mode mode)
+		{
+			virtual_wall_branch_mode = mode;
+		}
 
 		t_position search_adachi	(	t_position start_pos,	t_position goal_pos,	int goal_size,
 										wall_class *_wall,		make_map *_map,			Motion *motion );
@@ -90,6 +95,7 @@ class Search
 		{
 			full_search			= False;
 			search_priority     = priority_first;
+			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
 			return search_adachi	(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}
 		t_position search_adachi_1_acc(	t_position start_pos,	t_position goal_pos,	int goal_size,
@@ -97,6 +103,7 @@ class Search
 		{
 			full_search			= False;
 			search_priority     = priority_first;
+			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
 			return search_adachi_acc	(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}
 
@@ -106,6 +113,7 @@ class Search
 		{
 			full_search			= True;
 			search_priority     = priority_first;
+			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
 			return search_adachi	(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}
 
@@ -115,8 +123,18 @@ class Search
 		{
 			full_search			= True;
 			search_priority     = priority_first;
+			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
 			//reset_search_time();
 			return search_adachi_acc	(start_pos,goal_pos,goal_size,_wall,_map,motion );
+		}
+
+		t_position search_adachi_2_prune_acc(t_position start_pos,t_position goal_pos,int goal_size,
+					wall_class *_wall,make_map *_map,Motion *motion)
+		{
+			full_search = True;
+			search_priority = priority_first;
+			virtual_wall_branch_mode = VIRTUAL_BRANCH_UNKNOWN_OPEN;
+			return search_adachi_acc(start_pos,goal_pos,goal_size,_wall,_map,motion);
 		}
 
 
@@ -125,6 +143,7 @@ class Search
 		{
 			full_search			= False;
 			search_priority     = priority_second;
+			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
 			return search_adachi	(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}
 
@@ -133,6 +152,7 @@ class Search
 		{
 			full_search			= False;
 			search_priority     = priority_second;
+			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
 			//reset_search_time();
 			return search_adachi_acc(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}

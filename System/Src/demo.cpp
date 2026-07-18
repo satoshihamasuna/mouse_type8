@@ -128,7 +128,7 @@ void Demo()
 
 					//return
 					init_histry_cnt =  wall_data.wall_histry.get_histry_cnt();
-					DemoUtil::run_search(&solve_maze, DemoUtil::SEARCH_2_ACC, return_pos, start, 1, &wall_data, motion);
+					DemoUtil::run_search(&solve_maze, DemoUtil::SEARCH_2_PRUNE_ACC, return_pos, start, 1, &wall_data, motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
 						search_error_process(init_histry_cnt, &wall_data);

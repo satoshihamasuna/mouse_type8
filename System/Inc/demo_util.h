@@ -9,6 +9,7 @@ namespace DemoUtil
 		SEARCH_1,
 		SEARCH_1_ACC,
 		SEARCH_2_ACC,
+		SEARCH_2_PRUNE_ACC,
 		SEARCH_3_ACC
 	};
 

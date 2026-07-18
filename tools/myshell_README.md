@@ -108,8 +108,8 @@ python tools\myshell_gui.py
 | `disp log_bin` | ログデータを高速受信用のバイナリフレームで出力します。 |
 | `path dijkstra` | 現在 RAM 上にある迷路とゴール設定で `check_run_Dijkstra()` を実行します。未ロードの場合は flash の保存迷路と既定ゴールを読みます。 |
 | `path dijkstra_queue` | 同じ迷路・開始地点・ゴールで優先度付きキュー版を実行します。 |
-| `search run start_x start_y N\|E\|S\|W goal\|full first\|second mask max_steps` | モーションを実行せず、実機C++の仮想壁・歩数マップ・足立法を連続再生します。 |
-| `search replay reset\|keep plain\|acc start_x start_y dir goal_x goal_y goal_size goal\|full first\|second mask max_steps` | `Search`と同じ壁観測・マップ更新順で、モーションだけをno-opにして逐次再生します。 |
+| `search run start_x start_y N\|E\|S\|W goal\|full\|full_prune first\|second mask max_steps` | モーションを実行せず、実機C++の仮想壁・歩数マップ・足立法を連続再生します。`full_prune`はUNKNOWN開放仮定の枝刈り全面探索です。 |
+| `search replay reset\|keep plain\|acc start_x start_y dir goal_x goal_y goal_size goal\|full\|full_prune first\|second mask max_steps` | `Search`と同じ壁観測・マップ更新順で、モーションだけをno-opにして逐次再生します。 |
 | `log mode0` | ログヘッダ出力を有効にします。 |
 | `log mode1` | ログヘッダ出力を無効にします。 |
 | `end exe` | myshell を終了します。 |
@@ -127,6 +127,7 @@ virtual_wall_class → make_map → adachi::get_next_dir
 ```text
 search run 0 0 N goal first 1 256
 search run 7 8 E full first 1 256
+search run 7 8 E full_prune first 1 256
 ```
 
 各ステップで次を `SEARCH_STEP` として出力します。

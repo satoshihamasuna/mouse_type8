@@ -1,83 +1,82 @@
-# Subsys maze search simulator
+# 迷路探索シミュレータ
 
-`search_simulator.py` reproduces the relevant behavior of:
+`search_simulator.py` は、マイコン側の探索処理を動作させずに検証するためのツールです。
 
-- `wall_class` (`UNKNOWN`, `NOWALL`, `WALL`, separate virtual walls)
-- `virtual_wall_class` pillar and dead-end inference
-- `make_map_queue` and `make_map_queue_zenmen`
+## 再現する処理
+
+- `wall_class` の `UNKNOWN` / `NOWALL` / `WALL` と仮想壁
+- `add_pillar_walls`
+- `add_dead_end_walls`
+- `add_explored_branch_walls`
+- `make_map_queue` / `make_map_queue_zenmen`
 - `adachi::get_next_dir`
-- the current firmware ordering: initialize motion, rebuild virtual walls/map,
-  execute motion
+- マイコンと同じ更新順序（仮想壁更新 → マップ作成 → 移動実行）
 
-Virtual walls persist between updates.  A search start clears the whole virtual
-layer; subsequent updates clear only edges incident to the start, current
-`expand_end`, or goal area, then run one pillar pass and one dead-end pass.
+テキスト形式の迷路と、マイコンが出力する1024バイトの壁スナップショットを読み込めます。
 
-It accepts both complete text mazes and the packed 1024-byte maze snapshot
-emitted by the firmware.
+## 基本実行
 
-## Check the captured maze
+リポジトリのルートから実行します。
 
-From the repository root:
+```powershell
+python tools/search_simulator.py tools/maze_data/MM2011MM.txt
+```
+
+仮想壁を無効にする場合：
+
+```powershell
+python tools/search_simulator.py tools/maze_data/MM2011MM.txt --virtual off
+```
+
+## 探索モード
+
+`--map-mode goal` はゴール到達を優先します。`--map-mode full` は全面探索用のマップを使用します。
+
+通常の枝閉鎖は、枝の壁・区画が観測済みであることを要求します。
+
+```powershell
+python tools/search_simulator.py tools/maze_data/MM2011MM.txt `
+  --map-mode full --branch-mode observed
+```
+
+PRUNE形式では、UNKNOWNを開放と仮定して単一入口の枝を閉じます。
+全区画を実際に踏む保証はなく、主に復路短縮の検証用です。
+
+```powershell
+python tools/search_simulator.py tools/maze_data/MM2011MM.txt `
+  --map-mode full --branch-mode unknown_open --max-steps 4096
+```
+
+## 仮想壁の仕様
+
+- 柱則：3方向の壁が確定した柱の残り1方向を閉じる
+- 袋小路：3方向が閉じた区画の入口を閉じる
+- 枝閉鎖：入口が1本で、枝側にゴール・スタート・現在地がない枝を閉じる
+- 通常モードではUNKNOWNを未確定として枝閉鎖しない
+- PRUNEモードではUNKNOWNを開放として枝閉鎖する
+- スタート、現在地、ゴール領域は保護する
+
+## 連続往復の比較
+
+往路終了時の既知壁と仮想壁を復路へ引き継いで比較します。
+
+```powershell
+python tools/compare_virtual_walls.py --max-steps 4096 `
+  --return-map-mode full tools/maze_data/MM2011MM.txt
+```
+
+比較対象は `full_observed` と `full_prune` です。`goal+fallback` は全面マップが通常マップへフォールバックした後にゴールへ到達したことを示します。
+
+## 診断
 
 ```powershell
 python tools/search_simulator.py tools/maze_data/logs_maze.bin --compare
+python tools/search_simulator.py tools/maze_data/logs_maze.bin `
+  --audit-contexts --compare --features branch
 ```
 
-Compare full-search return behavior:
+テストは次で実行します。
 
 ```powershell
-python tools/search_simulator.py tools/maze_data/logs_maze.bin `
-  --compare --map-mode full --start 7,8,E --goal 0,0,1
+python -m unittest tools/test_search_simulator.py
 ```
-
-Audit every fully-observed current-to-next context in the snapshot:
-
-```powershell
-python tools/search_simulator.py tools/maze_data/logs_maze.bin `
-  --audit-contexts --compare
-```
-
-Isolate one inference rule:
-
-```powershell
-python tools/search_simulator.py tools/maze_data/logs_maze.bin `
-  --audit-contexts --compare --features dead_end
-
-python tools/search_simulator.py tools/maze_data/logs_maze.bin `
-  --audit-contexts --compare --features pillar
-```
-
-Write a per-step CSV trace:
-
-```powershell
-python tools/search_simulator.py tools/maze_data/logs_maze.bin `
-  --compare --csv tools/logs/virtual_wall_sim.csv
-```
-
-## Interpretation of binary snapshots
-
-A `.bin` file contains the mouse's known wall states, not the complete physical
-maze. Known `WALL` edges are treated as definite walls. `UNKNOWN` edges remain
-unknown and are considered traversable with the firmware's normal `mask=0x01`.
-By default the snapshot is frozen during a simulated walk.
-
-`--snapshot-sensing assume-open` is available for synthetic experiments, but
-it assumes unknown physical space is open and therefore must not be interpreted
-as a collision-proof reproduction of the real maze.
-
-## Current logs_maze.bin findings
-
-- Goal-map walk: virtual OFF, legacy guard, and fixed guard all reach `(7,8)` in
-  33 simulated steps.
-- Pillar-only inference does not close a selected movement edge in the 136
-  audited contexts.
-- With `dead_end` enabled, the legacy guard closes the already selected edge
-  in 19 of those contexts.
-- Pillar-only inference produces zero selected-edge closures.
-- The fixed edge guard produces zero selected-edge closures.
-- The position protected during the pre-motion update is the physical current
-  cell. `expand_end` is kept separate and is used only as the map-expansion
-  destination; protecting it would erase virtual walls before arrival.
-- Full-search return from `(7,8,E)` to `(0,0)` falls back to the normal goal map
-  even with virtual walls OFF; all three configurations then return in 33 steps.

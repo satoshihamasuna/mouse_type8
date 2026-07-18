@@ -678,7 +678,7 @@ def run_replay_matrix_on_serial(
     outward_variants = [(motion, priority) for motion in ("plain", "acc") for priority in ("first", "second")]
     return_variants = [
         (mode, motion, priority)
-        for mode in ("goal", "full")
+        for mode in (("goal", "full", "full_prune") if args.prune_full else ("goal", "full"))
         for motion in ("plain", "acc")
         for priority in ("first", "second")
     ]
@@ -887,7 +887,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--goal", type=parse_goal, default=(7, 7, 2))
     parser.add_argument("--return-goal", type=parse_goal, default=(0, 0, 1))
     parser.add_argument("--start", type=parse_start, default=(0, 0, "N"))
-    parser.add_argument("--mode", choices=("goal", "full"), default="goal")
+    parser.add_argument("--mode", choices=("goal", "full", "full_prune"), default="goal")
     parser.add_argument("--priority", choices=("first", "second"), default="first")
     parser.add_argument("--mask", type=int, choices=(1, 3), default=1)
     parser.add_argument("--max-steps", type=int, default=256)
@@ -900,6 +900,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--replay-matrix",
         action="store_true",
         help="run all goal outward x (goal/full) return x plain/acc x first/second combinations",
+    )
+    parser.add_argument(
+        "--prune-full",
+        action="store_true",
+        help="include full_prune return legs in --replay-matrix",
     )
     parser.add_argument("--output", type=Path, help="output prefix; defaults under tools/logs")
     return parser
@@ -927,7 +932,11 @@ def main(argv: Iterable[str] | None = None) -> int:
             for issue in issues:
                 print(f"  - {issue}")
             return 1
-        print("matrix_verification=OK scenarios=32 legs=64")
+        scenario_count = 48 if args.prune_full else 32
+        print(
+            f"matrix_verification=OK scenarios={scenario_count} "
+            f"legs={scenario_count * 2}"
+        )
         return 0
 
     if args.transcript is not None:

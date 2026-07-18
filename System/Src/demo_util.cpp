@@ -19,6 +19,8 @@ t_position run_search(Search *search, search_type_t type,
 		return search->search_adachi_1_acc(start, goal, goal_size, wall, &map_data, motion);
 	case SEARCH_2_ACC:
 		return search->search_adachi_2_acc(start, goal, goal_size, wall, &map_data, motion);
+	case SEARCH_2_PRUNE_ACC:
+		return search->search_adachi_2_prune_acc(start, goal, goal_size, wall, &map_data, motion);
 	case SEARCH_3_ACC:
 		return search->search_adachi_3_acc(start, goal, goal_size, wall, &map_data, motion);
 	default:

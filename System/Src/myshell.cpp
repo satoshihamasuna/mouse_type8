@@ -216,11 +216,11 @@ static int shell_search_virtual_count(const wall_class *wall_data)
 
 static void shell_search_update_map(wall_class *wall_data,make_map *map_data,
 		t_position maze_start,t_position protected_mouse,t_position expand_end,
-		t_bool full_search,int mask)
+		t_bool full_search,t_virtual_branch_mode branch_mode,int mask)
 {
 	t_position maze_goal = {shell_goal_x, shell_goal_y, North};
 	t_virtual_wall_context context = {maze_start, protected_mouse,
-		maze_goal, shell_goal_size};
+		maze_goal, shell_goal_size, branch_mode};
 	Search_UpdateMap(wall_data, map_data, context, expand_end, maze_goal,
 		shell_goal_size, full_search, mask);
 }
@@ -523,7 +523,7 @@ static int shell_search_select(adachi *algorithm,t_bool priority_second,
 
 static int shell_search_replay(t_bool reset,t_bool accelerated,t_position start,
 		t_position goal,int goal_size,t_bool full_search,t_bool priority_second,
-		int mask,int max_steps)
+		t_virtual_branch_mode branch_mode,int mask,int max_steps)
 {
 	wall_class *truth = shell_wall_data();
 	if(shell_wall_data_ready != True) shell_read_save_data(truth);
@@ -542,7 +542,7 @@ static int shell_search_replay(t_bool reset,t_bool accelerated,t_position start,
 	wall_data->clear_virtual_wall();
 	t_position maze_goal = {shell_goal_x, shell_goal_y, North};
 	t_virtual_wall_context context = {shell_replay_maze_start, start,
-		maze_goal, shell_goal_size};
+		maze_goal, shell_goal_size, branch_mode};
 	Search_UpdateMap(wall_data, map_data, context, start, goal, goal_size,
 		full_search, mask);
 	adachi algorithm(wall_data, map_data);
@@ -559,7 +559,8 @@ static int shell_search_replay(t_bool reset,t_bool accelerated,t_position start,
 		goal.x, goal.y, goal_size,
 		shell_replay_maze_start.x, shell_replay_maze_start.y,
 		maze_goal.x, maze_goal.y, shell_goal_size,
-		full_search == True ? "full" : "goal",
+		branch_mode == VIRTUAL_BRANCH_UNKNOWN_OPEN ? "full_prune" :
+		(full_search == True ? "full" : "goal"),
 		priority_second == True ? "second" : "first", mask, max_steps);
 
 	while(steps < max_steps) {
@@ -697,7 +698,8 @@ static int usrcmd_search(int argc, char **argv)
 		const int goal_x = ntlibc_atoi(argv[7]);
 		const int goal_y = ntlibc_atoi(argv[8]);
 		const int goal_size = ntlibc_atoi(argv[9]);
-		const t_bool full_search = ntlibc_strcmp(argv[10], "full") == 0 ? True : False;
+		const t_bool prune_full = ntlibc_strcmp(argv[10], "full_prune") == 0 ? True : False;
+		const t_bool full_search = (ntlibc_strcmp(argv[10], "full") == 0 || prune_full == True) ? True : False;
 		const t_bool goal_mode = ntlibc_strcmp(argv[10], "goal") == 0 ? True : False;
 		const t_bool priority_second = ntlibc_strcmp(argv[11], "second") == 0 ? True : False;
 		const t_bool priority_first = ntlibc_strcmp(argv[11], "first") == 0 ? True : False;
@@ -716,18 +718,21 @@ static int usrcmd_search(int argc, char **argv)
 		t_position start = {(uint8_t)start_x, (uint8_t)start_y, start_dir};
 		t_position goal = {(uint8_t)goal_x, (uint8_t)goal_y, North};
 		return shell_search_replay(reset, accelerated, start, goal, goal_size,
-			full_search, priority_second, mask, max_steps);
+			full_search, priority_second,
+			prune_full == True ? VIRTUAL_BRANCH_UNKNOWN_OPEN : VIRTUAL_BRANCH_OBSERVED_ONLY,
+			mask, max_steps);
 	}
 	if(argc != 9 || ntlibc_strcmp(argv[1], "run") != 0) {
-		printf("search run start_x start_y N|E|S|W goal|full first|second mask max_steps\r\n");
-		printf("search replay reset|keep plain|acc start_x start_y N|E|S|W goal_x goal_y goal_size goal|full first|second mask max_steps\r\n");
+		printf("search run start_x start_y N|E|S|W goal|full|full_prune first|second mask max_steps\r\n");
+		printf("search replay reset|keep plain|acc start_x start_y N|E|S|W goal_x goal_y goal_size goal|full|full_prune first|second mask max_steps\r\n");
 		return 0;
 	}
 
 	const int start_x = ntlibc_atoi(argv[2]);
 	const int start_y = ntlibc_atoi(argv[3]);
 	const t_direction start_dir = shell_search_parse_direction(argv[4]);
-	const t_bool full_search = ntlibc_strcmp(argv[5], "full") == 0 ? True : False;
+	const t_bool prune_full = ntlibc_strcmp(argv[5], "full_prune") == 0 ? True : False;
+	const t_bool full_search = (ntlibc_strcmp(argv[5], "full") == 0 || prune_full == True) ? True : False;
 	const t_bool goal_mode = ntlibc_strcmp(argv[5], "goal") == 0 ? True : False;
 	const t_bool priority_second = ntlibc_strcmp(argv[6], "second") == 0 ? True : False;
 	const t_bool priority_first = ntlibc_strcmp(argv[6], "first") == 0 ? True : False;
@@ -754,12 +759,14 @@ static int usrcmd_search(int argc, char **argv)
 	t_position goal = {shell_goal_x, shell_goal_y, North};
 	wall_data->clear_virtual_wall();
 	shell_search_update_map(wall_data, map_data, start, current, current,
-		full_search, mask);
+		full_search,
+		prune_full == True ? VIRTUAL_BRANCH_UNKNOWN_OPEN : VIRTUAL_BRANCH_OBSERVED_ONLY,
+		mask);
 
 	printf("SEARCH_RUN_START start:%d,%d,%s goal:%d,%d,%d mode:%s priority:%s mask:%d max_steps:%d\r\n",
 		start.x, start.y, shell_search_direction_name(start.dir),
 		shell_goal_x, shell_goal_y, shell_goal_size,
-		full_search == True ? "full" : "goal",
+		prune_full == True ? "full_prune" : (full_search == True ? "full" : "goal"),
 		priority_second == True ? "second" : "first", mask, max_steps);
 
 	const char *result = "max_steps";
@@ -810,7 +817,9 @@ static int usrcmd_search(int argc, char **argv)
 		}
 
 		shell_search_update_map(wall_data, map_data, start, current, next,
-			full_search, mask);
+			full_search,
+			prune_full == True ? VIRTUAL_BRANCH_UNKNOWN_OPEN : VIRTUAL_BRANCH_OBSERVED_ONLY,
+			mask);
 		const int selected_virtual = wall_data->get_virtual_wall(current.x, current.y, next.dir) == True ? 1 : 0;
 		printf("SEARCH_STEP index:%d pos:%d,%d,%s self:%d map:%d,%d,%d,%d wall:%d,%d,%d,%d "
 			"vwall:%d,%d,%d,%d next:%d,%d,%s local:%d found:1 selected_vwall:%d virtual_edges:%d\r\n",

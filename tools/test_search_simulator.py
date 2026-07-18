@@ -27,6 +27,27 @@ class SearchSimulatorTest(unittest.TestCase):
     def make_open_model(size=5):
         return WallModel(np.zeros((size, size, 4), dtype=bool))
 
+    @staticmethod
+    def make_known_graph(size=6, second_entrance=False, incomplete=False):
+        walls = WallModel(np.ones((size, size, 4), dtype=bool))
+        walls.known.fill(1)
+        edges = [
+            (1, 1, Direction.EAST),
+            (2, 1, Direction.EAST),
+            (2, 1, Direction.NORTH),
+            (2, 2, Direction.NORTH),
+            (2, 3, Direction.EAST),
+            (3, 3, Direction.SOUTH),
+            (3, 2, Direction.WEST),
+        ]
+        if second_entrance:
+            edges.append((3, 1, Direction.NORTH))
+        for x, y, direction in edges:
+            walls._set_known(x, y, direction, 0)
+        if incomplete:
+            walls._set_known(2, 3, Direction.NORTH, 2)
+        return walls
+
     def test_snapshot_decoder_preserves_wall_states(self):
         walls = WallModel.from_packed_snapshot(SNAPSHOT.read_bytes())
         counts = {
@@ -157,6 +178,57 @@ class SearchSimulatorTest(unittest.TestCase):
         pre_motion = VirtualContext(Position(0, 0), Position(6, 0), 6, 6, 1)
         engine.update(pre_motion)
         self.assertTrue(walls.get_virtual_wall(5, 0, Direction.NORTH))
+
+    def test_explored_multi_cell_branch_closes_only_its_single_entrance(self):
+        walls = self.make_known_graph()
+        engine = VirtualWallEngine(walls, True, "fixed", {"branch"})
+        context = VirtualContext(Position(1, 1), Position(3, 1), 5, 5, 1)
+
+        engine.update(context)
+
+        self.assertTrue(walls.get_virtual_wall(2, 1, Direction.NORTH))
+        self.assertEqual(
+            walls.virtual_reason[2, 1, int(Direction.NORTH) // 2],
+            "explored_branch",
+        )
+        self.assertEqual(walls.virtual_edge_count(), 1)
+
+    def test_explored_branch_with_unknown_wall_is_not_closed(self):
+        walls = self.make_known_graph(incomplete=True)
+        engine = VirtualWallEngine(walls, True, "fixed", {"branch"})
+        context = VirtualContext(Position(1, 1), Position(3, 1), 5, 5, 1)
+
+        engine.update(context)
+
+        self.assertFalse(walls.get_virtual_wall(2, 1, Direction.NORTH))
+
+    def test_unknown_open_branch_mode_closes_single_entry_branch(self):
+        walls = self.make_known_graph(incomplete=True)
+        engine = VirtualWallEngine(walls, True, "fixed", {"branch"})
+        context = VirtualContext(Position(1, 1), Position(3, 1), 5, 5, 1)
+
+        engine.update(context, unknown_open=True)
+
+        self.assertTrue(walls.get_virtual_wall(2, 1, Direction.NORTH))
+
+    def test_explored_branch_with_two_entrances_is_not_closed(self):
+        walls = self.make_known_graph(second_entrance=True)
+        engine = VirtualWallEngine(walls, True, "fixed", {"branch"})
+        context = VirtualContext(Position(1, 1), Position(3, 1), 5, 5, 1)
+
+        engine.update(context)
+
+        self.assertFalse(walls.get_virtual_wall(2, 1, Direction.NORTH))
+        self.assertFalse(walls.get_virtual_wall(3, 1, Direction.NORTH))
+
+    def test_explored_branch_containing_mouse_is_not_closed(self):
+        walls = self.make_known_graph()
+        engine = VirtualWallEngine(walls, True, "fixed", {"branch"})
+        context = VirtualContext(Position(1, 1), Position(2, 3), 5, 5, 1)
+
+        engine.update(context)
+
+        self.assertFalse(walls.get_virtual_wall(2, 1, Direction.NORTH))
 
     def test_full_search_snapshot_return_is_stable(self):
         common = dict(

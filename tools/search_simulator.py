@@ -119,6 +119,7 @@ class SimulationResult:
     steps: int
     final_position: Position
     records: list[StepRecord]
+    wall_model: "WallModel | None" = None
 
 
 class WallModel:
@@ -358,7 +359,134 @@ class VirtualWallEngine:
                         changed = True
         return changed
 
-    def update(self, context: VirtualContext) -> None:
+    def add_explored_branch_walls(
+        self, context: VirtualContext, unknown_open: bool = False
+    ) -> bool:
+        """Close a single-entry branch.
+
+        In the normal mode UNKNOWN edges are not traversable, so the branch
+        must be fully observed.  ``unknown_open`` mirrors the firmware's
+        aggressive full-exploration mode: UNKNOWN is treated as an open edge
+        while looking for bridges, and only VWALL/physical WALL blocks a
+        branch.  This intentionally trades the all-cell guarantee for fewer
+        return steps.
+        """
+        width = self.walls.width
+        height = self.walls.height
+        count = width * height
+        discover = [0] * count
+        low = [0] * count
+        parent = [-1] * count
+        order = [0] * count
+        next_dir = [0] * count
+        flags = [0] * count
+        protected_flag = 0x01
+        incomplete_flag = 0x02
+        bridge_flag = 0x04
+        detached_flag = 0x08
+
+        def index(x: int, y: int) -> int:
+            return y * width + x
+
+        def position(value: int) -> tuple[int, int]:
+            return value % width, value // width
+
+        def initial_flags(x: int, y: int) -> int:
+            result = protected_flag if self.is_protected(x, y, context) else 0
+            states = self.walls.known[x, y, :]
+            incomplete_states = states == VWALL
+            if not unknown_open:
+                incomplete_states = np.logical_or(incomplete_states, states == UNKNOWN)
+            if np.any(incomplete_states):
+                result |= incomplete_flag
+            return result
+
+        discovered = 0
+        for root_x in range(width):
+            for root_y in range(height):
+                if not self.is_protected(root_x, root_y, context):
+                    continue
+                root = index(root_x, root_y)
+                if discover[root] != 0:
+                    continue
+                discovered += 1
+                discover[root] = low[root] = discovered
+                order[discovered - 1] = root
+                flags[root] = initial_flags(root_x, root_y)
+                stack = [root]
+
+                while stack:
+                    vertex = stack[-1]
+                    x, y = position(vertex)
+                    if next_dir[vertex] < len(DIRECTIONS):
+                        direction = DIRECTIONS[next_dir[vertex]]
+                        next_dir[vertex] += 1
+                        adjacent = self.walls.neighbor(x, y, direction)
+                        if (
+                            adjacent is None
+                            or (
+                                self.walls.physical_state(x, y, direction) != NOWALL
+                                and not (
+                                    unknown_open
+                                    and self.walls.physical_state(x, y, direction)
+                                    == UNKNOWN
+                                )
+                            )
+                        ):
+                            continue
+                        nx, ny = adjacent
+                        next_vertex = index(nx, ny)
+                        if discover[next_vertex] == 0:
+                            parent[next_vertex] = vertex
+                            discovered += 1
+                            discover[next_vertex] = low[next_vertex] = discovered
+                            order[discovered - 1] = next_vertex
+                            flags[next_vertex] = initial_flags(nx, ny)
+                            stack.append(next_vertex)
+                        elif parent[vertex] != next_vertex:
+                            low[vertex] = min(low[vertex], discover[next_vertex])
+                    else:
+                        stack.pop()
+                        parent_vertex = parent[vertex]
+                        if parent_vertex >= 0:
+                            if low[vertex] > discover[parent_vertex]:
+                                flags[vertex] |= bridge_flag
+                            low[parent_vertex] = min(low[parent_vertex], low[vertex])
+                            flags[parent_vertex] |= flags[vertex] & (
+                                protected_flag | incomplete_flag
+                            )
+
+        changed = False
+        for order_index in range(discovered):
+            vertex = order[order_index]
+            parent_vertex = parent[vertex]
+            if parent_vertex < 0:
+                continue
+            if flags[parent_vertex] & detached_flag:
+                flags[vertex] |= detached_flag
+                continue
+            if not flags[vertex] & bridge_flag or flags[vertex] & (
+                protected_flag | incomplete_flag
+            ):
+                continue
+            x, y = position(vertex)
+            px, py = position(parent_vertex)
+            dx, dy = x - px, y - py
+            direction = next(
+                direction
+                for direction in DIRECTIONS
+                if DELTA[direction] == (dx, dy)
+            )
+            if self.walls.get_virtual_wall(px, py, direction):
+                flags[vertex] |= detached_flag
+            elif self.set_wall(
+                px, py, direction, context, "explored_branch"
+            ):
+                flags[vertex] |= detached_flag
+                changed = True
+        return changed
+
+    def update(self, context: VirtualContext, unknown_open: bool = False) -> None:
         if not self.enabled:
             self.walls.clear_virtual_wall()
             return
@@ -367,6 +495,8 @@ class VirtualWallEngine:
             self.add_pillar_walls(context)
         if "dead_end" in self.features:
             self.add_dead_end_walls(context)
+        if "branch" in self.features:
+            self.add_explored_branch_walls(context, unknown_open=unknown_open)
 
 
 def make_step_map(
@@ -529,10 +659,28 @@ def simulate(
     maze_start_override: Position | None = None,
     maze_goal_override: tuple[int, int, int] | None = None,
     snapshot_sensing: str = "frozen",
+    branch_mode: str = "observed",
+    initial_walls: "WallModel | None" = None,
 ) -> SimulationResult:
-    snapshot_mode = maze_path.suffix.lower() == ".bin"
-    if snapshot_mode:
-        walls = WallModel.from_packed_snapshot(maze_path.read_bytes())
+    # Firmware dumps are raw 1024-byte wall snapshots.  Some captured files
+    # retain a .txt suffix, so detect the packed format by size as well.
+    snapshot_mode = maze_path.suffix.lower() == ".bin" or maze_path.stat().st_size == 32 * 32
+    if initial_walls is not None:
+        walls = initial_walls
+        snapshot_mode = False
+        data = MazeFileReader.from_file(maze_path)
+        intrinsic_goal = maze_goal_override or derive_goal(data.goal_cells)
+        data_start_x, data_start_y = data.start_cells[0]
+        intrinsic_start = maze_start_override or Position(
+            data_start_x, data_start_y, Direction.NORTH
+        )
+    elif snapshot_mode:
+        snapshot_walls = WallModel.from_packed_snapshot(maze_path.read_bytes())
+        walls = (
+            WallModel(snapshot_walls.truth)
+            if snapshot_sensing == "replay-known"
+            else snapshot_walls
+        )
         intrinsic_goal = maze_goal_override or (7, 7, 2)
         intrinsic_start = maze_start_override or Position(0, 0, Direction.NORTH)
     else:
@@ -548,11 +696,14 @@ def simulate(
     start = start_override or intrinsic_start
     current = start
     tmp_next = start
+    if snapshot_mode and snapshot_sensing == "replay-known":
+        walls.sense(current)
     engine = VirtualWallEngine(walls, virtual_enabled, guard, features)
     context = VirtualContext(
         intrinsic_start, current, maze_goal_x, maze_goal_y, maze_goal_size
     )
-    engine.update(context)
+    unknown_open = branch_mode == "unknown_open"
+    engine.update(context, unknown_open=unknown_open)
     fallback_used = False
 
     def rebuild_map(target: Position) -> np.ndarray:
@@ -580,7 +731,7 @@ def simulate(
             context = VirtualContext(
                 intrinsic_start, current, maze_goal_x, maze_goal_y, maze_goal_size
             )
-            engine.update(context)
+            engine.update(context, unknown_open=unknown_open)
             step_map = rebuild_map(current)
 
         known_text, virtual_text, map_text = compact_edge_values(walls, step_map, current)
@@ -601,7 +752,7 @@ def simulate(
             context = VirtualContext(
                 intrinsic_start, current, maze_goal_x, maze_goal_y, maze_goal_size
             )
-            engine.update(context)
+            engine.update(context, unknown_open=unknown_open)
             step_map = rebuild_map(selection.next_position)
 
         selected_absolute = selection.next_position.direction
@@ -645,7 +796,7 @@ def simulate(
 
         current = selection.next_position
         tmp_next = selection.next_position
-        if not snapshot_mode or snapshot_sensing == "assume-open":
+        if not snapshot_mode or snapshot_sensing in ("assume-open", "replay-known"):
             walls.sense(current)
     else:
         step = max_steps
@@ -666,6 +817,7 @@ def simulate(
         steps=len(records),
         final_position=current,
         records=records,
+        wall_model=walls,
     )
 
 
@@ -775,17 +927,23 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timing", choices=("firmware", "fresh"), default="firmware")
     parser.add_argument("--map-mode", choices=("goal", "full"), default="goal")
     parser.add_argument(
+        "--branch-mode",
+        choices=("observed", "unknown_open"),
+        default="observed",
+        help="branch closure requires observed cells, or treats UNKNOWN as open",
+    )
+    parser.add_argument(
         "--features",
-        default="pillar,dead_end",
-        help="comma separated: pillar,dead_end (default: pillar,dead_end)",
+        default="pillar,dead_end,branch",
+        help="comma separated: pillar,dead_end,branch (default: all)",
     )
     parser.add_argument("--goal", type=parse_goal, help="override goal as X,Y,SIZE")
     parser.add_argument("--start", type=parse_start, help="override start as X,Y,N|E|S|W")
     parser.add_argument(
         "--snapshot-sensing",
-        choices=("frozen", "assume-open"),
+        choices=("frozen", "assume-open", "replay-known"),
         default="frozen",
-        help="when reading .bin, keep it frozen or sense UNKNOWN edges as synthetic open space",
+        help="keep a snapshot frozen, sense UNKNOWN as open, or reset and replay its known truth",
     )
     parser.add_argument("--max-steps", type=int, default=4096)
     parser.add_argument("--trace", action="store_true")
@@ -806,7 +964,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Iterable[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     features = {item.strip() for item in args.features.split(",") if item.strip()}
-    invalid = features - {"pillar", "dead_end"}
+    invalid = features - {"pillar", "dead_end", "branch"}
     if invalid:
         raise SystemExit(f"unknown features: {', '.join(sorted(invalid))}")
 
@@ -844,6 +1002,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             goal_override=args.goal,
             start_override=args.start,
             snapshot_sensing=args.snapshot_sensing,
+            branch_mode=args.branch_mode,
         )
         results.append(result)
         print_result(result, args.trace)
