@@ -108,9 +108,130 @@ python tools\myshell_gui.py
 | `disp log_bin` | ログデータを高速受信用のバイナリフレームで出力します。 |
 | `path dijkstra` | 現在 RAM 上にある迷路とゴール設定で `check_run_Dijkstra()` を実行します。未ロードの場合は flash の保存迷路と既定ゴールを読みます。 |
 | `path dijkstra_queue` | 同じ迷路・開始地点・ゴールで優先度付きキュー版を実行します。 |
+| `search run start_x start_y N\|E\|S\|W goal\|full first\|second mask max_steps` | モーションを実行せず、実機C++の仮想壁・歩数マップ・足立法を連続再生します。 |
+| `search replay reset\|keep plain\|acc start_x start_y dir goal_x goal_y goal_size goal\|full first\|second mask max_steps` | `Search`と同じ壁観測・マップ更新順で、モーションだけをno-opにして逐次再生します。 |
 | `log mode0` | ログヘッダ出力を有効にします。 |
 | `log mode1` | ログヘッダ出力を無効にします。 |
 | `end exe` | myshell を終了します。 |
+
+## Search診断
+
+`search run` はモータを動かさず、完成済みのRAM迷路を使って次の実装をマイコン上で実行します。
+
+```text
+virtual_wall_class → make_map → adachi::get_next_dir
+```
+
+例:
+
+```text
+search run 0 0 N goal first 1 256
+search run 7 8 E full first 1 256
+```
+
+各ステップで次を `SEARCH_STEP` として出力します。
+
+- 現在座標・姿勢
+- 現在セルと4近傍の歩数値
+- 観測壁4辺
+- 仮想壁4辺
+- 選択された次座標・方向
+- 次座標用の仮想壁更新が、選択済み辺を閉じたか
+- 迷路全体の仮想壁辺数
+
+終了後、`SEARCH_MAP` で32行の歩数マップ、`SEARCH_VIRTUAL` で仮想壁一覧を出力します。
+
+`search run` は完成迷路の静的診断であり、`Search::search_adachi()`の壁観測手順そのものではありません。
+実探索と同じ逐次壁観測を検証する場合は、次の`search replay`を使用します。
+
+### Search逐次再生
+
+`load maze_bin`で読み込んだ迷路をセンサの真値として保持し、探索用の壁は`reset`時に
+`init_maze()`から開始します。到着セルごとに真値から4辺を観測し、次の順番で進めます。
+
+```text
+壁観測 → 方向選択 → Init_Motion相当 → Search_UpdateMap → execute_Motion(no-op) → 到着
+```
+
+`Search_UpdateMap`は実走行の`Search::update_map()`と共通です。`keep`を指定すると、直前の往路で
+観測した壁を復路へ引き継ぎます。各`REPLAY_STEP`には選択辺の真値、仮想壁更新後の閉鎖状態、
+観測壁・仮想壁・歩数値を出力します。
+
+仮想壁のprotected領域は探索レッグのstart/goalではなく、迷路固有のstart/goalです。
+`reset`時の開始座標と`load goal`のゴール領域を保持するため、復路でも元の2×2ゴール領域全体を
+保護し、歩数マップの復路目的地だけをスタートへ切り替えます。
+
+仮想壁更新には移動前の現在座標、歩数マップ更新には選択した移動先を別々に渡します。
+このため、到着セルに接する仮想壁を到着前に誤って解除しません。
+
+Search専用GUIは次のコマンドで起動します。
+
+```powershell
+python tools\myshell_search_gui.py
+```
+
+GUIはCOM接続を保持し、迷路送信、静的Search、往路再生、往復再生、32シナリオ検証を
+実行できます。Shell log、ステップ表、実壁・仮想壁・経路の迷路表示、シナリオ一覧を
+切り替えて確認できます。迷路タブではマウス位置を黒丸で表示し、結果の座標列を
+再生・一時停止・前後1ステップ・速度変更できます。
+
+全組み合わせを実行する例:
+
+```powershell
+python tools\myshell_search.py --port COM8 `
+  --maze tools\maze_data\logs_maze.bin `
+  --goal 7,7,2 --return-goal 0,0,1 --start 0,0,N `
+  --replay-matrix
+```
+
+このマトリクスは次の32シナリオ、合計64レッグを実行します。
+
+- 往路: `plain/acc × first/second`の4種類
+- 復路: `goal/full × plain/acc × first/second`の8種類
+- 各組み合わせで往路を`reset`し、その復路だけを`keep`で実行
+
+シナリオごとに生ログとステップCSVを保存し、全体結果を`*_summary.csv`へ保存します。
+
+PCから迷路をアップロードして自動検証する場合は次を実行します。
+
+```powershell
+python tools\myshell_search.py `
+  --port COM8 `
+  --maze tools\maze_data\logs_maze.bin `
+  --goal 7,7,2 `
+  --start 0,0,N
+```
+
+全面探索の復路確認例:
+
+```powershell
+python tools\myshell_search.py `
+  --port COM8 `
+  --maze tools\maze_data\logs_maze.bin `
+  --goal 0,0,1 `
+  --start 7,8,E `
+  --mode full
+```
+
+入力は1024-byte `.bin`、壁履歴テキスト、標準 `maze_data` テキストに対応します。
+拡張子が `.txt` でも内容が1024-byteバイナリなら、そのまま迷路payloadとして扱います。
+
+結果は `tools/logs/` に次の形式で保存します。
+
+- 生の `SEARCH_*` 応答テキスト
+- ステップCSV
+- 歩数マップCSV
+- 仮想壁CSV
+- 歩数マップ・経路・仮想壁を重ねたPNG
+
+`verification=FAILED` になる主な条件は次のとおりです。
+
+- ゴールへ到達できない
+- 選択候補がない
+- 最小歩数でない方向を選択した
+- 選択済みの辺を直後の仮想壁更新が閉じた
+- スタート・ゴールに仮想壁が接している
+- 仮想壁数または歩数マップ行数が出力と一致しない
 
 ## 迷路バイナリ形式
 

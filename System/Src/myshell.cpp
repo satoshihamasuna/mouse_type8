@@ -14,6 +14,9 @@
 #include "../../Module/Inc/flash.h"
 #include "../../Module/Inc/interrupt.h"
 #include "../../Subsys/Inc/make_path.h"
+#include "../../Subsys/Inc/adachi_class.h"
+#include "../../Subsys/Inc/search_class.h"
+#include "../../Subsys/Inc/virtual_wall_class.h"
 #include "typedef.h"
 #include "../../Task/Inc/sensing_task.h"
 #include "../../Task/Inc/ctrl_task.h"
@@ -39,6 +42,7 @@ static int usrcmd_turnpattern(int argc, char **argv);
 static int usrcmd_log(int argc, char **argv);
 static int usrcmd_load(int argc, char **argv);
 static int usrcmd_path(int argc, char **argv);
+static int usrcmd_search(int argc, char **argv);
 typedef struct {
 	const char *cmd;
 	const char *desc;
@@ -54,7 +58,8 @@ static const cmd_table_t cmdlist[] = {
 	{ "turnpattern", "Build and execute a turn pattern (max 20).", usrcmd_turnpattern },
 	{ "log"  ,"This is a description text string for debug command.", usrcmd_log },
 	{ "load" ,"load saved maze data from flash.", usrcmd_load },
-	{ "path" ,"check path generation.", usrcmd_path }
+	{ "path" ,"check path generation.", usrcmd_path },
+	{ "search" ,"replay search/map/virtual-wall logic without motion.", usrcmd_search }
 };
 
 static ntshell_t nts;
@@ -64,6 +69,8 @@ static t_bool shell_wall_data_ready = False;
 static uint8_t shell_goal_x = MAZE_GOAL_X;
 static uint8_t shell_goal_y = MAZE_GOAL_Y;
 static uint8_t shell_goal_size = MAZE_GOAL_SIZE;
+static t_bool shell_replay_ready = False;
+static t_position shell_replay_maze_start = {0, 0, North};
 
 static wall_class *shell_wall_data(void)
 {
@@ -113,6 +120,230 @@ static t_bool shell_set_goal(int x, int y, int size)
 	shell_goal_y = (uint8_t)y;
 	shell_goal_size = (uint8_t)size;
 	return True;
+}
+
+static wall_class *shell_replay_wall_data(void)
+{
+	static wall_class wall_data(&IrSensTask_type8::getInstance());
+	return &wall_data;
+}
+
+static make_map *shell_search_map_data(wall_class *wall_data)
+{
+	static ring_queue<1024,t_MapNode> maze_q;
+	static make_map map_data(shell_wall_data(), &maze_q);
+	maze_q.queue_reset();
+	map_data.wall_property = wall_data;
+	return &map_data;
+}
+
+static const t_direction shell_search_dirs[4] = {North, East, South, West};
+
+static const char *shell_search_direction_name(t_direction dir)
+{
+	switch(dir) {
+		case North: return "N";
+		case East: return "E";
+		case South: return "S";
+		case West: return "W";
+		default: return "NONE";
+	}
+}
+
+static t_direction shell_search_parse_direction(const char *text)
+{
+	if(ntlibc_strcmp(text, "N") == 0 || ntlibc_strcmp(text, "0") == 0) return North;
+	if(ntlibc_strcmp(text, "E") == 0 || ntlibc_strcmp(text, "2") == 0) return East;
+	if(ntlibc_strcmp(text, "S") == 0 || ntlibc_strcmp(text, "4") == 0) return South;
+	if(ntlibc_strcmp(text, "W") == 0 || ntlibc_strcmp(text, "6") == 0) return West;
+	return Dir_None;
+}
+
+static t_bool shell_search_is_goal(t_position pos)
+{
+	return (pos.x >= shell_goal_x && pos.x < shell_goal_x + shell_goal_size &&
+		pos.y >= shell_goal_y && pos.y < shell_goal_y + shell_goal_size) ? True : False;
+}
+
+static t_bool shell_search_is_goal(t_position pos,t_position goal,int goal_size)
+{
+	return (pos.x >= goal.x && pos.x < goal.x + goal_size &&
+		pos.y >= goal.y && pos.y < goal.y + goal_size) ? True : False;
+}
+
+static uint16_t shell_search_map_value(const make_map *map_data,int x,int y)
+{
+	if(x < 0 || x >= MAZE_SIZE_X || y < 0 || y >= MAZE_SIZE_Y) return MAZE_SIZE;
+	return map_data->map[x][y];
+}
+
+static t_bool shell_search_neighbor(t_position pos,t_direction dir,int *nx,int *ny)
+{
+	*nx = pos.x;
+	*ny = pos.y;
+	switch(dir) {
+		case North: ++*ny; break;
+		case East: ++*nx; break;
+		case South: --*ny; break;
+		case West: --*nx; break;
+		default: return False;
+	}
+	return (*nx >= 0 && *nx < MAZE_SIZE_X && *ny >= 0 && *ny < MAZE_SIZE_Y) ? True : False;
+}
+
+static t_bool shell_search_has_candidate(wall_class *wall_data,make_map *map_data,t_position pos,int mask)
+{
+	for(int i = 0; i < 4; i++) {
+		int nx, ny;
+		if(shell_search_neighbor(pos, shell_search_dirs[i], &nx, &ny) != True) continue;
+		if(wall_data->is_open(pos.x, pos.y, shell_search_dirs[i], mask) != True) continue;
+		if(map_data->map[nx][ny] < MAP_MAX_VALUE) return True;
+	}
+	return False;
+}
+
+static int shell_search_virtual_count(const wall_class *wall_data)
+{
+	int count = 0;
+	for(int x = 0; x < MAZE_SIZE_X; x++) {
+		for(int y = 0; y < MAZE_SIZE_Y; y++) {
+			if(y + 1 < MAZE_SIZE_Y && wall_data->get_virtual_wall(x, y, North) == True) count++;
+			if(x + 1 < MAZE_SIZE_X && wall_data->get_virtual_wall(x, y, East) == True) count++;
+		}
+	}
+	return count;
+}
+
+static void shell_search_update_map(wall_class *wall_data,make_map *map_data,
+		t_position maze_start,t_position protected_mouse,t_position expand_end,
+		t_bool full_search,int mask)
+{
+	t_position maze_goal = {shell_goal_x, shell_goal_y, North};
+	t_virtual_wall_context context = {maze_start, protected_mouse,
+		maze_goal, shell_goal_size};
+	Search_UpdateMap(wall_data, map_data, context, expand_end, maze_goal,
+		shell_goal_size, full_search, mask);
+}
+
+static t_wall_state shell_search_wall_state(const wall_class *wall_data,int x,int y,t_direction dir)
+{
+	if(x < 0 || x >= MAZE_SIZE_X || y < 0 || y >= MAZE_SIZE_Y) return WALL;
+	switch(dir) {
+		case North: return (t_wall_state)wall_data->wall[x][y].north;
+		case East: return (t_wall_state)wall_data->wall[x][y].east;
+		case South: return (t_wall_state)wall_data->wall[x][y].south;
+		case West: return (t_wall_state)wall_data->wall[x][y].west;
+		default: return WALL;
+	}
+}
+
+static void shell_search_write_wall_state(wall_class *wall_data,int x,int y,
+		t_direction dir,t_wall_state state)
+{
+	if(x < 0 || x >= MAZE_SIZE_X || y < 0 || y >= MAZE_SIZE_Y) return;
+	switch(dir) {
+		case North: wall_data->wall[x][y].north = state; break;
+		case East: wall_data->wall[x][y].east = state; break;
+		case South: wall_data->wall[x][y].south = state; break;
+		case West: wall_data->wall[x][y].west = state; break;
+		default: break;
+	}
+}
+
+static t_direction shell_search_opposite(t_direction dir)
+{
+	switch(dir) {
+		case North: return South;
+		case East: return West;
+		case South: return North;
+		case West: return East;
+		default: return Dir_None;
+	}
+}
+
+static void shell_search_write_observation(wall_class *wall_data,int x,int y,
+		t_direction dir,t_wall_state observed)
+{
+	const t_wall_state old_state = shell_search_wall_state(wall_data, x, y, dir);
+	const t_wall_state stored = (old_state == UNKNOWN || old_state == observed) ? observed : VWALL;
+	shell_search_write_wall_state(wall_data, x, y, dir, stored);
+	int nx, ny;
+	t_position pos = {(uint8_t)x, (uint8_t)y, dir};
+	if(shell_search_neighbor(pos, dir, &nx, &ny) == True) {
+		shell_search_write_wall_state(wall_data, nx, ny, shell_search_opposite(dir), stored);
+	}
+}
+
+// Reproduce set_wall() using the uploaded snapshot as the sensor truth.  The
+// write/contradiction and reciprocal-edge rules match wall_class::set_wall().
+static t_bool shell_search_sense_from_truth(wall_class *wall_data,
+		const wall_class *truth,t_position pos)
+{
+	const t_bool append_history = wall_data->is_unknown(pos.x, pos.y);
+	t_bool complete_truth = True;
+	for(int i = 0; i < 4; i++) {
+		const t_wall_state observed = shell_search_wall_state(truth, pos.x, pos.y,
+			shell_search_dirs[i]);
+		if(observed == UNKNOWN) {
+			complete_truth = False;
+			continue;
+		}
+		shell_search_write_observation(wall_data, pos.x, pos.y,
+			shell_search_dirs[i], observed);
+	}
+	if(append_history == True) {
+		wall_data->wall_histry.histry_set(pos.x, pos.y, wall_data->wall[pos.x][pos.y]);
+	}
+	return complete_truth;
+}
+
+static void shell_search_replay_dump(wall_class *wall_data,const make_map *map_data)
+{
+	printf("REPLAY_DUMP_START\r\n");
+	for(int x = 0; x < MAZE_SIZE_X; x++) {
+		for(int y = 0; y < MAZE_SIZE_Y; y++) {
+			if(y + 1 < MAZE_SIZE_Y && wall_data->get_virtual_wall(x, y, North) == True) {
+				printf("REPLAY_VIRTUAL x:%d y:%d dir:N\r\n", x, y);
+			}
+			if(x + 1 < MAZE_SIZE_X && wall_data->get_virtual_wall(x, y, East) == True) {
+				printf("REPLAY_VIRTUAL x:%d y:%d dir:E\r\n", x, y);
+			}
+		}
+	}
+	for(int y = MAZE_SIZE_Y - 1; y >= 0; y--) {
+		printf("REPLAY_MAP y:%d values:", y);
+		for(int x = 0; x < MAZE_SIZE_X; x++) {
+			printf("%d%s", (int)map_data->map[x][y], x + 1 < MAZE_SIZE_X ? "," : "");
+		}
+		printf("\r\n");
+	}
+	printf("REPLAY_DUMP_END virtual_edges:%d map_rows:%d history:%d\r\n",
+		shell_search_virtual_count(wall_data), MAZE_SIZE_Y,
+		wall_data->wall_histry.get_histry_cnt());
+}
+
+static void shell_search_dump(wall_class *wall_data,const make_map *map_data)
+{
+	printf("SEARCH_DUMP_START\r\n");
+	for(int x = 0; x < MAZE_SIZE_X; x++) {
+		for(int y = 0; y < MAZE_SIZE_Y; y++) {
+			if(y + 1 < MAZE_SIZE_Y && wall_data->get_virtual_wall(x, y, North) == True) {
+				printf("SEARCH_VIRTUAL x:%d y:%d dir:N\r\n", x, y);
+			}
+			if(x + 1 < MAZE_SIZE_X && wall_data->get_virtual_wall(x, y, East) == True) {
+				printf("SEARCH_VIRTUAL x:%d y:%d dir:E\r\n", x, y);
+			}
+		}
+	}
+	for(int y = MAZE_SIZE_Y - 1; y >= 0; y--) {
+		printf("SEARCH_MAP y:%d values:", y);
+		for(int x = 0; x < MAZE_SIZE_X; x++) {
+			printf("%d%s", (int)map_data->map[x][y], x + 1 < MAZE_SIZE_X ? "," : "");
+		}
+		printf("\r\n");
+	}
+	printf("SEARCH_DUMP_END virtual_edges:%d map_rows:%d\r\n",
+		shell_search_virtual_count(wall_data), MAZE_SIZE_Y);
 }
 
 /* ---------------------------------------------------------------
@@ -280,6 +511,331 @@ static int usrcmd_path(int argc, char **argv)
     }
     printf("Unknown sub command found\r\n");
     return -1;
+}
+
+static int shell_search_select(adachi *algorithm,t_bool priority_second,
+		t_position current,t_position goal,int mask,t_position *next)
+{
+	return priority_second == True ?
+		algorithm->get_next_dir2(current, goal, mask, next) :
+		algorithm->get_next_dir(current, mask, next);
+}
+
+static int shell_search_replay(t_bool reset,t_bool accelerated,t_position start,
+		t_position goal,int goal_size,t_bool full_search,t_bool priority_second,
+		int mask,int max_steps)
+{
+	wall_class *truth = shell_wall_data();
+	if(shell_wall_data_ready != True) shell_read_save_data(truth);
+	wall_class *wall_data = shell_replay_wall_data();
+	make_map *map_data = shell_search_map_data(wall_data);
+	if(reset == True) {
+		wall_data->init_maze();
+		shell_replay_maze_start = start;
+		shell_replay_ready = True;
+	} else if(shell_replay_ready != True) {
+		printf("REPLAY_ERROR keep_without_reset\r\n");
+		return -1;
+	}
+
+	map_data->init_map(goal.x, goal.y, goal_size);
+	wall_data->clear_virtual_wall();
+	t_position maze_goal = {shell_goal_x, shell_goal_y, North};
+	t_virtual_wall_context context = {shell_replay_maze_start, start,
+		maze_goal, shell_goal_size};
+	Search_UpdateMap(wall_data, map_data, context, start, goal, goal_size,
+		full_search, mask);
+	adachi algorithm(wall_data, map_data);
+	t_position current = start;
+	int steps = 0;
+	int sensed_cells = 0;
+	const char *result = "max_steps";
+
+	printf("REPLAY_START state:%s motion:%s start:%d,%d,%s goal:%d,%d,%d "
+		"maze_start:%d,%d maze_goal:%d,%d,%d mode:%s "
+		"priority:%s mask:%d max_steps:%d\r\n",
+		reset == True ? "reset" : "keep", accelerated == True ? "acc" : "plain",
+		start.x, start.y, shell_search_direction_name(start.dir),
+		goal.x, goal.y, goal_size,
+		shell_replay_maze_start.x, shell_replay_maze_start.y,
+		maze_goal.x, maze_goal.y, shell_goal_size,
+		full_search == True ? "full" : "goal",
+		priority_second == True ? "second" : "first", mask, max_steps);
+
+	while(steps < max_steps) {
+		if(shell_search_is_goal(current, goal, goal_size) == True) {
+			result = "goal";
+			break;
+		}
+
+		int sensed = 0;
+		// search_adachi() senses every arrived cell. search_adachi_acc() only
+		// senses it while some edge is unknown. Neither senses the start before
+		// selecting the first move.
+		if(steps > 0 && (accelerated != True || wall_data->is_unknown(current.x, current.y) == True)) {
+			if(shell_search_sense_from_truth(wall_data, truth, current) != True) {
+				printf("REPLAY_ERROR truth_unknown index:%d pos:%d,%d,%s\r\n",
+					steps, current.x, current.y, shell_search_direction_name(current.dir));
+				result = "truth_unknown";
+				break;
+			}
+			sensed = 1;
+			sensed_cells++;
+		}
+
+		int map_values[4];
+		int wall_values[4];
+		int virtual_values[4];
+		const int self_value = (int)map_data->map[current.x][current.y];
+		for(int i = 0; i < 4; i++) {
+			int nx, ny;
+			map_values[i] = shell_search_neighbor(current, shell_search_dirs[i], &nx, &ny) == True ?
+				(int)shell_search_map_value(map_data, nx, ny) : MAZE_SIZE;
+			wall_values[i] = (int)shell_search_wall_state(wall_data, current.x, current.y,
+				shell_search_dirs[i]);
+			virtual_values[i] = wall_data->get_virtual_wall(current.x, current.y,
+				shell_search_dirs[i]) == True ? 1 : 0;
+		}
+
+		if(shell_search_has_candidate(wall_data, map_data, current, mask) != True) {
+			printf("REPLAY_STEP index:%d pos:%d,%d,%s self:%d map:%d,%d,%d,%d "
+				"wall:%d,%d,%d,%d vwall:%d,%d,%d,%d sensed:%d next:%d,%d,NONE "
+				"local:%d truth:%d selected_vwall:0 next_acc:%d virtual_edges:%d\r\n",
+				steps, current.x, current.y, shell_search_direction_name(current.dir),
+				self_value,
+				map_values[0], map_values[1], map_values[2], map_values[3],
+				wall_values[0], wall_values[1], wall_values[2], wall_values[3],
+				virtual_values[0], virtual_values[1], virtual_values[2], virtual_values[3],
+				sensed, current.x, current.y, None, UNKNOWN, None,
+				shell_search_virtual_count(wall_data));
+			result = "no_candidate";
+			break;
+		}
+
+		t_position next = current;
+		const int local_dir = shell_search_select(&algorithm, priority_second,
+			current, goal, mask, &next);
+		if(next.x >= MAZE_SIZE_X || next.y >= MAZE_SIZE_Y ||
+			(next.dir != North && next.dir != East && next.dir != South && next.dir != West)) {
+			printf("REPLAY_ERROR invalid_next index:%d\r\n", steps);
+			result = "invalid_next";
+			break;
+		}
+
+		int next_acc_dir = None;
+		if(accelerated == True && wall_data->is_unknown(next.x, next.y) == False &&
+			shell_search_is_goal(next, goal, goal_size) != True) {
+			t_position next_acc = next;
+			next_acc_dir = shell_search_select(&algorithm, priority_second,
+				next, goal, mask, &next_acc);
+		}
+
+		const t_wall_state truth_selected = shell_search_wall_state(truth,
+			current.x, current.y, next.dir);
+		// Same order as every Search motion helper:
+		// Init_Motion_* -> update_map -> execute_Motion(no-op here).
+		context.mouse = current;
+		Search_UpdateMap(wall_data, map_data, context, next, goal, goal_size,
+			full_search, mask);
+		const int selected_virtual = wall_data->get_virtual_wall(current.x,
+			current.y, next.dir) == True ? 1 : 0;
+
+		printf("REPLAY_STEP index:%d pos:%d,%d,%s self:%d map:%d,%d,%d,%d "
+			"wall:%d,%d,%d,%d vwall:%d,%d,%d,%d sensed:%d next:%d,%d,%s "
+			"local:%d truth:%d selected_vwall:%d next_acc:%d virtual_edges:%d\r\n",
+			steps, current.x, current.y, shell_search_direction_name(current.dir),
+			self_value,
+			map_values[0], map_values[1], map_values[2], map_values[3],
+			wall_values[0], wall_values[1], wall_values[2], wall_values[3],
+			virtual_values[0], virtual_values[1], virtual_values[2], virtual_values[3],
+			sensed, next.x, next.y, shell_search_direction_name(next.dir), local_dir,
+			(int)truth_selected, selected_virtual, next_acc_dir,
+			shell_search_virtual_count(wall_data));
+
+		if(truth_selected == WALL || truth_selected == VWALL) {
+			result = "truth_collision";
+			break;
+		}
+		if(truth_selected == UNKNOWN) {
+			result = "truth_unknown";
+			break;
+		}
+		if(selected_virtual != 0) {
+			result = "selected_edge_closed";
+			break;
+		}
+
+		// execute_Motion() is intentionally a no-op. Arrival happens here.
+		current = next;
+		steps++;
+	}
+
+	if(shell_search_is_goal(current, goal, goal_size) == True) result = "goal";
+	if(ntlibc_strcmp(result, "goal") == 0) {
+		// Both Search variants call set_wall() once more at the goal.
+		if(shell_search_sense_from_truth(wall_data, truth, current) == True) sensed_cells++;
+		else result = "truth_unknown";
+	}
+	printf("REPLAY_END result:%s steps:%d final:%d,%d,%s sensed:%d history:%d virtual_edges:%d\r\n",
+		result, steps, current.x, current.y, shell_search_direction_name(current.dir),
+		sensed_cells, wall_data->wall_histry.get_histry_cnt(),
+		shell_search_virtual_count(wall_data));
+	shell_search_replay_dump(wall_data, map_data);
+	return ntlibc_strcmp(result, "goal") == 0 ? 0 : -1;
+}
+
+static int usrcmd_search(int argc, char **argv)
+{
+	if(argc == 14 && ntlibc_strcmp(argv[1], "replay") == 0) {
+		const t_bool reset = ntlibc_strcmp(argv[2], "reset") == 0 ? True : False;
+		const t_bool keep = ntlibc_strcmp(argv[2], "keep") == 0 ? True : False;
+		const t_bool accelerated = ntlibc_strcmp(argv[3], "acc") == 0 ? True : False;
+		const t_bool plain = ntlibc_strcmp(argv[3], "plain") == 0 ? True : False;
+		const int start_x = ntlibc_atoi(argv[4]);
+		const int start_y = ntlibc_atoi(argv[5]);
+		const t_direction start_dir = shell_search_parse_direction(argv[6]);
+		const int goal_x = ntlibc_atoi(argv[7]);
+		const int goal_y = ntlibc_atoi(argv[8]);
+		const int goal_size = ntlibc_atoi(argv[9]);
+		const t_bool full_search = ntlibc_strcmp(argv[10], "full") == 0 ? True : False;
+		const t_bool goal_mode = ntlibc_strcmp(argv[10], "goal") == 0 ? True : False;
+		const t_bool priority_second = ntlibc_strcmp(argv[11], "second") == 0 ? True : False;
+		const t_bool priority_first = ntlibc_strcmp(argv[11], "first") == 0 ? True : False;
+		const int mask = ntlibc_atoi(argv[12]);
+		const int max_steps = ntlibc_atoi(argv[13]);
+		if((reset != True && keep != True) || (accelerated != True && plain != True) ||
+			start_x < 0 || start_x >= MAZE_SIZE_X || start_y < 0 || start_y >= MAZE_SIZE_Y ||
+			start_dir == Dir_None || goal_x < 0 || goal_y < 0 || goal_size <= 0 ||
+			goal_x + goal_size > MAZE_SIZE_X || goal_y + goal_size > MAZE_SIZE_Y ||
+			(full_search != True && goal_mode != True) ||
+			(priority_second != True && priority_first != True) ||
+			(mask != 0x01 && mask != 0x03) || max_steps <= 0 || max_steps > MAZE_SIZE * 4) {
+			printf("REPLAY_ERROR invalid_argument\r\n");
+			return -1;
+		}
+		t_position start = {(uint8_t)start_x, (uint8_t)start_y, start_dir};
+		t_position goal = {(uint8_t)goal_x, (uint8_t)goal_y, North};
+		return shell_search_replay(reset, accelerated, start, goal, goal_size,
+			full_search, priority_second, mask, max_steps);
+	}
+	if(argc != 9 || ntlibc_strcmp(argv[1], "run") != 0) {
+		printf("search run start_x start_y N|E|S|W goal|full first|second mask max_steps\r\n");
+		printf("search replay reset|keep plain|acc start_x start_y N|E|S|W goal_x goal_y goal_size goal|full first|second mask max_steps\r\n");
+		return 0;
+	}
+
+	const int start_x = ntlibc_atoi(argv[2]);
+	const int start_y = ntlibc_atoi(argv[3]);
+	const t_direction start_dir = shell_search_parse_direction(argv[4]);
+	const t_bool full_search = ntlibc_strcmp(argv[5], "full") == 0 ? True : False;
+	const t_bool goal_mode = ntlibc_strcmp(argv[5], "goal") == 0 ? True : False;
+	const t_bool priority_second = ntlibc_strcmp(argv[6], "second") == 0 ? True : False;
+	const t_bool priority_first = ntlibc_strcmp(argv[6], "first") == 0 ? True : False;
+	const int mask = ntlibc_atoi(argv[7]);
+	const int max_steps = ntlibc_atoi(argv[8]);
+
+	if(start_x < 0 || start_x >= MAZE_SIZE_X || start_y < 0 || start_y >= MAZE_SIZE_Y ||
+		start_dir == Dir_None || (full_search != True && goal_mode != True) ||
+		(priority_first != True && priority_second != True) ||
+		(mask != 0x01 && mask != 0x03) || max_steps <= 0 || max_steps > MAZE_SIZE * 4) {
+		printf("SEARCH_ERROR invalid_argument\r\n");
+		return -1;
+	}
+
+	wall_class *wall_data = shell_wall_data();
+	if(shell_wall_data_ready != True) {
+		shell_read_save_data(wall_data);
+	}
+
+	make_map *map_data = shell_search_map_data(wall_data);
+	adachi search_algorithm(wall_data, map_data);
+	t_position start = {(uint8_t)start_x, (uint8_t)start_y, start_dir};
+	t_position current = start;
+	t_position goal = {shell_goal_x, shell_goal_y, North};
+	wall_data->clear_virtual_wall();
+	shell_search_update_map(wall_data, map_data, start, current, current,
+		full_search, mask);
+
+	printf("SEARCH_RUN_START start:%d,%d,%s goal:%d,%d,%d mode:%s priority:%s mask:%d max_steps:%d\r\n",
+		start.x, start.y, shell_search_direction_name(start.dir),
+		shell_goal_x, shell_goal_y, shell_goal_size,
+		full_search == True ? "full" : "goal",
+		priority_second == True ? "second" : "first", mask, max_steps);
+
+	const char *result = "max_steps";
+	int steps = 0;
+	while(steps < max_steps) {
+		if(shell_search_is_goal(current) == True) {
+			result = "goal";
+			break;
+		}
+
+		int map_values[4];
+		int wall_values[4];
+		int virtual_values[4];
+		const int self_value = (int)map_data->map[current.x][current.y];
+		for(int i = 0; i < 4; i++) {
+			int nx, ny;
+			map_values[i] = shell_search_neighbor(current, shell_search_dirs[i], &nx, &ny) == True ?
+				(int)shell_search_map_value(map_data, nx, ny) : MAZE_SIZE;
+			t_position edge = current;
+			edge.dir = shell_search_dirs[i];
+			wall_values[i] = (int)wall_data->get_WallState(edge);
+			virtual_values[i] = wall_data->get_virtual_wall(current.x, current.y,
+				shell_search_dirs[i]) == True ? 1 : 0;
+		}
+
+		if(shell_search_has_candidate(wall_data, map_data, current, mask) != True) {
+			printf("SEARCH_STEP index:%d pos:%d,%d,%s self:%d map:%d,%d,%d,%d wall:%d,%d,%d,%d "
+				"vwall:%d,%d,%d,%d next:%d,%d,NONE local:%d found:0 selected_vwall:0 virtual_edges:%d\r\n",
+				steps, current.x, current.y, shell_search_direction_name(current.dir),
+				self_value,
+				map_values[0], map_values[1], map_values[2], map_values[3],
+				wall_values[0], wall_values[1], wall_values[2], wall_values[3],
+				virtual_values[0], virtual_values[1], virtual_values[2], virtual_values[3],
+				current.x, current.y, None, shell_search_virtual_count(wall_data));
+			result = "no_candidate";
+			break;
+		}
+
+		t_position next = current;
+		const int local_dir = priority_second == True ?
+			search_algorithm.get_next_dir2(current, goal, mask, &next) :
+			search_algorithm.get_next_dir(current, mask, &next);
+		if(next.x >= MAZE_SIZE_X || next.y >= MAZE_SIZE_Y ||
+			(next.dir != North && next.dir != East && next.dir != South && next.dir != West)) {
+			printf("SEARCH_ERROR invalid_next index:%d\r\n", steps);
+			result = "invalid_next";
+			break;
+		}
+
+		shell_search_update_map(wall_data, map_data, start, current, next,
+			full_search, mask);
+		const int selected_virtual = wall_data->get_virtual_wall(current.x, current.y, next.dir) == True ? 1 : 0;
+		printf("SEARCH_STEP index:%d pos:%d,%d,%s self:%d map:%d,%d,%d,%d wall:%d,%d,%d,%d "
+			"vwall:%d,%d,%d,%d next:%d,%d,%s local:%d found:1 selected_vwall:%d virtual_edges:%d\r\n",
+			steps, current.x, current.y, shell_search_direction_name(current.dir),
+			self_value,
+			map_values[0], map_values[1], map_values[2], map_values[3],
+			wall_values[0], wall_values[1], wall_values[2], wall_values[3],
+			virtual_values[0], virtual_values[1], virtual_values[2], virtual_values[3],
+			next.x, next.y, shell_search_direction_name(next.dir), local_dir,
+			selected_virtual, shell_search_virtual_count(wall_data));
+
+		if(selected_virtual != 0) {
+			result = "selected_edge_closed";
+			break;
+		}
+		current = next;
+		steps++;
+	}
+
+	if(shell_search_is_goal(current) == True) result = "goal";
+	printf("SEARCH_RUN_END result:%s steps:%d final:%d,%d,%s virtual_edges:%d\r\n",
+		result, steps, current.x, current.y, shell_search_direction_name(current.dir),
+		shell_search_virtual_count(wall_data));
+	shell_search_dump(wall_data, map_data);
+	return ntlibc_strcmp(result, "goal") == 0 ? 0 : -1;
 }
 
 static int usrcmd_end(int argc, char **argv)

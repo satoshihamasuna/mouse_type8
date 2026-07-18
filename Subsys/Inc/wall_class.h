@@ -108,11 +108,12 @@ class wall_class
 		}
 		IrSensTask *return_irObj() {return ir_sens;};
 		t_wall wall[MAZE_SIZE_X][MAZE_SIZE_Y];
-		// Keep inferred closures separate from sensor observations.  They are
-		// rebuilt when the protected mouse position changes.
+		// Keep inferred closures separate from sensor observations. They persist
+		// across moves; edges touching protected cells are cleared selectively.
 		t_wall virtual_wall[MAZE_SIZE_X][MAZE_SIZE_Y];
 		void init_maze();
 		void clear_virtual_wall();
+		void clear_virtual_wall(uint16_t x,uint16_t y,t_direction dir);
 		t_bool get_virtual_wall(uint16_t x,uint16_t y,t_direction dir) const;
 		t_bool set_virtual_wall(uint16_t x,uint16_t y,t_direction dir);
 		t_bool is_open(uint16_t x,uint16_t y,t_direction dir,int mask) const;

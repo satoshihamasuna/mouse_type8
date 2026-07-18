@@ -52,6 +52,31 @@ void wall_class::clear_virtual_wall()
 	}
 }
 
+void wall_class::clear_virtual_wall(uint16_t x,uint16_t y,t_direction dir)
+{
+	if(x >= MAZE_SIZE_X || y >= MAZE_SIZE_Y) return;
+	switch(dir) {
+		case North:
+			virtual_wall[x][y].north = NOWALL;
+			if(y + 1 < MAZE_SIZE_Y) virtual_wall[x][y + 1].south = NOWALL;
+			break;
+		case East:
+			virtual_wall[x][y].east = NOWALL;
+			if(x + 1 < MAZE_SIZE_X) virtual_wall[x + 1][y].west = NOWALL;
+			break;
+		case South:
+			virtual_wall[x][y].south = NOWALL;
+			if(y > 0) virtual_wall[x][y - 1].north = NOWALL;
+			break;
+		case West:
+			virtual_wall[x][y].west = NOWALL;
+			if(x > 0) virtual_wall[x - 1][y].east = NOWALL;
+			break;
+		default:
+			break;
+	}
+}
+
 t_bool wall_class::get_virtual_wall(uint16_t x,uint16_t y,t_direction dir) const
 {
 	if(x >= MAZE_SIZE_X || y >= MAZE_SIZE_Y) return True;

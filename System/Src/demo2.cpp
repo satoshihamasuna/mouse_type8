@@ -54,6 +54,7 @@ void Demo2()
 	start.x = start.y = 0;start.dir = North;
 	goal.x = MAZE_GOAL_X, goal.y = MAZE_GOAL_Y;
 	uint8_t goal_size = MAZE_GOAL_SIZE;
+	solve_maze.set_virtual_wall_protected_area(start, goal, goal_size);
 
 
 

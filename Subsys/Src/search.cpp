@@ -18,6 +18,10 @@
 #include "../../Task/Inc/ctrl_task.h"
 //#include "glob_var_machine.h"
 
+#ifndef ENABLE_VIRTUAL_WALL
+#define ENABLE_VIRTUAL_WALL 1
+#endif
+
 #if defined(MOUSE_A)
 #define ALLOW_SIDE_DIFF 	15.0
 #define ALLOW_FRONT_DIFF 	10.0
@@ -54,16 +58,34 @@ t_bool Search::i_am_goal(t_position pos,t_position g_pos,int goal_size)
 	return flag;
 }
 
+void Search_UpdateMap(wall_class *wall,make_map *map,
+		const t_virtual_wall_context& virtual_context,t_position expand_end,
+		t_position map_goal,int map_goal_size,t_bool use_full_search,int mask)
+{
+#if ENABLE_VIRTUAL_WALL
+	// The map expansion destination and the mouse position are different here:
+	// update_map() runs before the motion, so the exception is the pre-motion
+	// mouse position.  Treating expand_end as the mouse erases virtual walls
+	// around the destination before the mouse has arrived there.
+	// virtual_context keeps the maze's intrinsic start/goal; map_goal is only
+	// the destination of this outward or return search leg.
+	virtual_wall_class virtual_walls(wall);
+	virtual_walls.update(virtual_context);
+#endif
+	if(use_full_search == True)
+		map->make_map_queue_zenmen(map_goal.x, map_goal.y, expand_end, map_goal_size, mask);
+	else
+		map->make_map_queue(map_goal.x, map_goal.y, expand_end, map_goal_size, mask);
+
+}
+
 void Search::update_map(int x, int y,t_position expand_end,int size,int mask,make_map *_map)
 {
-	t_virtual_wall_context context = {{0, 0, North}, expand_end,
-		{(uint8_t)x, (uint8_t)y, North}, (uint8_t)size};
-	virtual_wall_class virtual_walls(_map->wall_property);
-	virtual_walls.update(context);
-	if(full_search == True)
-		_map->make_map_queue_zenmen(x, y, expand_end, size, mask);
-	else
-		_map->make_map_queue(x, y, expand_end, size, mask);
+	t_position goal = {(uint8_t)x, (uint8_t)y, North};
+	t_virtual_wall_context context = {virtual_wall_maze_start, virtual_wall_mouse,
+		virtual_wall_maze_goal, virtual_wall_maze_goal_size};
+	Search_UpdateMap(_map->wall_property, _map, context, expand_end,
+		goal, size, full_search, mask);
 
 }
 
@@ -303,6 +325,8 @@ t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int g
 	//IrSensTask *ir_sens = (_wall->return_irObj());
 	uint8_t mask = 0x01;
 	_map->init_map(goal_pos.x, goal_pos.y, goal_size);
+	virtual_wall_mouse = start_pos;
+	_wall->clear_virtual_wall();
 	update_map(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map);
 
 
@@ -372,6 +396,7 @@ t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int g
 				direction = search_algolithm.get_next_dir2(my_position,goal_pos, mask, &tmp_my_pos);
 				break;
 		}
+		virtual_wall_mouse = my_position;
 
 		switch(direction)
 		{
@@ -411,6 +436,8 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
 	uint8_t mask = 0x01;
 
 	_map->init_map(goal_pos.x, goal_pos.y, goal_size);
+	virtual_wall_mouse = start_pos;
+	_wall->clear_virtual_wall();
 	update_map(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map);
 
 	motion->Motion_start();
@@ -507,6 +534,7 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
 				}
 			}
 		}
+		virtual_wall_mouse = my_position;
 
 		switch(direction | next_acc_flag)
 		{

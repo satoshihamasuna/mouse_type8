@@ -29,6 +29,49 @@ GUIからコマンドを送信できるほか、`disp maze_bin` の受信結果�
 tools/myshell_README.md
 ```
 
+## Search実機診断
+
+myshell上で実機C++の仮想壁、歩数マップ、足立法をモーションなしで再生し、
+ステップCSV・歩数マップ・仮想壁・経路画像を出力します。
+
+```powershell
+python tools\myshell_search.py --port COM8 `
+  --maze tools\maze_data\logs_maze.bin --goal 7,7,2 --start 0,0,N
+```
+
+実探索と同じ逐次壁観測で、往路・通常復路・全面探索復路の全組み合わせを確認する場合:
+
+```powershell
+python tools\myshell_search.py --port COM8 `
+  --maze tools\maze_data\logs_maze.bin `
+  --goal 7,7,2 --return-goal 0,0,1 --start 0,0,N `
+  --replay-matrix
+```
+
+詳細は `tools/myshell_README.md` の「Search診断」を参照してください。
+
+### Search診断GUI
+
+COM接続、迷路アップロード、静的Search、逐次往路、往復、全32シナリオ検証を
+一つの画面から実行できます。
+
+```powershell
+python tools\myshell_search_gui.py
+```
+
+GUIには次の画面があります。
+
+- Shellの生ログ
+- ステップごとの座標、歩数、観測壁、仮想壁
+- 実壁・仮想壁・走行経路を重ねた迷路表示と、黒丸によるマウス位置再生
+- 32シナリオの進捗と成否一覧
+
+迷路表示では再生・一時停止・前後1ステップ・先頭へ戻る・再生速度を操作できます。
+診断結果を受信すると既定では自動再生します。
+
+GUIがCOMポートを保持するため、`myshell_gui.py`など別のシリアルツールは切断してから接続します。
+結果ファイルは指定したOutputディレクトリへCLI版と同じ形式で保存されます。
+
 ## myshellデバッグ・パラメータ調整GUI
 
 myshellを経由して、直進・斜め走行の走行パラメータとPIDゲインを調整し、実走行できます。

@@ -12,6 +12,7 @@
 #include "wall_class.h"
 #include "make_map_class.h"
 #include "adachi_class.h"
+#include "virtual_wall_class.h"
 
 #include "../../Task/Inc/ctrl_task.h"
 #include "../../Module/Inc/interrupt.h"
@@ -24,6 +25,12 @@ typedef enum
 	priority_second = 1,
 }t_search_priority;
 
+// Shared by the real Search loop and no-motion diagnostics.  Keeping this
+// operation in one place prevents virtual-wall/map ordering from diverging.
+void Search_UpdateMap(wall_class *wall,make_map *map,
+		const t_virtual_wall_context& virtual_context,t_position expand_end,
+		t_position map_goal,int map_goal_size,t_bool full_search,int mask);
+
 
 class Search
 {
@@ -33,6 +40,10 @@ class Search
 		Motion *motion;
 		int32_t search_start_time;
 		int32_t search_limit_time = END_TIME_LIMIT;
+		t_position virtual_wall_maze_start = {0, 0, North};
+		t_position virtual_wall_maze_goal = {MAZE_GOAL_X, MAZE_GOAL_Y, North};
+		uint8_t virtual_wall_maze_goal_size = MAZE_GOAL_SIZE;
+		t_position virtual_wall_mouse;
 
 		t_exeStatus updateMap_half_straight	(int x, int y,t_position expand_end,int size,int mask,make_map *_map,Motion *motion);
 		t_exeStatus updateMap_half_straight_and_stop(int x, int y,t_position expand_end,int size,int mask,make_map *_map,Motion *motion);
@@ -62,6 +73,12 @@ class Search
 
 		int32_t return_search_limit_time()			{		return search_limit_time;	    };
 		void set_search_limit_time(int32_t time)	{		search_limit_time = time; 		};
+		void set_virtual_wall_protected_area(t_position maze_start,t_position maze_goal,uint8_t maze_goal_size)
+		{
+			virtual_wall_maze_start = maze_start;
+			virtual_wall_maze_goal = maze_goal;
+			virtual_wall_maze_goal_size = maze_goal_size;
+		}
 
 		t_position search_adachi	(	t_position start_pos,	t_position goal_pos,	int goal_size,
 										wall_class *_wall,		make_map *_map,			Motion *motion );
