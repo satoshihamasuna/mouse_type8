@@ -315,7 +315,7 @@ t_exeStatus Search::turn_rear_process (	t_position my_position,t_position tmp_my
 	return result;
 }
 
-t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int goal_size,
+t_position Search::run_goal_search(	t_position start_pos,t_position goal_pos,int goal_size,
 									wall_class *_wall,make_map *_map,Motion *motion)
 {
 	t_position tmp_my_pos = start_pos;
@@ -337,10 +337,10 @@ t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int g
 	switch(search_priority)
 	{
 		case priority_first:
-			direction = search_algolithm.get_next_dir(my_position, mask, &tmp_my_pos);
+			direction = search_algolithm.select_next_direction(my_position, mask, &tmp_my_pos);
 			break;
 		case priority_second:
-			direction = search_algolithm.get_next_dir2(my_position,goal_pos, mask, &tmp_my_pos);
+			direction = search_algolithm.select_goal_aware_direction(my_position,goal_pos, mask, &tmp_my_pos);
 			break;
 	}
 
@@ -390,10 +390,10 @@ t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int g
 		switch(search_priority)
 		{
 			case priority_first:
-				direction = search_algolithm.get_next_dir(my_position, mask, &tmp_my_pos);
+				direction = search_algolithm.select_next_direction(my_position, mask, &tmp_my_pos);
 				break;
 			case priority_second:
-				direction = search_algolithm.get_next_dir2(my_position,goal_pos, mask, &tmp_my_pos);
+				direction = search_algolithm.select_goal_aware_direction(my_position,goal_pos, mask, &tmp_my_pos);
 				break;
 		}
 		virtual_wall_mouse = my_position;
@@ -426,7 +426,7 @@ t_position Search::search_adachi(	t_position start_pos,t_position goal_pos,int g
 }
 
 
-t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,int goal_size,wall_class *_wall,make_map *_map,Motion *motion)
+t_position Search::run_accelerated_goal_search(	t_position start_pos,t_position goal_pos,int goal_size,wall_class *_wall,make_map *_map,Motion *motion)
 {
 	t_position tmp_my_pos = start_pos;
 	t_position my_position = tmp_my_pos;
@@ -446,10 +446,10 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
 	switch(search_priority)
 	{
 		case priority_first:
-			direction = search_algolithm.get_next_dir(my_position, mask, &tmp_my_pos);
+			direction = search_algolithm.select_next_direction(my_position, mask, &tmp_my_pos);
 			break;
 		case priority_second:
-			direction = search_algolithm.get_next_dir2(my_position,goal_pos, mask, &tmp_my_pos);
+			direction = search_algolithm.select_goal_aware_direction(my_position,goal_pos, mask, &tmp_my_pos);
 			break;
 	}
 
@@ -507,10 +507,10 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
 		switch(search_priority)
 		{
 			case priority_first:
-				direction = search_algolithm.get_next_dir(my_position, mask, &tmp_my_pos);
+				direction = search_algolithm.select_next_direction(my_position, mask, &tmp_my_pos);
 				break;
 			case priority_second:
-				direction = search_algolithm.get_next_dir2(my_position,goal_pos, mask, &tmp_my_pos);
+				direction = search_algolithm.select_goal_aware_direction(my_position,goal_pos, mask, &tmp_my_pos);
 				break;
 		}
 
@@ -522,14 +522,14 @@ t_position Search::search_adachi_acc(	t_position start_pos,t_position goal_pos,i
 		{
 			if(i_am_goal(tmp_my_pos,goal_pos,goal_size) == False){
 				next_acc_flag = 0x80;
-				next_acc_dir  = search_algolithm.get_next_dir(tmp_my_pos, mask, &next_acc_pos);
+				next_acc_dir  = search_algolithm.select_next_direction(tmp_my_pos, mask, &next_acc_pos);
 				switch(search_priority)
 				{
 					case priority_first:
-						next_acc_dir  = search_algolithm.get_next_dir(tmp_my_pos, mask, &next_acc_pos);
+						next_acc_dir  = search_algolithm.select_next_direction(tmp_my_pos, mask, &next_acc_pos);
 						break;
 					case priority_second:
-						next_acc_dir  = search_algolithm.get_next_dir2(tmp_my_pos,goal_pos,mask, &next_acc_pos);
+						next_acc_dir  = search_algolithm.select_goal_aware_direction(tmp_my_pos,goal_pos,mask, &next_acc_pos);
 						break;
 				}
 			}

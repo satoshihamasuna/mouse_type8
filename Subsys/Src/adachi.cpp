@@ -19,7 +19,7 @@ t_position pos_set(uint8_t _x,uint8_t _y ,t_direction _dir)
 	return set_pos;
 }
 
-int adachi::get_priority(t_position mypos,t_position next_pos){	//そのマスの情報から、優先度を算出する
+int adachi::calculate_move_priority(t_position mypos,t_position next_pos){	//そのマスの情報から、優先度を算出する
 
 	int priority;	//優先度を記録する変数
 	priority = 0;
@@ -41,7 +41,7 @@ int adachi::get_priority(t_position mypos,t_position next_pos){	//そのマス�
 
 }
 
-int adachi::get_priority2(t_position mypos,t_position next_pos,t_position goal_pos){	//そのマスの情報から、優先度を算出する
+int adachi::calculate_goal_aware_priority(t_position mypos,t_position next_pos,t_position goal_pos){	//そのマスの情報から、優先度を算出する
 
 	int priority;	//優先度を記録する変数
 	priority = 0;
@@ -67,7 +67,7 @@ int adachi::get_priority2(t_position mypos,t_position next_pos,t_position goal_p
 }
 
 
-int adachi::get_next_dir(t_position mypos,int mask,t_position *glob_next_pos)
+int adachi::select_next_direction(t_position mypos,int mask,t_position *glob_next_pos)
 {
 	int little,priority,tmp_priority;
 	little = MAP_MAX_VALUE;
@@ -76,7 +76,7 @@ int adachi::get_next_dir(t_position mypos,int mask,t_position *glob_next_pos)
 
 	if(wall_property->is_open(mypos.x,mypos.y,North,mask) == True)
 	{
-		tmp_priority = get_priority(mypos, pos_set(mypos.x,mypos.y+1,North));
+		tmp_priority = calculate_move_priority(mypos, pos_set(mypos.x,mypos.y+1,North));
 		if(map_property->map[mypos.x][mypos.y+1] < little)
 		{
 			little = map_property->map[mypos.x][mypos.y+1];
@@ -104,7 +104,7 @@ int adachi::get_next_dir(t_position mypos,int mask,t_position *glob_next_pos)
 
 	if(wall_property->is_open(mypos.x,mypos.y,East,mask) == True)
 	{
-		tmp_priority = get_priority(mypos, pos_set(mypos.x+1,mypos.y,East));
+		tmp_priority = calculate_move_priority(mypos, pos_set(mypos.x+1,mypos.y,East));
 		if(map_property->map[mypos.x+1][mypos.y] < little)
 		{
 			little = map_property->map[mypos.x+1][mypos.y];
@@ -133,7 +133,7 @@ int adachi::get_next_dir(t_position mypos,int mask,t_position *glob_next_pos)
 
 	if(wall_property->is_open(mypos.x,mypos.y,South,mask) == True)
 	{
-		tmp_priority = get_priority(mypos, pos_set(mypos.x,mypos.y-1,South));
+		tmp_priority = calculate_move_priority(mypos, pos_set(mypos.x,mypos.y-1,South));
 		if(map_property->map[mypos.x][mypos.y-1] < little)
 		{
 			little= map_property->map[mypos.x][mypos.y-1];
@@ -162,7 +162,7 @@ int adachi::get_next_dir(t_position mypos,int mask,t_position *glob_next_pos)
 
 	if(wall_property->is_open(mypos.x,mypos.y,West,mask) == True)
 	{
-		tmp_priority = get_priority(mypos, pos_set(mypos.x-1,mypos.y,West));
+		tmp_priority = calculate_move_priority(mypos, pos_set(mypos.x-1,mypos.y,West));
 		if(map_property->map[mypos.x-1][mypos.y] < little)
 		{
 			little = map_property->map[mypos.x-1][mypos.y];
@@ -193,7 +193,7 @@ int adachi::get_next_dir(t_position mypos,int mask,t_position *glob_next_pos)
 	return ((int)((8+glob_next_pos->dir - mypos.dir)%8));
 }
 
-int adachi::get_next_dir2(t_position mypos,t_position goal_pos,int mask,t_position *glob_next_pos)
+int adachi::select_goal_aware_direction(t_position mypos,t_position goal_pos,int mask,t_position *glob_next_pos)
 {
 	int little,priority,tmp_priority;
 	little = MAP_MAX_VALUE;
@@ -202,7 +202,7 @@ int adachi::get_next_dir2(t_position mypos,t_position goal_pos,int mask,t_positi
 
 	if(wall_property->is_open(mypos.x,mypos.y,North,mask) == True)
 	{
-		tmp_priority = get_priority2(mypos, pos_set(mypos.x,mypos.y+1,North),goal_pos);
+		tmp_priority = calculate_goal_aware_priority(mypos, pos_set(mypos.x,mypos.y+1,North),goal_pos);
 		if(map_property->map[mypos.x][mypos.y+1] < little)
 		{
 			little = map_property->map[mypos.x][mypos.y+1];
@@ -230,7 +230,7 @@ int adachi::get_next_dir2(t_position mypos,t_position goal_pos,int mask,t_positi
 
 	if(wall_property->is_open(mypos.x,mypos.y,East,mask) == True)
 	{
-		tmp_priority = get_priority2(mypos, pos_set(mypos.x+1,mypos.y,East),goal_pos);
+		tmp_priority = calculate_goal_aware_priority(mypos, pos_set(mypos.x+1,mypos.y,East),goal_pos);
 		if(map_property->map[mypos.x+1][mypos.y] < little)
 		{
 			little = map_property->map[mypos.x+1][mypos.y];
@@ -259,7 +259,7 @@ int adachi::get_next_dir2(t_position mypos,t_position goal_pos,int mask,t_positi
 
 	if(wall_property->is_open(mypos.x,mypos.y,South,mask) == True)
 	{
-		tmp_priority = get_priority2(mypos, pos_set(mypos.x,mypos.y-1,South),goal_pos);
+		tmp_priority = calculate_goal_aware_priority(mypos, pos_set(mypos.x,mypos.y-1,South),goal_pos);
 		if(map_property->map[mypos.x][mypos.y-1] < little)
 		{
 			little= map_property->map[mypos.x][mypos.y-1];
@@ -288,7 +288,7 @@ int adachi::get_next_dir2(t_position mypos,t_position goal_pos,int mask,t_positi
 
 	if(wall_property->is_open(mypos.x,mypos.y,West,mask) == True)
 	{
-		tmp_priority = get_priority2(mypos, pos_set(mypos.x-1,mypos.y,West),goal_pos);
+		tmp_priority = calculate_goal_aware_priority(mypos, pos_set(mypos.x-1,mypos.y,West),goal_pos);
 		if(map_property->map[mypos.x-1][mypos.y] < little)
 		{
 			little = map_property->map[mypos.x-1][mypos.y];

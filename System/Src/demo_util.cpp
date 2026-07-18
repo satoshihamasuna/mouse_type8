@@ -13,16 +13,16 @@ t_position run_search(Search *search, search_type_t type,
 	make_map map_data(wall, &maze_q);
 
 	switch(type) {
-	case SEARCH_1:
-		return search->search_adachi_1(start, goal, goal_size, wall, &map_data, motion);
-	case SEARCH_1_ACC:
-		return search->search_adachi_1_acc(start, goal, goal_size, wall, &map_data, motion);
-	case SEARCH_2_ACC:
-		return search->search_adachi_2_acc(start, goal, goal_size, wall, &map_data, motion);
-	case SEARCH_2_PRUNE_ACC:
-		return search->search_adachi_2_prune_acc(start, goal, goal_size, wall, &map_data, motion);
-	case SEARCH_3_ACC:
-		return search->search_adachi_3_acc(start, goal, goal_size, wall, &map_data, motion);
+	case GOAL_SEARCH_FIRST_PRIORITY:
+		return search->run_goal_search_first_priority(start, goal, goal_size, wall, &map_data, motion);
+	case ACCELERATED_GOAL_SEARCH_FIRST_PRIORITY:
+		return search->run_accelerated_goal_search_first_priority(start, goal, goal_size, wall, &map_data, motion);
+	case ACCELERATED_FULL_EXPLORATION:
+		return search->run_accelerated_full_exploration(start, goal, goal_size, wall, &map_data, motion);
+	case ACCELERATED_PRUNED_FULL_EXPLORATION:
+		return search->run_accelerated_pruned_full_exploration(start, goal, goal_size, wall, &map_data, motion);
+	case ACCELERATED_GOAL_SEARCH_SECOND_PRIORITY:
+		return search->run_accelerated_goal_search_second_priority(start, goal, goal_size, wall, &map_data, motion);
 	default:
 		return start;
 	}

@@ -586,7 +586,7 @@ def select_next(
     stale_next: Position,
     mask: int,
 ) -> Selection:
-    """Reproduce adachi::get_next_dir, including its no-candidate behavior."""
+    """Reproduce adachi::select_next_direction, including no-candidate behavior."""
     little = walls.width * walls.height
     priority = 0
     selected: Position | None = None

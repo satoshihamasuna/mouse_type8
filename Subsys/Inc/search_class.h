@@ -85,76 +85,76 @@ class Search
 			virtual_wall_branch_mode = mode;
 		}
 
-		t_position search_adachi	(	t_position start_pos,	t_position goal_pos,	int goal_size,
+		t_position run_goal_search	(	t_position start_pos,	t_position goal_pos,	int goal_size,
 										wall_class *_wall,		make_map *_map,			Motion *motion );
-		t_position search_adachi_acc(	t_position start_pos,	t_position goal_pos,	int goal_size,
+		t_position run_accelerated_goal_search(	t_position start_pos,	t_position goal_pos,	int goal_size,
 										wall_class *_wall,		make_map *_map,			Motion *motion );
 
-		t_position search_adachi_1(	t_position start_pos,	t_position goal_pos,	int goal_size,
+		t_position run_goal_search_first_priority(	t_position start_pos,	t_position goal_pos,	int goal_size,
 									wall_class *_wall,		make_map *_map,			Motion *motion )
 		{
 			full_search			= False;
 			search_priority     = priority_first;
 			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
-			return search_adachi	(start_pos,goal_pos,goal_size,_wall,_map,motion );
+			return run_goal_search	(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}
-		t_position search_adachi_1_acc(	t_position start_pos,	t_position goal_pos,	int goal_size,
+		t_position run_accelerated_goal_search_first_priority(	t_position start_pos,	t_position goal_pos,	int goal_size,
 										wall_class *_wall,		make_map *_map,			Motion *motion )
 		{
 			full_search			= False;
 			search_priority     = priority_first;
 			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
-			return search_adachi_acc	(start_pos,goal_pos,goal_size,_wall,_map,motion );
+			return run_accelerated_goal_search	(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}
 
 
-		t_position search_adachi_2(	t_position start_pos,	t_position goal_pos,	int goal_size,
+		t_position run_full_exploration(	t_position start_pos,	t_position goal_pos,	int goal_size,
 									wall_class *_wall,		make_map *_map,			Motion *motion )
 		{
 			full_search			= True;
 			search_priority     = priority_first;
 			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
-			return search_adachi	(start_pos,goal_pos,goal_size,_wall,_map,motion );
+			return run_goal_search	(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}
 
 
-		t_position search_adachi_2_acc(	t_position start_pos,	t_position goal_pos,	int goal_size,
+		t_position run_accelerated_full_exploration(	t_position start_pos,	t_position goal_pos,	int goal_size,
 									wall_class *_wall,		make_map *_map,			Motion *motion )
 		{
 			full_search			= True;
 			search_priority     = priority_first;
 			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
 			//reset_search_time();
-			return search_adachi_acc	(start_pos,goal_pos,goal_size,_wall,_map,motion );
+			return run_accelerated_goal_search	(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}
 
-		t_position search_adachi_2_prune_acc(t_position start_pos,t_position goal_pos,int goal_size,
+		t_position run_accelerated_pruned_full_exploration(t_position start_pos,t_position goal_pos,int goal_size,
 					wall_class *_wall,make_map *_map,Motion *motion)
 		{
 			full_search = True;
 			search_priority = priority_first;
 			virtual_wall_branch_mode = VIRTUAL_BRANCH_UNKNOWN_OPEN;
-			return search_adachi_acc(start_pos,goal_pos,goal_size,_wall,_map,motion);
+			return run_accelerated_goal_search(start_pos,goal_pos,goal_size,_wall,_map,motion);
 		}
 
 
-		t_position search_adachi_3(	t_position start_pos,	t_position goal_pos,	int goal_size,
+		t_position run_goal_search_second_priority(	t_position start_pos,	t_position goal_pos,	int goal_size,
 									wall_class *_wall,		make_map *_map,			Motion *motion )
 		{
 			full_search			= False;
 			search_priority     = priority_second;
 			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
-			return search_adachi	(start_pos,goal_pos,goal_size,_wall,_map,motion );
+			return run_goal_search	(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}
 
-		t_position search_adachi_3_acc(	t_position start_pos,	t_position goal_pos,	int goal_size,
+		t_position run_accelerated_goal_search_second_priority(	t_position start_pos,	t_position goal_pos,	int goal_size,
 										wall_class *_wall,		make_map *_map,			Motion *motion )
 		{
 			full_search			= False;
 			search_priority     = priority_second;
 			virtual_wall_branch_mode = VIRTUAL_BRANCH_OBSERVED_ONLY;
 			//reset_search_time();
-			return search_adachi_acc(start_pos,goal_pos,goal_size,_wall,_map,motion );
+			return run_accelerated_goal_search(start_pos,goal_pos,goal_size,_wall,_map,motion );
 		}
 
 		void search_param_init()

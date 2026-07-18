@@ -19,89 +19,92 @@ typedef struct
 	int8_t x;
 	int8_t y;
 	t_wall wall;
-}t_histry_wall;
+}t_history_wall;
 
-class wall_histry_class
+
+class wall_history_class
 {
-	int16_t histry_cnt;
-	int16_t histry_tail;
+	int16_t history_cnt;
+	int16_t history_tail;
 	public:
-		t_histry_wall histry_wall[MAZE_SIZE];
-		void histry_init()
+		t_history_wall history_wall[MAZE_SIZE];
+		void history_init()
 		{
 			for(int i = 0; i < MAZE_SIZE;i++)
 			{
-				histry_wall[i].x = -1;
-				histry_wall[i].y = -1;
-				histry_wall[i].wall.north = UNKNOWN;
-				histry_wall[i].wall.south = UNKNOWN;
-				histry_wall[i].wall.east = UNKNOWN;
-				histry_wall[i].wall.west = UNKNOWN;
+				history_wall[i].x = -1;
+				history_wall[i].y = -1;
+				history_wall[i].wall.north = UNKNOWN;
+				history_wall[i].wall.south = UNKNOWN;
+				history_wall[i].wall.east = UNKNOWN;
+				history_wall[i].wall.west = UNKNOWN;
 			}
-			histry_cnt = 0;
-			histry_tail =- 1;
+			history_cnt = 0;
+			history_tail =- 1;
 		}
 
-		int16_t get_histry_cnt()
+		int16_t get_history_cnt()
 		{
-			return histry_cnt;
+			return history_cnt;
 		}
 
-		int16_t get_histry_tail()
+		int16_t get_history_tail()
 		{
-			return histry_tail;
+			return history_tail;
 		}
 
-		void histry_set(int x,int y,t_wall wall)
+		void history_set(int x,int y,t_wall wall)
 		{
-			if(histry_cnt < MAZE_SIZE)
+			if(history_cnt < MAZE_SIZE)
 			{
-				histry_wall[histry_tail + 1].x = x;
-				histry_wall[histry_tail + 1].y = y;
-				histry_wall[histry_tail + 1].wall.north = wall.north;
-				histry_wall[histry_tail + 1].wall.south = wall.south;
-				histry_wall[histry_tail + 1].wall.east = wall.east;
-				histry_wall[histry_tail + 1].wall.west = wall.west;
-				histry_tail = histry_tail + 1;
-				histry_cnt  = histry_cnt + 1;
+				history_wall[history_tail + 1].x = x;
+				history_wall[history_tail + 1].y = y;
+				history_wall[history_tail + 1].wall.north = wall.north;
+				history_wall[history_tail + 1].wall.south = wall.south;
+				history_wall[history_tail + 1].wall.east = wall.east;
+				history_wall[history_tail + 1].wall.west = wall.west;
+				history_tail = history_tail + 1;
+				history_cnt  = history_cnt + 1;
 			}
 		}
 
-		void histry_delete(int num)
+		void history_delete(int num)
 		{
-			if(num > histry_cnt) num = histry_cnt;
+			if(num > history_cnt) num = history_cnt;
 			for(int i = 0; i < num; i++)
 			{
-				if(histry_tail == -1) break;
-				histry_wall[histry_tail].x = -1;
-				histry_wall[histry_tail].y = -1;
-				histry_wall[histry_tail].wall.north = UNKNOWN;
-				histry_wall[histry_tail].wall.south = UNKNOWN;
-				histry_wall[histry_tail].wall.east = UNKNOWN;
-				histry_wall[histry_tail].wall.west = UNKNOWN;
-				histry_tail = histry_tail - 1;
-				histry_cnt  = histry_cnt - 1;
+				if(history_tail == -1) break;
+				history_wall[history_tail].x = -1;
+				history_wall[history_tail].y = -1;
+				history_wall[history_tail].wall.north = UNKNOWN;
+				history_wall[history_tail].wall.south = UNKNOWN;
+				history_wall[history_tail].wall.east = UNKNOWN;
+				history_wall[history_tail].wall.west = UNKNOWN;
+				history_tail = history_tail - 1;
+				history_cnt  = history_cnt - 1;
 			}
 		}
 
-		void histry_indicate()
+		void history_indicate()
 		{
-			for(int i = 0; i <histry_cnt;i++)
+			for(int i = 0; i <history_cnt;i++)
 			{
 				printf("%d:",i);
-				printf("(x,y)->(%2d,%2d),",histry_wall[i].x,histry_wall[i].y);
+				printf("(x,y)->(%2d,%2d),",history_wall[i].x,history_wall[i].y);
 				printf("(n,e,s,w)->(%2x,%2x,%2x,%2x)\n",
-						histry_wall[i].wall.north,histry_wall[i].wall.east,histry_wall[i].wall.south,histry_wall[i].wall.west);
+						history_wall[i].wall.north,history_wall[i].wall.east,history_wall[i].wall.south,history_wall[i].wall.west);
 			}
 		}
+
 };
+
 
 class wall_class
 {
 	IrSensTask *ir_sens;
 
 	public:
-		wall_histry_class wall_histry;
+		wall_history_class wall_history;
 		wall_class(IrSensTask *ir_sens_)
 		{
 			ir_sens = ir_sens_;
@@ -137,7 +140,7 @@ class wall_class
 		t_wall_state get_WallState(t_position pos);
 		void indicate_wall();
 		void indicate_wall_binary();
-		void histry2wall_append();
+		void history2wall_append();
 
 
 };

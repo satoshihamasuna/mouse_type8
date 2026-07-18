@@ -9,7 +9,7 @@
 - `add_dead_end_walls`
 - `add_explored_branch_walls`
 - `make_map_queue` / `make_map_queue_zenmen`
-- `adachi::get_next_dir`
+- `adachi::select_next_direction`
 - マイコンと同じ更新順序（仮想壁更新 → マップ作成 → 移動実行）
 
 テキスト形式の迷路と、マイコンが出力する1024バイトの壁スナップショットを読み込めます。

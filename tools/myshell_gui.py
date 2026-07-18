@@ -357,7 +357,7 @@ class MyshellGui(tk.Tk):
             ("load save", lambda: self.run_text_command("load save")),
             ("disp maze", lambda: self.run_text_command("disp maze")),
             ("disp maze_bin", self.receive_maze_binary),
-            ("disp histry", lambda: self.run_text_command("disp histry")),
+			("disp history", lambda: self.run_text_command("disp history")),
             ("path dijkstra", self.run_dijkstra_path),
             ("path queue", self.run_dijkstra_queue_path),
             ("compare path time", self.compare_dijkstra_time),

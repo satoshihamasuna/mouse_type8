@@ -1,6 +1,6 @@
 """Replay and verify the firmware Search logic through myshell.
 
-The tool can upload a packed maze, a saved ``wall_histry`` text log, or a
+    The tool can upload a packed maze, a saved ``wall_history`` text log, or a
 standard ``maze_data`` text maze.  It then runs the firmware-side ``search run``
 diagnostic and checks map selection, protected cells, and virtual-wall safety.
 """
@@ -882,7 +882,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", default="COM8")
     parser.add_argument("--baud", type=int, default=115200)
-    parser.add_argument("--maze", type=Path, help=".bin, wall_histry .txt, or standard maze_data .txt")
+    parser.add_argument("--maze", type=Path, help=".bin, wall_history .txt, or standard maze_data .txt")
     parser.add_argument("--transcript", type=Path, help="parse an existing SEARCH_* transcript without serial")
     parser.add_argument("--goal", type=parse_goal, default=(7, 7, 2))
     parser.add_argument("--return-goal", type=parse_goal, default=(0, 0, 1))

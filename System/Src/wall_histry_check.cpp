@@ -142,7 +142,7 @@ namespace Mode
 							  }
 						  }
 
-						  read_histry_WorkRam(&(wall_data->wall_histry));
+						  read_history_WorkRam(&(wall_data->wall_history));
 
 						  enable = 0x00;
 						  HAL_Delay(500);
@@ -230,7 +230,7 @@ namespace Mode
 								  HAL_Delay(50);
 							  }
 						  }
-						  wall_data->histry2wall_append();
+						  wall_data->history2wall_append();
 						  enable = 0x00;
 						  HAL_Delay(500);
 					}
@@ -297,8 +297,8 @@ namespace Mode
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
 							  HAL_Delay(50);
 						  }
-						  //indicate histry
-						  wall_data->wall_histry.histry_indicate();
+						  //indicate history
+						  wall_data->wall_history.history_indicate();
 						  enable = 0x00;
 						  HAL_Delay(500);
 					}

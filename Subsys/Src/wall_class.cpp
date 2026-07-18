@@ -35,7 +35,7 @@ void wall_class::init_maze(){
 
 			wall[0][0].east = wall[1][0].west = WALL;				//スタートの東側の壁を追加
 
-	wall_histry.histry_init();
+	wall_history.history_init();
 	clear_virtual_wall();
 
 }
@@ -149,7 +149,7 @@ void wall_class::set_wall(t_position pos)
     w_write = 0;
 	//自分の方向に応じて書き込むデータを生成
 
-    t_bool set_histry = is_unknown(pos.x, pos.y);
+    t_bool set_history = is_unknown(pos.x, pos.y);
 
 	//CONV_SEN2WALL()はmacro.hを参照
 	switch(pos.dir){
@@ -234,9 +234,9 @@ void wall_class::set_wall(t_position pos)
 		w_write			 = VWALL;
 	}
 
-	if(set_histry == True)
+	if(set_history == True)
 	{
-		wall_histry.histry_set(pos.x, pos.y, wall[pos.x][pos.y]);
+		wall_history.history_set(pos.x, pos.y, wall[pos.x][pos.y]);
 	}
 	//wall[x][y].north = n_write;
 	//wall[x][y].south = s_write;	//実際に壁情報を書き込み
@@ -283,42 +283,42 @@ t_wall_state wall_class::get_WallState(t_position pos)
 	}
 }
 
-void wall_class::histry2wall_append()
+void wall_class::history2wall_append()
 {
 	for(int i = 0; i < MAZE_SIZE;i++)
 	{
-		if(i < wall_histry.get_histry_cnt())
+		if(i < wall_history.get_history_cnt())
 		{
-			if(wall_histry.histry_wall[i].x >= 0 && wall_histry.histry_wall[i].y >= 0)
+			if(wall_history.history_wall[i].x >= 0 && wall_history.history_wall[i].y >= 0)
 			{
-				uint16_t x = (uint16_t)(wall_histry.histry_wall[i].x);
-				uint16_t y = (uint16_t)(wall_histry.histry_wall[i].y);
+				uint16_t x = (uint16_t)(wall_history.history_wall[i].x);
+				uint16_t y = (uint16_t)(wall_history.history_wall[i].y);
 				if(is_unknown(x, y) == True)
 				{
-					wall[x][y].north = wall_histry.histry_wall[i].wall.north;
-					wall[x][y].east = wall_histry.histry_wall[i].wall.east;
-					wall[x][y].south = wall_histry.histry_wall[i].wall.south;
-					wall[x][y].west = wall_histry.histry_wall[i].wall.west;
+					wall[x][y].north = wall_history.history_wall[i].wall.north;
+					wall[x][y].east = wall_history.history_wall[i].wall.east;
+					wall[x][y].south = wall_history.history_wall[i].wall.south;
+					wall[x][y].west = wall_history.history_wall[i].wall.west;
 
 
 					if(y< MAZE_SIZE_Y-1)	//範囲チェック
 					{
-						wall[x][y+1].south =  wall_histry.histry_wall[i].wall.north;	//反対側から見た壁を書き込み
+						wall[x][y+1].south =  wall_history.history_wall[i].wall.north;	//反対側から見た壁を書き込み
 					}
 
 					if(x < MAZE_SIZE_X-1)	//範囲チェック
 					{
-						wall[x+1][y].west = wall_histry.histry_wall[i].wall.east;	//反対側から見た壁を書き込み
+						wall[x+1][y].west = wall_history.history_wall[i].wall.east;	//反対側から見た壁を書き込み
 					}
 
 					if(y > 0)	//範囲チェック
 					{
-				        wall[x][y-1].north = wall_histry.histry_wall[i].wall.south;	//反対側から見た壁を書き込み
+				        wall[x][y-1].north = wall_history.history_wall[i].wall.south;	//反対側から見た壁を書き込み
 					}
 
 					if(x > 0)	//範囲チェック
 					{
-						wall[x-1][y].east =  wall_histry.histry_wall[i].wall.west;	//反対側から見た壁を書き込み
+						wall[x-1][y].east =  wall_history.history_wall[i].wall.west;	//反対側から見た壁を書き込み
 					}
 				}
 			}

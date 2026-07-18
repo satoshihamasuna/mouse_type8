@@ -81,7 +81,7 @@ python tools\myshell_gui.py
 | `Save maze_data` | 最後に受信または読み込んだ迷路を `tools/maze_data/` 形式の `.txt` として保存します。 |
 | `Load maze_data` | シミュレータ用の迷路 `.txt` を読み込み、キャンバスに描画します。 |
 | `Upload maze_data` | 読み込んだ迷路とゴール位置をマイコン側 RAM に送ります。 |
-| `disp histry` | flash 側の壁履歴を表示します。 |
+| `disp history` | flash 側の壁履歴を表示します。 |
 | `path dijkstra` | 現在 RAM 上にある迷路で Dijkstra の経路確認を実行し、迷路上にシミュレータ風の走行軌跡を表示します。 |
 | `path queue` | 同じ条件で優先度付きキュー版の Dijkstra を実行し、送信完了から応答完了までの時間を表示します。 |
 | `compare path time` | 通常版と優先度付きキュー版を連続実行し、シリアル往復時間と比率を表示します。 |
@@ -103,7 +103,7 @@ python tools\myshell_gui.py
 | `load goal x y size` | Dijkstra 用のゴール左下座標 `(x, y)` と正方形サイズを RAM に設定します。 |
 | `disp maze` | 保存迷路を読み込んで ASCII 表示します。 |
 | `disp maze_bin` | 保存迷路を読み込んで、1 cell 1 byte のバイナリとして出力します。 |
-| `disp histry` | 保存迷路を読み込んで壁履歴を表示します。 |
+| `disp history` | 保存迷路を読み込んで壁履歴を表示します。 |
 | `disp log` | ログデータを CSV 風テキストで表示します。 |
 | `disp log_bin` | ログデータを高速受信用のバイナリフレームで出力します。 |
 | `path dijkstra` | 現在 RAM 上にある迷路とゴール設定で `check_run_Dijkstra()` を実行します。未ロードの場合は flash の保存迷路と既定ゴールを読みます。 |
@@ -119,7 +119,7 @@ python tools\myshell_gui.py
 `search run` はモータを動かさず、完成済みのRAM迷路を使って次の実装をマイコン上で実行します。
 
 ```text
-virtual_wall_class → make_map → adachi::get_next_dir
+virtual_wall_class → make_map → adachi::select_next_direction
 ```
 
 例:
@@ -142,7 +142,7 @@ search run 7 8 E full_prune first 1 256
 
 終了後、`SEARCH_MAP` で32行の歩数マップ、`SEARCH_VIRTUAL` で仮想壁一覧を出力します。
 
-`search run` は完成迷路の静的診断であり、`Search::search_adachi()`の壁観測手順そのものではありません。
+`search run` は完成迷路の静的診断であり、`Search::run_goal_search()`の壁観測手順そのものではありません。
 実探索と同じ逐次壁観測を検証する場合は、次の`search replay`を使用します。
 
 ### Search逐次再生

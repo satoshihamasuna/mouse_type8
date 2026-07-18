@@ -34,18 +34,18 @@
 
 #define ENABLE (0x01 << 4)
 
-void search_error_process(int init_histry_cnt, wall_class *wall_data)
+void search_error_process(int init_history_cnt, wall_class *wall_data)
 {
-	if(wall_data->wall_histry.get_histry_cnt() > init_histry_cnt + 10)
+	if(wall_data->wall_history.get_history_cnt() > init_history_cnt + 10)
 	{
-		wall_data->wall_histry.histry_delete(0x0A);
-		write_histry_flash(&(wall_data->wall_histry));
+		wall_data->wall_history.history_delete(0x0A);
+		write_history_flash(&(wall_data->wall_history));
 	}
-	else if(wall_data->wall_histry.get_histry_cnt() - init_histry_cnt > 0)
+	else if(wall_data->wall_history.get_history_cnt() - init_history_cnt > 0)
 	{
-		int delete_num = wall_data->wall_histry.get_histry_cnt() - init_histry_cnt;
-		wall_data->wall_histry.histry_delete(delete_num);
-		write_histry_flash(&(wall_data->wall_histry));
+		int delete_num = wall_data->wall_history.get_history_cnt() - init_history_cnt;
+		wall_data->wall_history.history_delete(delete_num);
+		write_history_flash(&(wall_data->wall_history));
 	}
 	Mode::indicate_error();
 }
@@ -69,10 +69,10 @@ void Demo()
 
 	wall_class wall_data(irsens);
 	wall_data.init_maze();
-	wall_data.wall_histry.histry_init();
+	wall_data.wall_history.history_init();
 	write_wall_WorkRam(&wall_data);
-	write_histry_WorkRam(&(wall_data.wall_histry));
-	int init_histry_cnt = 0;
+	write_history_WorkRam(&(wall_data.wall_history));
+	int init_history_cnt = 0;
 
 
 	t_position start,goal;
@@ -113,13 +113,13 @@ void Demo()
 					Indicate_LED(mode|param);
 
 					//outward
-					init_histry_cnt =  wall_data.wall_histry.get_histry_cnt();
+					init_history_cnt =  wall_data.wall_history.get_history_cnt();
 					solve_maze.search_param_init();
 					solve_maze.reset_search_time();
-					t_position return_pos = DemoUtil::run_search(&solve_maze, DemoUtil::SEARCH_1_ACC, start, goal, goal_size, &wall_data, motion);
+					t_position return_pos = DemoUtil::run_search(&solve_maze, DemoUtil::ACCELERATED_GOAL_SEARCH_FIRST_PRIORITY, start, goal, goal_size, &wall_data, motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
-						search_error_process(init_histry_cnt, &wall_data);
+						search_error_process(init_history_cnt, &wall_data);
 						enable = 0x00;
 						break;
 					}
@@ -127,11 +127,11 @@ void Demo()
 					write_save_data(&wall_data);
 
 					//return
-					init_histry_cnt =  wall_data.wall_histry.get_histry_cnt();
-					DemoUtil::run_search(&solve_maze, DemoUtil::SEARCH_2_PRUNE_ACC, return_pos, start, 1, &wall_data, motion);
+					init_history_cnt =  wall_data.wall_history.get_history_cnt();
+					DemoUtil::run_search(&solve_maze, DemoUtil::ACCELERATED_PRUNED_FULL_EXPLORATION, return_pos, start, 1, &wall_data, motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
-						search_error_process(init_histry_cnt, &wall_data);
+						search_error_process(init_history_cnt, &wall_data);
 						enable = 0x00;
 						break;
 					}
@@ -150,24 +150,24 @@ void Demo()
 					Indicate_LED(mode|param);
 
 					//outward
-					init_histry_cnt =  wall_data.wall_histry.get_histry_cnt();
+					init_history_cnt =  wall_data.wall_history.get_history_cnt();
 					solve_maze.search_param_init();
 					solve_maze.reset_search_time();
-					t_position return_pos = DemoUtil::run_search(&solve_maze, DemoUtil::SEARCH_1, start, goal, goal_size, &wall_data, motion);
+					t_position return_pos = DemoUtil::run_search(&solve_maze, DemoUtil::GOAL_SEARCH_FIRST_PRIORITY, start, goal, goal_size, &wall_data, motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
-						search_error_process(init_histry_cnt, &wall_data);
+						search_error_process(init_history_cnt, &wall_data);
 						enable = 0x00;
 						break;
 					}
 					write_save_data(&wall_data);
 
 					//return
-					init_histry_cnt =  wall_data.wall_histry.get_histry_cnt();
-					DemoUtil::run_search(&solve_maze, DemoUtil::SEARCH_1, return_pos, start, 1, &wall_data, motion);
+					init_history_cnt =  wall_data.wall_history.get_history_cnt();
+					DemoUtil::run_search(&solve_maze, DemoUtil::GOAL_SEARCH_FIRST_PRIORITY, return_pos, start, 1, &wall_data, motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
-						search_error_process(init_histry_cnt, &wall_data);
+						search_error_process(init_history_cnt, &wall_data);
 						enable = 0x00;
 						break;
 					}
@@ -186,25 +186,25 @@ void Demo()
 					Indicate_LED(mode|param);
 
 					//outward
-					init_histry_cnt =  wall_data.wall_histry.get_histry_cnt();
+					init_history_cnt =  wall_data.wall_history.get_history_cnt();
 					solve_maze.search_param_init();
 					solve_maze.reset_search_time();
-					t_position return_pos = DemoUtil::run_search(&solve_maze, DemoUtil::SEARCH_3_ACC, start, goal, goal_size, &wall_data, motion);
+					t_position return_pos = DemoUtil::run_search(&solve_maze, DemoUtil::ACCELERATED_GOAL_SEARCH_SECOND_PRIORITY, start, goal, goal_size, &wall_data, motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
-						search_error_process(init_histry_cnt, &wall_data);
+						search_error_process(init_history_cnt, &wall_data);
 						enable = 0x00;
 						break;
 					}
 					write_save_data(&wall_data);
 
 					//return
-					init_histry_cnt =  wall_data.wall_histry.get_histry_cnt();
+					init_history_cnt =  wall_data.wall_history.get_history_cnt();
 					solve_maze.reset_search_time();
-					DemoUtil::run_search(&solve_maze, DemoUtil::SEARCH_2_ACC, return_pos, start, 1, &wall_data, motion);
+					DemoUtil::run_search(&solve_maze, DemoUtil::ACCELERATED_FULL_EXPLORATION, return_pos, start, 1, &wall_data, motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
-						search_error_process(init_histry_cnt, &wall_data);
+						search_error_process(init_history_cnt, &wall_data);
 						enable = 0x00;
 						break;
 					}
@@ -223,24 +223,24 @@ void Demo()
 					Indicate_LED(mode|param);
 
 					//outward
-					init_histry_cnt =  wall_data.wall_histry.get_histry_cnt();
+					init_history_cnt =  wall_data.wall_history.get_history_cnt();
 					solve_maze.search_param_init();
 					solve_maze.reset_search_time();
-					t_position return_pos = DemoUtil::run_search(&solve_maze, DemoUtil::SEARCH_3_ACC, start, goal, goal_size, &wall_data, motion);
+					t_position return_pos = DemoUtil::run_search(&solve_maze, DemoUtil::ACCELERATED_GOAL_SEARCH_SECOND_PRIORITY, start, goal, goal_size, &wall_data, motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
-						search_error_process(init_histry_cnt, &wall_data);
+						search_error_process(init_history_cnt, &wall_data);
 						enable = 0x00;
 						break;
 					}
 					write_save_data(&wall_data);
 
 					//return
-					init_histry_cnt =  wall_data.wall_histry.get_histry_cnt();
-					DemoUtil::run_search(&solve_maze, DemoUtil::SEARCH_3_ACC, return_pos, start, 1, &wall_data, motion);
+					init_history_cnt =  wall_data.wall_history.get_history_cnt();
+					DemoUtil::run_search(&solve_maze, DemoUtil::ACCELERATED_GOAL_SEARCH_SECOND_PRIORITY, return_pos, start, 1, &wall_data, motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
-						search_error_process(init_histry_cnt, &wall_data);
+						search_error_process(init_history_cnt, &wall_data);
 						enable = 0x00;
 						break;
 					}
@@ -541,4 +541,3 @@ void Demo()
 	}
 }
 }
-

@@ -23,12 +23,13 @@ void read_wall_WorkRam(wall_class *wall_property);
 //void read_wall_flash(wall_class *wall_property);
 void write_wall_flash(wall_class *wall_property);
 
-void write_histry_WorkRam(wall_histry_class *_wall_histry);
-void read_histry_WorkRam(wall_histry_class *_wall_histry);
+void write_history_WorkRam(wall_history_class *_wall_history);
+void read_history_WorkRam(wall_history_class *_wall_history);
 
 
-//void read_histry_flash(wall_histry_class *_wall_histry);
-void write_histry_flash(wall_histry_class *_wall_histry);
+//void read_history_flash(wall_history_class *_wall_history);
+void write_history_flash(wall_history_class *_wall_history);
+
 
 
 #endif /* CPP_INC_FLASH_H_ */

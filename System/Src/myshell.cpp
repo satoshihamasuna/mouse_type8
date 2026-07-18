@@ -82,7 +82,7 @@ static void shell_read_save_data(wall_class *wall_data)
 {
 	wall_data->init_maze();
 	read_save_data(wall_data);
-	wall_data->histry2wall_append();
+	wall_data->history2wall_append();
 	shell_wall_data_ready = True;
 	shell_goal_x = MAZE_GOAL_X;
 	shell_goal_y = MAZE_GOAL_Y;
@@ -101,7 +101,7 @@ static void shell_receive_maze_binary(wall_class *wall_data)
 			wall_data->wall[x][y].west  = (t_wall_state)((data >> 6) & 0x03);
 		}
 	}
-	wall_data->wall_histry.histry_init();
+	wall_data->wall_history.history_init();
 	shell_wall_data_ready = True;
 }
 
@@ -292,7 +292,7 @@ static t_bool shell_search_sense_from_truth(wall_class *wall_data,
 			shell_search_dirs[i], observed);
 	}
 	if(append_history == True) {
-		wall_data->wall_histry.histry_set(pos.x, pos.y, wall_data->wall[pos.x][pos.y]);
+		wall_data->wall_history.history_set(pos.x, pos.y, wall_data->wall[pos.x][pos.y]);
 	}
 	return complete_truth;
 }
@@ -319,7 +319,7 @@ static void shell_search_replay_dump(wall_class *wall_data,const make_map *map_d
 	}
 	printf("REPLAY_DUMP_END virtual_edges:%d map_rows:%d history:%d\r\n",
 		shell_search_virtual_count(wall_data), MAZE_SIZE_Y,
-		wall_data->wall_histry.get_histry_cnt());
+		wall_data->wall_history.get_history_cnt());
 }
 
 static void shell_search_dump(wall_class *wall_data,const make_map *map_data)
@@ -396,7 +396,7 @@ static int usrcmd_disp(int argc, char **argv)
     if (argc != 2) {
     	printf("disp maze\r\n");
     	printf("disp maze_bin\r\n");
-    	printf("disp histry\r\n");
+    	printf("disp history\r\n");
     	printf("disp log\r\n");
     	printf("disp log_bin\r\n");
     	return 0;
@@ -417,10 +417,10 @@ static int usrcmd_disp(int argc, char **argv)
     	printf("\r\nMAZE_BIN_END\r\n");
         return 0;
     }
-    if (ntlibc_strcmp(argv[1], "histry") == 0) {
+    if (ntlibc_strcmp(argv[1], "history") == 0) {
     	wall_class *wall_data = shell_wall_data();
     	shell_read_save_data(wall_data);
-    	wall_data->wall_histry.histry_indicate();
+    	wall_data->wall_history.history_indicate();
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "log") == 0) {
@@ -446,7 +446,7 @@ static int usrcmd_load(int argc, char **argv)
     if (ntlibc_strcmp(argv[1], "save") == 0) {
     	wall_class *wall_data = shell_wall_data();
     	shell_read_save_data(wall_data);
-    	printf("read_save_data done. histry_cnt:%d\r\n", wall_data->wall_histry.get_histry_cnt());
+    	printf("read_save_data done. history_cnt:%d\r\n", wall_data->wall_history.get_history_cnt());
         return 0;
     }
     if (ntlibc_strcmp(argv[1], "maze_bin") == 0) {
@@ -517,8 +517,8 @@ static int shell_search_select(adachi *algorithm,t_bool priority_second,
 		t_position current,t_position goal,int mask,t_position *next)
 {
 	return priority_second == True ?
-		algorithm->get_next_dir2(current, goal, mask, next) :
-		algorithm->get_next_dir(current, mask, next);
+		algorithm->select_goal_aware_direction(current, goal, mask, next) :
+		algorithm->select_next_direction(current, mask, next);
 }
 
 static int shell_search_replay(t_bool reset,t_bool accelerated,t_position start,
@@ -570,7 +570,7 @@ static int shell_search_replay(t_bool reset,t_bool accelerated,t_position start,
 		}
 
 		int sensed = 0;
-		// search_adachi() senses every arrived cell. search_adachi_acc() only
+		// run_goal_search() senses every arrived cell. run_accelerated_goal_search() only
 		// senses it while some edge is unknown. Neither senses the start before
 		// selecting the first move.
 		if(steps > 0 && (accelerated != True || wall_data->is_unknown(current.x, current.y) == True)) {
@@ -679,7 +679,7 @@ static int shell_search_replay(t_bool reset,t_bool accelerated,t_position start,
 	}
 	printf("REPLAY_END result:%s steps:%d final:%d,%d,%s sensed:%d history:%d virtual_edges:%d\r\n",
 		result, steps, current.x, current.y, shell_search_direction_name(current.dir),
-		sensed_cells, wall_data->wall_histry.get_histry_cnt(),
+		sensed_cells, wall_data->wall_history.get_history_cnt(),
 		shell_search_virtual_count(wall_data));
 	shell_search_replay_dump(wall_data, map_data);
 	return ntlibc_strcmp(result, "goal") == 0 ? 0 : -1;
@@ -807,8 +807,8 @@ static int usrcmd_search(int argc, char **argv)
 
 		t_position next = current;
 		const int local_dir = priority_second == True ?
-			search_algorithm.get_next_dir2(current, goal, mask, &next) :
-			search_algorithm.get_next_dir(current, mask, &next);
+			search_algorithm.select_goal_aware_direction(current, goal, mask, &next) :
+			search_algorithm.select_next_direction(current, mask, &next);
 		if(next.x >= MAZE_SIZE_X || next.y >= MAZE_SIZE_Y ||
 			(next.dir != North && next.dir != East && next.dir != South && next.dir != West)) {
 			printf("SEARCH_ERROR invalid_next index:%d\r\n", steps);
