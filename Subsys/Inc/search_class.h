@@ -64,9 +64,15 @@ class Search
 		t_bool full_search			= False;
 		t_search_priority search_priority = priority_first;
 
+#if defined(MOUSE_A)
+		t_straight_param search_st_param = st_param_370;
+		t_param param_L90_search = param_L90_search_370;
+		t_param param_R90_search = param_R90_search_370;
+#else
 		t_straight_param search_st_param = st_param_320;
 		t_param param_L90_search = param_L90_search_320;
 		t_param param_R90_search = param_R90_search_320;
+#endif
 
 	public:
 		int32_t return_search_time()	{		return Interrupt::getInstance().return_time_count() - search_start_time;	    };
@@ -159,9 +165,15 @@ class Search
 
 		void search_param_init()
 		{
+#if defined(MOUSE_A)
+			search_st_param = st_param_370;
+			param_L90_search = param_L90_search_370;
+			param_R90_search = param_R90_search_370;
+#else
 			search_st_param = st_param_320;
 			param_L90_search = param_L90_search_320;
 			param_R90_search = param_R90_search_320;
+#endif
 		}
 
 		t_bool i_am_goal(int x,int y,int gx,int gy,int goal_size);

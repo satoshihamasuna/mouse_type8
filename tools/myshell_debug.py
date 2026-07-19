@@ -25,6 +25,7 @@ LOG_FRAME_FORMAT = "<HH" + "H" * LOG_DATA_NUM
 LOG_FRAME_SIZE = struct.calcsize(LOG_FRAME_FORMAT)
 LOG_DIR = Path(__file__).resolve().parent / "logs"
 TURN_PRESET_SPEEDS = (300, 500, 700, 1000, 1200, 1400, 1500, 1600, 1800, 2000)
+SEARCH_TURN_PRESET_SPEEDS = (280, 300, 320, 350, 370, 400)
 TURN_PARAM_RE = re.compile(
     r"velo:(?P<velo>-?\d+) r_min:(?P<r_min>-?\d+) Lstart:(?P<lstart>-?\d+) "
     r"Lend:(?P<lend>-?\d+) degree:(?P<degree>-?\d+) correction:(?P<correction>-?\d+) "
@@ -110,7 +111,25 @@ BATTERY_COMMAND = "info battery"
 class BatteryMonitorError(RuntimeError):
     pass
 FF_DEFAULTS = (0.4239, 0.09665, 0.3017, 0.00602, 0.00110, 0.00110, 0.0)
-SEARCH_FF_OM_VELO_DEFAULTS = {"right": 0.0063, "left": 0.0073}
+SEARCH_FF_SP_DEFAULTS = (0.4379, 0.1000, 0.3329)
+SEARCH_FF_OM_DEFAULTS = {
+    "right": {
+        280: (0.0058360, 0.0015999, 0.0012282, 0.0130955, 0.000000187),
+        300: (0.0058330, 0.0016753, 0.0012683, 0.0175503, 0.000000321),
+        320: (0.0048070, 0.0014096, 0.0007200, 0.0318284, 0.00000032),
+        350: (0.0049760, 0.0015374, 0.0009230, 0.0340973, 0.00000032),
+        370: (0.0053600, 0.0015777, 0.0008080, 0.0443326, 0.00000032),
+        400: (0.0064590, 0.0015171, 0.0009990, 0.0188340, 0.00000032),
+    },
+    "left": {
+        280: (0.0068350, 0.0015320, 0.0012199, 0.0068564, 0.000000468),
+        300: (0.0064070, 0.0015845, 0.0013100, 0.0144698, 0.000000326),
+        320: (0.0056160, 0.0012020, 0.0009570, 0.0222808, 0.00000032),
+        350: (0.0060030, 0.0014087, 0.0010080, 0.0199057, 0.00000032),
+        370: (0.0065180, 0.0014980, 0.0010350, 0.0148286, 0.00000032),
+        400: (0.0072780, 0.0014828, 0.0010880, 0.0076013, 0.00000032),
+    },
+}
 PIVOT_FF_DEFAULTS = {
     "right": (0.4239, 0.09665, 0.3017, 0.00602, 0.001043436, 0.001043436, 0.3704708),
     "left": (0.4239, 0.09665, 0.3017, 0.00602, 0.001002870, 0.001002870, 0.3616070),
@@ -134,6 +153,7 @@ class DebugGui(tk.Tk):
         self.turn_type = tk.StringVar(value="long_r90")
         self.direction = tk.StringVar(value="right")
         self.turn_preset_speed = tk.IntVar(value=700)
+        self.search_turn_preset_speed = tk.IntVar(value=370)
         self.turn_count = tk.IntVar(value=1)
         self.pre_accel = tk.DoubleVar(value=6.5)
         self.suction_enable = tk.BooleanVar(value=False)
@@ -192,6 +212,15 @@ class DebugGui(tk.Tk):
                                   values=TURN_PRESET_SPEEDS, state="readonly", width=10)
         preset_box.pack(side=tk.LEFT, padx=5)
         preset_box.bind("<<ComboboxSelected>>", lambda _event: self._load_defaults())
+
+        self.search_preset_selector = ttk.Frame(selectors)
+        ttk.Label(self.search_preset_selector, text="Search speed").pack(side=tk.LEFT)
+        search_preset_box = ttk.Combobox(
+            self.search_preset_selector, textvariable=self.search_turn_preset_speed,
+            values=SEARCH_TURN_PRESET_SPEEDS, state="readonly", width=10
+        )
+        search_preset_box.pack(side=tk.LEFT, padx=5)
+        search_preset_box.bind("<<ComboboxSelected>>", lambda _event: self._load_defaults())
 
         self.turn_count_selector = ttk.Frame(selectors)
         ttk.Label(self.turn_count_selector, text="Turn count").pack(side=tk.LEFT)
@@ -262,6 +291,7 @@ class DebugGui(tk.Tk):
         self.turn_selector.grid_remove()
         self.direction_selector.grid_remove()
         self.preset_selector.grid_remove()
+        self.search_preset_selector.grid_remove()
         self.turn_count_selector.grid_remove()
         if motion == "turn":
             self.turn_selector.grid(row=0, column=2, sticky=tk.W, padx=(15, 0))
@@ -270,7 +300,8 @@ class DebugGui(tk.Tk):
         elif motion in ("pivot_turn", "search_turn"):
             self.direction_selector.grid(row=0, column=2, sticky=tk.W, padx=(15, 0))
             if motion == "search_turn":
-                self.turn_count_selector.grid(row=0, column=3, sticky=tk.W, padx=(15, 0))
+                self.search_preset_selector.grid(row=0, column=3, sticky=tk.W, padx=(15, 0))
+                self.turn_count_selector.grid(row=0, column=4, sticky=tk.W, padx=(15, 0))
 
         schemas = {
             "straight": (("distance", "Distance [mm]"), ("acc", "Acceleration"),
@@ -332,10 +363,20 @@ class DebugGui(tk.Tk):
             defaults = TURN_DEFAULTS[self.turn_type.get()] + (0.0, 2.0, 0.05, 0.0, 0.1, 0.01, 0.0)
             self.pre_accel.set(6.5)
         elif self.motion.get() == "search_turn":
+            speed = self.search_turn_preset_speed.get()
+            if self.ser and self.ser.is_open:
+                self.pending_suction_override = (self.suction_enable.get(), self.suction_duty.get())
+                self._start(f"debug search_turn {self.direction.get()} preset {speed}")
+                return
             sign = -1.0 if self.direction.get() == "right" else 1.0
-            defaults = (0.32, sign * 26.0, 9.46, 11.16, sign * 90.0, 0.0,
+            lstart = 9.49 if speed == 280 else 9.46
+            defaults = (speed / 1000.0, sign * 26.0, lstart, 11.16, sign * 90.0, 0.0,
                         2.0, 0.016, 0.0, 0.1, 0.005, 0.0)
-            ff_defaults = FF_DEFAULTS[:2] + (SEARCH_FF_OM_VELO_DEFAULTS[self.direction.get()],) + FF_DEFAULTS[3:]
+            direction = self.direction.get()
+            om_defaults = SEARCH_FF_OM_DEFAULTS[direction].get(
+                speed, (0.0073, FF_DEFAULTS[4], FF_DEFAULTS[5], 0.0, 0.0)
+            )
+            ff_defaults = SEARCH_FF_SP_DEFAULTS + om_defaults[:4]
             self.pre_accel.set(6.5)
         elif self.motion.get() == "pivot_turn":
             sign = -1.0 if self.direction.get() == "right" else 1.0
@@ -349,7 +390,8 @@ class DebugGui(tk.Tk):
             self.values[name].set(value)
         for (_, name), value in zip(FF_FIELDS, ff_defaults):
             self.values[name].set(value)
-        self.values[TURN_JERK_FIELD[1]].set(0.0)
+        jerk_default = om_defaults[4] if self.motion.get() == "search_turn" else 0.0
+        self.values[TURN_JERK_FIELD[1]].set(jerk_default)
 
     def _set_command(self):
         try:
@@ -392,7 +434,13 @@ class DebugGui(tk.Tk):
             if not 1 <= turn_count <= 100:
                 raise ValueError("ターン回数は1～100にしてください。")
             pre_accel = self._pre_accel_value()
-            turn_values = values[:6] + [pre_accel] + values[6:] + ff_values
+            try:
+                jerk_value = self.values[TURN_JERK_FIELD[1]].get()
+            except tk.TclError as exc:
+                raise ValueError("OM jerk FF must be numeric.") from exc
+            if jerk_value < 0.0:
+                raise ValueError("OM jerk FF must be zero or positive.")
+            turn_values = values[:6] + [pre_accel] + values[6:] + ff_values + [jerk_value]
             return "debug search_turn {} set {} {} {} {}".format(
                 self.direction.get(), " ".join(f"{v:.7g}" for v in turn_values),
                 int(self.suction_enable.get()), self._suction_duty_value(), turn_count
@@ -464,6 +512,10 @@ class DebugGui(tk.Tk):
             return
         if self.motion.get() == "turn":
             self._start(f"debug turn {self.turn_type.get()} preset {self.turn_preset_speed.get()}")
+        elif self.motion.get() == "search_turn":
+            self._start(
+                f"debug search_turn {self.direction.get()} preset {self.search_turn_preset_speed.get()}"
+            )
         else:
             self._load_defaults()
             self._start(f"debug {self.motion.get()} {self.direction.get()} reset")
@@ -485,6 +537,8 @@ class DebugGui(tk.Tk):
             elif self.motion.get() in ("pivot_turn", "search_turn"):
                 exe_command = f"debug {self.motion.get()} {self.direction.get()} exe"
                 motion_name = f"{self.motion.get()}_{self.direction.get()}"
+                if self.motion.get() == "search_turn":
+                    motion_name += f"_{self.search_turn_preset_speed.get()}"
             else:
                 exe_command = f"debug {self.motion.get()} exe"
                 motion_name = self.motion.get()
@@ -566,6 +620,8 @@ class DebugGui(tk.Tk):
             prefix = motion + "_"
             if motion_name.startswith(prefix):
                 direction = motion_name[len(prefix):]
+                if motion == "search_turn":
+                    direction = direction.split("_", 1)[0]
                 if direction in ("right", "left"):
                     return f"debug {motion} {direction} show"
         if motion_name in ("straight", "diagonal"):
@@ -859,7 +915,9 @@ class DebugGui(tk.Tk):
                         self.values[name].set(value)
                     self.suction_enable.set(suction_enable)
                     self.suction_duty.set(suction_duty)
-                    if preset_speed in TURN_PRESET_SPEEDS:
+                    if self.motion.get() == "search_turn" and preset_speed in SEARCH_TURN_PRESET_SPEEDS:
+                        self.search_turn_preset_speed.set(preset_speed)
+                    elif preset_speed in TURN_PRESET_SPEEDS:
                         self.turn_preset_speed.set(preset_speed)
                     self.turn_count.set(turn_count)
                     self.pre_accel.set(pre_accel)

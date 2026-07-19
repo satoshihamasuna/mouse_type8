@@ -412,11 +412,18 @@ void  Motion::SetIdeal_search_turn()
 		motion_control_set(SLATURN_STATE);
 		if((run_time_ms_get() - turn_start_time_ms) < motion_plan.turn_time_ms.get())
 		{
-			float rad_velo 		 	= motion_plan.rad_max_velo.get()*get_turn_table_value(motion_plan.turn_time_ms.get(), (run_time_ms_get() - turn_start_time_ms));
-			float next_rad_velo  	= motion_plan.rad_max_velo.get()*get_turn_table_value(motion_plan.turn_time_ms.get(), (run_time_ms_get() - turn_start_time_ms) + (float)deltaT_ms);
+			const float turn_time_ms = motion_plan.turn_time_ms.get();
+			const float exe_turn_time = run_time_ms_get() - turn_start_time_ms;
+			const float next_time_ms = MIN(exe_turn_time + (float)deltaT_ms, turn_time_ms);
+			const float next2_time_ms = MIN(exe_turn_time + 2.0f * (float)deltaT_ms, turn_time_ms);
+			float rad_velo 		 	= motion_plan.rad_max_velo.get()*get_turn_table_value(turn_time_ms, exe_turn_time);
+			float next_rad_velo  	= motion_plan.rad_max_velo.get()*get_turn_table_value(turn_time_ms, next_time_ms);
+			float next2_rad_velo 	= motion_plan.rad_max_velo.get()*get_turn_table_value(turn_time_ms, next2_time_ms);
 			float rad_acc			= (next_rad_velo - rad_velo)*1000.0f/(float)deltaT_ms;
+			float next_rad_acc		= (next2_rad_velo - next_rad_velo)*1000.0f/(float)deltaT_ms;
 			vehicle->ideal.rad_velo.set(rad_velo);
 			vehicle->ideal.rad_accel.set(rad_acc);
+			vehicle->ideal.rad_jerk.set((next_rad_acc - rad_acc)*1000.0f/(float)deltaT_ms);
 		}
 		else
 		{
@@ -426,6 +433,8 @@ void  Motion::SetIdeal_search_turn()
 
 			//vehicle->ideal.rad_accel.set(0.0f);
 			vehicle->ideal.rad_velo.set(0.0f);
+			vehicle->ideal.rad_accel.set(0.0f);
+			vehicle->ideal.rad_jerk.set(0.0f);
 			vehicle->ideal.radian.set(0.0f);
 			vehicle->ideal.turn_slip_theta.set(0.0f);
 

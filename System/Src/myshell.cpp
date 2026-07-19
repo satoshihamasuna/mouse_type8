@@ -904,12 +904,12 @@ typedef struct {
 
 static shell_debug_param_t shell_debug_straight_param = {
 	90.0f * 4.0f, 6.5f, 0.7f, 0.0f,
-	{4.0f, 0.05f, 0.0f}, {0.1f, 0.01f, 0.0f},
+	{2.0f, 0.05f, 0.0f}, {0.1f, 0.01f, 0.0f},
 	{FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_SP_BIAS_COEF, FF_OM_VELO_COEF, FF_OM_ACCEL_COEF, FF_OM_ACCEL_COEF, FF_OM_BIAS_COEF}, False, 650
 };
 static shell_debug_param_t shell_debug_diagonal_param = {
 	63.63f * 6.0f, 6.5f, 0.7f, 0.0f,
-	{4.0f, 0.05f, 0.0f}, {0.1f, 0.01f, 0.0f},
+	{2.0f, 0.05f, 0.0f}, {0.1f, 0.01f, 0.0f},
 	{FF_SP_VELO_COEF, FF_SP_ACCEL_COEF, FF_SP_BIAS_COEF, FF_OM_VELO_COEF, FF_OM_ACCEL_COEF, FF_OM_ACCEL_COEF, FF_OM_BIAS_COEF}, False, 650
 };
 
@@ -1463,10 +1463,26 @@ static t_bool shell_debug_is_right(const char *direction, t_bool *right)
 	return False;
 }
 
-static shell_debug_turn_param_t *shell_debug_search_get(t_bool right, t_bool reset)
+static const t_param *shell_debug_search_source(t_bool right, int preset_speed)
+{
+	switch (preset_speed) {
+	case 280: return right ? &param_R90_search_280 : &param_L90_search_280;
+	case 300: return right ? &param_R90_search_300 : &param_L90_search_300;
+	case 320: return right ? &param_R90_search_320 : &param_L90_search_320;
+#if defined(MOUSE_A)
+	case 350: return right ? &param_R90_search_350 : &param_L90_search_350;
+	case 370: return right ? &param_R90_search_370 : &param_L90_search_370;
+	case 400: return right ? &param_R90_search_400 : &param_L90_search_400;
+#endif
+	default: return NULL;
+	}
+}
+
+static shell_debug_turn_param_t *shell_debug_search_get(t_bool right, int preset_speed, t_bool reset)
 {
 	shell_debug_turn_param_t *debug = right ? &shell_debug_search_right : &shell_debug_search_left;
-	const t_param *source = right ? &param_R90_search_320 : &param_L90_search_320;
+	const t_param *source = shell_debug_search_source(right, preset_speed);
+	if (source == NULL) return NULL;
 	if (debug->initialized != True || reset == True) {
 		debug->table = *source->param;
 		if (right == True) {
@@ -1487,6 +1503,7 @@ static shell_debug_turn_param_t *shell_debug_search_get(t_bool right, t_bool res
 		debug->param.ff_gain = &debug->ff_gain;
 		debug->suction_enable = False;
 		debug->suction_duty = 650;
+		debug->preset_speed = preset_speed;
 		debug->turn_count = 1;
 		debug->pre_accel = shell_debug_straight_param.acc;
 		debug->initialized = True;
@@ -1496,22 +1513,32 @@ static shell_debug_turn_param_t *shell_debug_search_get(t_bool right, t_bool res
 
 static int shell_debug_search_command(int argc, char **argv)
 {
-	if (argc < 4) { printf("debug search_turn right|left show|reset|set|exe\r\n"); return 0; }
+	if (argc < 4) { printf("debug search_turn right|left show|reset|preset speed|set|exe\r\n"); return 0; }
 	t_bool right;
 	if (shell_debug_is_right(argv[2], &right) != True) { printf("DEBUG_SEARCH_ERROR direction\r\n"); return -1; }
+	shell_debug_turn_param_t *current = right ? &shell_debug_search_right : &shell_debug_search_left;
+	int preset_speed = (current->initialized == True) ? current->preset_speed : 320;
 	t_bool reset = (ntlibc_strcmp(argv[3], "reset") == 0) ? True : False;
-	shell_debug_turn_param_t *debug = shell_debug_search_get(right, reset);
+	t_bool preset = (ntlibc_strcmp(argv[3], "preset") == 0) ? True : False;
+	if (preset == True) {
+		if (argc != 5) { printf("debug search_turn %s preset 280|300|320|350|370|400\r\n", argv[2]); return -1; }
+		preset_speed = ntlibc_atoi(argv[4]);
+		reset = True;
+	}
+	shell_debug_turn_param_t *debug = shell_debug_search_get(right, preset_speed, reset);
+	if (debug == NULL) { printf("DEBUG_SEARCH_ERROR preset:%d\r\n", preset_speed); return -1; }
 	if (ntlibc_strcmp(argv[3], "show") == 0 || reset == True) {
 		if (reset == True) {
 			debug->turn_count = 1;
-			printf("DEBUG_SEARCH_RESET_DONE\r\n");
+			if (preset == True) printf("DEBUG_SEARCH_PRESET_DONE speed:%d\r\n", preset_speed);
+			else printf("DEBUG_SEARCH_RESET_DONE\r\n");
 		}
 		shell_debug_turn_show(argv[2], debug);
 		printf("DEBUG_SEARCH_COUNT %d\r\n", debug->turn_count);
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[3], "set") == 0) {
-		if (argc != 20 && argc != 24 && argc != 25 && argc != 26 && argc != 27) { printf("debug search_turn %s set velo r_min Lstart Lend degree degree_correction pre_accel sp_kp sp_ki sp_kd om_kp om_ki om_kd [ff_sp_velo ff_sp_accel ff_sp_bias ff_om_velo ff_om_accel ff_om_decel ff_om_bias] suction_enable suction_duty turn_count\r\n", argv[2]); return -1; }
+		if (argc != 20 && argc != 24 && argc != 25 && argc != 26 && argc != 27 && argc != 28) { printf("debug search_turn %s set velo r_min Lstart Lend degree degree_correction pre_accel sp_kp sp_ki sp_kd om_kp om_ki om_kd [ff_sp_velo ff_sp_accel ff_sp_bias ff_om_velo ff_om_accel ff_om_decel ff_om_bias [ff_om_jerk]] suction_enable suction_duty turn_count\r\n", argv[2]); return -1; }
 		shell_debug_turn_param_t next = *debug;
 		float *legacy_values[] = {&next.table.velo, &next.table.r_min, &next.table.Lstart, &next.table.Lend,
 			&next.table.degree, &next.table.degree_correction, &next.pre_accel, &next.sp_gain.Kp, &next.sp_gain.Ki, &next.sp_gain.Kd,
@@ -1522,13 +1549,14 @@ static int shell_debug_search_command(int argc, char **argv)
 			&next.table.degree, &next.table.degree_correction, &next.pre_accel, &next.sp_gain.Kp, &next.sp_gain.Ki, &next.sp_gain.Kd,
 			&next.om_gain.Kp, &next.om_gain.Ki, &next.om_gain.Kd,
 			&next.ff_gain.sp_velo, &next.ff_gain.sp_accel, &next.ff_gain.sp_bias, &next.ff_gain.om_velo,
-			&next.ff_gain.om_accel, &next.ff_gain.om_decel, &next.ff_gain.om_bias};
-		float **values = (argc == 27) ? full_values : legacy_values;
-		const int value_count = (argc == 27) ? 20 : ((argc == 26) ? 19 : ((argc == 25) ? 18 : ((argc == 24) ? 17 : 13)));
+			&next.ff_gain.om_accel, &next.ff_gain.om_decel, &next.ff_gain.om_bias, &next.ff_gain.om_jerk};
+		const t_bool full_format = (argc == 27 || argc == 28) ? True : False;
+		float **values = (full_format == True) ? full_values : legacy_values;
+		const int value_count = (argc == 28) ? 21 : ((argc == 27) ? 20 : ((argc == 26) ? 19 : ((argc == 25) ? 18 : ((argc == 24) ? 17 : 13))));
 		for (int i = 0; i < value_count; i++) if (shell_parse_float(argv[i + 4], values[i]) != True) { printf("DEBUG_SEARCH_ERROR number\r\n"); return -1; }
-		if (argc != 27) next.ff_gain.om_decel = next.ff_gain.om_accel;
+		if (full_format != True) next.ff_gain.om_decel = next.ff_gain.om_accel;
 		int enable, duty, count;
-		const int option_index = (argc == 27) ? 24 : ((argc == 26) ? 23 : ((argc == 25) ? 22 : ((argc == 24) ? 21 : 17)));
+		const int option_index = (argc == 28) ? 25 : ((argc == 27) ? 24 : ((argc == 26) ? 23 : ((argc == 25) ? 22 : ((argc == 24) ? 21 : 17))));
 		if (sscanf(argv[option_index], "%d", &enable) != 1 || sscanf(argv[option_index + 1], "%d", &duty) != 1 || sscanf(argv[option_index + 2], "%d", &count) != 1 ||
 			(enable != 0 && enable != 1) || duty < 0 || duty > 990 || next.table.velo <= 0.0f ||
 			next.pre_accel <= 0.0f || next.table.Lstart < 0.0f || next.table.Lend < 0.0f || count < 1 || count > 100) { printf("DEBUG_SEARCH_ERROR range\r\n"); return -1; }
@@ -1537,7 +1565,7 @@ static int shell_debug_search_command(int argc, char **argv)
 		next.table.turn_dir = right ? Turn_R : Turn_L;
 		next.suction_enable = enable ? True : False;
 		next.suction_duty = duty;
-		next.preset_speed = 0;
+		next.preset_speed = debug->preset_speed;
 		*debug = next;
 		debug->param.param = &debug->table;
 		debug->param.sp_gain = &debug->sp_gain;
@@ -1743,7 +1771,7 @@ static int usrcmd_debug(int argc, char **argv)
 		printf("debug diagonal show|set|exe\r\n");
 		printf("debug turn type show|reset|set|exe\r\n");
 		printf("debug pivot_turn right|left show|reset|set|exe\r\n");
-		printf("debug search_turn right|left show|reset|set|exe\r\n");
+		printf("debug search_turn right|left show|reset|preset speed|set|exe\r\n");
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[1], "straight") == 0)
