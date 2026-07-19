@@ -21,10 +21,17 @@
 #include "../Inc/run_typedef.h"
 #include "../Inc/sensing_task.h"
 
+namespace {
+	constexpr float OM_JERK_FF_LIMIT_V = 2.0f;
+}
+
 
 
 void CtrlTask::motion_ideal_param_set()
 {
+	// Motions that do not explicitly generate angular jerk must not inherit the
+	// final value from the preceding turn.
+	vehicle->ideal.rad_jerk.set(0.0f);
 
 	switch(motion_pattern_get())
 	{
@@ -155,6 +162,7 @@ void CtrlTask::motion_control()
 								+ ff_gain->sp_accel * ideal_accel;
 			const float ideal_rad_velo = vehicle->ideal.rad_velo.get();
 			const float ideal_rad_accel = vehicle->ideal.rad_accel.get();
+			const float ideal_rad_jerk = vehicle->ideal.rad_jerk.get();
 			float om_bias_direction = 0.0f;
 			if (ABS(ideal_rad_velo) > 0.001f) {
 				om_bias_direction = SIGN(ideal_rad_velo);
@@ -164,9 +172,12 @@ void CtrlTask::motion_control()
 			}
 			const bool is_om_decelerating = (ideal_rad_velo * ideal_rad_accel) < 0.0f;
 			const float om_accel_gain = is_om_decelerating ? ff_gain->om_decel : ff_gain->om_accel;
+			const float om_jerk_FF_control = CLAMP(ff_gain->om_jerk * ideal_rad_jerk,
+											-OM_JERK_FF_LIMIT_V, OM_JERK_FF_LIMIT_V);
 			float om_FF_control = ff_gain->om_bias * om_bias_direction
 								+ ff_gain->om_velo * ideal_rad_velo
-								+ om_accel_gain * ideal_rad_accel;
+								+ om_accel_gain * ideal_rad_accel
+								+ om_jerk_FF_control;
 
 
 			//feedback controll

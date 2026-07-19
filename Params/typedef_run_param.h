@@ -20,6 +20,7 @@ typedef struct{
 	float om_accel;  // Used while angular speed magnitude is increasing.
 	float om_decel;  // Used while angular speed magnitude is decreasing.
 	float om_bias;
+	float om_jerk = 0.0f;  // Target angular-acceleration derivative feedforward.
 }t_ff_gain;
 
 const static t_ff_gain ff_gain_default = {

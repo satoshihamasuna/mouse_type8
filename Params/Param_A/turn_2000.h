@@ -10,52 +10,55 @@
 
 #include "typedef_run_param.h"
 
+// OM feedforward for every turn is seeded from the verified L90-L result.
+// Dedicated variables are retained for later per-turn/direction tuning;
+// turn-specific SP feedforward remains unchanged.
 const static t_ff_gain ff_gain_long_turn_90_R_2000 = {
-	0.9030126f, 0.08183161f, 0.1190275f, 0.002f, 0.00096f, 0.00098f, 0.2972200f
+	0.9030126f, 0.08183161f, 0.1190275f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_long_turn_90_L_2000 = {
-	0.9030126f, 0.08183161f, 0.1190275f, 0.002f, 0.00085f, 0.00106f, 0.43f
+	0.9030126f, 0.08183161f, 0.1190275f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_long_turn_180_R_2000 = {
-	0.9030126f, 0.08101898f, 0.2138578f, 0.007355744f, 0.0009893826f, 0.0009893826f, 0.1964514f
+	0.9030126f, 0.08101898f, 0.2138578f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_long_turn_180_L_2000 = {
-	0.9030126f, 0.08101898f, 0.2138578f, 0.008186232f, 0.0009810843f, 0.0009810843f, 0.1963813f
+	0.9030126f, 0.08101898f, 0.2138578f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_in45_R_2000 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.000825f, 0.000625f, 0.0f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_in45_L_2000 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.00092f, 0.00070f, 0.04f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_out45_R_2000 = {
-	0.9030126f, 0.09295480f, 0.04174514f, 0.0f, 0.000825f, 0.000625f, 0.0f
+	0.9030126f, 0.09295480f, 0.04174514f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_out45_L_2000 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.00092f, 0.00070f, 0.04f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_in135_R_2000 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.004f, 0.001069892f, 0.001069892f, 0.3761218f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_in135_L_2000 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.004f, 0.00086f, 0.00113f, 0.485f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_out135_R_2000 = {
-	0.9030126f, 0.08607196f, 0.09289980f, 0.004f, 0.001069892f, 0.001069892f, 0.3761218f
+	0.9030126f, 0.08607196f, 0.09289980f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_out135_L_2000 = {
-	0.9030126f, 0.08607196f, 0.09289980f, 0.004f, 0.00086f, 0.00113f, 0.485f
+	0.9030126f, 0.08607196f, 0.09289980f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_v90_R_2000 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0f, 0.00085f, 0.00065f, 0.250f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 const static t_ff_gain ff_gain_v90_L_2000 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0f, 0.00091f, 0.00102f, 0.40f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0188f, 0.00105f, 0.00110f, 0.0175f, 0.0000030f
 };
 
 
-const static t_pid_gain sp_gain_turn90_2000 = {2.0,0.05,0.0};
-const static t_pid_gain om_gain_turn90_2000 = {0.1,0.002,0.0};
+const static t_pid_gain sp_gain_turn90_2000 = {2.0,0.016,0.0};
+const static t_pid_gain om_gain_turn90_2000 = {0.20,0.01,0.0};
 const static t_turn_param_table slalom_L90_2000_table = {2.00f, 52.0f,12.57,42.89, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f,12.57,42.89,-90.0f,Turn_R};
 const static t_param param_L90_2000 = {&slalom_L90_2000_table,&sp_gain_turn90_2000,&om_gain_turn90_2000,&ff_gain_long_turn_90_L_2000};

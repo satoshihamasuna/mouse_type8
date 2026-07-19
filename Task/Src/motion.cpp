@@ -14,21 +14,24 @@
 
 float get_turn_table_value(float time_period_ms,float time_ms)
 {
-	float turn_table_value = 0.0f;
-	if(time_ms <= time_period_ms)
+	if(time_period_ms <= 0.0f || time_ms < 0.0f || time_ms > time_period_ms)
 	{
-		//calc array position
-		int std_a = (int)((time_ms*1000.0f/time_period_ms));
-		int std_b = std_a + 1;
-		//
-		float m = ((time_ms*1000.0f/time_period_ms)) - (float)(std_a);
-		float n = (float)(std_b) -((time_ms*1000.0f/time_period_ms));
-		turn_table_value =  (n*accel_table[std_a] + m*accel_table[std_b]);
-		return turn_table_value;
+		return 0.0f;
 	}
-	else	;
 
-	return turn_table_value;
+	const float table_position = time_ms * 1000.0f / time_period_ms;
+	const int std_a = (int)table_position;
+	// At the exact end std_a is 1000. Returning the last entry avoids
+	// reading accel_table[1001] while preserving the profile endpoint.
+	if(std_a >= 1000)
+	{
+		return accel_table[1000];
+	}
+
+	const int std_b = std_a + 1;
+	const float m = table_position - (float)std_a;
+	const float n = 1.0f - m;
+	return n * accel_table[std_a] + m * accel_table[std_b];
 }
 /*
 float get_turn2_table_value(float time_period_ms,float time_ms)

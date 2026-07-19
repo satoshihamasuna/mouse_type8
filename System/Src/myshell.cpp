@@ -1154,7 +1154,7 @@ static shell_debug_turn_param_t *shell_debug_turn_get(t_run_pattern pattern, int
 static void shell_debug_turn_show(const char *name, const shell_debug_turn_param_t *debug)
 {
 	printf("DEBUG_TURN_PARAM_X1000 %s velo:%ld r_min:%ld Lstart:%ld Lend:%ld degree:%ld correction:%ld pre_accel:%ld "
-		   "sp_u:%ld,%ld,%ld om_u:%ld,%ld,%ld ff_u:%ld,%ld,%ld,%ld,%ld,%ld,%ld suction:%d duty:%d preset:%d count:%d\r\n",
+		   "sp_u:%ld,%ld,%ld om_u:%ld,%ld,%ld ff_u:%ld,%ld,%ld,%ld,%ld,%ld,%ld jerk_n:%ld suction:%d duty:%d preset:%d count:%d\r\n",
 		   name, (long)(debug->table.velo * 1000.0f), (long)(debug->table.r_min * 1000.0f),
 		   (long)(debug->table.Lstart * 1000.0f), (long)(debug->table.Lend * 1000.0f),
 		   (long)(debug->table.degree * 1000.0f), (long)(debug->table.degree_correction * 1000.0f),
@@ -1165,7 +1165,7 @@ static void shell_debug_turn_show(const char *name, const shell_debug_turn_param
 		   (long)(debug->ff_gain.sp_velo * 1000000.0f), (long)(debug->ff_gain.sp_accel * 1000000.0f),
 		   (long)(debug->ff_gain.sp_bias * 1000000.0f), (long)(debug->ff_gain.om_velo * 1000000.0f),
 		   (long)(debug->ff_gain.om_accel * 1000000.0f), (long)(debug->ff_gain.om_decel * 1000000.0f),
-		   (long)(debug->ff_gain.om_bias * 1000000.0f),
+		   (long)(debug->ff_gain.om_bias * 1000000.0f), (long)(debug->ff_gain.om_jerk * 1000000000.0f),
 		   debug->suction_enable, debug->suction_duty, debug->preset_speed, debug->turn_count);
 }
 
@@ -1299,8 +1299,8 @@ static int shell_debug_turn_command(int argc, char **argv)
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[3], "set") == 0) {
-		if (argc != 20 && argc != 24 && argc != 25 && argc != 26 && argc != 27) {
-			printf("debug turn %s set velo r_min Lstart Lend degree degree_correction pre_accel sp_kp sp_ki sp_kd om_kp om_ki om_kd [ff_sp_velo ff_sp_accel ff_sp_bias ff_om_velo ff_om_accel ff_om_decel ff_om_bias] suction_enable suction_duty turn_count\r\n", argv[2]);
+		if (argc != 20 && argc != 24 && argc != 25 && argc != 26 && argc != 27 && argc != 28) {
+			printf("debug turn %s set velo r_min Lstart Lend degree degree_correction pre_accel sp_kp sp_ki sp_kd om_kp om_ki om_kd [ff_sp_velo ff_sp_accel ff_sp_bias ff_om_velo ff_om_accel ff_om_decel ff_om_bias ff_om_jerk] suction_enable suction_duty turn_count\r\n", argv[2]);
 			return -1;
 		}
 		shell_debug_turn_param_t next = *debug;
@@ -1314,19 +1314,25 @@ static int shell_debug_turn_command(int argc, char **argv)
 			&next.sp_gain.Kd, &next.om_gain.Kp, &next.om_gain.Ki, &next.om_gain.Kd,
 			&next.ff_gain.sp_velo, &next.ff_gain.sp_accel, &next.ff_gain.sp_bias, &next.ff_gain.om_velo,
 			&next.ff_gain.om_accel, &next.ff_gain.om_decel, &next.ff_gain.om_bias};
-		float **values = (argc == 27) ? full_values : legacy_values;
-		const int value_count = (argc == 27) ? 20 : ((argc == 26) ? 19 : ((argc == 25) ? 18 : ((argc == 24) ? 17 : 13)));
+		float *full_values_with_jerk[] = {&next.table.velo, &next.table.r_min, &next.table.Lstart,
+			&next.table.Lend, &next.table.degree, &next.table.degree_correction, &next.pre_accel, &next.sp_gain.Kp, &next.sp_gain.Ki,
+			&next.sp_gain.Kd, &next.om_gain.Kp, &next.om_gain.Ki, &next.om_gain.Kd,
+			&next.ff_gain.sp_velo, &next.ff_gain.sp_accel, &next.ff_gain.sp_bias, &next.ff_gain.om_velo,
+			&next.ff_gain.om_accel, &next.ff_gain.om_decel, &next.ff_gain.om_bias, &next.ff_gain.om_jerk};
+		float **values = (argc == 28) ? full_values_with_jerk : ((argc == 27) ? full_values : legacy_values);
+		const int value_count = (argc == 28) ? 21 : ((argc == 27) ? 20 : ((argc == 26) ? 19 : ((argc == 25) ? 18 : ((argc == 24) ? 17 : 13))));
 		for (int i = 0; i < value_count; i++) {
 			if (shell_parse_float(argv[i + 4], values[i]) != True) {
 				printf("DEBUG_TURN_ERROR invalid_number:%s\r\n", argv[i + 4]);
 				return -1;
 			}
 		}
-		if (argc != 27) next.ff_gain.om_decel = next.ff_gain.om_accel;
+		if (argc != 27 && argc != 28) next.ff_gain.om_decel = next.ff_gain.om_accel;
+		if (argc != 28) next.ff_gain.om_jerk = 0.0f;
 		int suction_enable;
 		int suction_duty;
 		int turn_count;
-		const int option_index = (argc == 27) ? 24 : ((argc == 26) ? 23 : ((argc == 25) ? 22 : ((argc == 24) ? 21 : 17)));
+		const int option_index = (argc == 28) ? 25 : ((argc == 27) ? 24 : ((argc == 26) ? 23 : ((argc == 25) ? 22 : ((argc == 24) ? 21 : 17))));
 		if (sscanf(argv[option_index], "%d", &suction_enable) != 1 || sscanf(argv[option_index + 1], "%d", &suction_duty) != 1 ||
 			sscanf(argv[option_index + 2], "%d", &turn_count) != 1 || (suction_enable != 0 && suction_enable != 1) ||
 			suction_duty < 0 || suction_duty > 990 || turn_count < 1 || turn_count > 100) {

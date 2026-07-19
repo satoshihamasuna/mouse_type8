@@ -10,66 +10,52 @@
 
 #include "typedef_run_param.h"
 
-// Second-pass identification from the suction-run verification logs captured
-// at and after 20260716_034241. SP velocity is retained because a single fixed
-// speed cannot separate it reliably from bias; SP acceleration/bias are
-// refitted. Both free angular fits are negative, so OM velocity is constrained
-// to zero before refitting angular acceleration and signed bias per direction.
+// OM feedforward for every turn is seeded from the verified L90-L result.
+// Dedicated variables are retained for later per-turn/direction tuning;
+// turn-specific SP feedforward remains unchanged.
 const static t_ff_gain ff_gain_long_turn_R_1600 = {
-	0.9030126f, 0.08183161f, 0.1190275f, 0.002f, 0.00096f, 0.00098f, 0.2972200f
+	0.9030126f, 0.08183161f, 0.2379401f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_long_turn_L_1600 = {
-	0.9030126f, 0.08183161f, 0.1190275f, 0.002f, 0.00085f, 0.00106f, 0.43f
+	0.9030126f, 0.08183161f, 0.2400677f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 
-// Second-pass long-180 identification from the suction-run verification logs
-// captured after 20260716_035548. The incomplete-active-phase 040457 left log
-// is excluded. SP velocity is retained from the identified 1600 mm/s suction
-// profile; both angular velocity fits remain positive and consistent.
 const static t_ff_gain ff_gain_long_turn_180_R_1600 = {
-	0.9030126f, 0.08101898f, 0.2138578f, 0.007355744f, 0.0009893826f, 0.0009893826f, 0.1964514f
+	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_long_turn_180_L_1600 = {
-	0.9030126f, 0.08101898f, 0.2138578f, 0.008186232f, 0.0009810843f, 0.0009810843f, 0.1963813f
+	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 
-// Dedicated suction-run feedforward identified from the non-long-turn logs
-// captured at and after 20260716_023755. The already identified suction SP
-// velocity coefficient is retained because these are single-speed logs.
-// Negative free OM velocity fits are constrained to zero and then refitted.
 const static t_ff_gain ff_gain_v90_R_1600 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0f, 0.00085f, 0.00065f, 0.250f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_v90_L_1600 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0f, 0.00091f, 0.00102f, 0.40f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
-// Right in45 FF verified with the three 1600 mm/s logs captured at 221653,
-// 221732, and 221815. Their fitted angular plant has a 3 ms input delay.
-// Acceleration/deceleration gains prioritize peak-overshoot suppression with
-// the 0.20/0.005 PI gains and battery-voltage saturation included.
 const static t_ff_gain ff_gain_in45_R_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.000825f, 0.000625f, 0.0f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_in45_L_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.00092f, 0.00070f, 0.04f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_out45_R_1600 = {
-	0.9030126f, 0.09295480f, 0.04174514f, 0.0f, 0.000825f, 0.000625f, 0.0f
+	0.9030126f, 0.09295480f, 0.04174514f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_out45_L_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0f, 0.00092f, 0.00070f, 0.04f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_in135_R_1600 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.004f, 0.001069892f, 0.001069892f, 0.3761218f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_in135_L_1600 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.004f, 0.00086f, 0.00113f, 0.485f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_out135_R_1600 = {
-	0.9030126f, 0.08607196f, 0.09289980f, 0.004f, 0.001069892f, 0.001069892f, 0.3761218f
+	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_out135_L_1600 = {
-	0.9030126f, 0.08607196f, 0.09289980f, 0.004f, 0.00086f, 0.00113f, 0.485f
+	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
 };
 
 //k = 250

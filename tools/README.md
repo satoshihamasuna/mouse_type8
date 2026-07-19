@@ -243,6 +243,13 @@ python tools\log_compare.py tools\logs\20260712_141937_myshell_debug_log_long_r9
 python tools\log_compare.py --no-show --save tools\logs\log_compare.png
 ```
 
+`log_compare.py` automatically loads the sibling `.settings.json`. The output
+also includes motor/control voltages, derived ideal angular acceleration and
+jerk, and reconstructed angular FF components. If `ff_om_jerk` is absent from
+an older settings file, captured `Kj` is estimated from the OM-FF residual.
+This residual estimate assumes that the acceleration taper was disabled.
+Use `--jerk-gain` to override the inferred value for historical comparisons.
+
 次の目標値・測定値・誤差を時系列で比較します。
 
 - 速度

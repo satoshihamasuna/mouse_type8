@@ -45,6 +45,7 @@ struct machine_params
 		param_element z_accel;
 		param_element length;
 		param_element rad_accel;
+		param_element rad_jerk;
 		param_element rad_velo;
 		param_element radian;
 		param_element x_point;
@@ -75,6 +76,7 @@ class Vehicle
 			ego.z_accel.init();
 			ego.length.init();
 			ego.rad_accel.init();
+			ego.rad_jerk.init();
 			ego.rad_velo.init();
 			ego.radian.init();
 			ego.x_point.init();
@@ -109,6 +111,7 @@ class Vehicle
 			ideal.z_accel.init();
 			ideal.length.init();
 			ideal.rad_accel.init();
+			ideal.rad_jerk.init();
 			ideal.rad_velo.init();
 			ideal.radian.init();
 			ideal.x_point.init();

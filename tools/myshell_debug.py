@@ -34,6 +34,7 @@ TURN_PARAM_RE = re.compile(
     r"(?:ff_u:(?P<ff_sp_velo>-?\d+),(?P<ff_sp_accel>-?\d+),"
     r"(?P<ff_sp_bias>-?\d+),(?P<ff_om_velo>-?\d+),"
     r"(?P<ff_om_accel>-?\d+),(?P<ff_om_decel>-?\d+),(?P<ff_om_bias>-?\d+) )?"
+    r"(?:jerk_n:(?P<ff_om_jerk>-?\d+) )?"
     r"suction:(?P<suction>\d+) duty:(?P<duty>\d+) preset:(?P<preset>\d+) count:(?P<count>\d+)"
 )
 FLOAT_PATTERN = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
@@ -97,6 +98,8 @@ FF_FIELDS = (
     ("OM deceleration", "ff_om_decel"),
     ("OM signed bias", "ff_om_bias"),
 )
+TURN_JERK_FIELD = ("OM jerk", "ff_om_jerk")
+DISPLAY_FF_FIELDS = FF_FIELDS + (TURN_JERK_FIELD,)
 BATTERY_RE = re.compile(
     r"BATTERY voltage_mv:(?P<voltage_mv>\d+) limit_mv:(?P<limit_mv>\d+) "
     r"status:(?P<status>OK|ERROR)"
@@ -137,7 +140,7 @@ class DebugGui(tk.Tk):
         self.suction_duty = tk.IntVar(value=650)
         self.pending_suction_override = None
         self.last_motion_name = "unknown"
-        self.values = {name: tk.DoubleVar() for _, name in FIELDS + FF_FIELDS}
+        self.values = {name: tk.DoubleVar() for _, name in FIELDS + DISPLAY_FF_FIELDS}
         self._build()
         self._load_defaults()
         self.after(50, self._drain)
@@ -223,7 +226,7 @@ class DebugGui(tk.Tk):
             )
         pid_params.columnconfigure(1, weight=1)
 
-        for row, (label_text, name) in enumerate(FF_FIELDS):
+        for row, (label_text, name) in enumerate(DISPLAY_FF_FIELDS):
             ttk.Label(ff_params, text=label_text).grid(row=row, column=0, sticky=tk.W, pady=2)
             ttk.Entry(ff_params, textvariable=self.values[name], width=10).grid(
                 row=row, column=1, sticky=tk.EW, padx=5, pady=2
@@ -346,6 +349,7 @@ class DebugGui(tk.Tk):
             self.values[name].set(value)
         for (_, name), value in zip(FF_FIELDS, ff_defaults):
             self.values[name].set(value)
+        self.values[TURN_JERK_FIELD[1]].set(0.0)
 
     def _set_command(self):
         try:
@@ -361,7 +365,16 @@ class DebugGui(tk.Tk):
                 raise ValueError("右ターンのr_min/degreeは負、左ターンは正にしてください。")
             turn_count = self._turn_count_value()
             pre_accel = self._pre_accel_value()
-            turn_values = values[:6] + [pre_accel] + values[6:] + ff_values
+            try:
+                jerk_value = self.values[TURN_JERK_FIELD[1]].get()
+            except tk.TclError as exc:
+                raise ValueError("OM jerk FF must be numeric.") from exc
+            if jerk_value < 0.0:
+                raise ValueError("OM jerk FF must be zero or positive.")
+            turn_values = (
+                values[:6] + [pre_accel] + values[6:] + ff_values
+                + [jerk_value]
+            )
             return "debug turn {} set {} {} {} {}".format(
                 self.turn_type.get(), " ".join(f"{v:.7g}" for v in turn_values),
                 int(self.suction_enable.get()), self._suction_duty_value(), turn_count
@@ -588,6 +601,10 @@ class DebugGui(tk.Tk):
                     name: int(turn_match.group(name)) / 1000000.0
                     for name in ff_names
                 }
+                if turn_match.group("ff_om_jerk") is not None:
+                    base["feedforward"]["ff_om_jerk"] = (
+                        int(turn_match.group("ff_om_jerk")) / 1000000000.0
+                    )
             base["suction"] = {
                 "enabled": bool(int(turn_match.group("suction"))),
                 "duty": int(turn_match.group("duty")),
@@ -807,6 +824,11 @@ class DebugGui(tk.Tk):
             ff_values = list(FF_DEFAULTS)
         else:
             ff_values = [int(match.group(name)) / 1000000.0 for name in ff_names]
+        jerk_value = (
+            int(match.group("ff_om_jerk")) / 1000000000.0
+            if match.group("ff_om_jerk") is not None else 0.0
+        )
+        ff_values.append(jerk_value)
         self.events.put(("turn_params", physical_values + gain_values, ff_values,
                          suction_enable, suction_duty, int(match.group("preset")),
                          int(match.group("count")), pre_accel))
@@ -833,7 +855,7 @@ class DebugGui(tk.Tk):
                     _, values, ff_values, suction_enable, suction_duty, preset_speed, turn_count, pre_accel = item
                     for (_, name), value in zip(FIELDS, values):
                         self.values[name].set(value)
-                    for (_, name), value in zip(FF_FIELDS, ff_values):
+                    for (_, name), value in zip(DISPLAY_FF_FIELDS, ff_values):
                         self.values[name].set(value)
                     self.suction_enable.set(suction_enable)
                     self.suction_duty.set(suction_duty)
