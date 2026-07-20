@@ -105,10 +105,11 @@ const static t_param param_R90_search_280 = {&slalom_R90_table_280, &sp_gain_sea
 
 // Common non-suction SP feedforward for straight parameters at 700 mm/s and
 // below. Search turns use the same SP coefficients.
+
 const static t_ff_gain ff_gain_straight_non_suction = {
-	FF_SEARCH_SP_VELO_COEF,
-	FF_SEARCH_SP_ACCEL_COEF,
-	FF_SEARCH_SP_BIAS_COEF,
+	FF_SP_VELO_COEF,
+	FF_SP_ACCEL_COEF,
+	FF_SP_BIAS_COEF,
 	FF_OM_VELO_COEF,
 	FF_OM_ACCEL_COEF,
 	FF_OM_ACCEL_COEF,

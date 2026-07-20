@@ -10,52 +10,58 @@
 
 #include "typedef_run_param.h"
 
-// OM feedforward for every turn is seeded from the verified L90-L result.
-// Dedicated variables are retained for later per-turn/direction tuning;
-// turn-specific SP feedforward remains unchanged.
+// Long-90 OM feedforward adjusted from the 20260720 voltage-to-response
+// analysis. OM velocity and signed bias retain their verified values because a
+// single fixed-speed profile cannot identify them independently. Acceleration,
+// deceleration, and jerk also account for turn-body tracking and post-turn
+// angular-velocity ringing instead of fitting PID compensation alone.
 const static t_ff_gain ff_gain_long_turn_R_1600 = {
-	0.9030126f, 0.08183161f, 0.2379401f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08183161f, 0.2379401f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
 };
 const static t_ff_gain ff_gain_long_turn_L_1600 = {
-	0.9030126f, 0.08183161f, 0.2400677f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08183161f, 0.2400677f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
 };
 
+// The long-90 R/L gains provide the 1600 mm/s yaw-plant baseline. Short V90
+// and in45 profiles have dedicated acceleration/deceleration corrections from
+// their measured response; the remaining shapes retain the baseline first try.
+// See tools/turn_analysis/1600/profile_projection.csv for resulting voltages.
 const static t_ff_gain ff_gain_long_turn_180_R_1600 = {
-	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
 };
 const static t_ff_gain ff_gain_long_turn_180_L_1600 = {
-	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
 };
 
 const static t_ff_gain ff_gain_v90_R_1600 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00093f, 0.00090f, 0.0613f, 0.0000032f
 };
 const static t_ff_gain ff_gain_v90_L_1600 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00099f, 0.00091f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_in45_R_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00094f, 0.00085f, 0.0613f, 0.0000032f
 };
 const static t_ff_gain ff_gain_in45_L_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00097f, 0.00085f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_out45_R_1600 = {
-	0.9030126f, 0.09295480f, 0.04174514f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.09295480f, 0.04174514f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
 };
 const static t_ff_gain ff_gain_out45_L_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_in135_R_1600 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
 };
 const static t_ff_gain ff_gain_in135_L_1600 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_out135_R_1600 = {
-	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
 };
 const static t_ff_gain ff_gain_out135_L_1600 = {
-	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00119f, 0.00106f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
 };
 
 //k = 250

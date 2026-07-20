@@ -75,7 +75,7 @@
 	#define DEAD_VR			(DEAD_V)
 	#define DEAD_VL			(DEAD_V)
 
-	#define GYRO_COR_RATE	(-1.00f)
+	#define GYRO_COR_RATE	(-1.005f)
 	#define GYRO_COR_OFF	(0.0)//(0.005969)
 
 

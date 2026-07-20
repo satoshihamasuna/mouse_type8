@@ -10,41 +10,37 @@
 
 #include "typedef_run_param.h"
 
-// Identified jointly from the 500 and 700 mm/s turn logs. Velocity and
-// acceleration coefficients use both speed conditions, while the fitted bias
-// is separated by speed; only the 500 mm/s bias is stored here.
+// 500 mm/s turn-specific feedforward gains. Angular jerk gains are constrained
+// to non-negative values and are fitted independently for each turn shape.
 const static t_ff_gain ff_gain_long_turn_R_500 = {
-	0.8700466f, 0.1147426f, 0.09459957f, 0.0006231482f, 0.001185694f, 0.001185694f, 0.08559123f
+	0.8700466f, 0.1147426f, 0.09459957f, 0.002077371f, 0.000836273f, 0.000930115f, 0.08559123f, 0.000001569006f
 };
 const static t_ff_gain ff_gain_long_turn_L_500 = {
-	0.8700466f, 0.1147426f, 0.09459957f, 0.004464340f, 0.001461646f, 0.001461646f, 0.07266908f
+	0.8700466f, 0.1147426f, 0.09459957f, 0.003051475f, 0.000741268f, 0.000965438f, 0.08559123f, 0.000001971694f
 };
 const static t_ff_gain ff_gain_long_turn_180_R_500 = {
-	0.8700466f, 0.1147426f, 0.09459957f, 0.005721272f, 0.001043587f, 0.001043587f, 0.02111197f
+	0.8700466f, 0.1147426f, 0.09459957f, 0.002126270f, 0.000531106f, 0.001443002f, 0.08559123f, 0.0f
 };
 const static t_ff_gain ff_gain_long_turn_180_L_500 = {
-	0.8700466f, 0.1147426f, 0.09459957f, 0.006079761f, 0.0009266070f, 0.0009266070f, 0.03580000f
+	0.8700466f, 0.1147426f, 0.09459957f, 0.002432468f, 0.000538646f, 0.001405904f, 0.08559123f, 0.0f
 };
-// The joint 500/700 fits for 45-degree and V90 turns still produce negative
-// angular-velocity gains. Constrain those terms to zero and refit angular
-// acceleration and the speed-specific signed biases.
 const static t_ff_gain ff_gain_in_out_45_R_500 = {
-	0.8700466f, 0.1147426f, 0.09459957f, 0.0f, 0.001417219f, 0.001417219f, 0.06884993f
+	0.8700466f, 0.1147426f, 0.09459957f, 0.000849904f, 0.000794332f, 0.000776772f, 0.08559123f, 0.000003679442f
 };
 const static t_ff_gain ff_gain_in_out_45_L_500 = {
-	0.8700466f, 0.1147426f, 0.09459957f, 0.0f, 0.001390124f, 0.001390124f, 0.08803420f
+	0.8700466f, 0.1147426f, 0.09459957f, 0.001129579f, 0.000934826f, 0.000928198f, 0.08559123f, 0.000003962296f
 };
 const static t_ff_gain ff_gain_in_out_135_R_500 = {
-	0.8700466f, 0.1147426f, 0.09459957f, 0.001214761f, 0.001018063f, 0.001018063f, 0.1123876f
+	0.8700466f, 0.1147426f, 0.09459957f, 0.003190175f, 0.001071977f, 0.000987594f, 0.08559123f, 0.000000389595f
 };
 const static t_ff_gain ff_gain_in_out_135_L_500 = {
-	0.8700466f, 0.1147426f, 0.09459957f, 0.002087457f, 0.001058758f, 0.001058758f, 0.1230592f
+	0.8700466f, 0.1147426f, 0.09459957f, 0.003156581f, 0.001066273f, 0.000982570f, 0.08559123f, 0.000000178623f
 };
 const static t_ff_gain ff_gain_v90_R_500 = {
-	0.8700466f, 0.1147426f, 0.09459957f, 0.0f, 0.001258248f, 0.001258248f, 0.06924877f
+	0.8700466f, 0.1147426f, 0.09459957f, 0.001678876f, 0.000675940f, 0.001023082f, 0.08559123f, 0.000000758492f
 };
 const static t_ff_gain ff_gain_v90_L_500 = {
-	0.8700466f, 0.1147426f, 0.09459957f, 0.0f, 0.001265949f, 0.001265949f, 0.08503230f
+	0.8700466f, 0.1147426f, 0.09459957f, 0.002037948f, 0.000650298f, 0.001040909f, 0.08559123f, 0.000001038299f
 };
 
 const static t_pid_gain sp_gain_turn90_500 = {2.0,0.016,0.00};
