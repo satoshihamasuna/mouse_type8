@@ -70,7 +70,9 @@ def select_latest_group(speed: int, motion: str) -> list[tuple[Path, dict]]:
 
 
 def turn_segments(ideal_omega: np.ndarray) -> list[tuple[int, int]]:
-    core = np.abs(ideal_omega) > 1.0
+    # ideal_omega is direction-normalized by analyze_group. Ignore unrelated
+    # opposite-direction turns that may also be present in the capture.
+    core = ideal_omega > 1.0
     edges = np.diff(np.r_[False, core, False].astype(int))
     starts = np.where(edges == 1)[0]
     ends = np.where(edges == -1)[0] - 1
@@ -123,6 +125,11 @@ def analyze_group(group: list[tuple[Path, dict]], output: Path) -> dict:
     settings = group[-1][1]
     direction = 1.0 if float(settings["parameters"]["degree"]) > 0 else -1.0
     ff = settings["feedforward"]
+    params = settings["parameters"]
+    omega_max = abs(float(params["velo"]) / (float(params["r_min"]) / 1000.0))
+    profile_ms = abs(math.radians(float(params["degree"])) /
+                     (ACCEL_INTEGRAL * omega_max) * 1000.0)
+    expected_segment_ms = math.ceil(profile_ms) + 2
     rows, samples = [], []
     traces: dict[str, list[np.ndarray]] = {name: [] for name in (
         "ideal", "ego", "ff_velo", "ff_accel", "ff_bias", "ff_jerk",
@@ -146,7 +153,10 @@ def analyze_group(group: list[tuple[Path, dict]], output: Path) -> dict:
         voltage = direction * applied_angular_voltage(frame)
         battery = frame["Battery"].to_numpy(float)
 
-        segments = turn_segments(ideal)
+        segment_tolerance_ms = max(3, math.ceil(expected_segment_ms * 0.06))
+        segments = [segment for segment in turn_segments(ideal)
+                    if abs((segment[1] - segment[0] + 1) - expected_segment_ms)
+                    <= segment_tolerance_ms]
         for number, (start, end) in enumerate(segments, 1):
             indices = np.arange(start, end + 1)
             peak = start + int(np.argmax(ideal[indices]))
@@ -179,6 +189,8 @@ def analyze_group(group: list[tuple[Path, dict]], output: Path) -> dict:
                 "angle_error_deg": float(np.sum(error) * PERIOD_S * 180.0 / math.pi),
                 "pid_rms_v": float(np.sqrt(np.mean(np.square(pid[indices])))),
                 "saturation_pct": float(100.0 * np.mean(saturation)),
+                "first_saturation_pct": float(100.0 * np.mean(saturation[:split])),
+                "second_saturation_pct": float(100.0 * np.mean(saturation[split:])),
                 "post_peak_pos_rad_s": float(np.max(post_omega)) if len(post) else math.nan,
                 "post_peak_neg_rad_s": float(np.min(post_omega)) if len(post) else math.nan,
                 "post_rms_rad_s": float(np.sqrt(np.mean(np.square(post_omega)))) if len(post) else math.nan,
@@ -334,19 +346,20 @@ def parse_profiles(header: Path) -> list[dict]:
         gains[name] = {f"ff_{field}": value for field, value in zip(FF_NAMES, values)}
     param_pattern = re.compile(r"const static t_param\s+(\w+)\s*=\s*\{&(\w+),[^}]*,&(\w+)\};")
     motion_names = {
-        "param_R90_1600": "long_r90", "param_L90_1600": "long_l90",
-        "param_R180_1600": "long_r180", "param_L180_1600": "long_l180",
-        "param_RV90_1600": "r_v90", "param_LV90_1600": "l_v90",
-        "param_inR45_1600": "in_r45", "param_inL45_1600": "in_l45",
-        "param_outR45_1600": "out_r45", "param_outL45_1600": "out_l45",
-        "param_inR135_1600": "in_r135", "param_inL135_1600": "in_l135",
-        "param_outR135_1600": "out_r135", "param_outL135_1600": "out_l135",
+        "param_R90": "long_r90", "param_L90": "long_l90",
+        "param_R180": "long_r180", "param_L180": "long_l180",
+        "param_RV90": "r_v90", "param_LV90": "l_v90",
+        "param_inR45": "in_r45", "param_inL45": "in_l45",
+        "param_outR45": "out_r45", "param_outL45": "out_l45",
+        "param_inR135": "in_r135", "param_inL135": "in_l135",
+        "param_outR135": "out_r135", "param_outL135": "out_l135",
     }
     profiles = []
     for param, table, gain in param_pattern.findall(text):
-        if param in motion_names and table in tables and gain in gains:
+        param_base = re.sub(r"_\d+$", "", param)
+        if param_base in motion_names and table in tables and gain in gains:
             profiles.append({
-                "motion_name": motion_names[param], "gain_name": gain,
+                "motion_name": motion_names[param_base], "gain_name": gain,
                 "feedforward": gains[gain], **tables[table],
             })
     return profiles
