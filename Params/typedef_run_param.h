@@ -21,6 +21,11 @@ typedef struct{
 	float om_decel;  // Used while angular speed magnitude is decreasing.
 	float om_bias;
 	float om_jerk = 0.0f;  // Target angular-acceleration derivative feedforward.
+	// Common-mode voltage needed only while turning.  Angular acceleration is
+	// expressed along angular-speed magnitude: sign(omega) * alpha.  It is
+	// positive on turn entry and negative on exit for either turn direction.
+	float sp_turn_accel_mag = 0.0f;
+	float sp_turn_velo_sq = 0.0f;
 }t_ff_gain;
 
 const static t_ff_gain ff_gain_default = {

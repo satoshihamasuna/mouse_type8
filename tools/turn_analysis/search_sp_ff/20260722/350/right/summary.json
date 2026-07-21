@@ -1,0 +1,107 @@
+{
+  "speed_mm_s": 350,
+  "direction": "right",
+  "cohorts": {
+    "baseline": {
+      "metrics": {
+        "turns": 8,
+        "speed_error_mean_mm_s": -7.605897514381218,
+        "speed_error_rms_mm_s": 25.43840341781628,
+        "speed_error_peak_positive_mm_s": 34.423828125,
+        "speed_error_peak_negative_mm_s": -80.00732421875003,
+        "feedback_rms_v": 0.09222730921475568,
+        "motor_voltage_delta_rms_v": 0.07611771990175503
+      },
+      "required_voltage_fit": {
+        "k_alpha": -0.00010870003960609251,
+        "k_omega2": -0.0003624857567067659,
+        "rmse_v": 0.032181234932708885,
+        "samples": 1604,
+        "rejected": 4
+      },
+      "physical_sign_constrained_fit": {
+        "k_alpha": -9.075324771579569e-05,
+        "k_omega2": 2.579739722768425e-21,
+        "rmse_v": 0.0405390879940267,
+        "samples": 1604,
+        "rejected": 4
+      },
+      "voltage_response_fit": {
+        "lag_phase_samples": 0,
+        "voltage_gain_mps2_per_v": 2.660689231347529,
+        "k_alpha_from_response": -0.002661148856985792,
+        "k_omega2_from_response": 0.0030662709966245883,
+        "rmse_mps2": 3.0600315644959193,
+        "condition_number": 7.362705306387723,
+        "valid": true
+      },
+      "sources": [
+        "20260721_225047_myshell_debug_log_search_turn_right_350.csv",
+        "20260721_225120_myshell_debug_log_search_turn_right_350.csv"
+      ]
+    },
+    "trial": {
+      "metrics": {
+        "turns": 14,
+        "speed_error_mean_mm_s": -5.098463978933458,
+        "speed_error_rms_mm_s": 31.020512398618216,
+        "speed_error_peak_positive_mm_s": 59.433593750000085,
+        "speed_error_peak_negative_mm_s": -85.29296875,
+        "feedback_rms_v": 0.12018174943874729,
+        "motor_voltage_delta_rms_v": 0.24442922623522995
+      },
+      "required_voltage_fit": {
+        "k_alpha": -0.0001893499759726173,
+        "k_omega2": -0.0006876585469409308,
+        "rmse_v": 0.038138803748019826,
+        "samples": 2808,
+        "rejected": 6
+      },
+      "physical_sign_constrained_fit": {
+        "k_alpha": -0.0001574356765351458,
+        "k_omega2": 3.2046590326298134e-19,
+        "rmse_v": 0.05926781789283663,
+        "samples": 2808,
+        "rejected": 6
+      },
+      "voltage_response_fit": {
+        "lag_phase_samples": 15,
+        "voltage_gain_mps2_per_v": -0.24755178559675786,
+        "k_alpha_from_response": null,
+        "k_omega2_from_response": null,
+        "rmse_mps2": 3.9861944143156776,
+        "condition_number": 7.742297715734892,
+        "valid": false
+      },
+      "sources": [
+        "20260721_234348_myshell_debug_log_search_turn_right_350.csv",
+        "20260721_235600_myshell_debug_log_search_turn_right_350.csv",
+        "20260721_235634_myshell_debug_log_search_turn_right_350.csv",
+        "20260721_235728_myshell_debug_log_search_turn_right_350.csv"
+      ]
+    }
+  },
+  "response_based_recommendation": {
+    "baseline_speed_rms_mm_s": 28.162781115384277,
+    "unconstrained": {
+      "k_alpha": -0.0011397659568129848,
+      "k_omega2": 0.0005400640303154913,
+      "predicted_speed_rms_mm_s": 16.1896589865452
+    },
+    "physical_sign_constrained": {
+      "k_alpha": -0.0009100089672661332,
+      "k_omega2": 0.00043370132638788594,
+      "predicted_speed_rms_mm_s": 16.84468947803422,
+      "ff_min_v": -0.35,
+      "ff_max_v": 0.35
+    },
+    "recommended_conservative_half_step": {
+      "k_alpha": -0.0004550044836330666,
+      "k_omega2": 0.00021685066319394297,
+      "predicted_speed_rms_mm_s": 21.303407767536964,
+      "ff_min_v": -0.1753422476509702,
+      "ff_max_v": 0.35,
+      "ff_limit_v": 0.35
+    }
+  }
+}

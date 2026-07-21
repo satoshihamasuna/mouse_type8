@@ -1,0 +1,67 @@
+{
+  "speed_mm_s": 400,
+  "direction": "right",
+  "cohorts": {
+    "baseline": {
+      "metrics": {
+        "turns": 8,
+        "speed_error_mean_mm_s": -10.068168829922653,
+        "speed_error_rms_mm_s": 32.226831659915156,
+        "speed_error_peak_positive_mm_s": 35.89843749999987,
+        "speed_error_peak_negative_mm_s": -96.09130859375001,
+        "feedback_rms_v": 0.12314287386086054,
+        "motor_voltage_delta_rms_v": 0.10711950993725686
+      },
+      "required_voltage_fit": {
+        "k_alpha": -7.764249758090534e-05,
+        "k_omega2": -0.0003217124079910732,
+        "rmse_v": 0.04262632832477806,
+        "samples": 1608,
+        "rejected": 0
+      },
+      "physical_sign_constrained_fit": {
+        "k_alpha": -7.579014252005369e-05,
+        "k_omega2": 1.5423414974504744e-22,
+        "rmse_v": 0.051872145634790416,
+        "samples": 1608,
+        "rejected": 0
+      },
+      "voltage_response_fit": {
+        "lag_phase_samples": 11,
+        "voltage_gain_mps2_per_v": 13.814569170525981,
+        "k_alpha_from_response": -0.000297576732851402,
+        "k_omega2_from_response": 0.000984131472300464,
+        "rmse_mps2": 1.1254618652211035,
+        "condition_number": 13.186433397036021,
+        "valid": true
+      },
+      "sources": [
+        "20260721_225645_myshell_debug_log_search_turn_right_400.csv",
+        "20260721_225731_myshell_debug_log_search_turn_right_400.csv"
+      ]
+    }
+  },
+  "response_based_recommendation": {
+    "baseline_speed_rms_mm_s": 42.99195520584061,
+    "unconstrained": {
+      "k_alpha": -0.001320779535076081,
+      "k_omega2": 0.0002751511662111831,
+      "predicted_speed_rms_mm_s": 26.013777133478158
+    },
+    "physical_sign_constrained": {
+      "k_alpha": -0.0011310897089994612,
+      "k_omega2": 0.00015762217767485633,
+      "predicted_speed_rms_mm_s": 28.883461906517205,
+      "ff_min_v": -0.35,
+      "ff_max_v": 0.35
+    },
+    "recommended_conservative_half_step": {
+      "k_alpha": -0.0005655448544997306,
+      "k_omega2": 7.881108883742817e-05,
+      "predicted_speed_rms_mm_s": 32.35327130716436,
+      "ff_min_v": -0.29167139879711057,
+      "ff_max_v": 0.2969439162768553,
+      "ff_limit_v": 0.35
+    }
+  }
+}

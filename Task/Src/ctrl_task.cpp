@@ -21,9 +21,10 @@
 #include "../Inc/run_typedef.h"
 #include "../Inc/sensing_task.h"
 
-namespace {
-	constexpr float OM_JERK_FF_LIMIT_V = 2.0f;
-}
+	namespace {
+		constexpr float OM_JERK_FF_LIMIT_V = 2.0f;
+		constexpr float SP_TURN_FF_LIMIT_V = 0.35f;
+	}
 
 
 
@@ -170,6 +171,12 @@ void CtrlTask::motion_control()
 				// At turn launch the target angular velocity can still be zero.
 				om_bias_direction = SIGN(ideal_rad_accel);
 			}
+			const float ideal_rad_accel_mag = om_bias_direction * ideal_rad_accel;
+			const float sp_turn_FF_control = CLAMP(
+					ff_gain->sp_turn_accel_mag * ideal_rad_accel_mag
+					+ ff_gain->sp_turn_velo_sq * ideal_rad_velo * ideal_rad_velo,
+					-SP_TURN_FF_LIMIT_V, SP_TURN_FF_LIMIT_V);
+			sp_FF_control += sp_bias_direction * sp_turn_FF_control;
 			const bool is_om_decelerating = (ideal_rad_velo * ideal_rad_accel) < 0.0f;
 			const float om_accel_gain = is_om_decelerating ? ff_gain->om_decel : ff_gain->om_accel;
 			const float om_jerk_FF_control = CLAMP(ff_gain->om_jerk * ideal_rad_jerk,

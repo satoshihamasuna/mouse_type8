@@ -36,6 +36,7 @@ TURN_PARAM_RE = re.compile(
     r"(?P<ff_sp_bias>-?\d+),(?P<ff_om_velo>-?\d+),"
     r"(?P<ff_om_accel>-?\d+),(?P<ff_om_decel>-?\d+),(?P<ff_om_bias>-?\d+) )?"
     r"(?:jerk_n:(?P<ff_om_jerk>-?\d+) )?"
+    r"(?:turn_sp_n:(?P<ff_sp_turn_accel_mag>-?\d+),(?P<ff_sp_turn_velo_sq>-?\d+) )?"
     r"suction:(?P<suction>\d+) duty:(?P<duty>\d+) preset:(?P<preset>\d+) count:(?P<count>\d+)"
 )
 FLOAT_PATTERN = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
@@ -100,7 +101,11 @@ FF_FIELDS = (
     ("OM signed bias", "ff_om_bias"),
 )
 TURN_JERK_FIELD = ("OM jerk", "ff_om_jerk")
-DISPLAY_FF_FIELDS = FF_FIELDS + (TURN_JERK_FIELD,)
+TURN_SP_FIELDS = (
+    ("SP angular-speed acceleration", "ff_sp_turn_accel_mag"),
+    ("SP angular velocity squared", "ff_sp_turn_velo_sq"),
+)
+DISPLAY_FF_FIELDS = FF_FIELDS + (TURN_JERK_FIELD,) + TURN_SP_FIELDS
 BATTERY_RE = re.compile(
     r"BATTERY voltage_mv:(?P<voltage_mv>\d+) limit_mv:(?P<limit_mv>\d+) "
     r"status:(?P<status>OK|ERROR)"
@@ -128,6 +133,18 @@ SEARCH_FF_OM_DEFAULTS = {
         350: (0.0060030, 0.0014087, 0.0010080, 0.0199057, 0.00000032),
         370: (0.0065180, 0.0014980, 0.0010350, 0.0148286, 0.00000032),
         400: (0.0072780, 0.0014828, 0.0010880, 0.0076013, 0.00000032),
+    },
+}
+SEARCH_FF_SP_TURN_DEFAULTS = {
+    "right": {
+        280: (-0.00016090, 0.00012841), 300: (-0.00022961, 0.00017918),
+        320: (-0.00036311, 0.00021241), 350: (-0.00045500, 0.00021685),
+        370: (-0.00053817, 0.00020249), 400: (-0.00056554, 0.00007881),
+    },
+    "left": {
+        280: (-0.00004510, 0.00003266), 300: (-0.00006533, 0.00005630),
+        320: (-0.00016557, 0.00009479), 350: (-0.00018576, 0.00013722),
+        370: (-0.00016902, 0.00012027), 400: (-0.00012914, 0.00005493),
     },
 }
 PIVOT_FF_DEFAULTS = {
@@ -392,6 +409,10 @@ class DebugGui(tk.Tk):
             self.values[name].set(value)
         jerk_default = om_defaults[4] if self.motion.get() == "search_turn" else 0.0
         self.values[TURN_JERK_FIELD[1]].set(jerk_default)
+        turn_sp_defaults = SEARCH_FF_SP_TURN_DEFAULTS[self.direction.get()][speed] \
+            if self.motion.get() == "search_turn" else (0.0, 0.0)
+        for (_, name), value in zip(TURN_SP_FIELDS, turn_sp_defaults):
+            self.values[name].set(value)
 
     def _set_command(self):
         try:
@@ -399,6 +420,10 @@ class DebugGui(tk.Tk):
         except tk.TclError as exc:
             raise ValueError("全パラメータに数値を入力してください。") from exc
         ff_values = self._ff_values()
+        try:
+            turn_sp_values = [self.values[name].get() for _, name in TURN_SP_FIELDS]
+        except tk.TclError as exc:
+            raise ValueError("Turn SP FF values must be numeric.") from exc
         if self.motion.get() == "turn":
             if values[0] <= 0 or values[1] == 0 or values[2] < 0 or values[3] < 0 or values[4] == 0:
                 raise ValueError("veloは正、r_minとdegreeは0以外、Lstart/Lendは0以上にしてください。")
@@ -415,7 +440,7 @@ class DebugGui(tk.Tk):
                 raise ValueError("OM jerk FF must be zero or positive.")
             turn_values = (
                 values[:6] + [pre_accel] + values[6:] + ff_values
-                + [jerk_value]
+                + [jerk_value] + turn_sp_values
             )
             return "debug turn {} set {} {} {} {}".format(
                 self.turn_type.get(), " ".join(f"{v:.7g}" for v in turn_values),
@@ -440,7 +465,7 @@ class DebugGui(tk.Tk):
                 raise ValueError("OM jerk FF must be numeric.") from exc
             if jerk_value < 0.0:
                 raise ValueError("OM jerk FF must be zero or positive.")
-            turn_values = values[:6] + [pre_accel] + values[6:] + ff_values + [jerk_value]
+            turn_values = values[:6] + [pre_accel] + values[6:] + ff_values + [jerk_value] + turn_sp_values
             return "debug search_turn {} set {} {} {} {}".format(
                 self.direction.get(), " ".join(f"{v:.7g}" for v in turn_values),
                 int(self.suction_enable.get()), self._suction_duty_value(), turn_count
@@ -661,6 +686,9 @@ class DebugGui(tk.Tk):
                     base["feedforward"]["ff_om_jerk"] = (
                         int(turn_match.group("ff_om_jerk")) / 1000000000.0
                     )
+                for _, name in TURN_SP_FIELDS:
+                    if turn_match.group(name) is not None:
+                        base["feedforward"][name] = int(turn_match.group(name)) / 1000000000.0
             base["suction"] = {
                 "enabled": bool(int(turn_match.group("suction"))),
                 "duty": int(turn_match.group("duty")),
@@ -885,6 +913,10 @@ class DebugGui(tk.Tk):
             if match.group("ff_om_jerk") is not None else 0.0
         )
         ff_values.append(jerk_value)
+        ff_values.extend(
+            int(match.group(name)) / 1000000000.0 if match.group(name) is not None else 0.0
+            for _, name in TURN_SP_FIELDS
+        )
         self.events.put(("turn_params", physical_values + gain_values, ff_values,
                          suction_enable, suction_duty, int(match.group("preset")),
                          int(match.group("count")), pre_accel))

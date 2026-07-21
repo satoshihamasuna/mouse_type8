@@ -1,0 +1,74 @@
+<div id="search-turn-sp-analysis" style="width:100%;color:var(--foreground);">
+  <div class="viz-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
+    <section aria-label="Identified feedforward coefficients">
+      <svg id="st-coeff-chart" role="img" aria-label="Negative angular acceleration coefficient and positive angular velocity squared coefficient for each speed and direction" style="width:100%;height:auto;display:block;"></svg>
+    </section>
+    <section aria-label="Predicted turn speed fluctuation">
+      <svg id="st-rms-chart" role="img" aria-label="Baseline and predicted turn-induced speed RMS for each speed and direction" style="width:100%;height:auto;display:block;"></svg>
+    </section>
+  </div>
+  <div class="viz-row text-small text-muted" style="margin-top:10px;justify-content:space-between;">
+    <span>Voltage-response model: right R2 0.411 / left R2 0.661</span>
+    <span>50% learning update, turn FF limited to +/-0.35 V</span>
+  </div>
+</div>
+<script>
+(() => {
+  const root = document.getElementById('search-turn-sp-analysis');
+  const data = [{"speed":280,"dir":"R","base":11.40,"pred":9.79,"ka":-0.00016090,"kw":0.00012841},{"speed":280,"dir":"L","base":9.52,"pred":9.28,"ka":-0.00004510,"kw":0.00003266},{"speed":300,"dir":"R","base":17.27,"pred":14.47,"ka":-0.00022961,"kw":0.00017918},{"speed":300,"dir":"L","base":11.97,"pred":11.50,"ka":-0.00006533,"kw":0.00005630},{"speed":320,"dir":"R","base":17.84,"pred":12.99,"ka":-0.00036311,"kw":0.00021241},{"speed":320,"dir":"L","base":13.61,"pred":11.67,"ka":-0.00016557,"kw":0.00009479},{"speed":350,"dir":"R","base":28.16,"pred":21.30,"ka":-0.00045500,"kw":0.00021685},{"speed":350,"dir":"L","base":23.51,"pred":21.41,"ka":-0.00018576,"kw":0.00013722},{"speed":370,"dir":"R","base":34.79,"pred":26.10,"ka":-0.00053817,"kw":0.00020249},{"speed":370,"dir":"L","base":28.37,"pred":26.48,"ka":-0.00016902,"kw":0.00012027},{"speed":400,"dir":"R","base":42.99,"pred":32.35,"ka":-0.00056554,"kw":0.00007881},{"speed":400,"dir":"L","base":32.37,"pred":30.81,"ka":-0.00012914,"kw":0.00005493}];
+  const ns = 'http://www.w3.org/2000/svg';
+  const css = getComputedStyle(root);
+  const colors = {
+    fg: css.getPropertyValue('--foreground').trim(),
+    muted: css.getPropertyValue('--muted-foreground').trim(),
+    grid: css.getPropertyValue('--border').trim(),
+    s1: css.getPropertyValue('--viz-series-1').trim(),
+    s2: css.getPropertyValue('--viz-series-2').trim(),
+    s3: css.getPropertyValue('--viz-series-3').trim(),
+    s4: css.getPropertyValue('--viz-series-4').trim()
+  };
+  const add = (parent, tag, attrs, text) => {
+    const node = document.createElementNS(ns, tag);
+    Object.entries(attrs || {}).forEach(([key, value]) => node.setAttribute(key, value));
+    if (text !== undefined) node.textContent = text;
+    parent.appendChild(node);
+    return node;
+  };
+  function base(svg, label) {
+    svg.setAttribute('viewBox', '0 0 430 330');
+    add(svg, 'text', {x:48,y:20,fill:colors.fg,'font-weight':'500'}, label);
+    for (let i=0;i<=4;i++) add(svg,'line',{x1:48,y1:50+i*58,x2:418,y2:50+i*58,stroke:colors.grid,'stroke-width':'1'});
+  }
+  const coeff = root.querySelector('#st-coeff-chart');
+  base(coeff, 'FF coefficients x 1e4');
+  const groups = data.filter(d => d.dir === 'R');
+  groups.forEach((right, i) => {
+    const left = data.find(d => d.speed === right.speed && d.dir === 'L');
+    const x = 68 + i * 66;
+    [[right.ka*1e4,colors.s1,-9],[right.kw*1e4,colors.s2,0],[left.ka*1e4,colors.s3,9],[left.kw*1e4,colors.s4,18]].forEach(([v,c,dx]) => {
+      const y0=165, scale=25;
+      add(coeff,'line',{x1:x+dx,y1:y0,x2:x+dx,y2:y0-v*scale,stroke:c,'stroke-width':'6'});
+      add(coeff,'circle',{cx:x+dx,cy:y0-v*scale,r:'3',fill:c});
+    });
+    add(coeff,'text',{x:x+4,y:318,fill:colors.muted,'text-anchor':'middle'},String(right.speed));
+  });
+  add(coeff,'line',{x1:48,y1:165,x2:418,y2:165,stroke:colors.fg,'stroke-width':'1'});
+  [['R k-alpha',colors.s1,52],['R k-omega2',colors.s2,140],['L k-alpha',colors.s3,245],['L k-omega2',colors.s4,330]].forEach(([t,c,x])=>{
+    add(coeff,'line',{x1:x,y1:39,x2:x+18,y2:39,stroke:c,'stroke-width':'5'}); add(coeff,'text',{x:x+23,y:43,fill:colors.fg},t);
+  });
+  add(coeff,'text',{x:233,y:328,fill:colors.muted,'text-anchor':'middle'},'Speed [mm/s]');
+
+  const rms = root.querySelector('#st-rms-chart');
+  base(rms, 'Turn-induced speed RMS [mm/s]');
+  data.forEach((d,i) => {
+    const x=55+i*30, yBase=282, scale=5.15;
+    add(rms,'rect',{x:x,y:yBase-d.base*scale,width:10,height:d.base*scale,fill:colors.s1,opacity:'0.45'});
+    add(rms,'rect',{x:x+11,y:yBase-d.pred*scale,width:10,height:d.pred*scale,fill:colors.s2,opacity:'0.9'});
+    add(rms,'text',{x:x+10,y:305,fill:colors.muted,'text-anchor':'middle'},`${d.speed}${d.dir}`);
+  });
+  add(rms,'line',{x1:48,y1:282,x2:418,y2:282,stroke:colors.fg,'stroke-width':'1'});
+  [['Baseline',colors.s1,85],['50% update prediction',colors.s2,205]].forEach(([t,c,x])=>{
+    add(rms,'rect',{x:x,y:32,width:16,height:9,fill:c,opacity:t==='Baseline'?'0.45':'0.9'}); add(rms,'text',{x:x+22,y:41,fill:colors.fg},t);
+  });
+})();
+</script>

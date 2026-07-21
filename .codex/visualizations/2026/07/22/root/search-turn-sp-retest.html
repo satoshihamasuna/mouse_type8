@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>search_turn FF 再計測</title>
+<style>
+:root{color-scheme:light dark;--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--grid:#d7dce5;--base:#94a3b8;--now:#14b8a6;--good:#047857}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1220;--card:#121c2e;--text:#eef2ff;--muted:#a8b2c7;--grid:#334155;--base:#64748b;--now:#2dd4bf;--good:#6ee7b7}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}.wrap{max-width:1120px;margin:auto;padding:24px}.head{display:flex;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:16px}h1{font-size:24px;margin:0 0 4px}.sub{color:var(--muted)}.kpis{display:flex;gap:10px}.kpi{background:var(--card);border:1px solid var(--grid);border-radius:12px;padding:10px 14px;min-width:150px}.kpi b{display:block;font-size:22px;color:var(--good)}.card{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:18px;box-shadow:0 8px 24px #0001}.legend{display:flex;gap:18px;margin-bottom:12px;color:var(--muted)}.dot{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px}.base{background:var(--base)}.now{background:var(--now)}svg{display:block;width:100%;height:auto}.axis{stroke:var(--grid);stroke-width:1}.label{fill:var(--text);font-size:12px}.tick{fill:var(--muted);font-size:11px}.bar-base{fill:var(--base)}.bar-now{fill:var(--now)}.delta{fill:var(--good);font-size:11px;font-weight:700}.note{margin-top:12px;color:var(--muted);font-size:12px}
+@media(max-width:760px){.head{align-items:stretch;flex-direction:column}.kpis{flex-wrap:wrap}.kpi{flex:1}.wrap{padding:14px}.card{overflow-x:auto}svg{min-width:780px}}
+</style>
+</head>
+<body><main class="wrap">
+<div class="head"><div><h1>search_turn 並進速度 FF 再計測</h1><div class="sub">ターン内速度リップル RMS — 小さいほど良い</div></div><div class="kpis"><div class="kpi"><span>平均リップル</span><b>−21.6%</b><small>18.41 → 14.43 mm/s</small></div><div class="kpi"><span>改善条件</span><b>12 / 12</b><small>280–400 mm/s・左右</small></div></div></div>
+<section class="card"><div class="legend"><span><i class="dot base"></i>Baseline</span><span><i class="dot now"></i>Current FF</span></div>
+<svg viewBox="0 0 1030 650" role="img" aria-label="Baseline と Current FF の速度リップル RMS 比較">
+<line class="axis" x1="150" y1="26" x2="150" y2="620"/><line class="axis" x1="150" y1="620" x2="970" y2="620"/>
+<g class="tick"><text x="145" y="640">0</text><text x="415" y="640">10</text><text x="685" y="640">20</text><text x="955" y="640">30 mm/s</text></g>
+<g class="axis"><line x1="423" y1="26" x2="423" y2="620"/><line x1="697" y1="26" x2="697" y2="620"/><line x1="970" y1="26" x2="970" y2="620"/></g>
+<g class="label">
+<text x="12" y="60">280 R</text><rect class="bar-base" x="150" y="43" width="320" height="12" rx="3"/><rect class="bar-now" x="150" y="58" width="236" height="12" rx="3"/><text class="delta" x="480" y="64">−26.2%</text>
+<text x="12" y="108">280 L</text><rect class="bar-base" x="150" y="91" width="266" height="12" rx="3"/><rect class="bar-now" x="150" y="106" width="240" height="12" rx="3"/><text class="delta" x="426" y="112">−9.7%</text>
+<text x="12" y="156">300 R</text><rect class="bar-base" x="150" y="139" width="459" height="12" rx="3"/><rect class="bar-now" x="150" y="154" width="274" height="12" rx="3"/><text class="delta" x="619" y="160">−40.3%</text>
+<text x="12" y="204">300 L</text><rect class="bar-base" x="150" y="187" width="317" height="12" rx="3"/><rect class="bar-now" x="150" y="202" width="311" height="12" rx="3"/><text class="delta" x="477" y="208">−1.9%</text>
+<text x="12" y="252">320 R</text><rect class="bar-base" x="150" y="235" width="506" height="12" rx="3"/><rect class="bar-now" x="150" y="250" width="359" height="12" rx="3"/><text class="delta" x="666" y="256">−29.0%</text>
+<text x="12" y="300">320 L</text><rect class="bar-base" x="150" y="283" width="345" height="12" rx="3"/><rect class="bar-now" x="150" y="298" width="336" height="12" rx="3"/><text class="delta" x="505" y="304">−2.6%</text>
+<text x="12" y="348">350 R</text><rect class="bar-base" x="150" y="331" width="634" height="12" rx="3"/><rect class="bar-now" x="150" y="346" width="461" height="12" rx="3"/><text class="delta" x="794" y="352">−27.3%</text>
+<text x="12" y="396">350 L</text><rect class="bar-base" x="150" y="379" width="502" height="12" rx="3"/><rect class="bar-now" x="150" y="394" width="433" height="12" rx="3"/><text class="delta" x="662" y="400">−13.7%</text>
+<text x="12" y="444">370 R</text><rect class="bar-base" x="150" y="427" width="756" height="12" rx="3"/><rect class="bar-now" x="150" y="442" width="471" height="12" rx="3"/><text class="delta" x="916" y="448">−37.7%</text>
+<text x="12" y="492">370 L</text><rect class="bar-base" x="150" y="475" width="594" height="12" rx="3"/><rect class="bar-now" x="150" y="490" width="516" height="12" rx="3"/><text class="delta" x="754" y="496">−13.1%</text>
+<text x="12" y="540">400 R</text><rect class="bar-base" x="150" y="523" width="724" height="12" rx="3"/><rect class="bar-now" x="150" y="538" width="639" height="12" rx="3"/><text class="delta" x="884" y="544">−11.7%</text>
+<text x="12" y="588">400 L</text><rect class="bar-base" x="150" y="571" width="620" height="12" rx="3"/><rect class="bar-now" x="150" y="586" width="459" height="12" rx="3"/><text class="delta" x="780" y="592">−25.9%</text>
+</g></svg><div class="note">各ターンの平均偏差を除いた RMS。Current は各条件 3–4 ターン、Baseline は累積ログ。</div></section>
+</main></body></html>
