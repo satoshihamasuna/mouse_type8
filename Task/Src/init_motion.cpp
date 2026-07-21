@@ -674,6 +674,10 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 		}
 	}
 
+	//temp
+	motion_plan.fix_prev_run.set(0.0f);
+	motion_plan.fix_post_run.set(0.0f);
+
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
 	motion_control_set(STRAIGHT_STATE);
@@ -776,7 +780,9 @@ void Motion::Init_Motion_turn_out		(const t_param *turn_param,t_run_pattern run_
 			}
 		}
 	}
-
+	//temp
+	motion_plan.fix_prev_run.set(0.0f);
+	motion_plan.fix_post_run.set(0.0f);
 
 	motion_pattern_set(run_pt);
 	motion_exeStatus_set(execute);
@@ -918,6 +924,10 @@ void Motion::Init_Motion_long_turn	(const t_param *turn_param,t_run_pattern run_
 
 
 	}
+
+	//temp
+	motion_plan.fix_prev_run.set(0.0f);
+	motion_plan.fix_post_run.set(0.0f);
 
 
 	motion_pattern_set(run_pt);

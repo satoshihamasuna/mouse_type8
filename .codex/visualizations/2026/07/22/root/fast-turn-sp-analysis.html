@@ -1,0 +1,34 @@
+<div id="fast-turn-sp-analysis">
+  <style>
+    #fast-turn-sp-analysis{color:var(--foreground);width:100%}
+    #fast-turn-sp-analysis .legend{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.5rem;color:var(--muted-foreground)}
+    #fast-turn-sp-analysis .swatch{display:inline-block;width:.8rem;height:.8rem;margin-right:.35rem;background:var(--viz-series-1)}
+    #fast-turn-sp-analysis .plot{width:100%;height:auto;display:block}
+    #fast-turn-sp-analysis .grid{stroke:var(--border);stroke-width:1}
+    #fast-turn-sp-analysis .axis-text{fill:var(--muted-foreground)}
+    #fast-turn-sp-analysis .label{fill:var(--foreground);font-weight:500}
+    #fast-turn-sp-analysis .bar{fill:var(--viz-series-1)}
+    #fast-turn-sp-analysis .candidate{fill:var(--viz-series-2)}
+    #fast-turn-sp-analysis .table{margin-top:.75rem}
+  </style>
+  <div class="legend"><span><i class="swatch"></i>ターン内速度リップル RMS</span></div>
+  <svg class="plot" viewBox="0 0 720 300" role="img" aria-labelledby="fast-turn-title fast-turn-desc">
+    <title id="fast-turn-title">速度別のターン内並進速度リップル</title>
+    <desc id="fast-turn-desc">1600は39.63、1800は67.94、2000は113.31ミリメートル毎秒。速度上昇とともに増加する。</desc>
+    <g class="grid"><line x1="120" y1="250" x2="680" y2="250"/><line x1="120" y1="40" x2="120" y2="250"/><line x1="260" y1="40" x2="260" y2="250"/><line x1="400" y1="40" x2="400" y2="250"/><line x1="540" y1="40" x2="540" y2="250"/><line x1="680" y1="40" x2="680" y2="250"/></g>
+    <g class="axis-text"><text x="116" y="272">0</text><text x="250" y="272">30</text><text x="390" y="272">60</text><text x="530" y="272">90</text><text x="654" y="272">120 mm/s</text></g>
+    <g class="label"><text x="28" y="90">1600</text><text x="28" y="160">1800</text><text x="28" y="230">2000</text></g>
+    <rect class="bar" x="120" y="65" width="185" height="30" rx="4"/><rect class="bar" x="120" y="135" width="317" height="30" rx="4"/><rect class="bar" x="120" y="205" width="529" height="30" rx="4"/>
+    <g class="label"><text x="315" y="86">39.63</text><text x="447" y="156">67.94</text><text x="659" y="226">113.31</text></g>
+  </svg>
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead><tr><th>速度</th><th class="text-end">ターン数</th><th class="text-end">電圧ゲイン</th><th class="text-end">R2</th><th class="text-end">試験候補 k_alpha</th><th class="text-end">試験候補 k_omega2</th></tr></thead>
+      <tbody>
+        <tr><td>1600 mm/s</td><td class="text-end">61</td><td class="text-end">−0.936</td><td class="text-end">0.305</td><td class="text-end">0</td><td class="text-end">0</td></tr>
+        <tr><td>1800 mm/s</td><td class="text-end">65</td><td class="text-end">+0.315</td><td class="text-end">0.428</td><td class="text-end">−0.00010034</td><td class="text-end">+0.00062859</td></tr>
+        <tr><td>2000 mm/s</td><td class="text-end">48</td><td class="text-end">+2.480</td><td class="text-end">0.720</td><td class="text-end">−0.00009606</td><td class="text-end">+0.00039806</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

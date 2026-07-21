@@ -15,11 +15,16 @@
 // single fixed-speed profile cannot identify them independently. Acceleration,
 // deceleration, and jerk also account for turn-body tracking and post-turn
 // angular-velocity ringing instead of fitting PID compensation alone.
+// R/L-specific SP turn feedforward was identified from the 20260722 long-180
+// voltage response.  The directional baseline is shared by the turn shapes.
+// Long-180 itself uses a second 50% iterative correction from the repeated
+// FF-on logs; this avoids projecting the stronger correction into unmeasured
+// short shapes and keeps the long-180 voltage below the common 1.0 V clamp.
 const static t_ff_gain ff_gain_long_turn_R_1600 = {
-	0.9030126f, 0.08183161f, 0.2379401f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
+	0.9030126f, 0.08183161f, 0.2379401f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f, -0.00019277f, 0.00003695f
 };
 const static t_ff_gain ff_gain_long_turn_L_1600 = {
-	0.9030126f, 0.08183161f, 0.2400677f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08183161f, 0.2400677f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f, -0.00018248f, 0.00005183f
 };
 
 // The long-90 R/L gains provide the 1600 mm/s yaw-plant baseline. Short V90
@@ -27,41 +32,41 @@ const static t_ff_gain ff_gain_long_turn_L_1600 = {
 // their measured response; the remaining shapes retain the baseline first try.
 // See tools/turn_analysis/1600/profile_projection.csv for resulting voltages.
 const static t_ff_gain ff_gain_long_turn_180_R_1600 = {
-	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
+	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f, -0.00024186f, 0.00008612f
 };
 const static t_ff_gain ff_gain_long_turn_180_L_1600 = {
-	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f, -0.00023491f, 0.00010562f
 };
 
 const static t_ff_gain ff_gain_v90_R_1600 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00093f, 0.00090f, 0.0613f, 0.0000032f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00093f, 0.00090f, 0.0613f, 0.0000032f, -0.00019277f, 0.00003695f
 };
 const static t_ff_gain ff_gain_v90_L_1600 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00099f, 0.00091f, 0.0175f, 0.0000029f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00099f, 0.00091f, 0.0175f, 0.0000029f, -0.00018248f, 0.00005183f
 };
 const static t_ff_gain ff_gain_in45_R_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00098f, 0.00085f, 0.0613f, 0.0000032f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00098f, 0.00085f, 0.0613f, 0.0000032f, -0.00019277f, 0.00003695f
 };
 const static t_ff_gain ff_gain_in45_L_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00099f, 0.00085f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00099f, 0.00085f, 0.0175f, 0.0000029f, -0.00018248f, 0.00005183f
 };
 const static t_ff_gain ff_gain_out45_R_1600 = {
-	0.9030126f, 0.09295480f, 0.04174514f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
+	0.9030126f, 0.09295480f, 0.04174514f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f, -0.00019277f, 0.00003695f
 };
 const static t_ff_gain ff_gain_out45_L_1600 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f, -0.00018248f, 0.00005183f
 };
 const static t_ff_gain ff_gain_in135_R_1600 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f, -0.00019277f, 0.00003695f
 };
 const static t_ff_gain ff_gain_in135_L_1600 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f, -0.00018248f, 0.00005183f
 };
 const static t_ff_gain ff_gain_out135_R_1600 = {
-	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
+	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f, -0.00019277f, 0.00003695f
 };
 const static t_ff_gain ff_gain_out135_L_1600 = {
-	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f, -0.00018248f, 0.00005183f
 };
 
 //k = 250

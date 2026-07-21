@@ -122,9 +122,9 @@ const static t_ff_gain ff_gain_straight_non_suction = {
 };
 
 const static t_ff_gain ff_gain_straight_suction = {
-	FF_SP_VELO_COEF,
-	FF_SP_ACCEL_COEF,
-	FF_SP_BIAS_COEF,
+	0.9030126f,
+	0.08183161f,
+	0.1190275f,
 	FF_OM_VELO_COEF,
 	FF_OM_ACCEL_COEF,
 	FF_OM_ACCEL_COEF,

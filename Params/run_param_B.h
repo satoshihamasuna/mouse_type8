@@ -28,6 +28,19 @@ const static t_pid_gain basic_om_gain = {0.1f,0.005f,0.00f};//{0.05f, 0.001f, 0.
 const static t_pid_gain search_sp_gain = {1.200,0.02,0.0};
 const static t_pid_gain search_om_gain = {0.1f,0.005f,0.00f};
 
+// MOUSE_B has no separately identified suction plant yet.  Keep the named
+// profile available so suction straight-state selection is shared by both
+// hardware variants without changing B's existing feedforward behavior.
+const static t_ff_gain ff_gain_straight_suction = {
+	FF_SP_VELO_COEF,
+	FF_SP_ACCEL_COEF,
+	FF_SP_BIAS_COEF,
+	FF_OM_VELO_COEF,
+	FF_OM_ACCEL_COEF,
+	FF_OM_ACCEL_COEF,
+	FF_OM_BIAS_COEF
+};
+
 // Feedback gains used exclusively by pivot turns.
 const static t_pid_gain sp_gain_pivot_turn = {1.20f, 0.02f, 0.0f};
 const static t_pid_gain om_gain_pivot_turn = {0.1f, 0.005f, 0.0f};

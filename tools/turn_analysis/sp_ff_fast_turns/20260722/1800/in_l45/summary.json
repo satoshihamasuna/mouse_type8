@@ -1,0 +1,143 @@
+{
+  "speed_mm_s": 1800,
+  "motion_name": "in_l45",
+  "source_files": [
+    "20260721_082921_myshell_debug_log_in_l45.csv"
+  ],
+  "turn_count": 1,
+  "settings": {
+    "schema_version": 1,
+    "captured_at": "2026-07-21T08:29:21+09:00",
+    "source": "device_show",
+    "motion_name": "in_l45",
+    "command": "debug turn in_l45 show",
+    "raw_response": "DEBUG_TURN_PARAM_X1000 in_l45 velo:1800 r_min:53000 Lstart:9269 Lend:41090 degree:45000 correction:0 pre_accel:6500 sp_u:2000000,50000,0 om_u:120000,4000,0 ff_u:903012,82978,80615,16800,970,840,17500 jerk_n:2200 suction:1 duty:650 preset:1800 count:1",
+    "parameters": {
+      "velo": 1.8,
+      "r_min": 53.0,
+      "lstart": 9.269,
+      "lend": 41.09,
+      "degree": 45.0,
+      "correction": 0.0,
+      "pre_accel": 6.5
+    },
+    "pid": {
+      "sp_kp": 2.0,
+      "sp_ki": 0.05,
+      "sp_kd": 0.0,
+      "om_kp": 0.12,
+      "om_ki": 0.004,
+      "om_kd": 0.0
+    },
+    "feedforward": {
+      "ff_sp_velo": 0.903012,
+      "ff_sp_accel": 0.082978,
+      "ff_sp_bias": 0.080615,
+      "ff_om_velo": 0.0168,
+      "ff_om_accel": 0.00097,
+      "ff_om_decel": 0.00084,
+      "ff_om_bias": 0.0175,
+      "ff_om_jerk": 2.2e-06
+    },
+    "suction": {
+      "enabled": true,
+      "duty": 650
+    },
+    "preset_speed_mm_s": 1800,
+    "turn_count": 1,
+    "log": {
+      "csv": "20260721_082921_myshell_debug_log_in_l45.csv",
+      "saved_at": "2026-07-21T08:29:35+09:00",
+      "frame_count": 1000,
+      "drop_count": 0,
+      "columns": [
+        "cnt",
+        "ideal.velo",
+        "ego.velo",
+        "ideal.rad_velo",
+        "ego.rad_velo",
+        "ideal.length",
+        "ego.length",
+        "ideal.radian",
+        "ego.radian",
+        "V_r",
+        "V_l",
+        "sp_feedback",
+        "sp_feedforward",
+        "om_feedback",
+        "om_feedforward",
+        "sen_l.avg_distance",
+        "sen_r.avg_distance",
+        "sen_l.distance",
+        "sen_r.distance",
+        "ego.x_point",
+        "ideal.x_point",
+        "ego.turn_x",
+        "ideal.turn_x",
+        "ego.turn_y",
+        "ideal.turn_y",
+        "ego.turn_slip_theta",
+        "ideal.turn_slip_theta",
+        "ego.horizon_accel.get",
+        "ideal.horizon_accel.get",
+        "ego.horizon_velo.get",
+        "ideal.horizon_velo.get",
+        "Encoder_GetProperty_Right().sp_pulse",
+        "Encoder_GetProperty_Left().sp_pulse",
+        "Battery",
+        "ideal.accel",
+        "ego.accel",
+        "speed_ctrl.get_I_peration",
+        "omega_ctrl.get_I_peration",
+        "control_ir",
+        "control_ir_dot",
+        "sen_l.error",
+        "sen_r.error",
+        "sen_fl.distance",
+        "sen_fr.distance",
+        "speed_ctrl.get_D_peration",
+        "omega_ctrl.get_D_peration",
+        "speed_ctrl.Kp",
+        "speed_ctrl.Ki",
+        "speed_ctrl.Kd",
+        "omega_ctrl.Kp",
+        "omega_ctrl.Ki",
+        "omega_ctrl.Kd"
+      ]
+    }
+  },
+  "metrics_mean": {
+    "speed_error_mean_mm_s": 42.768093128109456,
+    "speed_error_rms_mm_s": 53.3443818788619,
+    "speed_ripple_rms_mm_s": 31.882805526226946,
+    "feedback_rms_v": 0.1251266768578788,
+    "required_voltage_rms_v": 0.12527584462191488,
+    "motor_voltage_delta_rms_v": 0.8970978573927262,
+    "saturation_pct": 6.467661691542288
+  },
+  "required_voltage_fit": {
+    "k_alpha": -2.545090594187332e-05,
+    "k_omega2": 1.34994813497432e-05,
+    "rmse_v": 0.036588635283437754,
+    "samples": 201,
+    "rejected": 0
+  },
+  "physical_sign_constrained_fit": {
+    "k_alpha": -2.545090594187332e-05,
+    "k_omega2": 1.34994813497432e-05,
+    "rmse_v": 0.036588635283437754,
+    "samples": 201,
+    "rejected": 0
+  },
+  "voltage_response_fit": {
+    "lag_ms": 20,
+    "voltage_gain_mps2_per_v": 1.4817356789028882,
+    "speed_term_per_s": 5.822644493958408,
+    "alpha_mag_term": -0.0027849947964879718,
+    "omega2_term": -0.007828128990044037,
+    "rmse_mps2": 0.9274189561308717,
+    "r_squared": 0.8557147466204675,
+    "condition_number": 456.2292059274456,
+    "valid_positive_gain": true
+  }
+}

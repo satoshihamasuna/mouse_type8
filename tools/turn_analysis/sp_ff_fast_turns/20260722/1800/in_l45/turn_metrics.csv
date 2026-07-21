@@ -1,0 +1,2 @@
+file,turn,speed_error_mean_mm_s,speed_error_rms_mm_s,speed_ripple_rms_mm_s,feedback_rms_v,required_voltage_rms_v,motor_voltage_delta_rms_v,saturation_pct
+20260721_082921_myshell_debug_log_in_l45.csv,1,42.768093128109456,53.3443818788619,31.882805526226946,0.1251266768578788,0.12527584462191488,0.8970978573927262,6.467661691542288

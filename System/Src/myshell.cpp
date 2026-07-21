@@ -1679,15 +1679,22 @@ static int shell_debug_pivot_command(int argc, char **argv)
 	printf("Unknown debug pivot_turn command found\r\n"); return -1;
 }
 
-static void shell_debug_show(const char *motion_name, const shell_debug_param_t *param)
+static const t_ff_gain *shell_debug_motion_ff(const shell_debug_param_t *param, t_bool diagonal)
 {
+	if (param->suction_enable == True && diagonal != True) return &ff_gain_straight_suction;
+	return &param->ff_gain;
+}
+
+static void shell_debug_show(const char *motion_name, const shell_debug_param_t *param, t_bool diagonal)
+{
+	const t_ff_gain *ff_gain = shell_debug_motion_ff(param, diagonal);
 	printf("DEBUG_PARAM %s distance:%.4f acc:%.4f max_velo:%.4f end_velo:%.4f "
 		   "sp:%.4f,%.4f,%.4f om:%.4f,%.4f,%.4f ff:%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f suction:%d duty:%d\r\n",
 		   motion_name, param->distance, param->acc, param->max_velo, param->end_velo,
 		   param->sp_gain.Kp, param->sp_gain.Ki, param->sp_gain.Kd,
 		   param->om_gain.Kp, param->om_gain.Ki, param->om_gain.Kd,
-		   param->ff_gain.sp_velo, param->ff_gain.sp_accel, param->ff_gain.sp_bias, param->ff_gain.om_velo,
-		   param->ff_gain.om_accel, param->ff_gain.om_decel, param->ff_gain.om_bias,
+		   ff_gain->sp_velo, ff_gain->sp_accel, ff_gain->sp_bias, ff_gain->om_velo,
+		   ff_gain->om_accel, ff_gain->om_decel, ff_gain->om_bias,
 		   param->suction_enable, param->suction_duty);
 }
 
@@ -1695,7 +1702,7 @@ static int shell_debug_command(int argc, char **argv, const char *motion_name,
 							   shell_debug_param_t *param, t_bool diagonal)
 {
 	if (ntlibc_strcmp(argv[2], "show") == 0) {
-		shell_debug_show(motion_name, param);
+		shell_debug_show(motion_name, param, diagonal);
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[2], "set") == 0) {
@@ -1744,7 +1751,7 @@ static int shell_debug_command(int argc, char **argv, const char *motion_name,
 		}
 		*param = next;
 		printf("DEBUG_PARAM_SET_DONE\r\n");
-		shell_debug_show(motion_name, param);
+		shell_debug_show(motion_name, param, diagonal);
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[2], "exe") == 0) {
@@ -1758,14 +1765,15 @@ static int shell_debug_command(int argc, char **argv, const char *motion_name,
 		}
 		motion->Motion_start();
 		shell_debug_suction_start(motion, param->suction_enable, param->suction_duty);
+		const t_ff_gain *ff_gain = shell_debug_motion_ff(param, diagonal);
 		LogData::getInstance().data_count = 0;
 		LogData::getInstance().log_enable = True;
 		if (diagonal == True) {
 			motion->Init_Motion_diagonal(param->distance, param->acc, param->max_velo,
-									 param->end_velo, &param->sp_gain, &param->om_gain, &param->ff_gain);
+									 param->end_velo, &param->sp_gain, &param->om_gain, ff_gain);
 		} else {
 			motion->Init_Motion_straight(param->distance, param->acc, param->max_velo,
-									 param->end_velo, &param->sp_gain, &param->om_gain, &param->ff_gain);
+									 param->end_velo, &param->sp_gain, &param->om_gain, ff_gain);
 		}
 		motion->execute_Motion();
 		LogData::getInstance().log_enable = False;

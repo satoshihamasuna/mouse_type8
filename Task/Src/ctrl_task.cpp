@@ -23,7 +23,7 @@
 
 	namespace {
 		constexpr float OM_JERK_FF_LIMIT_V = 2.0f;
-		constexpr float SP_TURN_FF_LIMIT_V = 0.35f;
+		constexpr float SP_TURN_FF_LIMIT_V = 1.0f;
 	}
 
 
@@ -147,8 +147,14 @@ void CtrlTask::motion_control()
 			float sp_FF_control_l =  MOTOR_R*motor_l_ampere + MOTOR_K_ER*motor_l_rpm/1000 + motor_l_Idot*L_BAR_DT ;
 #endif
 
-			// Feedforward model identified from logs.
+			// Feedforward model identified from logs.  Suction changes the
+			// longitudinal load, so every straight state (including the straight
+			// section before/after a shell turn) uses the suction-specific model.
+			// Turn and diagonal states keep their active motion-specific gains.
 			const t_ff_gain *ff_gain = active_ff_gain_get();
+			if (vehicle->suction_flag_get() == True && motion_control_get() == STRAIGHT_STATE) {
+				ff_gain = &ff_gain_straight_suction;
+			}
 			const float ideal_velo = vehicle->ideal.velo.get();
 			const float ideal_accel = vehicle->ideal.accel.get();
 			float sp_bias_direction = 0.0f;

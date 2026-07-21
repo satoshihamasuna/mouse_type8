@@ -14,24 +14,26 @@
 // per shape from the 1800 mm/s voltage/response reports. Short profiles use
 // shape-specific jerk gains to limit saturation; accel/decel gains account for
 // first/second-half tracking and post-turn residual omega. Turn-specific SP
-// feedforward remains unchanged.
+// feedforward uses the conservative 50% response-model trial value from the
+// 20260722 translational analysis.  Only measured shapes receive this value.
+// Recheck in45/V90 carefully because their source logs include saturation.
 const static t_ff_gain ff_gain_long_turn_90_R_1800 = {
-	0.9030126f, 0.08183161f, 0.1190275f, 0.0168f, 0.00092f, 0.00089f, 0.0613f, 0.0000032f
+	0.9030126f, 0.08183161f, 0.1190275f, 0.0168f, 0.00092f, 0.00089f, 0.0613f, 0.0000032f, -0.00010034f, 0.00062859f
 };
 const static t_ff_gain ff_gain_long_turn_90_L_1800 = {
-	0.9030126f, 0.08183161f, 0.1190275f, 0.0168f, 0.00097f, 0.00088f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08183161f, 0.1190275f, 0.0168f, 0.00097f, 0.00088f, 0.0175f, 0.0000029f, -0.00010034f, 0.00062859f
 };
 const static t_ff_gain ff_gain_long_turn_180_R_1800 = {
-	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00088f, 0.00090f, 0.0613f, 0.0000032f
+	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00088f, 0.00090f, 0.0613f, 0.0000032f, -0.00010034f, 0.00062859f
 };
 const static t_ff_gain ff_gain_long_turn_180_L_1800 = {
-	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00094f, 0.00087f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08101898f, 0.2138578f, 0.0168f, 0.00094f, 0.00087f, 0.0175f, 0.0000029f, -0.00010034f, 0.00062859f
 };
 const static t_ff_gain ff_gain_in45_R_1800 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00094f, 0.00082f, 0.0613f, 0.0000024f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00094f, 0.00082f, 0.0613f, 0.0000024f, -0.00010034f, 0.00062859f
 };
 const static t_ff_gain ff_gain_in45_L_1800 = {
-	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00097f, 0.00084f, 0.0175f, 0.0000022f
+	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00097f, 0.00084f, 0.0175f, 0.0000022f, -0.00010034f, 0.00062859f
 };
 const static t_ff_gain ff_gain_out45_R_1800 = {
 	0.9030126f, 0.09295480f, 0.04174514f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
@@ -40,10 +42,10 @@ const static t_ff_gain ff_gain_out45_L_1800 = {
 	0.9030126f, 0.08297866f, 0.08061591f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_in135_R_1800 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00091f, 0.00090f, 0.0613f, 0.0000032f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00091f, 0.00090f, 0.0613f, 0.0000032f, -0.00010034f, 0.00062859f
 };
 const static t_ff_gain ff_gain_in135_L_1800 = {
-	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00096f, 0.00088f, 0.0175f, 0.0000029f
+	0.9030126f, 0.08105824f, 0.1159204f, 0.0168f, 0.00096f, 0.00088f, 0.0175f, 0.0000029f, -0.00010034f, 0.00062859f
 };
 const static t_ff_gain ff_gain_out135_R_1800 = {
 	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00088f, 0.00085f, 0.0613f, 0.0000032f
@@ -52,10 +54,10 @@ const static t_ff_gain ff_gain_out135_L_1800 = {
 	0.9030126f, 0.08607196f, 0.09289980f, 0.0168f, 0.00094f, 0.00085f, 0.0175f, 0.0000029f
 };
 const static t_ff_gain ff_gain_v90_R_1800 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00093f, 0.00090f, 0.0613f, 0.0000028f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00093f, 0.00090f, 0.0613f, 0.0000028f, -0.00010034f, 0.00062859f
 };
 const static t_ff_gain ff_gain_v90_L_1800 = {
-	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00099f, 0.00091f, 0.0175f, 0.0000028f
+	0.9030126f, 0.07681955f, 0.2104154f, 0.0168f, 0.00099f, 0.00091f, 0.0175f, 0.0000028f, -0.00010034f, 0.00062859f
 };
 
 
