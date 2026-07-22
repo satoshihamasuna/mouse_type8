@@ -72,7 +72,7 @@ jerkを中間値へ上げたログでは電圧飽和0%を維持しながら前�
 ## 再解析方法
 
 ```powershell
-python tools/turn_ff_report.py --speed 1800 --motion long_r90 long_l90 in_r45 in_l45 in_r135 in_l135 r_v90 l_v90 long_r180 long_l180 --project-header Params/Param_A/turn_1800.h
+python tools/analysis/turn_ff_report.py --speed 1800 --motion long_r90 long_l90 in_r45 in_l45 in_r135 in_l135 r_v90 l_v90 long_r180 long_l180 --project-header Params/Param_A/turn_1800.h
 ```
 
 今回の変更値は新ログでは未検証です。同じPIDと吸引条件で再走行し、変更前後の

@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 
 
-TOOLS_DIR = Path(__file__).resolve().parent
+TOOLS_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS_DIR))
 
 from search_simulator import (  # noqa: E402

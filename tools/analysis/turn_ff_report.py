@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 LOG_DIR = ROOT / "tools" / "logs"
 DEFAULT_OUTPUT = ROOT / "tools" / "turn_analysis"
 PERIOD_S = 0.001

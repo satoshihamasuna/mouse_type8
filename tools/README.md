@@ -4,12 +4,21 @@
 
 以下のコマンドはリポジトリのルートディレクトリで実行してください。
 
+## ディレクトリ構成
+
+- `tools/` — シリアル通信、GUI、探索シミュレーターなどの実行ツールと共通モジュール
+- `tools/analysis/` — 保存済みログを解析してレポートを生成するツール
+- `tools/tests/` — Pythonツールのユニットテスト
+- `tools/logs/` — 取得ログと解析結果（Git管理対象外）
+- `tools/maze_data/` — 迷路データ
+- `tools/turn_analysis/` — ターン解析レポート
+
 ## セットアップ
 
 ツールが使用するPythonパッケージをインストールします。
 
 ```powershell
-pip install pyserial pandas numpy matplotlib
+pip install pyserial pandas numpy matplotlib scipy
 ```
 
 ## myshell GUI
@@ -228,19 +237,19 @@ tools/logs/20260708_2340_type8a_MPQ.csv
 `tools/logs/` 内の最新CSVを解析します。
 
 ```powershell
-python tools\log_compare.py
+python tools\analysis\log_compare.py
 ```
 
 CSVを指定する場合:
 
 ```powershell
-python tools\log_compare.py tools\logs\20260712_141937_myshell_debug_log_long_r90.csv
+python tools\analysis\log_compare.py tools\logs\20260712_141937_myshell_debug_log_long_r90.csv
 ```
 
 画面を開かずPNGへ保存する場合:
 
 ```powershell
-python tools\log_compare.py --no-show --save tools\logs\log_compare.png
+python tools\analysis\log_compare.py --no-show --save tools\logs\log_compare.png
 ```
 
 `log_compare.py` automatically loads the sibling `.settings.json`. The output

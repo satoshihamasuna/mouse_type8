@@ -20,33 +20,33 @@ om_required = FF_OM_VELO_COEF * ideal.rad_velo
 最新ログだけを確認します。
 
 ```powershell
-python tools\ff_analyzer.py --latest
+python tools\analysis\ff_analyzer.py --latest
 ```
 
-入力を省略して`python tools\ff_analyzer.py`だけで実行した場合も、古い設定のログを混在させないため最新ログ1本を使用します。
+入力を省略して`python tools\analysis\ff_analyzer.py`だけで実行した場合も、古い設定のログを混在させないため最新ログ1本を使用します。
 
 複数ログをまとめて同定します。速度一定、並進加減速、角速度一定、角加減速が含まれるログを組み合わせてください。
 
 ```powershell
-python tools\ff_analyzer.py tools\logs\straight_*.csv tools\logs\turn_*.csv
+python tools\analysis\ff_analyzer.py tools\logs\straight_*.csv tools\logs\turn_*.csv
 ```
 
 グラフを表示する場合：
 
 ```powershell
-python tools\ff_analyzer.py tools\logs\straight_*.csv --plot
+python tools\analysis\ff_analyzer.py tools\logs\straight_*.csv --plot
 ```
 
 JSONにも保存できます。
 
 ```powershell
-python tools\ff_analyzer.py tools\logs\straight_*.csv --json tools\logs\ff_result.json
+python tools\analysis\ff_analyzer.py tools\logs\straight_*.csv --json tools\logs\ff_result.json
 ```
 
 ログ周期が2 ms以外の場合：
 
 ```powershell
-python tools\ff_analyzer.py tools\logs\straight_*.csv --period-ms 1.0
+python tools\analysis\ff_analyzer.py tools\logs\straight_*.csv --period-ms 1.0
 ```
 
 ## 出力の見方

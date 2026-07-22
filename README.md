@@ -199,7 +199,7 @@ cube programmer -c port=SWD -d .\build\Debug\mouse_type8.elf -v -rst
 最大20個のターンを組み合わせて本体へ送信するGUIは、次のコマンドで起動します。
 
 ```powershell
-python .\tools\turnpattern.py
+python .\tools\myshell_turnpattern.py
 ```
 
 初回のみ `pyserial` が必要です。

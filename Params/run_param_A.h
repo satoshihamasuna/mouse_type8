@@ -125,10 +125,10 @@ const static t_ff_gain ff_gain_straight_suction = {
 	0.9030126f,
 	0.08183161f,
 	0.1190275f,
-	FF_OM_VELO_COEF,
-	FF_OM_ACCEL_COEF,
-	FF_OM_ACCEL_COEF,
-	FF_OM_BIAS_COEF
+	0.0168f, 
+	0.00094f, 
+	0.00085f,
+	0.0175f
 };
 
 const static t_pid_gain sp_gain_280 = {2.00,0.02,0.00};//{10.0,0.05,0.00};//

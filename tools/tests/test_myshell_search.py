@@ -1,8 +1,12 @@
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from myshell_search import (
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(TOOLS_DIR))
+
+from myshell_search import (  # noqa: E402
     HEIGHT,
     ReplayResult,
     WIDTH,

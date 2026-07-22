@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 
 
-LOG_DIR = Path(__file__).resolve().parent / "logs"
+ROOT = Path(__file__).resolve().parents[2]
+LOG_DIR = ROOT / "tools" / "logs"
 LOG_PERIOD_MS = 1.0
 JERK_FF_LIMIT_V = 1.25
 
@@ -61,7 +62,7 @@ def infer_jerk_gain_from_source(settings):
         return None, None
     direction = match.group(1).upper()
     speed = int(speed)
-    header = Path(__file__).resolve().parents[1] / "Params" / "Param_A" / f"turn_{speed}.h"
+    header = ROOT / "Params" / "Param_A" / f"turn_{speed}.h"
     if not header.exists():
         return None, None
     source = header.read_text(encoding="utf-8", errors="replace")

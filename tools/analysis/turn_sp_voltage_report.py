@@ -14,7 +14,7 @@ from scipy.optimize import least_squares, lsq_linear
 from scipy.signal import savgol_filter
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 LOG_DIR = ROOT / "tools" / "logs"
 PHASE = np.linspace(0.0, 100.0, 201)
 PERIOD_S = 0.001

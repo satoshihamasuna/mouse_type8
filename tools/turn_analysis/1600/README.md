@@ -88,7 +88,7 @@ jerk       = d(alpha)/dt
 リポジトリのルートで次のコマンドを実行します。
 
 ```powershell
-python tools/turn_ff_report.py --speed 1600 --motion long_r90 long_l90 long_r180 in_r45 in_l45 r_v90 l_v90 --project-header Params/Param_A/turn_1600.h
+python tools/analysis/turn_ff_report.py --speed 1600 --motion long_r90 long_l90 long_r180 in_r45 in_l45 r_v90 l_v90 --project-header Params/Param_A/turn_1600.h
 ```
 
 新しいログを追加してから再実行すると、Settingsが内部的に一致する最新の

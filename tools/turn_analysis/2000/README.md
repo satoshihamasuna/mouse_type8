@@ -44,5 +44,5 @@
 再解析コマンド:
 
 ```powershell
-python tools\turn_ff_report.py --speed 2000 --motion long_r90 long_l90 long_r180 long_l180 --project-header Params\Param_A\turn_2000.h
+python tools\analysis\turn_ff_report.py --speed 2000 --motion long_r90 long_l90 long_r180 long_l180 --project-header Params\Param_A\turn_2000.h
 ```

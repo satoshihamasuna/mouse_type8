@@ -78,5 +78,5 @@ python tools/search_simulator.py tools/maze_data/logs_maze.bin `
 テストは次で実行します。
 
 ```powershell
-python -m unittest tools/test_search_simulator.py
+python -m unittest discover -s tools/tests
 ```

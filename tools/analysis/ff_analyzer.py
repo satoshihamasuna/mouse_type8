@@ -29,7 +29,8 @@ import numpy as np
 import pandas as pd
 
 
-LOG_DIR = Path(__file__).resolve().parent / "logs"
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+LOG_DIR = TOOLS_DIR / "logs"
 T_FF_GAIN_ORDER = (
     "sp_velo", "sp_accel", "sp_bias",
     "om_velo", "om_accel", "om_decel", "om_bias",

@@ -68,5 +68,5 @@ Applied scope:
 Re-run:
 
 ```powershell
-python tools\turn_sp_voltage_report.py --speeds 1600 1800 2000 --output tools\turn_analysis\sp_ff_fast_turns\20260722
+python tools\analysis\turn_sp_voltage_report.py --speeds 1600 1800 2000 --output tools\turn_analysis\sp_ff_fast_turns\20260722
 ```
