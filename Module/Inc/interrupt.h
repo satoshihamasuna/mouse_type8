@@ -24,6 +24,9 @@ class Interrupt:public Singleton<Interrupt>
 		float acc_buff[ACC_BUFF_SIZE];
 		float acc_sum;
 
+		float x_acc_buff[ACC_BUFF_SIZE];
+		float x_acc_sum;
+
 		float z_acc_buff[ACC_BUFF_SIZE];
 		float z_acc_sum;
 

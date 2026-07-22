@@ -115,6 +115,10 @@ void Interrupt::preprocess()
 	acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE] = (-1.0)*read_accel_y_axis() - ACC_OFFSET;
 	acc_sum = acc_sum + acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE];
 
+	x_acc_sum = x_acc_sum - x_acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE];
+	x_acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE] = (-1.0)*read_accel_x_axis();
+	x_acc_sum = x_acc_sum + x_acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE];
+
 	z_acc_sum = z_acc_sum - z_acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE];
 	z_acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE] = (-1.0)*read_accel_z_axis();
 	z_acc_sum = z_acc_sum + z_acc_buff[(acc_time_cnt)%ACC_BUFF_SIZE];
@@ -124,6 +128,7 @@ void Interrupt::preprocess()
 
 	//update vehicle ego information
 	float acc_mean   	= acc_sum/(float)(ACC_BUFF_SIZE);
+	float x_acc_mean  = x_acc_sum/(float)(ACC_BUFF_SIZE);
 	float z_acc_mean    = z_acc_sum/(float)(ACC_BUFF_SIZE);
 	float enc_velo_mean = ((Renc.wheel_speed) - (Lenc.wheel_speed))/2.0;
 	float velo			= (1.0/2.0f)*acc_mean*((float)(ACC_BUFF_SIZE))/1000.0f + enc_velo_mean;
@@ -153,7 +158,12 @@ void Interrupt::preprocess()
 	Vehicle_type8::getInstance().ego.turn_slip_dot.set(slip_theta_dot);
 
 	float horizon_velo = enc_velo*slip_theta;
-	float horizon_acc  =  -Vehicle_type8::getInstance().turn_slip_k.get()*slip_theta - rad_velo*velo;
+	// Previous model-based estimate:
+	// float horizon_acc = -Vehicle_type8::getInstance().turn_slip_k.get()*slip_theta
+	// 					 - rad_velo*velo;
+	// x_acc_mean is the ACC_BUFF_SIZE-sample mean of the lateral-axis IMU
+	// measurement from read_accel_x_axis().
+	float horizon_acc = x_acc_mean;
 	Vehicle_type8::getInstance().ego.horizon_accel.set(horizon_acc);
 	Vehicle_type8::getInstance().ego.horizon_velo.set(horizon_velo);
 
