@@ -125,7 +125,8 @@ void Motion::handleTurnPost_Straight()
 
 			if(ir_sens->Division_Wall_Correction() == True)
 			{
-				vehicle->ego.length.set((vehicle->ego.length.get() + (turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_st))/2.0f);
+				//vehicle->ego.length.set((vehicle->ego.length.get() + (turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_st))/2.0f);
+				vehicle->ego.length.set(turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_st);
 			}
 
 
