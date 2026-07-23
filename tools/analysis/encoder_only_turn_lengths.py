@@ -1,9 +1,12 @@
-"""Solve 1600 mm/s Lstart/Lend from encoder pulses only.
+"""LEGACY: solve 1600 mm/s Lstart/Lend from encoder pulses only.
 
 The ideal yaw-rate column is used only to locate the commanded turn interval.
 Trajectory distance and angle use the right/left encoder pulses and the
 specified effective tread; ego.velo, gyro omega, beta, and acceleration are
 not used.
+
+New tuning should use lzero_turn_lengths.py with Lstart=Lend=0 marker videos.
+This module remains for historical comparison only.
 """
 
 from __future__ import annotations

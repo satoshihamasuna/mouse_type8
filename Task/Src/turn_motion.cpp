@@ -19,7 +19,8 @@ void Motion::handleTurnPrev_Straight()
 		{
 			if(ir_sens->Division_Wall_Correction() == True)
 			{
-				vehicle->ego.length.set((vehicle->ego.length.get() + detect_wall_edge_st)/2.0f);
+				//vehicle->ego.length.set((vehicle->ego.length.get() + detect_wall_edge_st)/2.0f);
+				vehicle->ego.length.set(detect_wall_edge_st);
 			}
 
 			vehicle->ideal.accel.set(motion_plan.accel.get());

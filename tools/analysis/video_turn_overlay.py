@@ -1,9 +1,11 @@
-"""Match 2026-07-23 turn videos to logs and overlay measured trajectories.
+"""LEGACY: match 2026-07-23 turn videos to logs and overlay trajectories.
 
 The camera is fixed above a dark calibration mat.  The robot is extracted with
 background subtraction, while the log path is reconstructed from measured
 forward/angular velocity.  A similarity transform aligns the log path to the
 video track; this makes endpoint and shape disagreement directly visible.
+
+New Lstart/Lend tuning should use lzero_turn_lengths.py.
 """
 from __future__ import annotations
 

@@ -1,6 +1,0 @@
-run,source_video,log,trim_start_s,trim_end_s,trimmed_duration_s,marker_detection_pct,trajectory_rmse_mm,turn_rmse_mm,video_heading_deg,log_heading_deg,video_minus_log_deg,video_radius_mm,log_radius_mm,log_lstart_ego_mm,log_lend_ego_mm
-previous,PXL_20260723_140407278_turn180.mp4,20260723_230447_myshell_debug_log_long_r180.csv,31.995,36.894,4.932,98.0,7.22,8.05,-180.88,-180.45,-0.43,44.82,46.78,9.45,28.53
-new_1,PXL_20260723_145524834_turn180.mp4,20260723_235539_myshell_debug_log_long_r180.csv,29.710,34.706,5.030,95.3,4.86,5.21,-181.06,-180.44,-0.62,47.52,46.77,10.00,28.53
-new_2,PXL_20260723_150136412_turn180.mp4,20260724_000153_myshell_debug_log_long_r180.csv,32.095,37.027,4.966,98.7,7.13,9.61,-182.01,-180.81,-1.19,45.90,46.59,9.86,29.91
-mean,,,,,,97.3,6.40,7.62,-181.32,-180.57,-0.75,46.08,46.71,9.77,28.99
-sample_std,,,,,,1.8,1.34,2.23,0.60,0.21,0.40,1.36,0.11,0.29,0.79

@@ -1,105 +1,119 @@
-# 1600 mm/s ターン・接地スリップモデル
+# 1600 mm/s Lstart/Lend実測
 
-## 目的
+## 基本方針
 
-1600 mm/sで取得した左右の実測ログを使い、各ターンの軌跡から共通の
-`Lstart` と `Lend` を決める。STMの運動制御モデルは変更せず、Python側で
-軌跡を再生して `Params/Param_A/turn_1600.h` の距離パラメータを求める。
+`Lstart=0`、`Lend=0`で走行し、動画で測定した旋回中の接地軌跡から
+必要な前後直進距離を求める。速度・横滑りを仮定した軌跡モデルは
+Lstart/Lendの決定には使用しない。
 
-## 速度モデル
+動画の赤・黄マーカーで機体中心と姿勢を測定し、ログの
+`ideal.rad_velo`から角速度プロファイルの開始・終了を特定する。
+動画とログを時間同期したうえで、旋回本体の実変位にLstartとLendを加え、
+指定終点へ到達する連立方程式を解く。
 
-ログの `ego.velo` は、地面に対する速度ベクトルの大きさとして扱う。
-機体姿勢から速度ベクトルが横滑り角 `beta` だけずれるため、まず接地面での
-並進スリップ倍率を
+long180は始終方向が平行でLstartとLendを一意に分離できないため、
+旋回軌跡の頂点を開始点から95 mmに置く条件を追加する。
 
-```text
-s(beta) = max(0, 1 - C_ground * beta^2)
-```
+## 測定手順
 
-とし、機体座標系の速度を次式で計算する。
+1. 対象ターンのLstartとLendを左右とも0 mmにする。
+2. 4隅のArUcoと、機体の赤・黄マーカーが見える状態で右旋回を3回撮影する。
+3. 各走行のログCSVと`.settings.json`を保存する。
+4. `manifest.csv`へ動画、ログ、ターン種別、目標座標を記入する。
+5. `lzero_turn_lengths.py`を実行する。
+6. `adopted_summary.csv`の中央値を左右共通値としてパラメータへ反映する。
+7. 設定後に実走し、終点と壁距離を確認する。
 
-```text
-v_forward = ego.velo * s(beta) * cos(beta)
-v_lateral = ego.velo * s(beta) * sin(beta)
-```
+`.settings.json`のLstartまたはLendが0でない場合、解析スクリプトは停止する。
 
-前後・横成分へ同じ `s(beta)` を掛けることで、速度ベクトルの方向は
-機体姿勢から `beta` ずれたままになる。今回使用する係数は次のとおり。
+## 座標と開始姿勢
 
-```text
-C_ground = 3.125327524776992
-```
+manifestの目標座標は、開始点を`(0, 0)`とした
+`(横方向, 前方向)` [mm]で記述する。右が負、左が正。
 
-この係数は、2026-07-22のlong180動画で確認した90 mmの横移動に対し、
-同時期のログを再生して求めた。個別の同定値は右3.091784、左3.158871で、
-左右差をターンパラメータへ持ち込まないよう平均値を採用した。
-
-## 使用する実測量
-
-- `ego.velo`: 合成速度の大きさ
-- `ego.rad_velo`: ヨーレート。積分して旋回角を再現する
-- `ego.turn_slip_theta`: 横滑り角 `beta`
-
-加速度はログ取得と横滑り状態の確認に使用するが、この軌跡計算では
-`ego.horizon_accel` を再積分して横速度を作っていない。横速度は上式から
-直接求めるため、加速度オフセットの積分ドリフトを持ち込まない。
-
-### 旋回終了時のbeta
-
-in45、out45、V90のログでは、旋回終了サンプルで
-`ego.turn_slip_theta` が約-0.09 radから0へ強制的にリセットされる。この0を
-物理的な横滑り消失として使うと、速度方向が約5度飛び、軌跡終端に不自然な
-折れが発生する。
-
-そこで、強制ゼロのサンプルだけを次式による1 ms後の値へ置き換える。
-
-```text
-beta_dot = -k * beta / ego.velo - omega
-beta_next = beta + beta_dot * 0.001
-```
-
-その後のLend区間も同じ式でbetaを連続的に減衰させる。Lendがシミュレータの
-減衰区間より短い場合は、指定距離で軌跡を補間して打ち切る。
-
-## 現在turn_1600.hへ反映したLstart/Lend
-
-元MATLAB式を1600 mm/s、`Kp=4.0`、`Ki=0.01`、`alpha=1.0`、
-`k_R=239.34375`、`k_L=260.464286`で計算し、右・左の平均を共通値にした。
-実測ログと接地スリップモデルによる値ではない。単位はmm。
-
-| ターン | r_min | Lstart | Lend |
+| ターン | 右旋回の目標 | 左旋回の目標 | 右旋回の開始姿勢 |
 | --- | ---: | ---: | ---: |
-| long90 | 52.0 | 14.69 | 34.06 |
-| long180 | 48.0 | 10.79 | 32.40 |
-| in45 | 55.0 | 25.41 | 23.05 |
-| out45 | 60.0 | 21.00 | 20.61 |
-| in135 | 42.0 | 11.60 | 25.47 |
-| out135 | 39.3 | 12.47 | 40.99 |
-| V90 | 40.0 | 4.51 | 23.78 |
+| long90 | (-90, 90) | (90, 90) | 0° |
+| long180 | (-90, 0) | (90, 0) | 0° |
+| in45 | (-45, 90) | (45, 90) | 0° |
+| out45 | (-90, 45) | (90, 45) | -45° |
+| in135 | (-90, 45) | (90, 45) | 0° |
+| out135 | (-90, -45) | (90, -45) | -45° |
+| V90 | (-90, 0) | (90, 0) | -45° |
 
-## 再計算
+## 実行方法
 
-MATLAB移植式は `tools/turn_simulator.py` の `MATLAB_DYNAMICS` を指定し、
-各方向のkで計算する。設定後の整合性確認はリポジトリのルートで次を実行する。
+現在の2026-07-24データを再集計する場合:
 
 ```powershell
-python -m pytest -q
+python tools\analysis\lzero_turn_lengths.py
 ```
 
-主なファイルは以下のとおり。
+別の動画セットを解析する場合:
 
-- `tools/turn_simulator.py`: MATLAB移植を基にしたターン積分器
-- `tools/analysis/turn1600_variable_speed_lengths.py`: 最新ログの抽出、モデル再生、左右平均距離の算出
-- `resultant_speed_ground_slip_lengths/report.md`: 方向別の数値結果
-- `resultant_speed_ground_slip_lengths/trajectories/`: 理想軌跡と予測軌跡
-- `resultant_speed_ground_slip_lengths/velocity_profiles/`: 合成・前後・横速度
-- `video_20260722_175611/`: long180動画との照合結果
+```powershell
+python tools\analysis\lzero_turn_lengths.py `
+  --manifest path\to\manifest.csv `
+  --video-root path\to\videos `
+  --output tools\turn_analysis\1600\video_YYYYMMDD_lzero
+```
 
-## 適用上の注意
+既存の個別結果を使わず動画追跡からやり直す場合は`--force`を付ける。
+特定ターンだけなら、例えば`--force-motion in_r45`を使用する。
 
-`C_ground` はlong180から同定したため、他形状への適用は外挿を含む。特に
-in135、out135、V90は `beta` が大きく、速度低下量が大きくなる。今回の値を
-初期値として実走し、壁との距離と終点誤差を確認してから最終固定する。
+manifestに必要な列:
 
-`C_ground` とLstart/Lendを同じログへ同時に過度適合させないため、新しい
-long180動画で係数を確認し、その他のターンで距離だけを再調整するのが望ましい。
+```text
+video,log_stem,motion,target_lateral_mm,target_forward_mm
+```
+
+`log_stem`には`.csv`を除いたログ名を指定する。
+
+## 採用判定
+
+次をすべて満たすランを有効とする。
+
+- マーカー検出率95%以上
+- 推定スローモーション倍率7.5～9.0
+- 動画―ログ軌跡RMSE 8 mm以下
+
+各ターンで有効ランが2本未満の場合は自動結果をそのまま採用せず、
+動画、マーカー、ログ対応を確認して再測定する。
+
+## 現在の採用値
+
+2026-07-24の右旋回動画から求め、左右共通値として
+`Params/Param_A/turn_1600.h`へ反映した値。
+
+| ターン | Lstart [mm] | Lend [mm] |
+| --- | ---: | ---: |
+| long90 | 18.42 | 26.31 |
+| long180 | 22.68 | 26.33 |
+| in45 | 6.46 | 39.86 |
+| out45 | 21.74 | 20.46 |
+| in135 | 17.43 | 20.56 |
+| out135 | 11.13 | 36.50 |
+| V90 | 6.49 | 20.83 |
+
+詳細は[`video_20260724_lzero/README.md`](video_20260724_lzero/README.md)、
+全ランは[`video_20260724_lzero/run_results.csv`](video_20260724_lzero/run_results.csv)、
+動画とログの対応は
+[`video_20260724_lzero/manifest.csv`](video_20260724_lzero/manifest.csv)にある。
+
+## 主なコード
+
+- `tools/analysis/lzero_turn_lengths.py`: manifest読込、動画・ログ同期、長さ算出、集計
+- `tools/analysis/trim_motion_video.py`: 実走行区間の抽出
+- `tools/analysis/video_marker_pose.py`: ArUco較正、マーカー追跡、ログ同期
+
+## Legacy
+
+次は旧方式との比較と回帰テストのためコードだけを残している。
+新しいLstart/Lendの決定には使用しない。
+
+- `tools/analysis/encoder_only_turn_lengths.py`
+- `tools/analysis/turn1600_variable_speed_lengths.py`
+- `tools/analysis/video_turn_overlay.py`
+- `tools/analysis/video_turn_simulator_compare.py`
+
+旧方式の生成結果は削除済みで、必要な場合はGit履歴から復元できる。

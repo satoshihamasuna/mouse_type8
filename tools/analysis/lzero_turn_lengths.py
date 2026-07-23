@@ -21,31 +21,14 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 VIDEO_ROOT = ROOT.parent / "video3"
 OUTPUT = ROOT / "tools" / "turn_analysis" / "1600" / "video_20260724_lzero"
-
-# Video filename, log stem, and target (lateral x, forward y), in millimetres.
-RUNS = [
-    ("PXL_20260723_161330413_turn90.mp4", "20260724_011348_myshell_debug_log_long_r90", "long_r90", -90.0, 90.0),
-    ("PXL_20260723_161529470_turn90.mp4", "20260724_011546_myshell_debug_log_long_r90", "long_r90", -90.0, 90.0),
-    ("PXL_20260723_161640038_turn90.mp4", "20260724_011701_myshell_debug_log_long_r90", "long_r90", -90.0, 90.0),
-    ("PXL_20260723_161756449_turn180.mp4", "20260724_011851_myshell_debug_log_long_r180", "long_r180", -90.0, 0.0),
-    ("PXL_20260723_161937030_turn180.mp4", "20260724_012001_myshell_debug_log_long_r180", "long_r180", -90.0, 0.0),
-    ("PXL_20260723_162048138_turn180.mp4", "20260724_012107_myshell_debug_log_long_r180", "long_r180", -90.0, 0.0),
-    ("PXL_20260723_163957963_turnin45.mp4", "20260724_014022_myshell_debug_log_in_r45", "in_r45", -45.0, 90.0),
-    ("PXL_20260723_164108052_turnin45.mp4", "20260724_014131_myshell_debug_log_in_r45", "in_r45", -45.0, 90.0),
-    ("PXL_20260723_164215117_turnin45.mp4", "20260724_014239_myshell_debug_log_in_r45", "in_r45", -45.0, 90.0),
-    ("PXL_20260723_164331188_turnin135.mp4", "20260724_014355_myshell_debug_log_in_r135", "in_r135", -90.0, 45.0),
-    ("PXL_20260723_164440192_turnin135.mp4", "20260724_014501_myshell_debug_log_in_r135", "in_r135", -90.0, 45.0),
-    ("PXL_20260723_164546074_turnin135.mp4", "20260724_014614_myshell_debug_log_in_r135", "in_r135", -90.0, 45.0),
-    ("PXL_20260723_164714357_turnout45.mp4", "20260724_014747_myshell_debug_log_out_r45", "out_r45", -90.0, 45.0),
-    ("PXL_20260723_165208846_turnout45.mp4", "20260724_015229_myshell_debug_log_out_r45", "out_r45", -90.0, 45.0),
-    ("PXL_20260723_165319564_turnout45.mp4", "20260724_015352_myshell_debug_log_out_r45", "out_r45", -90.0, 45.0),
-    ("PXL_20260723_165447498_turnout135.mp4", "20260724_015542_myshell_debug_log_out_r135", "out_r135", -90.0, -45.0),
-    ("PXL_20260723_165627623_turnout135.mp4", "20260724_015647_myshell_debug_log_out_r135", "out_r135", -90.0, -45.0),
-    ("PXL_20260723_165750265_turnout135.mp4", "20260724_015814_myshell_debug_log_out_r135", "out_r135", -90.0, -45.0),
-    ("PXL_20260723_165921238_v90.mp4", "20260724_015943_myshell_debug_log_r_v90", "r_v90", -90.0, 0.0),
-    ("PXL_20260723_170047077_v90.mp4", "20260724_020113_myshell_debug_log_r_v90", "r_v90", -90.0, 0.0),
-    ("PXL_20260723_170159905_v90.mp4", "20260724_020224_myshell_debug_log_r_v90", "r_v90", -90.0, 0.0),
-]
+DEFAULT_MANIFEST = OUTPUT / "manifest.csv"
+MANIFEST_COLUMNS = (
+    "video",
+    "log_stem",
+    "motion",
+    "target_lateral_mm",
+    "target_forward_mm",
+)
 
 START_HEADING_DEG = {
     "long_r90": 0.0,
@@ -56,6 +39,51 @@ START_HEADING_DEG = {
     "out_r135": -45.0,
     "r_v90": -45.0,
 }
+
+
+def read_manifest(path: Path) -> list[tuple[str, str, str, float, float]]:
+    """Read and validate video/log/target mappings."""
+    frame = pd.read_csv(path)
+    missing = [column for column in MANIFEST_COLUMNS if column not in frame.columns]
+    if missing:
+        raise ValueError(f"manifest is missing columns: {', '.join(missing)}")
+    if frame.empty:
+        raise ValueError("manifest has no runs")
+    if frame["log_stem"].duplicated().any():
+        duplicates = frame.loc[frame["log_stem"].duplicated(), "log_stem"].tolist()
+        raise ValueError(f"duplicate log_stem values: {duplicates}")
+    unsupported = sorted(set(frame["motion"]) - set(START_HEADING_DEG))
+    if unsupported:
+        raise ValueError(f"unsupported motions: {unsupported}")
+
+    runs = []
+    for row in frame.itertuples(index=False):
+        video = str(row.video)
+        log_stem = str(row.log_stem)
+        video_path = VIDEO_ROOT / video
+        log_path = ROOT / "tools" / "logs" / f"{log_stem}.csv"
+        settings_path = ROOT / "tools" / "logs" / f"{log_stem}.settings.json"
+        if not video_path.is_file():
+            raise FileNotFoundError(f"video not found: {video_path}")
+        if not log_path.is_file():
+            raise FileNotFoundError(f"log not found: {log_path}")
+        if settings_path.is_file():
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+            parameters = settings.get("parameters", {})
+            if float(parameters.get("lstart", math.nan)) != 0.0:
+                raise ValueError(f"Lstart is not zero: {settings_path}")
+            if float(parameters.get("lend", math.nan)) != 0.0:
+                raise ValueError(f"Lend is not zero: {settings_path}")
+        runs.append(
+            (
+                video,
+                log_stem,
+                str(row.motion),
+                float(row.target_lateral_mm),
+                float(row.target_forward_mm),
+            )
+        )
+    return runs
 
 
 def target_in_start_frame(
@@ -237,7 +265,7 @@ def write_report(runs: pd.DataFrame, summary: pd.DataFrame) -> None:
     ]
     for row in summary.itertuples():
         lines.append(
-            f"| {row.motion} | {row.accepted_runs}/3 | "
+            f"| {row.motion} | {row.accepted_runs}/{row.total_runs} | "
             f"{row.adopted_lstart_mm:.2f} | "
             f"{row.adopted_lend_mm:.2f} | {row.video_lstart_min_mm:.2f}–"
             f"{row.video_lstart_max_mm:.2f} | {row.video_lend_min_mm:.2f}–"
@@ -256,12 +284,24 @@ def write_report(runs: pd.DataFrame, summary: pd.DataFrame) -> None:
 
 
 def main() -> None:
+    global OUTPUT, VIDEO_ROOT
     parser = argparse.ArgumentParser()
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--video-root", type=Path, default=VIDEO_ROOT)
+    parser.add_argument("--output", type=Path, default=OUTPUT)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--force-motion", action="append", default=[])
     parser.add_argument("--workers", type=int, default=3)
     args = parser.parse_args()
+    OUTPUT = args.output.resolve()
+    VIDEO_ROOT = args.video_root.resolve()
+    manifest_path = args.manifest.resolve()
+    runs_manifest = read_manifest(manifest_path)
     OUTPUT.mkdir(parents=True, exist_ok=True)
+    if manifest_path.parent != OUTPUT:
+        (OUTPUT / "manifest.csv").write_text(
+            manifest_path.read_text(encoding="utf-8"), encoding="utf-8"
+        )
 
     metric_paths: dict[str, Path] = {}
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
@@ -269,7 +309,7 @@ def main() -> None:
             executor.submit(
                 run_tools, item, args.force or item[2] in args.force_motion
             ): item
-            for item in RUNS
+            for item in runs_manifest
         }
         for future in as_completed(futures):
             item = futures[future]
@@ -277,7 +317,7 @@ def main() -> None:
             print(f"tracked {item[1]}", flush=True)
 
     rows = []
-    for _, log_stem, motion, target_x, target_y in RUNS:
+    for _, log_stem, motion, target_x, target_y in runs_manifest:
         metrics_path = metric_paths[log_stem]
         metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
         row = {
@@ -305,9 +345,12 @@ def main() -> None:
     for motion, group in runs.groupby("motion", sort=False):
         accepted = group[group["accepted"]]
         if len(accepted) < 2:
-            accepted = group
+            raise RuntimeError(
+                f"{motion}: only {len(accepted)}/{len(group)} runs passed quality checks"
+            )
         summaries.append({
             "motion": motion,
+            "total_runs": len(group),
             "accepted_runs": len(accepted),
             "adopted_lstart_mm": float(accepted["video_lstart_mm"].median()),
             "adopted_lend_mm": float(accepted["video_lend_mm"].median()),

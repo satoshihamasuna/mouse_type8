@@ -1,4 +1,4 @@
-"""Compare the blue-LED turn segment with tools/turn_simulator.py.
+"""LEGACY: compare the blue-LED turn segment with tools/turn_simulator.py.
 
 The indicator in myshell encloses the complete Init_Motion_* call: Lstart,
 the angular profile, and Lend.  This script puts the detected LED-on video
@@ -7,6 +7,8 @@ system.  Endpoint error is projected onto the simulator exit tangent:
 
     positive  -> the video turn segment is short by this many millimetres
     negative  -> the video turn segment travels too far
+
+New Lstart/Lend tuning should use lzero_turn_lengths.py.
 """
 
 from __future__ import annotations

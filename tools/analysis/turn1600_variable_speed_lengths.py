@@ -1,4 +1,8 @@
-"""Calculate 1600 mm/s turn lengths with measured velocity profiles and slip."""
+"""LEGACY: calculate turn lengths with a modelled velocity/slip trajectory.
+
+New tuning should use lzero_turn_lengths.py with Lstart=Lend=0 marker videos.
+This module remains because regression tests and legacy comparisons import it.
+"""
 
 from __future__ import annotations
 
