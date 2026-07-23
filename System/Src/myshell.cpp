@@ -1380,6 +1380,9 @@ static int shell_debug_turn_command(int argc, char **argv)
 			Indicate_LED((i % 2 == 0) ? 0xff : 0x00);
 			HAL_Delay(50);
 		}
+		// The indicator is reserved for the turn segment below.  Keep it off
+		// during the approach run, after the sensor-ready flashing has ended.
+		Indicate_LED(0x00);
 		motion->Motion_start();
 		shell_debug_suction_start(motion, debug->suction_enable, debug->suction_duty);
 		LogData::getInstance().data_count = 0;
@@ -1424,7 +1427,11 @@ static int shell_debug_turn_command(int argc, char **argv)
 				motion->Motion_end();
 				return -1;
 			}
+			// Init_Motion_* contains Lstart, the angular turn, and Lend.  Light
+			// the LEDs only while that complete turn segment is being executed.
+			Indicate_LED(0x3f);
 			motion->execute_Motion();
+			Indicate_LED(0x00);
 		}
 		if (shell_debug_turn_post_run(motion, pattern, debug->table.velo) != True) {
 			printf("DEBUG_TURN_ERROR unsupported_post_run:%d\r\n", pattern);
