@@ -20,7 +20,33 @@ void Motion::handleTurnPrev_Straight()
 			if(ir_sens->Division_Wall_Correction() == True)
 			{
 				//vehicle->ego.length.set((vehicle->ego.length.get() + detect_wall_edge_st)/2.0f);
-				vehicle->ego.length.set(detect_wall_edge_st);
+				//vehicle->ego.length.set(detect_wall_edge_st);
+				
+				if(ir_sens->r_wall_corner == True)
+				{
+					if(turn_motion_param.param->turn_dir == Turn_R)
+					{
+						vehicle->ego.length.set(detect_wall_edge_st);
+					}
+					else
+					{
+						ir_sens->wall_correction = False;
+					}
+
+				}
+				if(ir_sens->l_wall_corner == True)
+				{
+					if(turn_motion_param.param->turn_dir == Turn_L)
+					{
+						vehicle->ego.length.set(detect_wall_edge_st);
+					}
+					else
+					{
+						ir_sens->wall_correction = False;
+					}
+				}
+
+
 			}
 
 			vehicle->ideal.accel.set(motion_plan.accel.get());
@@ -73,7 +99,8 @@ void Motion::handleTurnPrev_Diagonal()
 					}
 
 				}
-				else if(ir_sens->l_wall_corner == True)
+				
+				if(ir_sens->l_wall_corner == True)
 				{
 					if(turn_motion_param.param->turn_dir == Turn_L)
 					{
@@ -199,7 +226,7 @@ void Motion::handleTurnPost_Diagonal()
 					}
 
 				}
-				else if(ir_sens->l_wall_corner == True)
+				if(ir_sens->l_wall_corner == True)
 				{
 					if(turn_motion_param.param->turn_dir == Turn_R)
 					{

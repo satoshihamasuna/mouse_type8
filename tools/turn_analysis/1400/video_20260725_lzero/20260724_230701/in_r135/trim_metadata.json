@@ -1,0 +1,20 @@
+{
+  "motion_start_frame": 87,
+  "motion_end_frame": 138,
+  "motion_start_s": 2.9005750147801175,
+  "motion_end_s": 4.600912092409841,
+  "trim_start_frame": 57,
+  "trim_end_frame": 168,
+  "trim_start_s": 1.900376733821456,
+  "trim_end_s": 5.601110373368503,
+  "led_detection_threshold_pixels": 328.44800000000004,
+  "motion_peak_playback_mm_s": 329.0684846875346,
+  "source_video": "PXL_20260724_140642452_turnin135.mp4",
+  "trimmed_video": "trim.mp4",
+  "fps": 29.994052750466505,
+  "trimmed_frames": 112,
+  "trimmed_duration_s": 3.734073582245668,
+  "margin_s": 1.0,
+  "scan_sample_step": 3,
+  "front_marker_color": "red"
+}

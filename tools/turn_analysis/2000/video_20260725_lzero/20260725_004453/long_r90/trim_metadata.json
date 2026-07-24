@@ -1,0 +1,20 @@
+{
+  "motion_start_frame": 120,
+  "motion_end_frame": 210,
+  "motion_start_s": 4.054878029968809,
+  "motion_end_s": 7.096036552445417,
+  "trim_start_frame": 90,
+  "trim_end_frame": 240,
+  "trim_start_s": 3.041158522476607,
+  "trim_end_s": 8.109756059937618,
+  "led_detection_threshold_pixels": 100.0,
+  "motion_peak_playback_mm_s": 226.64109711949837,
+  "source_video": "PXL_20260724_154434571_turm90r.mp4",
+  "trimmed_video": "trim.mp4",
+  "fps": 29.593985099700532,
+  "trimmed_frames": 151,
+  "trimmed_duration_s": 5.102388187710752,
+  "margin_s": 1.0,
+  "scan_sample_step": 3,
+  "front_marker_color": "red"
+}

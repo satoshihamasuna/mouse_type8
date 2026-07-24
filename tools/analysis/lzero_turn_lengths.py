@@ -1,4 +1,4 @@
-"""Determine 1600 mm/s Lstart/Lend from Lstart=Lend=0 videos and logs.
+"""Determine Lstart/Lend from Lstart=Lend=0 videos and logs.
 
 The Pixel videos are slow-motion recordings.  Coloured body markers provide
 the physical chassis trajectory, while the corresponding controller log
@@ -32,7 +32,9 @@ MANIFEST_COLUMNS = (
 
 START_HEADING_DEG = {
     "long_r90": 0.0,
+    "long_l90": 0.0,
     "long_r180": 0.0,
+    "long_l180": 0.0,
     "in_r45": 0.0,
     "in_r135": 0.0,
     "out_r45": -45.0,
@@ -96,7 +98,11 @@ def target_in_start_frame(
     return target_left, target_forward
 
 
-def run_tools(item: tuple[str, str, str, float, float], force: bool) -> Path:
+def run_tools(
+    item: tuple[str, str, str, float, float],
+    force: bool,
+    slow_factor: float | None,
+) -> Path:
     video_name, log_stem, motion, _, _ = item
     run_dir = OUTPUT / log_stem[:15] / motion
     metrics = run_dir / "metrics.json"
@@ -115,17 +121,17 @@ def run_tools(item: tuple[str, str, str, float, float], force: bool) -> Path:
             ],
             check=True,
         )
-    subprocess.run(
-        [
+    marker_command = [
             sys.executable, str(ROOT / "tools/analysis/video_marker_pose.py"),
             "--video", str(clip),
             "--log", str(ROOT / "tools/logs" / f"{log_stem}.csv"),
             "--output", str(run_dir),
             "--front-color", "red",
             "--calibration-video", str(VIDEO_ROOT / video_name),
-        ],
-        check=True,
-    )
+    ]
+    if slow_factor is not None:
+        marker_command += ["--slow-factor", str(slow_factor)]
+    subprocess.run(marker_command, check=True)
     clip.unlink()
     return metrics
 
@@ -208,7 +214,8 @@ def video_result(metrics_path: Path, target_x: float, target_y: float) -> dict:
     )
     lstart, lend, residual, apex = solve_lengths(
         displacement, points, final_heading, local_x, local_y,
-        metrics["motion_name"] == "long_r180",
+        str(metrics["motion_name"]).startswith("long_")
+        and str(metrics["motion_name"]).endswith("180"),
     )
     return {
         "video_lstart_mm": lstart,
@@ -239,7 +246,8 @@ def log_result(log_path: Path, motion: str, target_x: float, target_y: float) ->
     angle = float(frame["ego.radian"].iloc[end] - frame["ego.radian"].iloc[start])
     local_x, local_y = target_in_start_frame(motion, target_x, target_y)
     lstart, lend, residual, apex = solve_lengths(
-        displacement, points, angle, local_x, local_y, motion == "long_r180"
+        displacement, points, angle, local_x, local_y,
+        motion.startswith("long_") and motion.endswith("180")
     )
     return {
         "log_lstart_mm": lstart,
@@ -252,9 +260,19 @@ def log_result(log_path: Path, motion: str, target_x: float, target_y: float) ->
     }
 
 
-def write_report(runs: pd.DataFrame, summary: pd.DataFrame) -> None:
+def write_report(
+    runs: pd.DataFrame,
+    summary: pd.DataFrame,
+    speed: int,
+    side_policy: str,
+    slow_factor: float | None,
+    min_detection_pct: float,
+    min_slow_factor: float,
+    max_slow_factor: float,
+    max_rmse_mm: float,
+) -> None:
     lines = [
-        "# Lstart=Lend=0 実測からの1600 mm/sターン長",
+        f"# Lstart=Lend=0 実測からの{speed} mm/sターン長",
         "",
         "赤・黄マーカーの動画軌跡をログの角速度プロファイル開始・終了時刻で切り、"
         "指定された終点へ初期直進と後直進を加える連立方程式から求めた。"
@@ -272,14 +290,29 @@ def write_report(runs: pd.DataFrame, summary: pd.DataFrame) -> None:
             f"{row.video_lend_max_mm:.2f} | {row.log_lstart_median_mm:.2f} / "
             f"{row.log_lend_median_mm:.2f} |"
         )
+    constrained = summary[
+        (summary["adopted_lstart_mm"] != summary["video_lstart_median_raw_mm"])
+        | (summary["adopted_lend_mm"] != summary["video_lend_median_raw_mm"])
+    ]
     lines += [
         "",
-        "採用値は有効動画の中央値。検出率95%以上、スロー倍率7.5–9.0、"
-        "動画―ログ軌跡RMSE 8 mm以下を有効とした。右旋回だけを撮影しているため、左右は同じ"
-        "Lstart/Lendを使い、r_minとdegreeの符号だけを反転する前提とした。",
+        f"採用値は有効動画の中央値。検出率{min_detection_pct:g}%以上、"
+        + (
+            f"スロー倍率{slow_factor:g}倍固定、"
+            if slow_factor is not None
+            else f"スロー倍率{min_slow_factor:g}–{max_slow_factor:g}、"
+        )
+        + f"動画―ログ軌跡RMSE {max_rmse_mm:g} mm以下を有効とした。"
+        + side_policy,
         "",
         "全ランの同期誤差・軌跡変位・旋回角は `run_results.csv` に保存した。",
     ]
+    if not constrained.empty:
+        motions = ", ".join(constrained["motion"].astype(str))
+        lines += [
+            "",
+            f"{motions}は動画解が負になった成分を、実装可能範囲の境界である0 mmに制約した。",
+        ]
     (OUTPUT / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -291,12 +324,40 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=OUTPUT)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--force-motion", action="append", default=[])
+    parser.add_argument(
+        "--motion",
+        action="append",
+        default=[],
+        help="analyze only this motion; repeat to select multiple motions",
+    )
     parser.add_argument("--workers", type=int, default=3)
+    parser.add_argument("--speed", type=int, default=1600)
+    parser.add_argument("--slow-factor", type=float)
+    parser.add_argument("--min-detection-pct", type=float, default=95.0)
+    parser.add_argument("--min-slow-factor", type=float, default=7.5)
+    parser.add_argument("--max-slow-factor", type=float, default=9.0)
+    parser.add_argument("--max-rmse-mm", type=float, default=8.0)
+    parser.add_argument(
+        "--side-policy",
+        default="右旋回だけを撮影しているため、左右は同じLstart/Lendを使い、"
+        "r_minとdegreeの符号だけを反転する前提とした。",
+    )
     args = parser.parse_args()
     OUTPUT = args.output.resolve()
     VIDEO_ROOT = args.video_root.resolve()
     manifest_path = args.manifest.resolve()
     runs_manifest = read_manifest(manifest_path)
+    if args.motion:
+        requested = set(args.motion)
+        available = {item[2] for item in runs_manifest}
+        missing = sorted(requested - available)
+        if missing:
+            raise ValueError(
+                "requested motions are not in manifest: " + ", ".join(missing)
+            )
+        runs_manifest = [
+            item for item in runs_manifest if item[2] in requested
+        ]
     OUTPUT.mkdir(parents=True, exist_ok=True)
     if manifest_path.parent != OUTPUT:
         (OUTPUT / "manifest.csv").write_text(
@@ -307,7 +368,10 @@ def main() -> None:
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
         futures = {
             executor.submit(
-                run_tools, item, args.force or item[2] in args.force_motion
+                run_tools,
+                item,
+                args.force or item[2] in args.force_motion,
+                args.slow_factor,
             ): item
             for item in runs_manifest
         }
@@ -334,10 +398,17 @@ def main() -> None:
                               motion, target_x, target_y))
         rows.append(row)
     runs = pd.DataFrame(rows)
+    factor_ok = (
+        np.isclose(runs["slow_motion_factor"], args.slow_factor)
+        if args.slow_factor is not None
+        else runs["slow_motion_factor"].between(
+            args.min_slow_factor, args.max_slow_factor
+        )
+    )
     runs["accepted"] = (
-        (runs["marker_detection_pct"] >= 95.0)
-        & runs["slow_motion_factor"].between(7.5, 9.0)
-        & (runs["trajectory_fit_rmse_mm"] <= 8.0)
+        (runs["marker_detection_pct"] >= args.min_detection_pct)
+        & factor_ok
+        & (runs["trajectory_fit_rmse_mm"] <= args.max_rmse_mm)
     )
     runs.to_csv(OUTPUT / "run_results.csv", index=False)
 
@@ -348,12 +419,16 @@ def main() -> None:
             raise RuntimeError(
                 f"{motion}: only {len(accepted)}/{len(group)} runs passed quality checks"
             )
+        raw_lstart = float(accepted["video_lstart_mm"].median())
+        raw_lend = float(accepted["video_lend_mm"].median())
         summaries.append({
             "motion": motion,
             "total_runs": len(group),
             "accepted_runs": len(accepted),
-            "adopted_lstart_mm": float(accepted["video_lstart_mm"].median()),
-            "adopted_lend_mm": float(accepted["video_lend_mm"].median()),
+            "adopted_lstart_mm": max(0.0, raw_lstart),
+            "adopted_lend_mm": max(0.0, raw_lend),
+            "video_lstart_median_raw_mm": raw_lstart,
+            "video_lend_median_raw_mm": raw_lend,
             "video_lstart_min_mm": float(accepted["video_lstart_mm"].min()),
             "video_lstart_max_mm": float(accepted["video_lstart_mm"].max()),
             "video_lend_min_mm": float(accepted["video_lend_mm"].min()),
@@ -367,7 +442,17 @@ def main() -> None:
         })
     summary = pd.DataFrame(summaries)
     summary.to_csv(OUTPUT / "adopted_summary.csv", index=False)
-    write_report(runs, summary)
+    write_report(
+        runs,
+        summary,
+        args.speed,
+        args.side_policy,
+        args.slow_factor,
+        args.min_detection_pct,
+        args.min_slow_factor,
+        args.max_slow_factor,
+        args.max_rmse_mm,
+    )
     print(summary.to_string(index=False))
 
 

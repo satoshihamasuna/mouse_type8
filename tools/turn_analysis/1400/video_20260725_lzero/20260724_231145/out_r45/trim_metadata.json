@@ -1,0 +1,20 @@
+{
+  "motion_start_frame": 104,
+  "motion_end_frame": 147,
+  "motion_start_s": 3.462212980655551,
+  "motion_end_s": 4.893704886118904,
+  "trim_start_frame": 74,
+  "trim_end_frame": 177,
+  "trim_start_s": 2.4634976977741423,
+  "trim_end_s": 5.892420169000313,
+  "led_detection_threshold_pixels": 174.48,
+  "motion_peak_playback_mm_s": 319.87838047597353,
+  "source_video": "PXL_20260724_141121996_turnout45.mp4",
+  "trimmed_video": "trim.mp4",
+  "fps": 30.038591092194498,
+  "trimmed_frames": 104,
+  "trimmed_duration_s": 3.462212980655551,
+  "margin_s": 1.0,
+  "scan_sample_step": 3,
+  "front_marker_color": "red"
+}

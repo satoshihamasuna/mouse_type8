@@ -455,14 +455,21 @@ def estimate_profile_matched_lengths(
     }
 
 
-def fit_time_and_pose(video: pd.DataFrame, log: pd.DataFrame):
+def fit_time_and_pose(
+    video: pd.DataFrame, log: pd.DataFrame, fixed_slow_factor: float | None = None
+):
     video_t = video["time_video_s"].to_numpy()
     video_xy = video[["center_x_mm", "center_y_mm"]].to_numpy()
     log_t = log["time_log_s"].to_numpy()
     log_xy = log[["x_local_mm", "y_local_mm"]].to_numpy()
     best = None
     offset_max = min(3.2, max(.5, float(video_t[-1] - .2)))
-    for slow_factor in np.linspace(6.5, 9.5, 121):
+    slow_factors = (
+        [fixed_slow_factor]
+        if fixed_slow_factor is not None
+        else np.linspace(6.5, 9.5, 121)
+    )
+    for slow_factor in slow_factors:
         # A one-second trim margin becomes slightly shorter than one second
         # after Pixel slow-motion playback is mapped back to log time.  Keep a
         # wider negative range so the optimum does not stick to the old -0.5 s
@@ -619,6 +626,11 @@ def main():
         type=Path,
         help="fallback source video containing all four ArUcos",
     )
+    parser.add_argument(
+        "--slow-factor",
+        type=float,
+        help="fixed slow-motion playback factor; otherwise fit within 6.5–9.5",
+    )
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
 
@@ -627,7 +639,9 @@ def main():
     )
     log = integrate_log(args.log)
     log_lengths = measure_log_length_phases(args.log)
-    comparison, factor, offset, rotation, translation, fit_rmse = fit_time_and_pose(pose, log)
+    comparison, factor, offset, rotation, translation, fit_rmse = fit_time_and_pose(
+        pose, log, args.slow_factor
+    )
     pose.to_csv(args.output / "video_marker_pose.csv", index=False)
     comparison.to_csv(args.output / "video_log_comparison.csv", index=False)
     draw_outputs(args.video, pose, comparison, quad, args.output)
