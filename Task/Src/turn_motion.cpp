@@ -73,7 +73,7 @@ void Motion::handleTurnPrev_Diagonal()
 					}
 
 				}
-				if(ir_sens->l_wall_corner == True)
+				else if(ir_sens->l_wall_corner == True)
 				{
 					if(turn_motion_param.param->turn_dir == Turn_L)
 					{
@@ -199,7 +199,7 @@ void Motion::handleTurnPost_Diagonal()
 					}
 
 				}
-				if(ir_sens->l_wall_corner == True)
+				else if(ir_sens->l_wall_corner == True)
 				{
 					if(turn_motion_param.param->turn_dir == Turn_R)
 					{
