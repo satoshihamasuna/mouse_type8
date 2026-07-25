@@ -8,6 +8,10 @@
 #ifndef RUN_PARAM_A_H_
 #define RUN_PARAM_A_H_
 
+// 0: currently adopted turn lengths
+// 1: Lstart/Lend calculated from the pink (turn-LED-on) video interval
+#define PARAM_A_USE_PINK_LED_TURN_LENGTHS 0
+
 #include <Param_A/turn_1000.h>
 #include <Param_A/turn_1200.h>
 #include <Param_A/turn_1400.h>
