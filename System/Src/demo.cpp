@@ -332,6 +332,7 @@ void Demo()
 					enable = 0x00;
 				}
 				break;
+				
 			case ENABLE|0x08:
 			   if(irsens->IrSensor_Avg() > 2000)
 			   {
