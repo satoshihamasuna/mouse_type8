@@ -8,7 +8,7 @@
 #ifndef MOUSE_CONFIG_H_
 #define MOUSE_CONFIG_H_
 
-#include "math_utils.h"
+#include "Component/Inc/math_utils.h"
 
 // ===== 使用するマウスを選択 =====
 #define MOUSE_A

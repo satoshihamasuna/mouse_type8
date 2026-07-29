@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
-#include "main.h"
+#include "Core/Inc/main.h"
 
 uint16_t duty_table[1001] = {
     43, 43, 44, 44, 45, 45, 46, 46, 47, 47, 48, 48, 49, 49, 50, 50,

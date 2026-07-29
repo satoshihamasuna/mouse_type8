@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "stm32u5xx_hal.h"
-#include "flash_util.h"
+#include "Peripheral/Inc/flash_util.h"
 
 
 extern uint8_t _user_data_start[]; // リンカスクリプトのシンボル（開始アドレス）

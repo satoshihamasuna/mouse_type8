@@ -8,7 +8,7 @@
 #ifndef INC_MATH_UTILS_H_
 #define INC_MATH_UTILS_H_
 
-#include "mouse_config.h"
+#include "Params/mouse_config.h"
 
 #define MASK_SEARCH	0x01
 #define MASK_SECOND	0x03

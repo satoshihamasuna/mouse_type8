@@ -14,17 +14,17 @@
  */
 
 
-#include "sensing_task.h"
-#include "sens_table.h"
-#include "typedef.h"
-#include "maze_typedef.h"
-#include "peripheral.h"
+#include "Task/Inc/sensing_task.h"
+#include "Params/sens_table.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/maze_typedef.h"
+#include "Peripheral/Inc/peripheral.h"
 #include <math.h>
 /*
 #ifdef MOUSE_A
-  #include "sens_table_A.h"
+  #include "Params/sens_table_A.h"
 #elif defined(MOUSE_B)
-  #include "sens_table_B.h"
+  #include "Params/sens_table_B.h"
 #else
   #error "No SENSOR_TYPE defined. Please define SENSOR_TYPE_A or SENSOR_TYPE_B."
 #endif

@@ -7,9 +7,9 @@
 
 
 
-#include "communicate.h"
+#include "Peripheral/Inc/communicate.h"
 #include <stdio.h>
-#include "queue.h"
+#include "Component/Inc/queue.h"
 
 #define _BS				0x08	// バックスペース
 #define _ESC			0x1b	// エスケープシーケンス

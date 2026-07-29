@@ -1,7 +1,7 @@
-#include "demo_util.h"
+#include "System/Inc/demo_util.h"
 
-#include "make_map_class.h"
-#include "queue.h"
+#include "Subsys/Inc/make_map_class.h"
+#include "Component/Inc/queue.h"
 
 namespace DemoUtil
 {

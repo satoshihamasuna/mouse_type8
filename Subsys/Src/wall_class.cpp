@@ -7,10 +7,10 @@
 
 
 
-#include "wall_class.h"
+#include "Subsys/Inc/wall_class.h"
 
-#include "typedef.h"
-#include "communicate.h"
+#include "Component/Inc/typedef.h"
+#include "Peripheral/Inc/communicate.h"
 
 
 void wall_class::init_maze(){

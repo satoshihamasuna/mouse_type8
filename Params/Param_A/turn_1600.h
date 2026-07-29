@@ -8,7 +8,7 @@
 #ifndef CPP_PARAMS_TURN_1600_H_
 #define CPP_PARAMS_TURN_1600_H_
 
-#include "typedef_run_param.h"
+#include "Params/typedef_run_param.h"
 
 // Long-90 OM feedforward adjusted from the 20260720 voltage-to-response
 // analysis. OM velocity and signed bias retain their verified values because a

@@ -6,17 +6,17 @@
  */
 
 
-#include "main.h"
-#include "adc.h"
-#include "gpdma.h"
-#include "icache.h"
-#include "lptim.h"
-#include "spi.h"
-#include "tim.h"
-#include "gpio.h"
-#include "math_utils.h"
-#include "ir_sensor.h"
-#include "encoder.h"
+#include "Core/Inc/main.h"
+#include "Core/Inc/adc.h"
+#include "Core/Inc/gpdma.h"
+#include "Core/Inc/icache.h"
+#include "Core/Inc/lptim.h"
+#include "Core/Inc/spi.h"
+#include "Core/Inc/tim.h"
+#include "Core/Inc/gpio.h"
+#include "Component/Inc/math_utils.h"
+#include "Peripheral/Inc/ir_sensor.h"
+#include "Peripheral/Inc/encoder.h"
 
 
 //#define ENC_CNT_L 		(TIM2 -> CNT)

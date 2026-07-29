@@ -10,7 +10,7 @@
 
 
 #include <stdint.h>
-#include "rtwhalf.h"
+#include "Component/codegen/rtwhalf.h"
 
 half_float float_to_half(float f) ;
 float half_to_float(half_float hf);

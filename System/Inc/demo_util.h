@@ -1,7 +1,7 @@
 #ifndef INC_DEMO_UTIL_H_
 #define INC_DEMO_UTIL_H_
 
-#include "search_class.h"
+#include "Subsys/Inc/search_class.h"
 
 namespace DemoUtil
 {

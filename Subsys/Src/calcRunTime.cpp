@@ -6,12 +6,12 @@
  */
 
 
-#include "make_path.h"
-#include "typedef.h"
-#include "wall_class.h"
-#include "run_typedef.h"
-#include "turn_table.h"
-#include "controller.h"
+#include "Subsys/Inc/make_path.h"
+#include "Component/Inc/typedef.h"
+#include "Subsys/Inc/wall_class.h"
+#include "Task/Inc/run_typedef.h"
+#include "Params/turn_table.h"
+#include "Component/Inc/controller.h"
 #define OFF_SET_LENGTH 10.0
 #define TURN_PENALTY_LENGTH 20.0f
 

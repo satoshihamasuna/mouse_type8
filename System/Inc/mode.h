@@ -8,9 +8,9 @@
 #ifndef INC_MODE_H_
 #define INC_MODE_H_
 
-#include "peripheral.h"
-#include "wall_class.h"
-#include "typedef_run_param.h"
+#include "Peripheral/Inc/peripheral.h"
+#include "Subsys/Inc/wall_class.h"
+#include "Params/typedef_run_param.h"
 
 namespace Mode
 {

@@ -6,9 +6,9 @@
  */
 
 
-#include "typedef.h"
-#include "maze_typedef.h"
-#include "adachi_class.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/maze_typedef.h"
+#include "Subsys/Inc/adachi_class.h"
 
 t_position pos_set(uint8_t _x,uint8_t _y ,t_direction _dir)
 {

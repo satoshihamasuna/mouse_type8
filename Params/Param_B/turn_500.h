@@ -8,7 +8,7 @@
 #ifndef CPP_PARAMS_TURN_500_H_
 #define CPP_PARAMS_TURN_500_H_
 
-#include "typedef_run_param.h"
+#include "Params/typedef_run_param.h"
 
 const static t_pid_gain sp_gain_turn90_500 = {1.50,0.02,0.0};
 const static t_pid_gain om_gain_turn90_500 = {0.10f,0.002f,0.0f};

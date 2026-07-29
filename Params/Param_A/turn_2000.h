@@ -8,7 +8,7 @@
 #ifndef CPP_PARAMS_TURN_2000_H_
 #define CPP_PARAMS_TURN_2000_H_
 
-#include "typedef_run_param.h"
+#include "Params/typedef_run_param.h"
 
 // OM feedforward tuned from the 2026-07-21 2000 mm/s turn logs.
 // R/L-specific SP turn feedforward was identified independently from the

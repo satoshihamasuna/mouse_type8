@@ -8,17 +8,17 @@
 #ifndef CPP_INC_MAKE_PATH_H_
 #define CPP_INC_MAKE_PATH_H_
 
-#include "wall_class.h"
-#include "typedef.h"
+#include "Subsys/Inc/wall_class.h"
+#include "Component/Inc/typedef.h"
 
-#include "singleton.h"
-#include "controller.h"
+#include "Component/Inc/singleton.h"
+#include "Component/Inc/controller.h"
 
-#include "run_param.h"
+#include "Params/run_param.h"
 
-#include "ctrl_task.h"
-#include "run_typedef.h"
-#include "sensing_task.h"
+#include "Task/Inc/ctrl_task.h"
+#include "Task/Inc/run_typedef.h"
+#include "Task/Inc/sensing_task.h"
 //#define DEBUG_MODE
 
 #define DIJKSTRA_PATH_MAX 512

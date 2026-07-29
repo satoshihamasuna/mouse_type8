@@ -9,8 +9,8 @@
 #define INC_COMMUNICATE_H_
 
 #include <stdio.h>
-#include "main.h"
-#include "usart.h"
+#include "Core/Inc/main.h"
+#include "Core/Inc/usart.h"
 
 #ifdef __cplusplus
 extern "C" {

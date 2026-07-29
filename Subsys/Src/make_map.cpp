@@ -6,11 +6,11 @@
  */
 
 
-#include "queue.h"
-#include "make_map_class.h"
-#include "typedef.h"
-#include "maze_typedef.h"
-#include "math_utils.h"
+#include "Component/Inc/queue.h"
+#include "Subsys/Inc/make_map_class.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/maze_typedef.h"
+#include "Component/Inc/math_utils.h"
 
 
 

@@ -12,19 +12,19 @@
 // 1: Lstart/Lend calculated from the pink (turn-LED-on) video interval
 #define PARAM_A_USE_PINK_LED_TURN_LENGTHS 0
 
-#include <Param_A/turn_1000.h>
-#include <Param_A/turn_1200.h>
-#include <Param_A/turn_1400.h>
-#include <Param_A/turn_1500.h>
-#include <Param_A/turn_1600.h>
-#include <Param_A/turn_1800.h>
-#include <Param_A/turn_2000.h>
-#include <Param_A/turn_300.h>
-#include <Param_A/turn_500.h>
-#include <Param_A/turn_700.h>
-#include "controller.h"
-#include "vehicle.h"
-#include "typedef_run_param.h"
+#include "Params/Param_A/turn_1000.h"
+#include "Params/Param_A/turn_1200.h"
+#include "Params/Param_A/turn_1400.h"
+#include "Params/Param_A/turn_1500.h"
+#include "Params/Param_A/turn_1600.h"
+#include "Params/Param_A/turn_1800.h"
+#include "Params/Param_A/turn_2000.h"
+#include "Params/Param_A/turn_300.h"
+#include "Params/Param_A/turn_500.h"
+#include "Params/Param_A/turn_700.h"
+#include "Component/Inc/controller.h"
+#include "Module/Inc/vehicle.h"
+#include "Params/typedef_run_param.h"
 
 const static t_pid_gain basic_sp_gain = {2.0,0.04,0.00};//{10.0,0.05,0.00};////
 const static t_pid_gain basic_om_gain = {0.08f,0.003f,0.00f};//;{0.40f, 0.05f, 0.00f};//

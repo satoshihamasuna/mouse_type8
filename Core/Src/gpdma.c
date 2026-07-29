@@ -18,7 +18,7 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "gpdma.h"
+#include "Core/Inc/gpdma.h"
 
 /* USER CODE BEGIN 0 */
 

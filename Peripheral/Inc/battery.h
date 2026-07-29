@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
-#include "main.h"
+#include "Core/Inc/main.h"
 
 float Battery_GetVoltage(void);
 float Battery_GetAverageVoltage(void);

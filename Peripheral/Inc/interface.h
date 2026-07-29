@@ -10,8 +10,8 @@
 
 //uint8_t led_state = 0;
 #include <stdio.h>
-#include "main.h"
-#include "typedef.h"
+#include "Core/Inc/main.h"
+#include "Component/Inc/typedef.h"
 
 #ifdef __cplusplus
 extern "C" {

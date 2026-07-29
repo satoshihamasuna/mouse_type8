@@ -6,7 +6,7 @@
  */
 
 
-#include "path_follow.h"
+#include "Component/Inc/path_follow.h"
 
 float path_follow_class::calc_control_yaw_rate(float ideal_velo,float vehicle_velo,float ideal_theta,float vehicle_theta)
 {

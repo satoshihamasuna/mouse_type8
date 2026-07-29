@@ -8,10 +8,10 @@
 #ifndef CPP_INC_WALL_CLASS_H_
 #define CPP_INC_WALL_CLASS_H_
 
-#include "typedef.h"
-#include "maze_typedef.h"
-#include "math_utils.h"
-#include "sensing_task.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/maze_typedef.h"
+#include "Component/Inc/math_utils.h"
+#include "Task/Inc/sensing_task.h"
 
 
 typedef struct

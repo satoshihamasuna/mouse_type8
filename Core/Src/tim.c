@@ -18,7 +18,7 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "tim.h"
+#include "Core/Inc/tim.h"
 
 /* USER CODE BEGIN 0 */
 

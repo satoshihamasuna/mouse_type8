@@ -7,17 +7,17 @@
 
 
 
-#include "log_data.h"
-#include "communicate.h"
+#include "Module/Inc/log_data.h"
+#include "Peripheral/Inc/communicate.h"
 #include "stdio.h"
 
-#include "peripheral.h"
+#include "Peripheral/Inc/peripheral.h"
 
-#include "sensing_task.h"
-#include "ctrl_task.h"
+#include "Task/Inc/sensing_task.h"
+#include "Task/Inc/ctrl_task.h"
 
-#include "controller.h"
-#include "half_float.h"
+#include "Component/Inc/controller.h"
+#include "Component/Inc/half_float.h"
 /*
 void LogData::indicate_data()
 {

@@ -8,11 +8,11 @@
 #ifndef CPP_INC_SENSING_TASK_H_
 #define CPP_INC_SENSING_TASK_H_
 
-#include "vehicle.h"
-#include "singleton.h"
-#include "typedef.h"
-#include "maze_typedef.h"
-#include "run_typedef.h"
+#include "Module/Inc/vehicle.h"
+#include "Component/Inc/singleton.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/maze_typedef.h"
+#include "Task/Inc/run_typedef.h"
 
 #define STRAIGHT_REF		(45.0)
 #define DIAGONAL_REF		(32.0)

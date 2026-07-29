@@ -8,19 +8,19 @@
 #ifndef RUN_PARAM_B_H_
 #define RUN_PARAM_B_H_
 
-#include <Param_B/turn_1000.h>
-#include <Param_B/turn_1200.h>
-#include <Param_B/turn_1400.h>
-#include <Param_B/turn_1500.h>
-#include <Param_B/turn_1600.h>
-#include <Param_B/turn_1800.h>
-#include <Param_B/turn_2000.h>
-#include <Param_B/turn_300.h>
-#include <Param_B/turn_500.h>
-#include <Param_B/turn_700.h>
-#include "controller.h"
-#include "vehicle.h"
-#include "typedef_run_param.h"
+#include "Params/Param_B/turn_1000.h"
+#include "Params/Param_B/turn_1200.h"
+#include "Params/Param_B/turn_1400.h"
+#include "Params/Param_B/turn_1500.h"
+#include "Params/Param_B/turn_1600.h"
+#include "Params/Param_B/turn_1800.h"
+#include "Params/Param_B/turn_2000.h"
+#include "Params/Param_B/turn_300.h"
+#include "Params/Param_B/turn_500.h"
+#include "Params/Param_B/turn_700.h"
+#include "Component/Inc/controller.h"
+#include "Module/Inc/vehicle.h"
+#include "Params/typedef_run_param.h"
 
 const static t_pid_gain basic_sp_gain = {1.20,0.02,0.0};
 const static t_pid_gain basic_om_gain = {0.1f,0.005f,0.00f};//{0.05f, 0.001f, 0.00f};

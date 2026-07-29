@@ -17,30 +17,30 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
-#include "adc.h"
-#include "gpdma.h"
-#include "icache.h"
-#include "lptim.h"
-#include "spi.h"
-#include "tim.h"
-#include "usart.h"
-#include "gpio.h"
+#include "Core/Inc/main.h"
+#include "Core/Inc/adc.h"
+#include "Core/Inc/gpdma.h"
+#include "Core/Inc/icache.h"
+#include "Core/Inc/lptim.h"
+#include "Core/Inc/spi.h"
+#include "Core/Inc/tim.h"
+#include "Core/Inc/usart.h"
+#include "Core/Inc/gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "core/ntshell.h"
 #include "core/ntlibc.h"
-#include "interface.h"
-#include "ir_sensor.h"
-#include "communicate.h"
-#include "imu.h"
-#include "lsm6dsr_reg.h"
-#include "encoder.h"
-#include "motor.h"
+#include "Peripheral/Inc/interface.h"
+#include "Peripheral/Inc/ir_sensor.h"
+#include "Peripheral/Inc/communicate.h"
+#include "Peripheral/Inc/imu.h"
+#include "Peripheral/Inc/lsm6dsr_reg.h"
+#include "Peripheral/Inc/encoder.h"
+#include "Peripheral/Inc/motor.h"
 #include <stdio.h>
-#include "flash_util.h"
-#include "system_util.h"
+#include "Peripheral/Inc/flash_util.h"
+#include "System/Inc/system_util.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

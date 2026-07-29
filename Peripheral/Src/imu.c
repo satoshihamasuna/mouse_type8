@@ -5,13 +5,13 @@
  *      Author: sato1
  */
 
-#include "interface.h"
-#include "imu.h"
-#include "spi.h"
-#include "mouse_config.h"
-#include "lsm6dsr_reg.h"
-#include "lsm6dsrx_reg.h"
-#include "lsm6dsv16x_reg.h"
+#include "Peripheral/Inc/interface.h"
+#include "Peripheral/Inc/imu.h"
+#include "Core/Inc/spi.h"
+#include "Params/mouse_config.h"
+#include "Peripheral/Inc/lsm6dsr_reg.h"
+#include "Peripheral/Inc/lsm6dsrx_reg.h"
+#include "Peripheral/Inc/lsm6dsv16x_reg.h"
 
 uint8_t imu_address = OUTX_L_G|0x80; //ACCEL_X_HIGH_BYTE
 uint8_t imu_value[13];

@@ -8,9 +8,9 @@
 #ifndef CPP_INC_FLASH_H_
 #define CPP_INC_FLASH_H_
 
-#include "wall_class.h"
-#include "typedef.h"
-#include "flash_util.h"
+#include "Subsys/Inc/wall_class.h"
+#include "Component/Inc/typedef.h"
+#include "Peripheral/Inc/flash_util.h"
 
 void write_save_data(wall_class *wall_property);
 //ここをポインタのポインタに変更する

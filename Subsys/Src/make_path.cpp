@@ -5,18 +5,18 @@
  *      Author: sato1
  */
 
-#include "peripheral.h"
-#include "typedef.h"
-#include "math_utils.h"
+#include "Peripheral/Inc/peripheral.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/math_utils.h"
 
-#include "controller.h"
+#include "Component/Inc/controller.h"
 
-#include "run_typedef.h"
-#include "ctrl_task.h"
+#include "Task/Inc/run_typedef.h"
+#include "Task/Inc/ctrl_task.h"
 
-#include "log_data.h"
+#include "Module/Inc/log_data.h"
 
-#include "make_path.h"
+#include "Subsys/Inc/make_path.h"
 
 #define DIJKSTRA_MAX_TIME ((1UL << 17) - 1UL)
 

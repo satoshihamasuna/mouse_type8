@@ -9,7 +9,7 @@
 #define INC_IMU_H_
 
 #include <stdio.h>
-#include "main.h"
+#include "Core/Inc/main.h"
 
 #ifdef __cplusplus
 extern "C" {

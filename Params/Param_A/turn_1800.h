@@ -8,7 +8,7 @@
 #ifndef CPP_PARAMS_TURN_1800_H_
 #define CPP_PARAMS_TURN_1800_H_
 
-#include "typedef_run_param.h"
+#include "Params/typedef_run_param.h"
 
 // OM feedforward starts from the corresponding 1600 mm/s turn and is refined
 // per shape from the 1800 mm/s voltage/response reports. Short profiles use
