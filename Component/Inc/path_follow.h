@@ -10,7 +10,7 @@
 
 
 #include <stdio.h>
-#include "../../Component/Inc/singleton.h"
+#include "singleton.h"
 
 class path_follow_class:public Singleton<path_follow_class>
 {

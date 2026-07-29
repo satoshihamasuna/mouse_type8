@@ -5,8 +5,8 @@
  *      Author: sato1
  */
 
-#include "../Inc/flash.h"
-#include "../../Subsys/Inc/wall_class.h"
+#include "flash.h"
+#include "wall_class.h"
 #include "typedef.h"
 #include "flash_util.h"
 

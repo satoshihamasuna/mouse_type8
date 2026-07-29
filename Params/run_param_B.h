@@ -18,8 +18,8 @@
 #include <Param_B/turn_300.h>
 #include <Param_B/turn_500.h>
 #include <Param_B/turn_700.h>
-#include "../Component/Inc/controller.h"
-#include "../Module/Inc/vehicle.h"
+#include "controller.h"
+#include "vehicle.h"
 #include "typedef_run_param.h"
 
 const static t_pid_gain basic_sp_gain = {1.20,0.02,0.0};

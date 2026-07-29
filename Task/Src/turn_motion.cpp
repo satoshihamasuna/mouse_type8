@@ -5,9 +5,9 @@
  *      Author: sato1
  */
 
-#include "../Inc/ctrl_task.h"
-#include "../Inc/run_typedef.h"
-#include "../../Params/turn_table.h"
+#include "ctrl_task.h"
+#include "run_typedef.h"
+#include "turn_table.h"
 #include <math.h>
 #include "peripheral.h"
 

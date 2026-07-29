@@ -11,7 +11,7 @@
 #include "typedef.h"
 #include "maze_typedef.h"
 #include "math_utils.h"
-#include "../../Task/Inc/sensing_task.h"
+#include "sensing_task.h"
 
 
 typedef struct

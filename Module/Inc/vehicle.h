@@ -11,10 +11,10 @@
 #include "typedef.h"
 #include "peripheral.h"
 
-#include "../../Component/Inc/singleton.h"
-#include "../../Component/Inc/controller.h"
+#include "singleton.h"
+#include "controller.h"
 
-#include "../../Task/Inc/run_typedef.h"
+#include "run_typedef.h"
 
 class param_element
 {

@@ -14,8 +14,8 @@
 #include "adachi_class.h"
 #include "virtual_wall_class.h"
 
-#include "../../Task/Inc/ctrl_task.h"
-#include "../../Module/Inc/interrupt.h"
+#include "ctrl_task.h"
+#include "interrupt.h"
 
 #define END_TIME_LIMIT (6*60*1000)
 

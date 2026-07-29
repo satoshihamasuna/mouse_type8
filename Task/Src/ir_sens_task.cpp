@@ -14,8 +14,8 @@
  */
 
 
-#include "../Inc/sensing_task.h"
-#include "../../Params/sens_table.h"
+#include "sensing_task.h"
+#include "sens_table.h"
 #include "typedef.h"
 #include "maze_typedef.h"
 #include "peripheral.h"

@@ -8,8 +8,8 @@
 #ifndef CPP_INC_SENSING_TASK_H_
 #define CPP_INC_SENSING_TASK_H_
 
-#include "../../Module/Inc/vehicle.h"
-#include "../../Component/Inc/singleton.h"
+#include "vehicle.h"
+#include "singleton.h"
 #include "typedef.h"
 #include "maze_typedef.h"
 #include "run_typedef.h"

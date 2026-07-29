@@ -12,11 +12,11 @@
 
 #include "sensing_task.h"
 
-#include "../../Params/run_param.h"
+#include "run_param.h"
 
 #include "controller.h"
 
-#include "../../Module/Inc/vehicle.h"
+#include "vehicle.h"
 #include "run_typedef.h"
 
 #define SUCTION_ACC (0.008)

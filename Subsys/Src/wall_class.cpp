@@ -7,7 +7,7 @@
 
 
 
-#include "../Inc/wall_class.h"
+#include "wall_class.h"
 
 #include "typedef.h"
 #include "communicate.h"

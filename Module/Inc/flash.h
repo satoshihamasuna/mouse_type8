@@ -8,7 +8,7 @@
 #ifndef CPP_INC_FLASH_H_
 #define CPP_INC_FLASH_H_
 
-#include "../../Subsys/Inc/wall_class.h"
+#include "wall_class.h"
 #include "typedef.h"
 #include "flash_util.h"
 

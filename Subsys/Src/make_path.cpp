@@ -9,14 +9,14 @@
 #include "typedef.h"
 #include "math_utils.h"
 
-#include "../../Component/Inc/controller.h"
+#include "controller.h"
 
-#include "../../Task/Inc/run_typedef.h"
-#include "../../Task/Inc/ctrl_task.h"
+#include "run_typedef.h"
+#include "ctrl_task.h"
 
-#include "../../Module/Inc/log_data.h"
+#include "log_data.h"
 
-#include "../Inc/make_path.h"
+#include "make_path.h"
 
 #define DIJKSTRA_MAX_TIME ((1UL << 17) - 1UL)
 

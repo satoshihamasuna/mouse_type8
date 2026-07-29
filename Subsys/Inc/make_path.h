@@ -11,14 +11,14 @@
 #include "wall_class.h"
 #include "typedef.h"
 
-#include "../../Component/Inc/singleton.h"
-#include "../../Component/Inc/controller.h"
+#include "singleton.h"
+#include "controller.h"
 
-#include "../../Params/run_param.h"
+#include "run_param.h"
 
-#include "../../Task/Inc/ctrl_task.h"
-#include "../../Task/Inc/run_typedef.h"
-#include "../../Task/Inc/sensing_task.h"
+#include "ctrl_task.h"
+#include "run_typedef.h"
+#include "sensing_task.h"
 //#define DEBUG_MODE
 
 #define DIJKSTRA_PATH_MAX 512

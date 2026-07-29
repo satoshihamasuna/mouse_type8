@@ -7,15 +7,15 @@
 
 
 #include "queue.h"
-#include "../Inc/make_map_class.h"
+#include "make_map_class.h"
 #include "typedef.h"
 #include "maze_typedef.h"
 #include "peripheral.h"
-#include "../Inc/search_class.h"
-#include "../Inc/adachi_class.h"
-#include "../Inc/virtual_wall_class.h"
-#include "../../Params/run_param.h"
-#include "../../Task/Inc/ctrl_task.h"
+#include "search_class.h"
+#include "adachi_class.h"
+#include "virtual_wall_class.h"
+#include "run_param.h"
+#include "ctrl_task.h"
 //#include "glob_var_machine.h"
 
 #ifndef ENABLE_VIRTUAL_WALL

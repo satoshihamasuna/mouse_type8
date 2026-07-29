@@ -6,7 +6,7 @@
  */
 
 
-#include "../Inc/make_path.h"
+#include "make_path.h"
 #include "typedef.h"
 #include "wall_class.h"
 #include "run_typedef.h"
