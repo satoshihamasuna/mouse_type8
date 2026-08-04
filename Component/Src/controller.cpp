@@ -8,8 +8,8 @@
 
 
 
-#include "controller.h"
-#include "math_utils.h"
+#include "Component/Inc/controller.h"
+#include "Component/Inc/math_utils.h"
 
 #define LOW_PASS_ALPHA 0.045
 

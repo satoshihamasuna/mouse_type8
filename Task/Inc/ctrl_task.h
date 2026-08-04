@@ -10,14 +10,14 @@
 
 #include <stdio.h>
 
-#include "sensing_task.h"
+#include "Task/Inc/sensing_task.h"
 
-#include "../../Params/run_param.h"
+#include "Params/run_param.h"
 
-#include "controller.h"
+#include "Component/Inc/controller.h"
 
-#include "../../Module/Inc/vehicle.h"
-#include "run_typedef.h"
+#include "Module/Inc/vehicle.h"
+#include "Task/Inc/run_typedef.h"
 
 #define SUCTION_ACC (0.008)
 const float detect_wall_edge_st = STRAIGHT_CORRECTION;

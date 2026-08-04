@@ -7,10 +7,7 @@
 
 #ifndef CPP_INC_TEST_WALL_H_
 #define CPP_INC_TEST_WALL_H_
-#include "../Subsys/Inc/wall_class.h"
-#include "../Pheripheral/Include/typedef.h"
-#include "../Pheripheral/Include/macro.h"
-#include "../Pheripheral/Include/index.h"
+#include "Subsys/Inc/wall_class.h"
 
 #define TEST_GOAL_X 17
 #define TEST_GOAL_Y 13

@@ -1,0 +1,4 @@
+video,log_stem,motion,target_lateral_mm,target_forward_mm
+PXL_20260725_201223551_turn180_1600.mp4,20260726_051248_myshell_debug_log_long_r180,long_r180,-90,0
+PXL_20260725_201808474_turn180_1600.mp4,20260726_051824_myshell_debug_log_long_r180,long_r180,-90,0
+PXL_20260725_201859534_turn180_1600.mp4,20260726_051918_myshell_debug_log_long_r180,long_r180,-90,0

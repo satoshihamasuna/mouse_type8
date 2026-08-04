@@ -6,16 +6,16 @@
  */
 
 
-#include "queue.h"
-#include "../Inc/make_map_class.h"
-#include "typedef.h"
-#include "maze_typedef.h"
-#include "peripheral.h"
-#include "../Inc/search_class.h"
-#include "../Inc/adachi_class.h"
-#include "../Inc/virtual_wall_class.h"
-#include "../../Params/run_param.h"
-#include "../../Task/Inc/ctrl_task.h"
+#include "Component/Inc/queue.h"
+#include "Subsys/Inc/make_map_class.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/maze_typedef.h"
+#include "Peripheral/Inc/peripheral.h"
+#include "Subsys/Inc/search_class.h"
+#include "Subsys/Inc/adachi_class.h"
+#include "Subsys/Inc/virtual_wall_class.h"
+#include "Params/run_param.h"
+#include "Task/Inc/ctrl_task.h"
 //#include "glob_var_machine.h"
 
 #ifndef ENABLE_VIRTUAL_WALL

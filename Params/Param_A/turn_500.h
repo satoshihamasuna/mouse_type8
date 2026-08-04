@@ -8,7 +8,7 @@
 #ifndef CPP_PARAMS_TURN_500_H_
 #define CPP_PARAMS_TURN_500_H_
 
-#include "typedef_run_param.h"
+#include "Params/typedef_run_param.h"
 
 // 500 mm/s turn-specific feedforward gains. Angular jerk gains are constrained
 // to non-negative values and are fitted independently for each turn shape.

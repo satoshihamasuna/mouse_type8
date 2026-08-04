@@ -5,10 +5,10 @@
  *      Author: sato1
  */
 
-#include "../Inc/flash.h"
-#include "../../Subsys/Inc/wall_class.h"
-#include "typedef.h"
-#include "flash_util.h"
+#include "Module/Inc/flash.h"
+#include "Subsys/Inc/wall_class.h"
+#include "Component/Inc/typedef.h"
+#include "Peripheral/Inc/flash_util.h"
 
 #define WORK_RAM_WALL_ADDRESS_START 	0x0000
 #define WORK_RAM_WALL_ADDRESS_END   	0x0FFF

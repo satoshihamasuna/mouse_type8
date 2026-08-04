@@ -18,7 +18,7 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
+#include "Core/Inc/main.h"
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */

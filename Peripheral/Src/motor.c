@@ -7,18 +7,18 @@
 
 
 
-#include "main.h"
-#include "adc.h"
-#include "gpdma.h"
-#include "icache.h"
-#include "lptim.h"
-#include "spi.h"
-#include "tim.h"
-#include "gpio.h"
-#include "math_utils.h"
-#include "motor.h"
-#include "mouse_config.h"
-#include "mpq6612_dutytable.h"
+#include "Core/Inc/main.h"
+#include "Core/Inc/adc.h"
+#include "Core/Inc/gpdma.h"
+#include "Core/Inc/icache.h"
+#include "Core/Inc/lptim.h"
+#include "Core/Inc/spi.h"
+#include "Core/Inc/tim.h"
+#include "Core/Inc/gpio.h"
+#include "Component/Inc/math_utils.h"
+#include "Peripheral/Inc/motor.h"
+#include "Params/mouse_config.h"
+#include "Peripheral/Inc/mpq6612_dutytable.h"
 
 #define PCLK1			(50000000)//(HAL_RCC_GetPCLK1Freq())//25,000,000
 #define PCLK2			(50000000)//(HAL_RCC_GetPCLK2Freq())//50,000,000

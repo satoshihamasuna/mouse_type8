@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
-#include "main.h"
+#include "Core/Inc/main.h"
 
 typedef  enum {
 	LED_FL_ON 	= 6,

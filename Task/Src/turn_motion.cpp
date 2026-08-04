@@ -5,11 +5,11 @@
  *      Author: sato1
  */
 
-#include "../Inc/ctrl_task.h"
-#include "../Inc/run_typedef.h"
-#include "../../Params/turn_table.h"
+#include "Task/Inc/ctrl_task.h"
+#include "Task/Inc/run_typedef.h"
+#include "Params/turn_table.h"
 #include <math.h>
-#include "peripheral.h"
+#include "Peripheral/Inc/peripheral.h"
 
 void Motion::handleTurnPrev_Straight()
 {

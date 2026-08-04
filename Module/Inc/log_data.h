@@ -8,9 +8,9 @@
 #ifndef CPP_INC_LOG_DATA_H_
 #define CPP_INC_LOG_DATA_H_
 
-#include "typedef.h"
-#include "../../Component/Inc/half_float.h"
-#include "../../Component/Inc/singleton.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/half_float.h"
+#include "Component/Inc/singleton.h"
 
 #define LOG_DATA_SIZE 1000
 #define LOG_DATA_NUM  51

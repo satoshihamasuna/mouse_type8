@@ -1,4 +1,4 @@
-#include "virtual_wall_class.h"
+#include "Subsys/Inc/virtual_wall_class.h"
 
 namespace {
 static const t_direction dirs[4] = {North, East, South, West};

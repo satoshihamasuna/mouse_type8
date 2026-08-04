@@ -9,7 +9,7 @@
 #define INC_FLASH_UTIL_H_
 
 #include <stdio.h>
-#include "main.h"
+#include "Core/Inc/main.h"
 
 #ifdef __cplusplus
 extern "C" {

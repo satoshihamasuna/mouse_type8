@@ -6,31 +6,31 @@
  */
 
 
-#include "peripheral.h"
-#include "communicate.h"
+#include "Peripheral/Inc/peripheral.h"
+#include "Peripheral/Inc/communicate.h"
 
-#include "../../Subsys/Inc/search_class.h"
-#include "../../Subsys/Inc/make_map_class.h"
-#include "../../Subsys/Inc/wall_class.h"
-#include "../../Subsys/Inc/make_path.h"
+#include "Subsys/Inc/search_class.h"
+#include "Subsys/Inc/make_map_class.h"
+#include "Subsys/Inc/wall_class.h"
+#include "Subsys/Inc/make_path.h"
 
-#include "../../Component/Inc/controller.h"
-#include "../../Component/Inc/queue.h"
-#include "../../Component/Inc/priority_queue.h"
-#include "typedef.h"
-#include "math_utils.h"
+#include "Component/Inc/controller.h"
+#include "Component/Inc/queue.h"
+#include "Component/Inc/priority_queue.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/math_utils.h"
 
-#include "../../Task/Inc/sensing_task.h"
-#include "../../Task/Inc/ctrl_task.h"
+#include "Task/Inc/sensing_task.h"
+#include "Task/Inc/ctrl_task.h"
 
-#include "../../Module/Inc/interrupt.h"
-#include "../../Module/Inc/log_data.h"
-#include "../../Module/Inc/flash.h"
+#include "Module/Inc/interrupt.h"
+#include "Module/Inc/log_data.h"
+#include "Module/Inc/flash.h"
 
-#include "../../Params/run_param.h"
+#include "Params/run_param.h"
 
-#include "../Inc/mode.h"
-#include "../Inc/demo_util.h"
+#include "System/Inc/mode.h"
+#include "System/Inc/demo_util.h"
 
 #define ENABLE (0x01 << 4)
 
@@ -332,6 +332,7 @@ void Demo()
 					enable = 0x00;
 				}
 				break;
+				
 			case ENABLE|0x08:
 			   if(irsens->IrSensor_Avg() > 2000)
 			   {
@@ -340,12 +341,14 @@ void Demo()
 						(i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
 						HAL_Delay(50);
 					}
-
+					
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_1000);
-					run_path.run_Dijkstra_suction(		start, Dir_None, goal,MAZE_GOAL_SIZE,600,
-														st_mode_1000_v0, (int)(sizeof(st_mode_1000_v0)/sizeof(t_straight_param *const)),
-														di_mode_1000_v0, (int)(sizeof(di_mode_1000_v0)/sizeof(t_straight_param *const)), mode_1000,motion);
+					run_path.turn_time_set(mode_1600);
+					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,700,
+														st_mode_1600_v3, (int)(sizeof(st_mode_1600_v3)/sizeof(t_straight_param *const))	,
+														di_mode_1600_v2, (int)(sizeof(di_mode_1600_v2)/sizeof(t_straight_param *const))	,
+														acc_mode_1600_v1,(int)(sizeof(acc_mode_1600_v1)/sizeof(t_param *const*const))	,motion);
+
 
 					if(motion->motion_exeStatus_get() == error)
 					{
@@ -366,11 +369,11 @@ void Demo()
 					}
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_1600);
-					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,700,
-														st_mode_1600_v3, (int)(sizeof(st_mode_1600_v3)/sizeof(t_straight_param *const))	,
-														di_mode_1600_v2, (int)(sizeof(di_mode_1600_v2)/sizeof(t_straight_param *const))	,
-														acc_mode_1600_v1,(int)(sizeof(acc_mode_1600_v1)/sizeof(t_param *const*const))	,motion);
+					run_path.turn_time_set(mode_1400);
+					run_path.run_Dijkstra_suction(		start, Dir_None, goal,MAZE_GOAL_SIZE,600,
+														st_mode_1400_v1, (int)(sizeof(st_mode_1400_v1)/sizeof(t_straight_param *const)),
+														di_mode_1400_v1, (int)(sizeof(di_mode_1400_v1)/sizeof(t_straight_param *const)), mode_1400,motion);
+
 					if(motion->motion_exeStatus_get() == error)
 					{
 						Mode::indicate_error();
@@ -390,10 +393,10 @@ void Demo()
 					}
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_1200);
+					run_path.turn_time_set(mode_1400);
 					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,650,
-														st_mode_1200_v0, (int)(sizeof(st_mode_1200_v0)/sizeof(t_straight_param *const)),
-														di_mode_1200_v0, (int)(sizeof(di_mode_1200_v0)/sizeof(t_straight_param *const)), mode_1200,motion);
+														st_mode_1400_v2, (int)(sizeof(st_mode_1400_v2)/sizeof(t_straight_param *const)),
+														di_mode_1400_v1, (int)(sizeof(di_mode_1400_v1)/sizeof(t_straight_param *const)), mode_1400,motion);
 
 					if(motion->motion_exeStatus_get() == error)
 					{

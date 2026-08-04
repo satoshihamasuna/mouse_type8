@@ -8,17 +8,17 @@
 
 
 #include <math.h>
-#include "../Inc/interrupt.h"
-#include "../Inc/log_data.h"
+#include "Module/Inc/interrupt.h"
+#include "Module/Inc/log_data.h"
 
-#include "peripheral.h"
-#include "mouse_config.h"
+#include "Peripheral/Inc/peripheral.h"
+#include "Params/mouse_config.h"
 
-#include "../../Task/Inc/sensing_task.h"
-#include "../../Task/Inc/ctrl_task.h"
+#include "Task/Inc/sensing_task.h"
+#include "Task/Inc/ctrl_task.h"
 
-#include "../../Component/Inc/controller.h"
-#include "../../Component/Inc/half_float.h"
+#include "Component/Inc/controller.h"
+#include "Component/Inc/half_float.h"
 
 
 #define GYRO_OFFSET (GYRO_COR_OFF)

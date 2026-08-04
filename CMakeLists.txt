@@ -35,5 +35,5 @@ target_sources(${BUILD_UNIT_0_NAME} PRIVATE
 
 # Add include directories
 target_include_directories(${BUILD_UNIT_0_NAME} PRIVATE
-  # User defined include directories
+  "${CMAKE_SOURCE_DIR}"
 )

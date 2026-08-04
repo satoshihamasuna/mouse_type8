@@ -10,9 +10,9 @@
 #define BATTERY_CELL_COUNT	(2)
 #define BATTERY_SAMPLE_COUNT	(10)
 
-#include "ir_sensor.h"
-#include "battery.h"
-#include "interface.h"
+#include "Peripheral/Inc/ir_sensor.h"
+#include "Peripheral/Inc/battery.h"
+#include "Peripheral/Inc/interface.h"
 
 float Battery_GetVoltage(void){
 	return (BATTRY_REFERENCE * (143.0f+10.0f)/(10.0f) * (float)Sensor_GetBatteryValue())/(4096.f);

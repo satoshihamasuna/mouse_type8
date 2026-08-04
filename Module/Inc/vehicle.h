@@ -8,13 +8,13 @@
 #ifndef CPP_MODULE_INC_VEHICLE_H_
 #define CPP_MODULE_INC_VEHICLE_H_
 
-#include "typedef.h"
-#include "peripheral.h"
+#include "Component/Inc/typedef.h"
+#include "Peripheral/Inc/peripheral.h"
 
-#include "../../Component/Inc/singleton.h"
-#include "../../Component/Inc/controller.h"
+#include "Component/Inc/singleton.h"
+#include "Component/Inc/controller.h"
 
-#include "../../Task/Inc/run_typedef.h"
+#include "Task/Inc/run_typedef.h"
 
 class param_element
 {

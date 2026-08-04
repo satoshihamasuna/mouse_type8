@@ -8,7 +8,7 @@
 #ifndef CPP_PARAMS_TURN_1200_H_
 #define CPP_PARAMS_TURN_1200_H_
 
-#include "typedef_run_param.h"
+#include "Params/typedef_run_param.h"
 
 // Long-90 OM feedforward identified from the 20260719 fixed-PID turn-body logs.
 const static t_ff_gain ff_gain_long_turn_90_R_1200 = {

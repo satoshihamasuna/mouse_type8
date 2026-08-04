@@ -9,13 +9,13 @@
 #define CPP_INC_SEARCH_CLASS_H_
 
 
-#include "wall_class.h"
-#include "make_map_class.h"
-#include "adachi_class.h"
-#include "virtual_wall_class.h"
+#include "Subsys/Inc/wall_class.h"
+#include "Subsys/Inc/make_map_class.h"
+#include "Subsys/Inc/adachi_class.h"
+#include "Subsys/Inc/virtual_wall_class.h"
 
-#include "../../Task/Inc/ctrl_task.h"
-#include "../../Module/Inc/interrupt.h"
+#include "Task/Inc/ctrl_task.h"
+#include "Module/Inc/interrupt.h"
 
 #define END_TIME_LIMIT (6*60*1000)
 

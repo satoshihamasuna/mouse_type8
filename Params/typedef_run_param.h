@@ -8,9 +8,9 @@
 #ifndef CPP_PARAMS_TYPEDEF_RUN_PARAM_H_
 #define CPP_PARAMS_TYPEDEF_RUN_PARAM_H_
 
-#include "../Component/Inc/controller.h"
-#include "../Module/Inc/vehicle.h"
-#include "mouse_config.h"
+#include "Component/Inc/controller.h"
+#include "Module/Inc/vehicle.h"
+#include "Params/mouse_config.h"
 
 typedef struct{
 	float sp_velo;

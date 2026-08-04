@@ -9,9 +9,9 @@
 #define CPP_INC_ADACHI_CLASS_H_
 
 #include <stdio.h>
-#include "math_utils.h"
-#include "make_map_class.h"
-#include "wall_class.h"
+#include "Component/Inc/math_utils.h"
+#include "Subsys/Inc/make_map_class.h"
+#include "Subsys/Inc/wall_class.h"
 
 
 

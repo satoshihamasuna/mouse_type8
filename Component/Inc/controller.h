@@ -8,7 +8,7 @@
 #ifndef CPP_INC_CONTROLL_H_
 #define CPP_INC_CONTROLL_H_
 
-#include "typedef.h"
+#include "Component/Inc/typedef.h"
 
 typedef struct{
 	float Kp;

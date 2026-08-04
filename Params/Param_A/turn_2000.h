@@ -8,7 +8,7 @@
 #ifndef CPP_PARAMS_TURN_2000_H_
 #define CPP_PARAMS_TURN_2000_H_
 
-#include "typedef_run_param.h"
+#include "Params/typedef_run_param.h"
 
 // OM feedforward tuned from the 2026-07-21 2000 mm/s turn logs.
 // R/L-specific SP turn feedforward was identified independently from the
@@ -66,8 +66,14 @@ const static t_pid_gain om_gain_turn90_2000 = {0.20,0.01,0.0};
 //const static t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f,12.57,42.89,-90.0f,Turn_R};
 // Lstart/Lend are direction-specific medians from the 20260725
 // Lstart=Lend=0 marker videos.
+#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
+// Pink LED interval (20260725 direction-specific Lstart=Lend=0 videos).
+const static t_turn_param_table slalom_L90_2000_table = {2.00f, 52.0f,17.66,38.18, 90.0f,Turn_L};
+const static t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f,18.79,35.66,-90.0f,Turn_R};
+#else
 const static t_turn_param_table slalom_L90_2000_table = {2.00f, 52.0f,13.67,35.58, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f,13.55,38.10,-90.0f,Turn_R};
+#endif
 const static t_param param_L90_2000 = {&slalom_L90_2000_table,&sp_gain_turn90_2000,&om_gain_turn90_2000,&ff_gain_long_turn_90_L_2000};
 const static t_param param_R90_2000 = {&slalom_R90_2000_table,&sp_gain_turn90_2000,&om_gain_turn90_2000,&ff_gain_long_turn_90_R_2000};
 
@@ -75,8 +81,17 @@ const static t_pid_gain sp_gain_turn180_2000 = {2.0,0.1,0.00};
 const static t_pid_gain om_gain_turn180_2000 = {0.10,0.002,0.0};
 //const static t_turn_param_table slalom_L180_2000_table = {2.00f, 50.0f,5.28,41.08, 180.0f,Turn_L};
 //const static t_turn_param_table slalom_R180_2000_table = {2.00f,-50.0f,5.28,41.08,-180.0f,Turn_R};
-const static t_turn_param_table slalom_L180_2000_table = {2.00f, 50.0f,26.07,35.18, 180.0f,Turn_L};
-const static t_turn_param_table slalom_R180_2000_table = {2.00f,-50.0f,28.25,38.74,-180.0f,Turn_R};
+/*20260725*/
+//const static t_turn_param_table slalom_L180_2000_table = {2.00f, 52.0f,26.07,35.18, 180.0f,Turn_L};
+//const static t_turn_param_table slalom_R180_2000_table = {2.00f,-52.0f,28.25,38.74,-180.0f,Turn_R};
+#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
+// Pink LED interval (L: 20260725 direction-specific videos; R: 20260726 videos).
+const static t_turn_param_table slalom_L180_2000_table = {2.00f, 52.0f,9.10,37.03, 180.0f,Turn_L};
+const static t_turn_param_table slalom_R180_2000_table = {2.00f,-52.0f,2.41,38.02,-180.0f,Turn_R};
+#else
+const static t_turn_param_table slalom_L180_2000_table = {2.00f, 52.0f,2.41,38.02, 180.0f,Turn_L};
+const static t_turn_param_table slalom_R180_2000_table = {2.00f,-52.0f,2.41,38.02,-180.0f,Turn_R};
+#endif
 const static t_param param_L180_2000 = {&slalom_L180_2000_table,&sp_gain_turn180_2000,&om_gain_turn180_2000,&ff_gain_long_turn_180_L_2000};
 const static t_param param_R180_2000 = {&slalom_R180_2000_table,&sp_gain_turn180_2000,&om_gain_turn180_2000,&ff_gain_long_turn_180_R_2000};
 

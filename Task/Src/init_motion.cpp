@@ -6,10 +6,10 @@
  */
 
 
-#include "../Inc/ctrl_task.h"
-#include "peripheral.h"
-#include "../Inc/run_typedef.h"
-#include "../../Params/turn_table.h"
+#include "Task/Inc/ctrl_task.h"
+#include "Peripheral/Inc/peripheral.h"
+#include "Task/Inc/run_typedef.h"
+#include "Params/turn_table.h"
 
 void Motion::Motion_start()
 {

@@ -18,7 +18,7 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "lptim.h"
+#include "Core/Inc/lptim.h"
 
 /* USER CODE BEGIN 0 */
 

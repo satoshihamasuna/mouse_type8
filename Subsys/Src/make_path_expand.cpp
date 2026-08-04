@@ -5,11 +5,11 @@
  *      Author: sato1
  */
 
-#include "queue.h"
-#include "make_map_class.h"
-#include "make_path.h"
-#include "typedef.h"
-#include "math_utils.h"
+#include "Component/Inc/queue.h"
+#include "Subsys/Inc/make_map_class.h"
+#include "Subsys/Inc/make_path.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/math_utils.h"
 
 /*
 #define DIR_TURN_NEWS_R90(x) ((x + 1 + 4) % 4)

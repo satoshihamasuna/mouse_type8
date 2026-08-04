@@ -8,11 +8,10 @@
 #ifndef CPP_INC_INTERRUPT_H_
 #define CPP_INC_INTERRUPT_H_
 
-#include "../../Component/Inc/singleton.h"
-#include "math_utils.h"
-#include "peripheral.h"
-#include "tim.h"
-//#include "../Include/macro.h"
+#include "Component/Inc/singleton.h"
+#include "Component/Inc/math_utils.h"
+#include "Peripheral/Inc/peripheral.h"
+#include "Core/Inc/tim.h"
 
 void Interrupt_Initialize();
 

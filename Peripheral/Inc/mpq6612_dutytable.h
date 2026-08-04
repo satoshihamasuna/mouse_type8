@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
-#include "main.h"
+#include "Core/Inc/main.h"
 
 const uint16_t duty_table_mpq[1001] = {
     0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,

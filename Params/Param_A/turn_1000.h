@@ -8,7 +8,7 @@
 #ifndef CPP_PARAMS_TURN_1000_H_
 #define CPP_PARAMS_TURN_1000_H_
 
-#include "typedef_run_param.h"
+#include "Params/typedef_run_param.h"
 
 //k = 200
 

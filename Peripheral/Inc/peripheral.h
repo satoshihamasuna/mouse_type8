@@ -11,15 +11,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "battery.h"
-#include "interface.h"
-#include "communicate.h"
-#include "encoder.h"
-#include "flash_util.h"
-#include "imu.h"
-#include "ir_sensor.h"
-#include "motor.h"
-#include "current_sens.h"
+#include "Peripheral/Inc/battery.h"
+#include "Peripheral/Inc/interface.h"
+#include "Peripheral/Inc/communicate.h"
+#include "Peripheral/Inc/encoder.h"
+#include "Peripheral/Inc/flash_util.h"
+#include "Peripheral/Inc/imu.h"
+#include "Peripheral/Inc/ir_sensor.h"
+#include "Peripheral/Inc/motor.h"
+#include "Peripheral/Inc/current_sens.h"
 
 #ifdef __cplusplus
 }

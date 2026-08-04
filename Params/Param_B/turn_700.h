@@ -8,7 +8,7 @@
 #ifndef CPP_PARAMS_TURN_700_H_
 #define CPP_PARAMS_TURN_700_H_
 
-#include "typedef_run_param.h"
+#include "Params/typedef_run_param.h"
 
 //-----------velo = 500 mm/s parameters
 const static t_pid_gain sp_gain_turn90_700 = {2.0,0.016,0.00};

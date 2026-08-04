@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
-#include "main.h"
+#include "Core/Inc/main.h"
 
 //motor
 void Motor_Initialize();

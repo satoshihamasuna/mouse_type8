@@ -6,20 +6,20 @@
  */
 
 #include <stdio.h>
-#include "peripheral.h"
-#include "typedef.h"
-#include "math_utils.h"
-#include "../../Component/Inc/singleton.h"
-#include "../../Component/Inc/controller.h"
+#include "Peripheral/Inc/peripheral.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/math_utils.h"
+#include "Component/Inc/singleton.h"
+#include "Component/Inc/controller.h"
 
-#include "../../Module/Inc/vehicle.h"
+#include "Module/Inc/vehicle.h"
 
-#include "../../Params/run_param.h"
+#include "Params/run_param.h"
 
-#include "../Inc/ctrl_task.h"
+#include "Task/Inc/ctrl_task.h"
 
-#include "../Inc/run_typedef.h"
-#include "../Inc/sensing_task.h"
+#include "Task/Inc/run_typedef.h"
+#include "Task/Inc/sensing_task.h"
 
 	namespace {
 		constexpr float OM_JERK_FF_LIMIT_V = 2.0f;

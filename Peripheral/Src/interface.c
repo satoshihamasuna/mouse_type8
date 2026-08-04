@@ -4,9 +4,9 @@
  *  Created on: Jul 4, 2025
  *      Author: sato1
  */
-#include "gpio.h"
-#include "interface.h"
-#include "typedef.h"
+#include "Core/Inc/gpio.h"
+#include "Peripheral/Inc/interface.h"
+#include "Component/Inc/typedef.h"
 
 
 void Indicate_LED(uint8_t led_num)

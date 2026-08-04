@@ -6,15 +6,15 @@
  */
 
 
-#include "main.h"
-#include "adc.h"
-#include "gpdma.h"
-#include "icache.h"
-#include "lptim.h"
-#include "spi.h"
-#include "tim.h"
-#include "gpio.h"
-#include "current_sens.h"
+#include "Core/Inc/main.h"
+#include "Core/Inc/adc.h"
+#include "Core/Inc/gpdma.h"
+#include "Core/Inc/icache.h"
+#include "Core/Inc/lptim.h"
+#include "Core/Inc/spi.h"
+#include "Core/Inc/tim.h"
+#include "Core/Inc/gpio.h"
+#include "Peripheral/Inc/current_sens.h"
 
 #define NUM_ADC4				(4)
 #define GET_ADC4_DATA(x)		adc4_value[x-1]

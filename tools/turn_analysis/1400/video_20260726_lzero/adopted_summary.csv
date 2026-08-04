@@ -1,0 +1,2 @@
+motion,total_runs,accepted_runs,adopted_lstart_mm,adopted_lend_mm,video_lstart_median_raw_mm,video_lend_median_raw_mm,video_lstart_min_mm,video_lstart_max_mm,video_lend_min_mm,video_lend_max_mm,log_lstart_median_mm,log_lend_median_mm,trajectory_fit_rmse_median_mm,marker_detection_min_pct
+long_r180,3,3,23.36270888361595,22.831829603364547,23.36270888361595,22.831829603364547,21.609791124760164,24.712925250631628,21.01596862025334,24.94618930479925,18.208984375,16.94279845373303,5.519445658324333,99.3421052631579

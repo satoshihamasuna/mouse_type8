@@ -1,7 +1,7 @@
 #ifndef SUBSYS_INC_VIRTUAL_WALL_CLASS_H_
 #define SUBSYS_INC_VIRTUAL_WALL_CLASS_H_
 
-#include "wall_class.h"
+#include "Subsys/Inc/wall_class.h"
 
 typedef enum {
 	VIRTUAL_BRANCH_OBSERVED_ONLY = 0,

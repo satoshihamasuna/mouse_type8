@@ -8,10 +8,10 @@
 #ifndef CPP_INC_MAKE_MAP_CLASS_H_
 #define CPP_INC_MAKE_MAP_CLASS_H_
 
-#include "typedef.h"
-#include "math_utils.h"
-#include "queue.h"
-#include "wall_class.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/math_utils.h"
+#include "Component/Inc/queue.h"
+#include "Subsys/Inc/wall_class.h"
 
 typedef struct{
 	uint8_t st_x;

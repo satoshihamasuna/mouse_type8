@@ -8,7 +8,7 @@
 #ifndef CPP_PARAMS_TURN_700_H_
 #define CPP_PARAMS_TURN_700_H_
 
-#include "typedef_run_param.h"
+#include "Params/typedef_run_param.h"
 
 // Use the tuned long-R90 feedforward values as the initial values for every
 // 700 mm/s turn-specific gain. Keep separate variables so each turn can be

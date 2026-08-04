@@ -5,31 +5,31 @@
  *      Author: sato1
  */
 
-#include "peripheral.h"
-#include "communicate.h"
+#include "Peripheral/Inc/peripheral.h"
+#include "Peripheral/Inc/communicate.h"
 
-#include "../../Subsys/Inc/search_class.h"
-#include "../../Subsys/Inc/make_map_class.h"
-#include "../../Subsys/Inc/wall_class.h"
-#include "../../Subsys/Inc/make_path.h"
+#include "Subsys/Inc/search_class.h"
+#include "Subsys/Inc/make_map_class.h"
+#include "Subsys/Inc/wall_class.h"
+#include "Subsys/Inc/make_path.h"
 
-#include "../../Component/Inc/controller.h"
-#include "../../Component/Inc/queue.h"
-#include "../../Component/Inc/priority_queue.h"
-#include "typedef.h"
-#include "math_utils.h"
+#include "Component/Inc/controller.h"
+#include "Component/Inc/queue.h"
+#include "Component/Inc/priority_queue.h"
+#include "Component/Inc/typedef.h"
+#include "Component/Inc/math_utils.h"
 
-#include "../../Task/Inc/sensing_task.h"
-#include "../../Task/Inc/ctrl_task.h"
+#include "Task/Inc/sensing_task.h"
+#include "Task/Inc/ctrl_task.h"
 
-#include "../../Module/Inc/interrupt.h"
-#include "../../Module/Inc/log_data.h"
-#include "../../Module/Inc/flash.h"
+#include "Module/Inc/interrupt.h"
+#include "Module/Inc/log_data.h"
+#include "Module/Inc/flash.h"
 
-#include "../../Params/run_param.h"
+#include "Params/run_param.h"
 
-#include "../Inc/mode.h"
-#include "myshell.h"
+#include "System/Inc/mode.h"
+#include "System/Inc/myshell.h"
 
 #define ENABLE (0x01 << 4)
 

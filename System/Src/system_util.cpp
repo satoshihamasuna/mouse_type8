@@ -5,10 +5,10 @@
  *      Author: sato1
  */
 
-#include "mode.h"
-#include "system_util.h"
-#include "interrupt.h"
-#include "peripheral.h"
+#include "System/Inc/mode.h"
+#include "System/Inc/system_util.h"
+#include "Module/Inc/interrupt.h"
+#include "Peripheral/Inc/peripheral.h"
 
 void Module_Initialize()
 {
