@@ -22,6 +22,8 @@
 #include "Task/Inc/ctrl_task.h"
 #include "Params/run_param.h"
 #include "Peripheral/Inc/battery.h"
+#include "Peripheral/Inc/imu.h"
+#include "Peripheral/Inc/ir_sensor.h"
 
 #include <stdio.h>
 
@@ -43,6 +45,7 @@ static int usrcmd_log(int argc, char **argv);
 static int usrcmd_load(int argc, char **argv);
 static int usrcmd_path(int argc, char **argv);
 static int usrcmd_search(int argc, char **argv);
+static int usrcmd_interface(int argc, char **argv);
 typedef struct {
 	const char *cmd;
 	const char *desc;
@@ -59,7 +62,8 @@ static const cmd_table_t cmdlist[] = {
 	{ "log"  ,"This is a description text string for debug command.", usrcmd_log },
 	{ "load" ,"load saved maze data from flash.", usrcmd_load },
 	{ "path" ,"check path generation.", usrcmd_path },
-	{ "search" ,"replay search/map/virtual-wall logic without motion.", usrcmd_search }
+	{ "search" ,"replay search/map/virtual-wall logic without motion.", usrcmd_search },
+	{ "interface", "check IMU and photo sensor values.", usrcmd_interface }
 };
 
 static ntshell_t nts;
@@ -388,6 +392,74 @@ static int usrcmd_info(int argc, char **argv)
     }
     printf("Unknown sub command found\r\n");
     return -1;
+}
+
+static void shell_interface_usage(void)
+{
+	printf("interface imu [count] [interval_ms]\r\n");
+	printf("interface photo [count] [interval_ms] (alias: ir)\r\n");
+	printf("  count: 1-1000 (default: 1)\r\n");
+	printf("  interval_ms: 0-1000 (default: 10)\r\n");
+}
+
+static t_bool shell_interface_parse_sampling(int argc, char **argv,
+		int *count, int *interval_ms)
+{
+	if(argc < 2 || argc > 4) return False;
+	*count = (argc >= 3) ? ntlibc_atoi(argv[2]) : 1;
+	*interval_ms = (argc >= 4) ? ntlibc_atoi(argv[3]) : 10;
+	if(*count < 1 || *count > 1000) return False;
+	if(*interval_ms < 0 || *interval_ms > 1000) return False;
+	return True;
+}
+
+static int usrcmd_interface(int argc, char **argv)
+{
+	int count;
+	int interval_ms;
+	if(shell_interface_parse_sampling(argc, argv, &count, &interval_ms) != True) {
+		shell_interface_usage();
+		return argc == 1 ? 0 : -1;
+	}
+
+	if(ntlibc_strcmp(argv[1], "imu") == 0) {
+		printf("IMU_START count:%d interval_ms:%d\r\n", count, interval_ms);
+		for(int i = 0; i < count; i++) {
+			printf("IMU index:%d gyro_mdps:%ld,%ld,%ld accel_mmps2:%ld,%ld,%ld\r\n",
+				i,
+				(long)(read_gyro_x_axis() * 1000.0f),
+				(long)(read_gyro_y_axis() * 1000.0f),
+				(long)(read_gyro_z_axis() * 1000.0f),
+				(long)(read_accel_x_axis() * 1000.0f),
+				(long)(read_accel_y_axis() * 1000.0f),
+				(long)(read_accel_z_axis() * 1000.0f));
+			if(i + 1 < count && interval_ms > 0) HAL_Delay((uint32_t)interval_ms);
+		}
+		printf("IMU_END\r\n");
+		return 0;
+	}
+
+	if(ntlibc_strcmp(argv[1], "photo") == 0 || ntlibc_strcmp(argv[1], "ir") == 0) {
+		printf("PHOTO_START count:%d interval_ms:%d\r\n", count, interval_ms);
+		for(int i = 0; i < count; i++) {
+			printf("PHOTO index:%d value_fl:%d value_fr:%d value_sl:%d value_sr:%d "
+				"raw_fr_on:%d raw_fr_off:%d raw_sl_on:%d raw_sl_off:%d "
+				"raw_sr_on:%d raw_sr_off:%d raw_fl_on:%d raw_fl_off:%d\r\n",
+				i, Sensor_GetValue(sensor_fl), Sensor_GetValue(sensor_fr),
+				Sensor_GetValue(sensor_sl), Sensor_GetValue(sensor_sr),
+				ADC_get_value(LED_FR_ON), ADC_get_value(LED_FR_OFF),
+				ADC_get_value(LED_SL_ON), ADC_get_value(LED_SL_OFF),
+				ADC_get_value(LED_SR_ON), ADC_get_value(LED_SR_OFF),
+				ADC_get_value(LED_FL_ON), ADC_get_value(LED_FL_OFF));
+			if(i + 1 < count && interval_ms > 0) HAL_Delay((uint32_t)interval_ms);
+		}
+		printf("PHOTO_END\r\n");
+		return 0;
+	}
+
+	printf("Unknown interface found.\r\n");
+	shell_interface_usage();
+	return -1;
 }
 
 
