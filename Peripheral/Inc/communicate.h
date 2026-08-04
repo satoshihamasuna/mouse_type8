@@ -21,6 +21,9 @@ extern "C" {
 	void Communicate_TxPopData( void );
 	void Communicate_TxPushData( int8_t data );
 	uint8_t Communicate_RxPopData( void );
+	uint8_t Communicate_RxTryPopData( uint8_t *data );
+	void Communicate_RxStartContinuous( void );
+	void Communicate_RxStopContinuous( void );
 	void Communicate_RxPushData( void );
 	uint8_t Communicate_RecieveDMA( void );
 	void Communicate_TxPushBuffer(uint8_t *buf, uint16_t len);

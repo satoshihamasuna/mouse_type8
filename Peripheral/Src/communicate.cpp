@@ -21,6 +21,7 @@ ring_queue<TRX_BUFFER_SIZE,volatile uint8_t> rx_buffer;
 
 volatile uint8_t		tx_data;
 volatile uint8_t		rx_data;
+volatile uint8_t		rx_continuous_enabled;
 
 /* ---------------------------------------------------------------
 	UART1で1文字受信する関数
@@ -51,29 +52,43 @@ void Communicate_RxPushData( void )
 uint8_t Communicate_RxPopData( void )
 {
 	uint8_t ch;
-
-	// この関数は多重に実行されるとまずいので割り込みを禁止する
-	__disable_irq();
-
-	// データがない場合
-	if(rx_buffer.queue_length() == 0){
-		// 割り込み許可
-		__enable_irq();
-
-		// データを受信するまで待機
-		while(rx_buffer.queue_length() == 0)
-		{
-			HAL_UART_Receive_DMA( &huart1, (uint8_t*)(&rx_data), 1 );
+	while(Communicate_RxTryPopData(&ch) == 0U) {
+		if(huart1.RxState == HAL_UART_STATE_READY) {
+			HAL_UART_Receive_DMA(&huart1, (uint8_t*)(&rx_data), 1);
 		}
-		__disable_irq();
-	} else;
-
-	ch = rx_buffer.pop();	// 読み出しデータの取り出し
-
-
-	// 割り込み許可
-	__enable_irq();
+	}
 	return ch;
+}
+
+uint8_t Communicate_RxTryPopData( uint8_t *data )
+{
+	if(data == NULL) {
+		return 0U;
+	}
+
+	__disable_irq();
+	if(rx_buffer.queue_length() == 0) {
+		__enable_irq();
+		return 0U;
+	}
+
+	*data = rx_buffer.pop();
+	__enable_irq();
+	return 1U;
+}
+
+void Communicate_RxStartContinuous( void )
+{
+	rx_continuous_enabled = 1U;
+	if(huart1.RxState == HAL_UART_STATE_READY) {
+		HAL_UART_Receive_DMA(&huart1, (uint8_t*)(&rx_data), 1);
+	}
+}
+
+void Communicate_RxStopContinuous( void )
+{
+	rx_continuous_enabled = 0U;
+	HAL_UART_AbortReceive(&huart1);
 }
 
 
@@ -134,9 +149,9 @@ void Communicate_TxPopData( void )
 	// データがない場合
 	if(tx_buffer.queue_length() == 0)
 	{
-		//tx_data = '\0';
-		// DMAを停止
-		HAL_UART_DMAStop(&huart1);
+		if(rx_continuous_enabled == 0U) {
+			HAL_UART_DMAStop(&huart1);
+		}
 	}
 	else
 	{
@@ -155,6 +170,9 @@ void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )
 {
     if( huart->Instance == USART1 ) {
         Communicate_RxPushData();
+		if(rx_continuous_enabled != 0U) {
+			HAL_UART_Receive_DMA(&huart1, (uint8_t*)(&rx_data), 1);
+		}
     } else;
 }
 
@@ -172,6 +190,7 @@ void Communicate_Initialize( void )
 {
 	setbuf(stdout, NULL);
 	setbuf(stdin, NULL);
+	rx_continuous_enabled = 0U;
 }
 
 /* ---------------------------------------------------------------
