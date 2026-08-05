@@ -549,9 +549,10 @@ static int usrcmd_load(int argc, char **argv)
 
 static int usrcmd_path(int argc, char **argv)
 {
-    if (argc != 2) {
+    if (argc < 2 || argc > 3) {
     	printf("path dijkstra\r\n");
 		printf("path dijkstra_queue\r\n");
+		printf("path dijkstra[_queue] acc1600\r\n");
     	return 0;
     }
 	t_bool priority_queue = False;
@@ -571,9 +572,18 @@ static int usrcmd_path(int argc, char **argv)
     	goal.x = shell_goal_x;
     	goal.y = shell_goal_y;
 
-	run_path.st_param_set(st_mode_1000_v0, sizeof(st_mode_1000_v0) / sizeof(st_mode_1000_v0[0]));
-	run_path.di_param_set(di_mode_1000_v0, sizeof(di_mode_1000_v0) / sizeof(di_mode_1000_v0[0]));
-	run_path.turn_time_set(mode_1000);
+	if(argc == 3 && ntlibc_strcmp(argv[2], "acc1600") == 0) {
+		run_path.st_param_set(st_mode_1600_v3, sizeof(st_mode_1600_v3) / sizeof(st_mode_1600_v3[0]));
+		run_path.di_param_set(di_mode_1600_v2, sizeof(di_mode_1600_v2) / sizeof(di_mode_1600_v2[0]));
+		run_path.turn_time_set(acc_mode_1600_v1, sizeof(acc_mode_1600_v1) / sizeof(acc_mode_1600_v1[0]));
+		printf("DIJKSTRA_PROFILE ACC1600_MIXED\r\n");
+	}
+	else {
+		run_path.st_param_set(st_mode_1000_v0, sizeof(st_mode_1000_v0) / sizeof(st_mode_1000_v0[0]));
+		run_path.di_param_set(di_mode_1000_v0, sizeof(di_mode_1000_v0) / sizeof(di_mode_1000_v0[0]));
+		run_path.turn_time_set(mode_1000);
+		printf("DIJKSTRA_PROFILE UNIFORM1000\r\n");
+	}
     	printf("DIJKSTRA_GOAL x:%d y:%d size:%d\r\n", shell_goal_x, shell_goal_y, shell_goal_size);
 		printf("DIJKSTRA_MODE PRIORITY_QUEUE%s\r\n", priority_queue == True ? "" : " (COMPAT_ALIAS)");
 	printf("DIJKSTRA_START\r\n");

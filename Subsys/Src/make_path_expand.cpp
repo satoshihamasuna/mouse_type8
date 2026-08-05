@@ -766,7 +766,7 @@ void Dijkstra::turn_inR45_expand(t_posDijkstra pos,t_direction m_dir)
 	t_posDijkstra next_pos = pos2;
 	if(get_wall_inf(pos1) == NOWALL  && get_wall_inf(pos2) == NOWALL && get_wall_inf(pos3) == NOWALL)
 	{
-		int time = return_turn_time(Turn_in_R45) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Turn_in_R45);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -790,7 +790,7 @@ void Dijkstra::turn_inL45_expand(t_posDijkstra pos,t_direction m_dir)
 	t_posDijkstra next_pos = pos2;
 	if(get_wall_inf(pos1) == NOWALL  && get_wall_inf(pos2) == NOWALL && get_wall_inf(pos3) == NOWALL)
 	{
-		int time = return_turn_time(Turn_in_L45) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Turn_in_L45);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -839,7 +839,7 @@ void Dijkstra::turn_outR45_expand(t_posDijkstra pos,t_direction m_dir)
  	next_pos = SetNodePos(next_pos.x, next_pos.y, C_pos);
 	if(get_wall_inf(pos1) == NOWALL)
 	{
-		int time = return_turn_time(Turn_out_R45) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Turn_out_R45);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -889,7 +889,7 @@ void Dijkstra::turn_outL45_expand(t_posDijkstra pos,t_direction m_dir)
  	next_pos = SetNodePos(next_pos.x, next_pos.y, C_pos);
 	if(get_wall_inf(pos1) == NOWALL )
 	{
-		int time = return_turn_time(Turn_out_L45) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Turn_out_L45);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -922,7 +922,7 @@ void Dijkstra::turn_inR135_expand(t_posDijkstra pos,t_direction m_dir)
 		printf("turn_inR135_expand->wallOK\n");
 		HAL_Delay(10);
 		#endif
-		uint32_t time = return_turn_time(Turn_in_R135) + (*get_closure_inf(pos)).time;
+		uint32_t time = calc_turn_candidate_time(pos,Turn_in_R135);
 		#ifdef DEBUG_MODE
 		printf("time:%d,next_det:%d,nex_time:%d\n",time,(int)((*get_closure_inf(pos)) .determine),(int)((*get_closure_inf(pos)) .time));
 		printf("time:%d,next_det:%d,nex_time:%d\n",time,(int)((*get_closure_inf(next_pos)).determine),(int)((*get_closure_inf(next_pos)) .time));
@@ -953,7 +953,7 @@ void Dijkstra::turn_inL135_expand(t_posDijkstra pos,t_direction m_dir)
 	t_posDijkstra next_pos = pos3;
 	if(get_wall_inf(pos1) == NOWALL  && get_wall_inf(pos2) == NOWALL && get_wall_inf(pos3) == NOWALL && get_wall_inf(pos4) == NOWALL)
 	{
-		int time = return_turn_time(Turn_in_L135) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Turn_in_L135);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -1004,7 +1004,7 @@ void Dijkstra::turn_outR135_expand(t_posDijkstra pos,t_direction m_dir)
  	next_pos = SetNodePos(next_pos.x, next_pos.y, C_pos);
 	if(get_wall_inf(pos1) == NOWALL && get_wall_inf(pos2) == NOWALL)
 	{
-		int time = return_turn_time(Turn_out_R135) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Turn_out_R135);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -1056,7 +1056,7 @@ void Dijkstra::turn_outL135_expand(t_posDijkstra pos,t_direction m_dir)
  	next_pos = SetNodePos(next_pos.x, next_pos.y, C_pos);
 	if(get_wall_inf(pos1) == NOWALL && get_wall_inf(pos2) == NOWALL )
 	{
-		int time = return_turn_time(Turn_out_L135)  + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Turn_out_L135);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -1080,7 +1080,7 @@ void Dijkstra::longturn_R90_expand(t_posDijkstra pos,t_direction m_dir)
 	t_posDijkstra next_pos = LocalPosDir2GlobWallPos_Center(pos, m_dir, Right_Front, None);
 	if(get_wall_inf(pos1) == NOWALL  && get_wall_inf(pos2) == NOWALL)
 	{
-		int time = return_turn_time(Long_turnR90) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Long_turnR90);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -1104,7 +1104,7 @@ void Dijkstra::longturn_L90_expand(t_posDijkstra pos,t_direction m_dir)
 	t_posDijkstra next_pos = LocalPosDir2GlobWallPos_Center(pos, m_dir, Left_Front, None);
 	if(get_wall_inf(pos1) == NOWALL  && get_wall_inf(pos2) == NOWALL)
 	{
-		int time = return_turn_time(Long_turnL90) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Long_turnL90);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -1129,7 +1129,7 @@ void Dijkstra::longturn_R180_expand(t_posDijkstra pos,t_direction m_dir)
 	t_posDijkstra next_pos = LocalPosDir2GlobWallPos_Center(pos, m_dir, Right, None);
 	if(get_wall_inf(pos1) == NOWALL  && get_wall_inf(pos2) == NOWALL && get_wall_inf(pos3) == NOWALL)
 	{
-		int time = return_turn_time(Long_turnR180) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Long_turnR180);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -1153,7 +1153,7 @@ void Dijkstra::longturn_L180_expand(t_posDijkstra pos,t_direction m_dir)
 	t_posDijkstra next_pos = LocalPosDir2GlobWallPos_Center(pos, m_dir, Left, None);
 	if(get_wall_inf(pos1) == NOWALL  && get_wall_inf(pos2) == NOWALL && get_wall_inf(pos3) == NOWALL)
 	{
-		int time = return_turn_time(Long_turnL180) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Long_turnL180);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -1192,7 +1192,7 @@ void Dijkstra::turn_vR90_expand(t_posDijkstra pos,t_direction m_dir)
 	}
 	if(get_wall_inf(pos1) == NOWALL && get_wall_inf(pos2) == NOWALL && get_wall_inf(pos3) == NOWALL)
 	{
-		int time = return_turn_time(Turn_RV90) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Turn_RV90);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{
@@ -1232,7 +1232,7 @@ void Dijkstra::turn_vL90_expand(t_posDijkstra pos,t_direction m_dir)
 
 	if(get_wall_inf(pos1) == NOWALL && get_wall_inf(pos2) == NOWALL && get_wall_inf(pos3) == NOWALL)
 	{
-		int time = return_turn_time(Turn_LV90) + (*get_closure_inf(pos)) .time;
+		uint32_t time = calc_turn_candidate_time(pos,Turn_LV90);
 		next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
 		if((*get_closure_inf(next_pos)) .determine == False && (*get_closure_inf(next_pos)) .time >= time)
 		{

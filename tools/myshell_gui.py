@@ -36,6 +36,13 @@ DIJKSTRA_LINE_RE = re.compile(
     r"(?:count->\s*\d+)?([A-Za-z0-9_]+)"
 )
 DIJKSTRA_POS_RE = re.compile(r"x:\s*(-?\d+),y:\s*(-?\d+),d:\s*(-?\d+)")
+DIJKSTRA_RESULT_RE = re.compile(
+    r"DIJKSTRA_RESULT\s+(?P<status>GOAL|NO_PATH).*?time:(?P<time>\d+)"
+)
+PATH_PROFILES = {
+    "Uniform 1000": "",
+    "Mixed 1600/1800": "acc1600",
+}
 FW_NODE_CENTER = 0
 FW_NODE_NORTH = 1
 FW_NODE_EAST = 2
@@ -299,6 +306,19 @@ def step_cell(step):
     return step["x"], step["y"]
 
 
+def dijkstra_profile_command(profile, queue_mode=True):
+    command = "path dijkstra_queue" if queue_mode else "path dijkstra"
+    argument = PATH_PROFILES[profile]
+    return f"{command} {argument}".rstrip()
+
+
+def parse_dijkstra_result(line):
+    match = DIJKSTRA_RESULT_RE.search(line)
+    if match is None:
+        return None
+    return {"status": match.group("status"), "time": int(match.group("time"))}
+
+
 class MyshellGui(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -316,6 +336,8 @@ class MyshellGui(tk.Tk):
         self.char_delay_var = tk.DoubleVar(value=0.08)
         self.command_var = tk.StringVar(value="help")
         self.status_var = tk.StringVar(value="Disconnected")
+        self.path_profile_var = tk.StringVar(value="Uniform 1000")
+        self.path_result_var = tk.StringVar(value="Select a profile and run the shortest path")
         self.goal_var = tk.StringVar(value=f"Goal {DEFAULT_GOAL[0]},{DEFAULT_GOAL[1]} size {DEFAULT_GOAL[2]}")
 
         self._build_ui()
@@ -360,12 +382,31 @@ class MyshellGui(tk.Tk):
 			("disp history", lambda: self.run_text_command("disp history")),
             ("path dijkstra", self.run_dijkstra_path),
             ("path queue", self.run_dijkstra_queue_path),
-            ("compare path time", self.compare_dijkstra_time),
+            ("compare profiles", self.compare_dijkstra_profiles),
             ("disp log", lambda: self.run_text_command("disp log")),
             ("disp log_bin -> CSV", self.receive_log_binary),
             ("end exe", lambda: self.run_text_command("end exe")),
         ):
             ttk.Button(quick, text=label, command=command).pack(side=tk.LEFT, padx=3, pady=2)
+
+        profile_row = ttk.LabelFrame(root, text="Dijkstra cost profile", padding=6)
+        profile_row.pack(fill=tk.X, pady=(0, 8))
+        ttk.Label(profile_row, text="Profile").pack(side=tk.LEFT)
+        ttk.Combobox(
+            profile_row,
+            textvariable=self.path_profile_var,
+            values=tuple(PATH_PROFILES),
+            state="readonly",
+            width=20,
+        ).pack(side=tk.LEFT, padx=(5, 8))
+        ttk.Button(
+            profile_row, text="Run selected", command=self.run_dijkstra_queue_path
+        ).pack(side=tk.LEFT)
+        ttk.Button(
+            profile_row, text="Compare / overlay", command=self.compare_dijkstra_profiles
+        ).pack(side=tk.LEFT, padx=(6, 0))
+        ttk.Label(profile_row, text="Blue: Uniform / Orange: Mixed").pack(side=tk.LEFT, padx=(12, 0))
+        ttk.Label(profile_row, textvariable=self.path_result_var).pack(side=tk.RIGHT)
 
         body = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
         body.pack(fill=tk.BOTH, expand=True)
@@ -410,6 +451,7 @@ class MyshellGui(tk.Tk):
         self.last_maze_goal_area = DEFAULT_GOAL
         self.last_maze_goal_cells = goal_cells_from_area(DEFAULT_GOAL)
         self.last_path_cells = []
+        self.last_profile_paths = {}
         self.last_draw_geometry = None
 
         self.refresh_ports()
@@ -470,13 +512,15 @@ class MyshellGui(tk.Tk):
         self._run_worker(self._log_binary_worker)
 
     def run_dijkstra_path(self):
-        self._run_worker(lambda: self._dijkstra_path_worker("path dijkstra"))
+        command = dijkstra_profile_command(self.path_profile_var.get(), queue_mode=False)
+        self._run_worker(lambda: self._dijkstra_path_worker(command))
 
     def run_dijkstra_queue_path(self):
-        self._run_worker(lambda: self._dijkstra_path_worker("path dijkstra_queue"))
+        command = dijkstra_profile_command(self.path_profile_var.get(), queue_mode=True)
+        self._run_worker(lambda: self._dijkstra_path_worker(command))
 
-    def compare_dijkstra_time(self):
-        self._run_worker(self._compare_dijkstra_time_worker)
+    def compare_dijkstra_profiles(self):
+        self._run_worker(self._compare_dijkstra_profiles_worker)
 
     def upload_maze_data(self):
         if not self.last_maze_binary:
@@ -533,7 +577,7 @@ class MyshellGui(tk.Tk):
             self._append(f"\n> {command}\n")
             self._prepare_shell()
             self._write_command(command)
-            path_steps = [self._start_path_step()] if command == "path dijkstra" else None
+            path_steps = [self._start_path_step()] if command.startswith("path dijkstra") else None
             deadline = time.monotonic() + self.timeout_var.get()
             idle_deadline = time.monotonic() + 1.0
             while time.monotonic() < deadline:
@@ -552,8 +596,9 @@ class MyshellGui(tk.Tk):
                 self.last_path_cells = path_steps
                 self.ui_queue.put(("draw_path", path_steps))
 
-    def _dijkstra_path_worker(self, command="path dijkstra"):
+    def _dijkstra_path_worker(self, command="path dijkstra", draw=True):
         path_steps = [self._start_path_step()]
+        result = None
         with self.serial_lock:
             self._append(f"\n> {command}\n")
             self._prepare_shell()
@@ -566,22 +611,52 @@ class MyshellGui(tk.Tk):
                     continue
                 self._append(line + "\n")
                 self._collect_dijkstra_line(line, path_steps)
+                parsed = parse_dijkstra_result(line)
+                if parsed is not None:
+                    result = parsed
                 if line == "DIJKSTRA_END":
                     elapsed_ms = (time.monotonic() - started_at) * 1000.0
                     self._append(f"ROUND_TRIP_TIME {command}: {elapsed_ms:.3f} ms\n")
-                    self.last_path_cells = path_steps
-                    self.ui_queue.put(("draw_path", path_steps))
-                    return elapsed_ms
+                    outcome = result or {"status": "UNKNOWN", "time": None}
+                    outcome.update({"round_trip_ms": elapsed_ms, "path": path_steps, "command": command})
+                    if draw:
+                        self.last_path_cells = path_steps
+                        self.ui_queue.put(("draw_path", path_steps))
+                        self.ui_queue.put(("path_result", self._format_path_result(command, outcome)))
+                    return outcome
         raise TimeoutError("Timed out waiting for DIJKSTRA_END")
 
-    def _compare_dijkstra_time_worker(self):
-        linear_ms = self._dijkstra_path_worker("path dijkstra")
-        queue_ms = self._dijkstra_path_worker("path dijkstra_queue")
-        ratio = linear_ms / queue_ms if queue_ms > 0 else float("inf")
-        self._append(
-            f"PATH_TIME_COMPARE linear={linear_ms:.3f} ms, "
-            f"queue={queue_ms:.3f} ms, linear/queue={ratio:.3f}x\n"
+    def _compare_dijkstra_profiles_worker(self):
+        uniform = self._dijkstra_path_worker(
+            dijkstra_profile_command("Uniform 1000"), draw=False
         )
+        mixed = self._dijkstra_path_worker(
+            dijkstra_profile_command("Mixed 1600/1800"), draw=False
+        )
+        same_route = self._path_signature(uniform["path"]) == self._path_signature(mixed["path"])
+        summary = (
+            f"Uniform: {uniform['time']} ms | Mixed: {mixed['time']} ms | "
+            f"route: {'same' if same_route else 'changed'}"
+        )
+        self._append(
+            f"PATH_PROFILE_COMPARE uniform={uniform['time']} ms, "
+            f"mixed={mixed['time']} ms, route={'same' if same_route else 'changed'}\n"
+        )
+        self.ui_queue.put(("draw_profile_compare", uniform["path"], mixed["path"]))
+        self.ui_queue.put(("path_result", summary))
+
+    @staticmethod
+    def _path_signature(path_steps):
+        return tuple(
+            (step.get("x"), step.get("y"), step.get("node_pos"), step.get("motion"))
+            for step in path_steps
+        )
+
+    @staticmethod
+    def _format_path_result(command, outcome):
+        profile = "Mixed" if command.endswith("acc1600") else "Uniform"
+        cost = "-" if outcome["time"] is None else f"{outcome['time']} ms"
+        return f"{profile}: {outcome['status']} / {cost}"
 
     def _start_path_step(self):
         start_x, start_y = self.last_maze_start_cells[0]
@@ -613,6 +688,7 @@ class MyshellGui(tk.Tk):
             self.last_maze_binary = payload
             self.last_maze_wall_data = maze_binary_to_wall_data(payload, width, height)
             self.last_path_cells = []
+            self.last_profile_paths = {}
             self.last_maze_start_cells = [(0, 0)]
             self.last_maze_goal_area = DEFAULT_GOAL
             self.last_maze_goal_cells = goal_cells_from_area(DEFAULT_GOAL)
@@ -762,14 +838,20 @@ class MyshellGui(tk.Tk):
             rect = self.canvas.create_rectangle(x1, y1, x2, y2, fill="#ffe5e5", outline="")
             self.canvas.tag_lower(rect)
 
-        if self.last_path_cells:
+        if self.last_profile_paths:
+            self._draw_profile_comparison(
+                self.last_profile_paths.get("uniform", []),
+                self.last_profile_paths.get("mixed", []),
+            )
+        elif self.last_path_cells:
             self._draw_path(self.last_path_cells)
 
-    def _draw_path(self, path_steps):
+    def _draw_path(self, path_steps, color="#0067c0", tag="path", clear=True, width_scale=0.14):
         if not self.last_draw_geometry:
             return
         width, height, cell, ox, oy = self.last_draw_geometry
-        self.canvas.delete("path")
+        if clear:
+            self.canvas.delete("path")
         if len(path_steps) < 2:
             return
 
@@ -797,18 +879,35 @@ class MyshellGui(tk.Tk):
 
         self.canvas.create_line(
             *points,
-            fill="#0067c0",
-            width=max(2, int(cell * 0.14)),
+            fill=color,
+            width=max(2, int(cell * width_scale)),
             smooth=False,
             capstyle=tk.ROUND,
             joinstyle=tk.ROUND,
-            tags="path",
+            tags=("path", tag),
         )
         radius = max(3, cell * 0.16)
         sx, sy = points[0], points[1]
         gx, gy = points[-2], points[-1]
-        self.canvas.create_oval(sx - radius, sy - radius, sx + radius, sy + radius, fill="#0067c0", outline="", tags="path")
-        self.canvas.create_oval(gx - radius, gy - radius, gx + radius, gy + radius, fill="#111111", outline="", tags="path")
+        self.canvas.create_oval(
+            sx - radius, sy - radius, sx + radius, sy + radius,
+            fill=color, outline="", tags=("path", tag),
+        )
+        self.canvas.create_oval(
+            gx - radius, gy - radius, gx + radius, gy + radius,
+            fill="#111111", outline="", tags=("path", tag),
+        )
+
+    def _draw_profile_comparison(self, uniform_path, mixed_path):
+        self.canvas.delete("path")
+        self._draw_path(
+            uniform_path, color="#0067c0", tag="path_uniform",
+            clear=False, width_scale=0.16,
+        )
+        self._draw_path(
+            mixed_path, color="#e87500", tag="path_mixed",
+            clear=False, width_scale=0.09,
+        )
 
     def _append(self, text):
         self.ui_queue.put(("append", text))
@@ -825,7 +924,15 @@ class MyshellGui(tk.Tk):
                     self._draw_maze(payload, width, height)
                 elif item[0] == "draw_path":
                     _, path_cells = item
+                    self.last_profile_paths = {}
                     self._draw_path(path_cells)
+                elif item[0] == "draw_profile_compare":
+                    _, uniform_path, mixed_path = item
+                    self.last_path_cells = mixed_path
+                    self.last_profile_paths = {"uniform": uniform_path, "mixed": mixed_path}
+                    self._draw_profile_comparison(uniform_path, mixed_path)
+                elif item[0] == "path_result":
+                    self.path_result_var.set(item[1])
         except queue.Empty:
             pass
         self.after(50, self._drain_ui_queue)
@@ -898,6 +1005,7 @@ class MyshellGui(tk.Tk):
         self.last_maze_binary = payload
         self.last_maze_wall_data = data.maze_wall_data.copy()
         self.last_path_cells = []
+        self.last_profile_paths = {}
         self.last_maze_start_cells = list(data.start_cells)
         self.last_maze_goal_area = goal_area
         self.last_maze_goal_cells = goal_cells_from_area(goal_area)

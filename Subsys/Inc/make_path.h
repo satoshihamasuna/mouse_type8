@@ -69,6 +69,13 @@ class calcRunTime
 		float turn_in135_time;
 		float turn_out45_time;
 		float turn_out135_time;
+		float turn_Long90_velo;
+		float turn_Long180_velo;
+		float turn_in45_velo;
+		float turn_in135_velo;
+		float turn_out45_velo;
+		float turn_out135_velo;
+		float turn_V90_velo;
 		const t_straight_param *const *st_set_mode;
 		const t_straight_param *const *di_set_mode;
 		uint16_t st_mode_size = 1;uint16_t di_mode_size = 1;
@@ -79,6 +86,9 @@ class calcRunTime
 		void di_param_set(const t_straight_param *const *mode,uint16_t mode_size);
 		uint16_t return_turn_time(t_run_pattern run_pt);
 		uint16_t straight_time_set(float length);
+		uint16_t straight_time_set(float length,float start_velo,float end_velo);
+		float return_turn_entry_velo(t_run_pattern run_pt) const;
+		float return_turn_exit_velo(t_run_pattern run_pt) const;
 		t_straight_param calc_end_straight_max_velo(float length);
 		t_straight_param straight_base_velo()
 		{
@@ -89,6 +99,7 @@ class calcRunTime
 			return return_param;
 		}
 		uint16_t diagonal_time_set(float length);
+		uint16_t diagonal_time_set(float length,float start_velo,float end_velo);
 		t_straight_param calc_end_diagonal_max_velo(float length);
 		t_straight_param diagonal_base_velo()
 		{
@@ -107,6 +118,13 @@ class calcRunTime
 			turn_in135_time		= 2.0f;
 			turn_out45_time		= 2.0f;
 			turn_out135_time	= 2.0f;
+			turn_Long90_velo	= 0.0f;
+			turn_Long180_velo	= 0.0f;
+			turn_in45_velo		= 0.0f;
+			turn_in135_velo		= 0.0f;
+			turn_out45_velo	= 0.0f;
+			turn_out135_velo	= 0.0f;
+			turn_V90_velo		= 0.0f;
 			st_set_mode = st_mode_300_v0;
 			di_set_mode = di_mode_300_v0;
 			st_mode_size = 1;
@@ -142,6 +160,8 @@ class Dijkstra:public calcRunTime
 		t_element SetNode(t_posDijkstra _parent, uint32_t _time, t_bool _determine);
 		t_posDijkstra get_parent(const t_element *element) const;
 		t_run_pattern get_run_pattern(t_posDijkstra current) const;
+		uint32_t calc_turn_candidate_time(t_posDijkstra current,t_run_pattern next_turn);
+		uint32_t calc_goal_candidate_time(t_posDijkstra goal_node,float goal_end_velo);
 		void set_determine(t_posDijkstra set_pos);
 		uint16_t dijkstra_node_order(t_posDijkstra pos);
 		void push_open_node(t_posDijkstra pos);

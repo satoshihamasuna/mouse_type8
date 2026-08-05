@@ -198,6 +198,74 @@ t_run_pattern Dijkstra::get_run_pattern(t_posDijkstra current) const
 	return No_run;
 }
 
+static uint32_t clamp_dijkstra_time(int64_t time)
+{
+	if(time <= 0) return 0;
+	if(time >= (int64_t)DIJKSTRA_MAX_TIME) return DIJKSTRA_MAX_TIME;
+	return (uint32_t)time;
+}
+
+uint32_t Dijkstra::calc_turn_candidate_time(t_posDijkstra current,t_run_pattern next_turn)
+{
+	t_element *current_element = get_closure_inf(current);
+	int64_t candidate = current_element->time;
+	t_run_pattern incoming_pattern = get_run_pattern(current);
+
+	if(incoming_pattern == Straight || incoming_pattern == Diagonal)
+	{
+		t_posDijkstra section_start = get_parent(current_element);
+		t_run_pattern previous_pattern = get_run_pattern(section_start);
+		float base_velo = incoming_pattern == Straight
+				? straight_base_velo().param->max_velo
+				: diagonal_base_velo().param->max_velo;
+		float start_velo = return_turn_exit_velo(previous_pattern);
+		float end_velo = return_turn_entry_velo(next_turn);
+		if(start_velo <= 0.0f) start_velo = base_velo;
+		if(end_velo <= 0.0f) end_velo = base_velo;
+
+		uint16_t section_count = incoming_pattern == Straight
+				? straight_section_num(section_start,current,dijkstra_pos_dir(current))
+				: diagonal_section_num(section_start,current,dijkstra_pos_dir(current));
+		float length = (incoming_pattern == Straight ? SECTION : DIAG_SECTION) * section_count;
+		uint16_t old_time = incoming_pattern == Straight
+				? straight_time_set(length) : diagonal_time_set(length);
+		uint16_t new_time = incoming_pattern == Straight
+				? straight_time_set(length,start_velo,end_velo)
+				: diagonal_time_set(length,start_velo,end_velo);
+		candidate = candidate - old_time + new_time;
+	}
+
+	candidate += return_turn_time(next_turn);
+	return clamp_dijkstra_time(candidate);
+}
+
+uint32_t Dijkstra::calc_goal_candidate_time(t_posDijkstra goal_node,float goal_end_velo)
+{
+	t_element *goal_element = get_closure_inf(goal_node);
+	int64_t candidate = goal_element->time;
+	t_run_pattern incoming_pattern = get_run_pattern(goal_node);
+	if(incoming_pattern != Straight && incoming_pattern != Diagonal)
+		return clamp_dijkstra_time(candidate);
+
+	t_posDijkstra section_start = get_parent(goal_element);
+	t_run_pattern previous_pattern = get_run_pattern(section_start);
+	float base_velo = incoming_pattern == Straight
+			? straight_base_velo().param->max_velo
+			: diagonal_base_velo().param->max_velo;
+	float start_velo = return_turn_exit_velo(previous_pattern);
+	if(start_velo <= 0.0f) start_velo = base_velo;
+	uint16_t section_count = incoming_pattern == Straight
+			? straight_section_num(section_start,goal_node,dijkstra_pos_dir(goal_node))
+			: diagonal_section_num(section_start,goal_node,dijkstra_pos_dir(goal_node));
+	float length = (incoming_pattern == Straight ? SECTION : DIAG_SECTION) * section_count;
+	uint16_t old_time = incoming_pattern == Straight
+			? straight_time_set(length) : diagonal_time_set(length);
+	uint16_t new_time = incoming_pattern == Straight
+			? straight_time_set(length,start_velo,goal_end_velo)
+			: diagonal_time_set(length,start_velo,goal_end_velo);
+	return clamp_dijkstra_time(candidate - old_time + new_time);
+}
+
 void Dijkstra::init_dijkstra_map()
 {
 	for(int i = 0;i < MAZE_SIZE_X;i++)
@@ -435,6 +503,9 @@ t_posDijkstra Dijkstra::min_search()
 t_posDijkstra Dijkstra::make_path_Dijkstra_priority_queue(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size)
 {
 	t_posDijkstra min_pos = conv_t_pos2t_posDijkstra(start_pos, start_wallPos);
+	t_posDijkstra best_goal = min_pos;
+	uint32_t best_goal_time = DIJKSTRA_MAX_TIME;
+	t_bool goal_found = False;
 	init_dijkstra_map();
 	dijkstra_open_queue_init();
 	use_priority_queue = True;
@@ -456,26 +527,37 @@ t_posDijkstra Dijkstra::make_path_Dijkstra_priority_queue(t_position start_pos,t
 
 		if(is_goal_Dijkstra(min_pos, goal_pos, goal_size))
 		{
-						t_direction pos_dir = dijkstra_pos_dir(min_pos);
-			min_pos = last_expand(min_pos,pos_dir ,goal_pos, goal_size);
-			break;
+			uint32_t goal_time = calc_goal_candidate_time(min_pos,0.0f);
+			if(goal_found == False || goal_time < best_goal_time)
+			{
+				best_goal = min_pos;
+				best_goal_time = goal_time;
+				goal_found = True;
+			}
 		}
 		expand(min_pos);
 	}
 
 	use_priority_queue = False;
-	return min_pos;
+	return goal_found == True ? best_goal : min_pos;
 }
 
 t_posDijkstra Dijkstra::make_path_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size)
 {
 	t_posDijkstra min_pos;
+	t_posDijkstra best_goal = conv_t_pos2t_posDijkstra(start_pos, start_wallPos);
+	uint32_t best_goal_time = DIJKSTRA_MAX_TIME;
+	t_bool goal_found = False;
 	init_dijkstra_map();
 	start_node_setUp(conv_t_pos2t_posDijkstra(start_pos, start_wallPos), start_pos.dir);
 	use_priority_queue = False;
 	for(int i = 0; i < DIJKSTRA_NODE_NUM;i++)
 	{
 		min_pos = min_search();
+		if(get_closure_inf(min_pos)->time >= DIJKSTRA_MAX_TIME)
+		{
+			break;
+		}
 		//set_determine
 		#ifdef DEBUG_MODE
 		printf("minimum->%d,%d,%d\n",min_pos.x,min_pos.y,min_pos.NodePos);
@@ -484,14 +566,17 @@ t_posDijkstra Dijkstra::make_path_Dijkstra(t_position start_pos,t_direction star
 
 		if(is_goal_Dijkstra(min_pos, goal_pos, goal_size))
 		{
-			//last_expand(min_pos,goal_pos,(int)goal_size);
-			t_direction pos_dir = dijkstra_pos_dir(min_pos);
-			min_pos = last_expand(min_pos,pos_dir ,goal_pos, goal_size);
-			break;
+			uint32_t goal_time = calc_goal_candidate_time(min_pos,0.0f);
+			if(goal_found == False || goal_time < best_goal_time)
+			{
+				best_goal = min_pos;
+				best_goal_time = goal_time;
+				goal_found = True;
+			}
 		}
 		expand(min_pos);
 	}
-	return min_pos;
+	return goal_found == True ? best_goal : min_pos;
 }
 
 void Dijkstra::expand(t_posDijkstra pos)
@@ -673,7 +758,7 @@ void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos
 			last_pos.x,
 			last_pos.y,
 			last_pos.NodePos,
-			(*get_closure_inf(last_pos)).time);
+			(int)calc_goal_candidate_time(last_pos,0.0f));
 	t_posDijkstra tmp_pos = last_pos;
 	t_posDijkstra start = conv_t_pos2t_posDijkstra(start_pos, start_wallPos);
 	int tail = 0;;
