@@ -28,6 +28,25 @@ python tools/search_simulator.py tools/maze_data/MM2011MM.txt
 python tools/search_simulator.py tools/maze_data/MM2011MM.txt --virtual off
 ```
 
+## 移動アニメーション
+
+`--animate` を付けると、探索結果を迷路上で再生します。マウスの現在位置は黒丸、
+走行済みの軌跡は水色、ゴール領域は黄色、仮想壁は赤い破線で表示されます。
+スペースキーで一時停止・再開できます。
+
+```powershell
+python tools/search_simulator.py tools/maze_data/MM2011MM.txt --animate
+```
+
+1歩あたりの表示時間はミリ秒単位で変更できます。次の例は100ミリ秒です。
+
+```powershell
+python tools/search_simulator.py tools/maze_data/MM2011MM.txt `
+  --animate --animation-interval 100
+```
+
+`--compare` と同時に指定した場合は、3種類の結果を横に並べて同時再生します。
+
 ## 探索モード
 
 `--map-mode goal` はゴール到達を優先します。`--map-mode full` は全面探索用のマップを使用します。

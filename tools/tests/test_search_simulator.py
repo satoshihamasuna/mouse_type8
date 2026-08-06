@@ -14,6 +14,7 @@ from search_simulator import (  # noqa: E402
     VirtualContext,
     VirtualWallEngine,
     WallModel,
+    animation_positions,
     audit_snapshot_contexts,
     simulate,
 )
@@ -247,6 +248,14 @@ class SearchSimulatorTest(unittest.TestCase):
         self.assertEqual(off.steps, fixed.steps)
         self.assertIn("fallback", off.reason)
         self.assertIn("fallback", fixed.reason)
+
+        positions = animation_positions(off)
+        self.assertEqual(positions[0], (7.5, 8.5))
+        self.assertEqual(
+            positions[-1],
+            (off.final_position.x + 0.5, off.final_position.y + 0.5),
+        )
+        self.assertEqual(len(positions), len(off.records) + 1)
 
 
 if __name__ == "__main__":

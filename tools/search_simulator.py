@@ -113,6 +113,9 @@ class SimulationResult:
     guard: str
     timing: str
     map_mode: str
+    goal_x: int
+    goal_y: int
+    goal_size: int
     features: str
     success: bool
     reason: str
@@ -811,6 +814,9 @@ def simulate(
         guard=guard,
         timing=timing,
         map_mode=map_mode,
+        goal_x=goal_x,
+        goal_y=goal_y,
+        goal_size=goal_size,
         features=",".join(sorted(features)) or "none",
         success=success,
         reason=f"{reason}+fallback" if fallback_used else reason,
@@ -897,6 +903,170 @@ def print_result(result: SimulationResult, trace: bool) -> None:
             )
 
 
+def animation_positions(result: SimulationResult) -> list[tuple[float, float]]:
+    """Return cell-center coordinates for every displayed animation frame."""
+    positions = [(record.x + 0.5, record.y + 0.5) for record in result.records]
+    final = (result.final_position.x + 0.5, result.final_position.y + 0.5)
+    if not positions or positions[-1] != final:
+        positions.append(final)
+    return positions
+
+
+def show_animation(results: Sequence[SimulationResult], interval_ms: int = 250) -> None:
+    """Animate one or more simulation results on their physical mazes."""
+    try:
+        import matplotlib.pyplot as plt
+        from matplotlib.animation import FuncAnimation
+        from matplotlib.collections import LineCollection
+        from matplotlib.patches import Rectangle
+    except ImportError as exc:
+        raise RuntimeError(
+            "animation requires matplotlib; install it with 'pip install matplotlib'"
+        ) from exc
+
+    if not results:
+        return
+
+    figure, axes = plt.subplots(
+        1,
+        len(results),
+        figsize=(max(6, 5 * len(results)), 6),
+        squeeze=False,
+    )
+    paths = [animation_positions(result) for result in results]
+    artists: list[tuple[object, object, object]] = []
+
+    for axis, result, positions in zip(axes[0], results, paths):
+        walls = result.wall_model
+        if walls is None:
+            raise ValueError("simulation result has no wall model to draw")
+
+        axis.add_patch(
+            Rectangle(
+                (result.goal_x, result.goal_y),
+                result.goal_size,
+                result.goal_size,
+                facecolor="#ffe9a8",
+                edgecolor="#d39b00",
+                linewidth=1.2,
+                zorder=0,
+            )
+        )
+
+        physical_segments: list[list[tuple[float, float]]] = []
+        virtual_segments: list[list[tuple[float, float]]] = []
+        for x in range(walls.width):
+            for y in range(walls.height):
+                edges = (
+                    (Direction.NORTH, [(x, y + 1), (x + 1, y + 1)]),
+                    (Direction.EAST, [(x + 1, y), (x + 1, y + 1)]),
+                )
+                if y == 0:
+                    edges += ((Direction.SOUTH, [(x, y), (x + 1, y)]),)
+                if x == 0:
+                    edges += ((Direction.WEST, [(x, y), (x, y + 1)]),)
+                for direction, segment in edges:
+                    if walls.truth_has_wall(x, y, direction):
+                        physical_segments.append(segment)
+                    elif walls.get_virtual_wall(x, y, direction):
+                        virtual_segments.append(segment)
+
+        if physical_segments:
+            axis.add_collection(
+                LineCollection(physical_segments, colors="#303030", linewidths=1.6)
+            )
+        if virtual_segments:
+            axis.add_collection(
+                LineCollection(
+                    virtual_segments,
+                    colors="#d62728",
+                    linewidths=1.2,
+                    linestyles="dashed",
+                )
+            )
+
+        start_x, start_y = positions[0]
+        axis.plot(start_x, start_y, marker="s", color="#19a974", markersize=5, zorder=3)
+        trail, = axis.plot([], [], color="#00a6d6", linewidth=1.8, zorder=2)
+        mouse, = axis.plot(
+            [],
+            [],
+            marker="o",
+            color="black",
+            markeredgecolor="black",
+            markersize=max(5, min(12, 100 / max(walls.width, walls.height))),
+            linestyle="None",
+            zorder=4,
+        )
+        status = axis.text(
+            0.01,
+            0.99,
+            "",
+            transform=axis.transAxes,
+            ha="left",
+            va="top",
+            fontsize=9,
+            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8, "pad": 2},
+            zorder=5,
+        )
+        axis.set_xlim(0, walls.width)
+        axis.set_ylim(0, walls.height)
+        axis.set_aspect("equal", adjustable="box")
+        tick_step = 1 if max(walls.width, walls.height) <= 16 else 4
+        axis.set_xticks(range(0, walls.width + 1, tick_step))
+        axis.set_yticks(range(0, walls.height + 1, tick_step))
+        axis.grid(color="#dddddd", linewidth=0.35, zorder=-1)
+        mode = "off" if not result.virtual_enabled else result.guard
+        axis.set_title(f"virtual={mode}  {result.reason}")
+        axis.set_xlabel("x")
+        axis.set_ylabel("y")
+        artists.append((trail, mouse, status))
+
+    frame_count = max(len(positions) for positions in paths)
+
+    def update(frame: int):
+        changed = []
+        for positions, (trail, mouse, status) in zip(paths, artists):
+            index = min(frame, len(positions) - 1)
+            visible = positions[: index + 1]
+            trail.set_data(
+                [position[0] for position in visible],
+                [position[1] for position in visible],
+            )
+            x, y = positions[index]
+            mouse.set_data([x], [y])
+            status.set_text(
+                f"step {index}/{len(positions) - 1}   cell ({int(x - 0.5)}, {int(y - 0.5)})"
+            )
+            changed.extend((trail, mouse, status))
+        return changed
+
+    animation = FuncAnimation(
+        figure,
+        update,
+        frames=frame_count,
+        interval=interval_ms,
+        repeat=False,
+        blit=False,
+    )
+    update(0)
+    playback = {"paused": False}
+
+    def toggle_pause(event) -> None:
+        if event.key != " ":
+            return
+        if playback["paused"]:
+            animation.event_source.start()
+        else:
+            animation.event_source.stop()
+        playback["paused"] = not playback["paused"]
+
+    figure.canvas.mpl_connect("key_press_event", toggle_pause)
+    figure.suptitle("Search simulation (Space: pause / resume)")
+    figure.tight_layout(rect=(0, 0, 1, 0.95))
+    plt.show()
+
+
 def parse_goal(text: str) -> tuple[int, int, int]:
     try:
         x_text, y_text, size_text = text.split(",")
@@ -949,6 +1119,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--trace", action="store_true")
     parser.add_argument("--csv", type=Path, help="write per-step diagnostics")
     parser.add_argument(
+        "--animate",
+        action="store_true",
+        help="show the route as an animation; the mouse is a black circle",
+    )
+    parser.add_argument(
+        "--animation-interval",
+        type=int,
+        default=250,
+        metavar="MS",
+        help="milliseconds per movement step (default: 250)",
+    )
+    parser.add_argument(
         "--compare",
         action="store_true",
         help="compare virtual off, legacy guard, and fixed guard",
@@ -963,6 +1145,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Iterable[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.animation_interval <= 0:
+        raise SystemExit("--animation-interval must be greater than zero")
     features = {item.strip() for item in args.features.split(",") if item.strip()}
     invalid = features - {"pillar", "dead_end", "branch"}
     if invalid:
@@ -1015,6 +1199,9 @@ def main(argv: Iterable[str] | None = None) -> int:
                 mode = "off" if not result.virtual_enabled else result.guard
                 output = args.csv.with_name(f"{args.csv.stem}_{mode}{args.csv.suffix or '.csv'}")
                 write_csv(output, result)
+
+    if args.animate:
+        show_animation(results, interval_ms=args.animation_interval)
 
     return 0 if all(result.success for result in results) else 1
 
