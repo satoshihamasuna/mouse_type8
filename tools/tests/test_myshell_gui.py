@@ -6,7 +6,12 @@ TOOLS_DIR = Path(__file__).resolve().parents[1]
 if str(TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DIR))
 
-from myshell_gui import dijkstra_run_config_command, parse_dijkstra_result, parse_run_config
+from myshell_gui import (
+    dijkstra_run_config_command,
+    make_dijkstra_step,
+    parse_dijkstra_result,
+    parse_run_config,
+)
 
 
 def test_dijkstra_run_config_commands():
@@ -37,3 +42,16 @@ def test_parse_dijkstra_no_path_result():
         "DIJKSTRA_RESULT NO_PATH last=( 0, 0, 0) time:0"
     ) == {"status": "NO_PATH", "time": 0}
     assert parse_dijkstra_result("DIJKSTRA_END") is None
+
+
+def test_parse_last_expand_path_step():
+    assert make_dijkstra_step(
+        "DIJKSTRA_LAST_EXPAND x:25,y:27,d:0,mdir:0,time:6400->count-> 1Straight"
+    ) == {
+        "x": 25,
+        "y": 27,
+        "node_pos": 0,
+        "mouse_dir": 0,
+        "motion": "Straight",
+        "last_expand": True,
+    }

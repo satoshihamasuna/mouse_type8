@@ -203,7 +203,8 @@ class Dijkstra:public calcRunTime
 		void run_Dijkstra_suction_acc(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,
 											  const t_run_config *config,Motion *motion);
 		void expand(t_posDijkstra pos);
-		t_posDijkstra last_expand(t_posDijkstra pos,t_direction m_dir,t_position goal_pos,uint8_t goal_size);
+		t_posDijkstra last_expand(t_posDijkstra pos,t_direction m_dir,t_position goal_pos,uint8_t goal_size,
+							  t_bool update_closure = True);
 		uint16_t straight_section_num(t_posDijkstra s_pos,t_posDijkstra e_pos,t_direction dir);
 		uint16_t diagonal_section_num(t_posDijkstra s_pos,t_posDijkstra e_pos,t_direction dir);
 };

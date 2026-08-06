@@ -292,7 +292,14 @@ def make_dijkstra_step(line):
         node_pos = int(match.group(3))
         mouse_dir = int(match.group(4)) if match.group(4) is not None else None
         motion = match.group(5)
-        return {"x": x, "y": y, "node_pos": node_pos, "mouse_dir": mouse_dir, "motion": motion}
+        return {
+            "x": x,
+            "y": y,
+            "node_pos": node_pos,
+            "mouse_dir": mouse_dir,
+            "motion": motion,
+            "last_expand": "DIJKSTRA_LAST_EXPAND" in line,
+        }
 
     match = DIJKSTRA_POS_RE.search(line)
     if not match:
@@ -303,6 +310,7 @@ def make_dijkstra_step(line):
         "node_pos": int(match.group(3)),
         "mouse_dir": None,
         "motion": "",
+        "last_expand": False,
     }
 
 

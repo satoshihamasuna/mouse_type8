@@ -610,7 +610,8 @@ void Dijkstra::expand(t_posDijkstra pos)
 	}
 }
 
-t_posDijkstra Dijkstra::last_expand(t_posDijkstra pos,t_direction m_dir,t_position goal_pos,uint8_t goal_size)
+t_posDijkstra Dijkstra::last_expand(t_posDijkstra pos,t_direction m_dir,t_position goal_pos,uint8_t goal_size,
+		t_bool update_closure)
 {
 	t_posDijkstra  last_pos = pos;
 	t_direction next_dir = m_dir;
@@ -630,7 +631,7 @@ t_posDijkstra Dijkstra::last_expand(t_posDijkstra pos,t_direction m_dir,t_positi
 				if(get_wall_inf(pos1) == NOWALL && get_wall_inf(pos2) == NOWALL && is_goal_Dijkstra(next_pos, goal_pos, goal_size) == True)
 				{
 					next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
-					if((*get_closure_inf(next_pos)) .determine == False )//&& (*get_closure_inf(next_pos)) .time >= time)
+					if(update_closure == True && (*get_closure_inf(next_pos)) .determine == False )//&& (*get_closure_inf(next_pos)) .time >= time)
 					{
 						(*get_closure_inf(next_pos)) = SetNode(pos, time, False);
 						#ifdef DEBUG_MODE
@@ -658,7 +659,7 @@ t_posDijkstra Dijkstra::last_expand(t_posDijkstra pos,t_direction m_dir,t_positi
 				if(get_wall_inf(pos1) == NOWALL && is_goal_Dijkstra(next_pos, goal_pos, goal_size) == True)
 				{
 						next_pos.state_dir = (((uint8_t)next_dir) >> 1) & 0x03;
-						if((*get_closure_inf(next_pos)) .determine == False )
+						if(update_closure == True && (*get_closure_inf(next_pos)) .determine == False )
 						{
 							/*
 							if(get_run_pattern(pos) == Straight)
@@ -859,6 +860,36 @@ void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos
 			//#endif
 			default :
 				break;
+		}
+	}
+
+	// The search compares all goal nodes and therefore no longer uses last_expand()
+	// to select the result.  Append its goal-internal tail only to the path trace so
+	// GUI visualization still shows the complete path without rewriting closure.
+	t_direction last_dir = dijkstra_pos_dir(last_pos);
+	t_posDijkstra expanded_last_pos = last_expand(
+			last_pos, last_dir, goal_pos, goal_size, False);
+	if(expanded_last_pos.x != last_pos.x || expanded_last_pos.y != last_pos.y ||
+	   expanded_last_pos.NodePos != last_pos.NodePos)
+	{
+		uint16_t count;
+		uint32_t display_time = get_closure_inf(last_pos)->time;
+		printf("DIJKSTRA_LAST_EXPAND ");
+		if(last_pos.NodePos == C_pos)
+		{
+			count = straight_section_num(last_pos, expanded_last_pos, last_dir);
+			display_time += straight_time_set(SECTION * count);
+			printf("x:%2d,y:%2d,d:%2d,mdir:%2d,time:%d->count->%2dStraight\n",
+					expanded_last_pos.x, expanded_last_pos.y, expanded_last_pos.NodePos,
+					last_dir, (int)display_time, count);
+		}
+		else
+		{
+			count = diagonal_section_num(last_pos, expanded_last_pos, last_dir);
+			display_time += diagonal_time_set(DIAG_SECTION * count);
+			printf("x:%2d,y:%2d,d:%2d,mdir:%2d,time:%d->count->%2dDiagonal\n",
+					expanded_last_pos.x, expanded_last_pos.y, expanded_last_pos.NodePos,
+					last_dir, (int)display_time, count);
 		}
 	}
 }
