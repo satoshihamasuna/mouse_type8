@@ -81,6 +81,7 @@ class SearchGui(tk.Tk):
         self._load_initial_maze()
         self.after(50, self._drain_events)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.bind("<space>", self._on_animation_space)
 
     def _build_ui(self) -> None:
         root = ttk.Frame(self, padding=8)
@@ -177,16 +178,16 @@ class SearchGui(tk.Tk):
         self.progress.pack(side=tk.RIGHT, padx=(6, 0))
         ttk.Label(actions, textvariable=self.progress_text_var).pack(side=tk.RIGHT)
 
-        notebook = ttk.Notebook(root)
-        notebook.grid(row=4, column=0, sticky="nsew")
-        log_tab = ttk.Frame(notebook)
-        steps_tab = ttk.Frame(notebook)
-        maze_tab = ttk.Frame(notebook)
-        scenarios_tab = ttk.Frame(notebook)
-        notebook.add(log_tab, text="Shell log")
-        notebook.add(steps_tab, text="Steps")
-        notebook.add(maze_tab, text="Maze / path")
-        notebook.add(scenarios_tab, text="Scenarios")
+        self.notebook = ttk.Notebook(root)
+        self.notebook.grid(row=4, column=0, sticky="nsew")
+        log_tab = ttk.Frame(self.notebook)
+        steps_tab = ttk.Frame(self.notebook)
+        self.maze_tab = ttk.Frame(self.notebook)
+        scenarios_tab = ttk.Frame(self.notebook)
+        self.notebook.add(log_tab, text="Shell log")
+        self.notebook.add(steps_tab, text="Steps")
+        self.notebook.add(self.maze_tab, text="迷路 / 経路")
+        self.notebook.add(scenarios_tab, text="Scenarios")
 
         self.log_text = tk.Text(log_tab, wrap="none", font=("Consolas", 9))
         log_y = ttk.Scrollbar(log_tab, orient=tk.VERTICAL, command=self.log_text.yview)
@@ -209,7 +210,7 @@ class SearchGui(tk.Tk):
         self.step_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         step_y.pack(side=tk.RIGHT, fill=tk.Y)
 
-        playback = ttk.Frame(maze_tab, padding=(6, 5))
+        playback = ttk.Frame(self.maze_tab, padding=(6, 5))
         playback.pack(fill=tk.X)
         self.play_button = ttk.Button(playback, text="▶ 再生", command=self._toggle_animation)
         self.play_button.pack(side=tk.LEFT)
@@ -236,7 +237,7 @@ class SearchGui(tk.Tk):
         ).pack(side=tk.LEFT, padx=(14, 0))
         ttk.Label(playback, textvariable=self.animation_status_var).pack(side=tk.RIGHT)
 
-        self.maze_canvas = tk.Canvas(maze_tab, background="white", highlightthickness=0)
+        self.maze_canvas = tk.Canvas(self.maze_tab, background="white", highlightthickness=0)
         self.maze_canvas.pack(fill=tk.BOTH, expand=True)
         self.maze_canvas.bind("<Configure>", lambda _event: self._redraw())
 
@@ -622,10 +623,7 @@ class SearchGui(tk.Tk):
         self.current_result = result
         self.payload = payload
         self.current_goal = goal
-        self.animation_positions = [
-            (step.x + 0.5, step.y + 0.5) for step in result.steps
-        ]
-        self.animation_positions.append((result.final_x + 0.5, result.final_y + 0.5))
+        self.animation_positions = search.result_positions(result)
         self.animation_index = 0
         for item in self.step_tree.get_children():
             self.step_tree.delete(item)
@@ -646,6 +644,7 @@ class SearchGui(tk.Tk):
                     step.virtual_edges,
                 ),
             )
+        self.notebook.select(self.maze_tab)
         self._redraw()
         self._update_animation_status()
         if self.animation_auto_var.get() and len(self.animation_positions) > 1:
@@ -656,6 +655,10 @@ class SearchGui(tk.Tk):
             self._animation_pause()
         else:
             self._animation_play()
+
+    def _on_animation_space(self, _event) -> str:
+        self._toggle_animation()
+        return "break"
 
     def _animation_play(self) -> None:
         if len(self.animation_positions) <= 1:
@@ -737,6 +740,18 @@ class SearchGui(tk.Tk):
             return ox + x * cell, oy + side - y * cell
 
         canvas.create_rectangle(ox, oy, ox + side, oy + side, outline="#777")
+        gx, gy, goal_size = self.current_goal
+        x1, y1 = point(gx, gy)
+        x2, y2 = point(gx + goal_size, gy + goal_size)
+        canvas.create_rectangle(
+            x1,
+            y2,
+            x2,
+            y1,
+            fill="#ffe9a8",
+            outline="#d39b00",
+            width=2,
+        )
         if self.payload is not None and len(self.payload) == search.MAZE_SIZE:
             index = 0
             for y in range(search.HEIGHT - 1, -1, -1):
@@ -761,11 +776,13 @@ class SearchGui(tk.Tk):
             for x, y, direction in result.virtual_edges:
                 if direction == "N":
                     canvas.create_line(
-                        *point(x, y + 1), *point(x + 1, y + 1), fill="red", width=2
+                        *point(x, y + 1), *point(x + 1, y + 1),
+                        fill="#d62728", width=2, dash=(4, 2)
                     )
                 else:
                     canvas.create_line(
-                        *point(x + 1, y), *point(x + 1, y + 1), fill="red", width=2
+                        *point(x + 1, y), *point(x + 1, y + 1),
+                        fill="#d62728", width=2, dash=(4, 2)
                     )
             full_path = self.animation_positions
             visible_path = full_path[: self.animation_index + 1]
@@ -775,12 +792,12 @@ class SearchGui(tk.Tk):
             if full_path:
                 sx, sy = point(*full_path[0])
                 start_radius = max(2, cell * 0.18)
-                canvas.create_oval(
+                canvas.create_rectangle(
                     sx - start_radius,
                     sy - start_radius,
                     sx + start_radius,
                     sy + start_radius,
-                    fill="#00bcd4",
+                    fill="#19a974",
                     outline="",
                 )
                 mx, my = point(*full_path[self.animation_index])
@@ -791,8 +808,7 @@ class SearchGui(tk.Tk):
                     mx + mouse_radius,
                     my + mouse_radius,
                     fill="black",
-                    outline="white",
-                    width=1,
+                    outline="black",
                     tags=("mouse",),
                 )
         else:
@@ -807,16 +823,11 @@ class SearchGui(tk.Tk):
                     mx + mouse_radius,
                     my + mouse_radius,
                     fill="black",
-                    outline="white",
-                    width=1,
+                    outline="black",
                     tags=("mouse",),
                 )
             except (tk.TclError, ValueError):
                 pass
-        gx, gy, goal_size = self.current_goal
-        x1, y1 = point(gx, gy)
-        x2, y2 = point(gx + goal_size, gy + goal_size)
-        canvas.create_rectangle(x1, y2, x2, y1, outline="#00a000", width=2)
 
     def _on_close(self) -> None:
         if self.busy and not messagebox.askyesno("Exit", "実行中です。終了しますか？"):

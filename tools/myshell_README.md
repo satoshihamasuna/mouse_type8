@@ -174,7 +174,8 @@ python tools\myshell_search_gui.py
 GUIはCOM接続を保持し、迷路送信、静的Search、往路再生、往復再生、32シナリオ検証を
 実行できます。Shell log、ステップ表、実壁・仮想壁・経路の迷路表示、シナリオ一覧を
 切り替えて確認できます。迷路タブではマウス位置を黒丸で表示し、結果の座標列を
-再生・一時停止・前後1ステップ・速度変更できます。
+再生・一時停止・前後1ステップ・速度変更できます。スペースキーでも一時停止・再開できます。
+診断結果の受信後は「迷路 / 経路」タブへ自動的に切り替わります。
 
 全組み合わせを実行する例:
 
@@ -201,6 +202,17 @@ python tools\myshell_search.py `
   --maze tools\maze_data\logs_maze.bin `
   --goal 7,7,2 `
   --start 0,0,N
+```
+
+探索経路を迷路上で再生する場合は`--animate`を追加します。マウスは黒丸、走行済み軌跡は水色、
+ゴールは黄色、仮想壁は赤破線で表示されます。
+
+```powershell
+python tools\myshell_search.py `
+  --port COM8 `
+  --maze tools\maze_data\logs_maze.bin `
+  --goal 7,7,2 --start 0,0,N `
+  --animate --animation-interval 100
 ```
 
 全面探索の復路確認例:

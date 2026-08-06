@@ -817,27 +817,44 @@ def save_result(prefix: Path, lines: list[str], result: SearchResult) -> None:
         writer.writerows(result.virtual_edges)
 
 
-def plot_result(
-    output: Path,
-    result: SearchResult,
-    payload: bytes | None,
-    goal: tuple[int, int, int],
-) -> None:
-    try:
-        import matplotlib
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-        import numpy as np
-        from matplotlib.patches import Rectangle
-    except ImportError:
-        print("plot skipped: install matplotlib and numpy")
-        return
+def result_positions(result: SearchResult | ReplayResult) -> list[tuple[float, float]]:
+    """Return the mouse position at each step, including the final cell."""
+    positions = [(step.x + 0.5, step.y + 0.5) for step in result.steps]
+    final = (result.final_x + 0.5, result.final_y + 0.5)
+    if not positions or positions[-1] != final:
+        positions.append(final)
+    return positions
 
-    grid = np.full((HEIGHT, WIDTH), np.nan)
-    for y, values in result.map_rows.items():
-        grid[y, :] = [np.nan if value >= MAZE_SIZE else value for value in values]
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.imshow(grid, origin="lower", extent=(0, WIDTH, 0, HEIGHT), cmap="viridis_r", alpha=0.65)
+
+def draw_result_maze(ax, result, payload, goal, show_map: bool = True) -> None:
+    """Draw the common maze layers used by the PNG and animation views."""
+    import numpy as np
+    from matplotlib.patches import Rectangle
+
+    if show_map:
+        grid = np.full((HEIGHT, WIDTH), np.nan)
+        for y, values in result.map_rows.items():
+            grid[y, :] = [np.nan if value >= MAZE_SIZE else value for value in values]
+        ax.imshow(
+            grid,
+            origin="lower",
+            extent=(0, WIDTH, 0, HEIGHT),
+            cmap="viridis_r",
+            alpha=0.45,
+        )
+
+    gx, gy, size = goal
+    ax.add_patch(
+        Rectangle(
+            (gx, gy),
+            size,
+            size,
+            facecolor="#ffe9a8",
+            edgecolor="#d39b00",
+            linewidth=1.2,
+            zorder=0,
+        )
+    )
 
     if payload is not None:
         index = 0
@@ -846,36 +863,161 @@ def plot_result(
             for x in range(WIDTH):
                 value = payload[index]
                 index += 1
-                states[x][y] = [value & 3, (value >> 2) & 3, (value >> 4) & 3, (value >> 6) & 3]
+                states[x][y] = [
+                    value & 3,
+                    (value >> 2) & 3,
+                    (value >> 4) & 3,
+                    (value >> 6) & 3,
+                ]
         for x in range(WIDTH):
             for y in range(HEIGHT):
                 if states[x][y][0] in (WALL, VWALL):
-                    ax.plot([x, x + 1], [y + 1, y + 1], color="black", linewidth=0.7)
+                    ax.plot([x, x + 1], [y + 1, y + 1], color="#303030", linewidth=0.8)
                 if states[x][y][1] in (WALL, VWALL):
-                    ax.plot([x + 1, x + 1], [y, y + 1], color="black", linewidth=0.7)
+                    ax.plot([x + 1, x + 1], [y, y + 1], color="#303030", linewidth=0.8)
                 if y == 0 and states[x][y][2] in (WALL, VWALL):
-                    ax.plot([x, x + 1], [y, y], color="black", linewidth=0.7)
+                    ax.plot([x, x + 1], [y, y], color="#303030", linewidth=0.8)
                 if x == 0 and states[x][y][3] in (WALL, VWALL):
-                    ax.plot([x, x], [y, y + 1], color="black", linewidth=0.7)
+                    ax.plot([x, x], [y, y + 1], color="#303030", linewidth=0.8)
 
     for x, y, direction in result.virtual_edges:
         if direction == "N":
-            ax.plot([x, x + 1], [y + 1, y + 1], color="red", linewidth=2.0)
+            endpoints = ([x, x + 1], [y + 1, y + 1])
         else:
-            ax.plot([x + 1, x + 1], [y, y + 1], color="red", linewidth=2.0)
-    path = [(step.x + 0.5, step.y + 0.5) for step in result.steps]
-    path.append((result.final_x + 0.5, result.final_y + 0.5))
-    if path:
-        ax.plot([p[0] for p in path], [p[1] for p in path], color="cyan", linewidth=1.5, marker="o", markersize=2)
-    gx, gy, size = goal
-    ax.add_patch(Rectangle((gx, gy), size, size, fill=False, edgecolor="lime", linewidth=2.0))
+            endpoints = ([x + 1, x + 1], [y, y + 1])
+        ax.plot(
+            *endpoints,
+            color="#d62728",
+            linewidth=1.4,
+            linestyle="dashed",
+        )
+
     ax.set_xlim(0, WIDTH)
     ax.set_ylim(0, HEIGHT)
     ax.set_aspect("equal")
+    ax.set_xticks(range(0, WIDTH + 1, 4))
+    ax.set_yticks(range(0, HEIGHT + 1, 4))
+    ax.grid(color="#dddddd", linewidth=0.35, zorder=-1)
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+
+
+def plot_result(
+    output: Path,
+    result: SearchResult,
+    payload: bytes | None,
+    goal: tuple[int, int, int],
+) -> None:
+    try:
+        import matplotlib.pyplot as plt
+        import numpy  # noqa: F401 - checked here for draw_result_maze
+    except ImportError:
+        print("plot skipped: install matplotlib and numpy")
+        return
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+    draw_result_maze(ax, result, payload, goal)
+    path = result_positions(result)
+    ax.plot(
+        [position[0] for position in path],
+        [position[1] for position in path],
+        color="#00a6d6",
+        linewidth=1.8,
+    )
+    ax.plot(*path[0], marker="s", color="#19a974", markersize=5)
+    ax.plot(*path[-1], marker="o", color="black", markersize=6)
     ax.set_title(f"myshell Search: {result.result}, steps={result.reported_steps}, virtual={len(result.virtual_edges)}")
     fig.tight_layout()
     fig.savefig(output, dpi=180)
     plt.close(fig)
+
+
+def show_animation(
+    result: SearchResult | ReplayResult,
+    payload: bytes | None,
+    goal: tuple[int, int, int],
+    interval_ms: int = 250,
+) -> None:
+    """Animate a firmware search result with the mouse shown as a black circle."""
+    try:
+        import matplotlib.pyplot as plt
+        import numpy  # noqa: F401 - checked here for draw_result_maze
+        from matplotlib.animation import FuncAnimation
+    except ImportError as exc:
+        raise RuntimeError(
+            "animation requires matplotlib and numpy; install them with "
+            "'pip install matplotlib numpy'"
+        ) from exc
+
+    positions = result_positions(result)
+    figure, axis = plt.subplots(figsize=(7, 7))
+    draw_result_maze(axis, result, payload, goal, show_map=False)
+    start_x, start_y = positions[0]
+    axis.plot(start_x, start_y, marker="s", color="#19a974", markersize=5, zorder=3)
+    trail, = axis.plot([], [], color="#00a6d6", linewidth=1.8, zorder=2)
+    mouse, = axis.plot(
+        [],
+        [],
+        marker="o",
+        color="black",
+        markeredgecolor="black",
+        markersize=6,
+        linestyle="None",
+        zorder=4,
+    )
+    status = axis.text(
+        0.01,
+        0.99,
+        "",
+        transform=axis.transAxes,
+        ha="left",
+        va="top",
+        fontsize=9,
+        bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8, "pad": 2},
+        zorder=5,
+    )
+
+    def update(frame: int):
+        visible = positions[: frame + 1]
+        trail.set_data(
+            [position[0] for position in visible],
+            [position[1] for position in visible],
+        )
+        x, y = positions[frame]
+        mouse.set_data([x], [y])
+        status.set_text(
+            f"step {frame}/{len(positions) - 1}   cell ({int(x - 0.5)}, {int(y - 0.5)})"
+        )
+        return trail, mouse, status
+
+    animation = FuncAnimation(
+        figure,
+        update,
+        frames=len(positions),
+        interval=interval_ms,
+        repeat=False,
+        blit=False,
+    )
+    update(0)
+    playback = {"paused": False}
+
+    def toggle_pause(event) -> None:
+        if event.key != " ":
+            return
+        if playback["paused"]:
+            animation.event_source.start()
+        else:
+            animation.event_source.stop()
+        playback["paused"] = not playback["paused"]
+
+    figure.canvas.mpl_connect("key_press_event", toggle_pause)
+    axis.set_title(
+        f"myshell Search: {result.result}, steps={result.reported_steps}, "
+        f"virtual={len(result.virtual_edges)}"
+    )
+    figure.suptitle("Search animation (Space: pause / resume)")
+    figure.tight_layout(rect=(0, 0, 1, 0.95))
+    plt.show()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -897,6 +1039,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--no-plot", action="store_true")
     parser.add_argument(
+        "--animate",
+        action="store_true",
+        help="animate the route with the mouse shown as a black circle",
+    )
+    parser.add_argument(
+        "--animation-interval",
+        type=int,
+        default=250,
+        metavar="MS",
+        help="milliseconds per movement step (default: 250)",
+    )
+    parser.add_argument(
         "--replay-matrix",
         action="store_true",
         help="run all goal outward x (goal/full) return x plain/acc x first/second combinations",
@@ -912,6 +1066,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Iterable[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.animation_interval <= 0:
+        raise SystemExit("--animation-interval must be greater than zero")
+    if args.replay_matrix and args.animate:
+        raise SystemExit("--animate cannot be combined with --replay-matrix")
     payload = None
     if args.maze is not None:
         payload, inferred_start, inferred_goal = load_maze_payload(args.maze)
@@ -949,6 +1107,8 @@ def main(argv: Iterable[str] | None = None) -> int:
     save_result(prefix, lines, result)
     if not args.no_plot:
         plot_result(prefix.with_suffix(".png"), result, payload, args.goal)
+    if args.animate:
+        show_animation(result, payload, args.goal, args.animation_interval)
 
     print(
         f"result={result.result} steps={result.reported_steps} "

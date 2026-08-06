@@ -14,6 +14,7 @@ from myshell_search import (  # noqa: E402
     load_maze_payload,
     parse_replay_lines,
     parse_search_lines,
+    result_positions,
     validate_replay_result,
     validate_result,
 )
@@ -39,6 +40,7 @@ class MyshellSearchTest(unittest.TestCase):
     def test_valid_transcript(self):
         result = parse_search_lines(self.valid_lines())
         self.assertEqual(validate_result(result, (0, 0, "N"), (0, 1, 1), 1), [])
+        self.assertEqual(result_positions(result), [(0.5, 0.5), (0.5, 1.5)])
 
     def test_selected_edge_closure_is_reported(self):
         result = parse_search_lines(self.valid_lines(selected_vwall=1))

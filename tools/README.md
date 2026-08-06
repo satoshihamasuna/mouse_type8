@@ -48,6 +48,16 @@ python tools\myshell_search.py --port COM8 `
   --maze tools\maze_data\logs_maze.bin --goal 7,7,2 --start 0,0,N
 ```
 
+`--animate`を付けると、受信した探索経路を迷路上で再生します。マウスは黒丸、
+走行済み軌跡は水色、ゴールは黄色、仮想壁は赤破線で表示されます。
+スペースキーで一時停止・再開でき、`--animation-interval`で1歩の表示時間を変更できます。
+
+```powershell
+python tools\myshell_search.py --port COM8 `
+  --maze tools\maze_data\logs_maze.bin --goal 7,7,2 --start 0,0,N `
+  --animate --animation-interval 100
+```
+
 実探索と同じ逐次壁観測で、往路・通常復路・全面探索復路の全組み合わせを確認する場合:
 
 ```powershell
@@ -76,6 +86,8 @@ GUIには次の画面があります。
 - 32シナリオの進捗と成否一覧
 
 迷路表示では再生・一時停止・前後1ステップ・先頭へ戻る・再生速度を操作できます。
+マウスは黒丸で表示され、スペースキーでも一時停止・再開できます。
+診断結果を受信すると「迷路 / 経路」タブへ自動的に切り替わります。
 診断結果を受信すると既定では自動再生します。
 
 GUIがCOMポートを保持するため、`myshell_gui.py`など別のシリアルツールは切断してから接続します。
