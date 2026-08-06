@@ -864,13 +864,10 @@ void Dijkstra::check_run_Dijkstra(t_position start_pos,t_direction start_wallPos
 }
 
 void Dijkstra::run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,
-				  const t_straight_param *const *st_mode,uint16_t size_st_mode,
-				  const t_straight_param *const *di_mode,uint16_t size_di_mode,
-				  const t_param *const *turn_mode , Motion *motion)
+				  const t_run_config *config,Motion *motion)
 {
-	turn_time_set(turn_mode);
-	st_param_set(st_mode, size_st_mode);
-	di_param_set(di_mode, size_di_mode);
+	run_config_set(config);
+	const t_param *const *turn_mode = config->turn_mode[config->turn_mode_size - 1];
 
 	//t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
 	t_posDijkstra last_pos = make_path_Dijkstra_priority_queue(start_pos, start_wallPos, goal_pos, goal_size);
@@ -988,14 +985,12 @@ void Dijkstra::run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_pos
 	HAL_Delay(200);
 }
 
-void Dijkstra::run_Dijkstra_suction(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,int suction,
-									  const t_straight_param *const *st_mode,uint16_t size_st_mode,
-									  const t_straight_param *const *di_mode,uint16_t size_di_mode,
-									  const t_param *const *turn_mode , Motion *motion)
+void Dijkstra::run_Dijkstra_suction(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,
+									  const t_run_config *config,Motion *motion)
 {
-	turn_time_set(turn_mode);
-	st_param_set(st_mode, size_st_mode);
-	di_param_set(di_mode, size_di_mode);
+	run_config_set(config);
+	const int suction = config->suction;
+	const t_param *const *turn_mode = config->turn_mode[config->turn_mode_size - 1];
 
 	//t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
 	t_posDijkstra last_pos = make_path_Dijkstra_priority_queue(start_pos, start_wallPos, goal_pos, goal_size);
@@ -1127,14 +1122,13 @@ void Dijkstra::run_Dijkstra_suction(t_position start_pos,t_direction start_wallP
 	HAL_Delay(200);
 }
 
-void Dijkstra::run_Dijkstra_suction_acc(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,int suction,
-									  const t_straight_param *const *st_mode,uint16_t size_st_mode,
-									  const t_straight_param *const *di_mode,uint16_t size_di_mode,
-									  const t_param *const*const *turn_mode ,uint16_t size_turn_mode, Motion *motion)
+void Dijkstra::run_Dijkstra_suction_acc(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,
+									  const t_run_config *config,Motion *motion)
 {
-	turn_time_set(turn_mode,size_turn_mode);
-	st_param_set(st_mode, size_st_mode);
-	di_param_set(di_mode, size_di_mode);
+	run_config_set(config);
+	const int suction = config->suction;
+	const t_param *const*const *turn_mode = config->turn_mode;
+	const uint16_t size_turn_mode = config->turn_mode_size;
 
 	//t_posDijkstra last_pos = make_path_Dijkstra(start_pos, start_wallPos, goal_pos, goal_size);
 	t_posDijkstra last_pos = make_path_Dijkstra_priority_queue(start_pos, start_wallPos, goal_pos, goal_size);

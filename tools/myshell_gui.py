@@ -39,9 +39,13 @@ DIJKSTRA_POS_RE = re.compile(r"x:\s*(-?\d+),y:\s*(-?\d+),d:\s*(-?\d+)")
 DIJKSTRA_RESULT_RE = re.compile(
     r"DIJKSTRA_RESULT\s+(?P<status>GOAL|NO_PATH).*?time:(?P<time>\d+)"
 )
-PATH_PROFILES = {
-    "Uniform 1000": "",
-    "Mixed 1600/1800": "acc1600",
+RUN_CONFIG_RE = re.compile(
+    r"RUN_CONFIG\s+key:(?P<key>\S+)\s+type:(?P<type>\d+)\s+"
+    r"suction:(?P<suction>\d+)\s+name:(?P<name>.+)"
+)
+DEFAULT_RUN_CONFIGS = {
+    "Uniform 1000": "uniform1000",
+    "Variable turn 1600 V1": "acc1600_v1",
 }
 FW_NODE_CENTER = 0
 FW_NODE_NORTH = 1
@@ -306,10 +310,21 @@ def step_cell(step):
     return step["x"], step["y"]
 
 
-def dijkstra_profile_command(profile, queue_mode=True):
+def dijkstra_run_config_command(config_key, queue_mode=True):
     command = "path dijkstra_queue" if queue_mode else "path dijkstra"
-    argument = PATH_PROFILES[profile]
-    return f"{command} {argument}".rstrip()
+    return f"{command} {config_key}"
+
+
+def parse_run_config(line):
+    match = RUN_CONFIG_RE.search(line)
+    if match is None:
+        return None
+    return {
+        "key": match.group("key"),
+        "name": match.group("name"),
+        "type": int(match.group("type")),
+        "suction": int(match.group("suction")),
+    }
 
 
 def parse_dijkstra_result(line):
@@ -327,6 +342,10 @@ class MyshellGui(tk.Tk):
         self.serial_port = None
         self.serial_lock = threading.Lock()
         self.ui_queue = queue.Queue()
+        self.command_timeout = 30.0
+        self.command_char_delay = 0.08
+        self.command_width = DEFAULT_WIDTH
+        self.command_height = DEFAULT_HEIGHT
 
         self.port_var = tk.StringVar(value="COM8")
         self.baud_var = tk.IntVar(value=DEFAULT_BAUD)
@@ -336,8 +355,10 @@ class MyshellGui(tk.Tk):
         self.char_delay_var = tk.DoubleVar(value=0.08)
         self.command_var = tk.StringVar(value="help")
         self.status_var = tk.StringVar(value="Disconnected")
-        self.path_profile_var = tk.StringVar(value="Uniform 1000")
-        self.path_result_var = tk.StringVar(value="Select a profile and run the shortest path")
+        self.run_configs = dict(DEFAULT_RUN_CONFIGS)
+        self.base_run_config_var = tk.StringVar(value="Uniform 1000")
+        self.compare_run_config_var = tk.StringVar(value="Variable turn 1600 V1")
+        self.path_result_var = tk.StringVar(value="走行設定を選択して最短経路を計算")
         self.goal_var = tk.StringVar(value=f"Goal {DEFAULT_GOAL[0]},{DEFAULT_GOAL[1]} size {DEFAULT_GOAL[2]}")
 
         self._build_ui()
@@ -382,31 +403,43 @@ class MyshellGui(tk.Tk):
 			("disp history", lambda: self.run_text_command("disp history")),
             ("path dijkstra", self.run_dijkstra_path),
             ("path queue", self.run_dijkstra_queue_path),
-            ("compare profiles", self.compare_dijkstra_profiles),
+            ("走行設定を比較", self.compare_dijkstra_run_configs),
             ("disp log", lambda: self.run_text_command("disp log")),
             ("disp log_bin -> CSV", self.receive_log_binary),
             ("end exe", lambda: self.run_text_command("end exe")),
         ):
             ttk.Button(quick, text=label, command=command).pack(side=tk.LEFT, padx=3, pady=2)
 
-        profile_row = ttk.LabelFrame(root, text="Dijkstra cost profile", padding=6)
-        profile_row.pack(fill=tk.X, pady=(0, 8))
-        ttk.Label(profile_row, text="Profile").pack(side=tk.LEFT)
-        ttk.Combobox(
-            profile_row,
-            textvariable=self.path_profile_var,
-            values=tuple(PATH_PROFILES),
+        config_row = ttk.LabelFrame(root, text="ダイクストラ走行設定", padding=6)
+        config_row.pack(fill=tk.X, pady=(0, 8))
+        ttk.Label(config_row, text="基準（青）").pack(side=tk.LEFT)
+        self.base_run_config_combo = ttk.Combobox(
+            config_row,
+            textvariable=self.base_run_config_var,
+            values=tuple(self.run_configs),
             state="readonly",
-            width=20,
-        ).pack(side=tk.LEFT, padx=(5, 8))
+            width=23,
+        )
+        self.base_run_config_combo.pack(side=tk.LEFT, padx=(5, 8))
+        ttk.Label(config_row, text="比較（橙）").pack(side=tk.LEFT)
+        self.compare_run_config_combo = ttk.Combobox(
+            config_row,
+            textvariable=self.compare_run_config_var,
+            values=tuple(self.run_configs),
+            state="readonly",
+            width=23,
+        )
+        self.compare_run_config_combo.pack(side=tk.LEFT, padx=(5, 8))
         ttk.Button(
-            profile_row, text="Run selected", command=self.run_dijkstra_queue_path
+            config_row, text="比較側を計算", command=self.run_dijkstra_queue_path
         ).pack(side=tk.LEFT)
         ttk.Button(
-            profile_row, text="Compare / overlay", command=self.compare_dijkstra_profiles
+            config_row, text="比較して重ねる", command=self.compare_dijkstra_run_configs
         ).pack(side=tk.LEFT, padx=(6, 0))
-        ttk.Label(profile_row, text="Blue: Uniform / Orange: Mixed").pack(side=tk.LEFT, padx=(12, 0))
-        ttk.Label(profile_row, textvariable=self.path_result_var).pack(side=tk.RIGHT)
+        ttk.Button(
+            config_row, text="設定一覧更新", command=self.refresh_run_configs
+        ).pack(side=tk.LEFT, padx=(6, 0))
+        ttk.Label(config_row, textvariable=self.path_result_var).pack(side=tk.RIGHT)
 
         body = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
         body.pack(fill=tk.BOTH, expand=True)
@@ -451,7 +484,7 @@ class MyshellGui(tk.Tk):
         self.last_maze_goal_area = DEFAULT_GOAL
         self.last_maze_goal_cells = goal_cells_from_area(DEFAULT_GOAL)
         self.last_path_cells = []
-        self.last_profile_paths = {}
+        self.last_config_paths = {}
         self.last_draw_geometry = None
 
         self.refresh_ports()
@@ -479,11 +512,16 @@ class MyshellGui(tk.Tk):
             self.serial_port = serial.Serial(self.port_var.get(), self.baud_var.get(), timeout=0.1)
             time.sleep(0.2)
             self.serial_port.reset_input_buffer()
+            self.command_char_delay = float(self.char_delay_var.get())
+            self._write_command("shell")
+            time.sleep(0.5)
+            self.serial_port.read(self.serial_port.in_waiting or 1)
         except Exception as exc:
             messagebox.showerror("Connect failed", str(exc))
             return
         self.connect_button.configure(text="Disconnect")
         self.status_var.set(f"Connected: {self.port_var.get()} @ {self.baud_var.get()}")
+        self.refresh_run_configs()
 
     def disconnect(self):
         with self.serial_lock:
@@ -512,15 +550,26 @@ class MyshellGui(tk.Tk):
         self._run_worker(self._log_binary_worker)
 
     def run_dijkstra_path(self):
-        command = dijkstra_profile_command(self.path_profile_var.get(), queue_mode=False)
+        command = dijkstra_run_config_command(
+            self.run_configs[self.compare_run_config_var.get()], queue_mode=False
+        )
         self._run_worker(lambda: self._dijkstra_path_worker(command))
 
     def run_dijkstra_queue_path(self):
-        command = dijkstra_profile_command(self.path_profile_var.get(), queue_mode=True)
+        command = dijkstra_run_config_command(
+            self.run_configs[self.compare_run_config_var.get()], queue_mode=True
+        )
         self._run_worker(lambda: self._dijkstra_path_worker(command))
 
-    def compare_dijkstra_profiles(self):
-        self._run_worker(self._compare_dijkstra_profiles_worker)
+    def compare_dijkstra_run_configs(self):
+        base_name = self.base_run_config_var.get()
+        compare_name = self.compare_run_config_var.get()
+        self._run_worker(
+            lambda: self._compare_dijkstra_run_configs_worker(base_name, compare_name)
+        )
+
+    def refresh_run_configs(self):
+        self._run_worker(self._run_config_list_worker)
 
     def upload_maze_data(self):
         if not self.last_maze_binary:
@@ -537,6 +586,10 @@ class MyshellGui(tk.Tk):
     def _run_worker(self, target):
         if not self.require_serial():
             return
+        self.command_timeout = float(self.timeout_var.get())
+        self.command_char_delay = float(self.char_delay_var.get())
+        self.command_width = int(self.width_var.get())
+        self.command_height = int(self.height_var.get())
         threading.Thread(target=self._worker_guard, args=(target,), daemon=True).start()
 
     def _worker_guard(self, target):
@@ -549,7 +602,7 @@ class MyshellGui(tk.Tk):
         for char in command + "\r":
             self.serial_port.write(char.encode("ascii"))
             self.serial_port.flush()
-            delay = self.char_delay_var.get()
+            delay = self.command_char_delay
             if delay > 0:
                 time.sleep(delay)
         self.serial_port.flush()
@@ -578,7 +631,7 @@ class MyshellGui(tk.Tk):
             self._prepare_shell()
             self._write_command(command)
             path_steps = [self._start_path_step()] if command.startswith("path dijkstra") else None
-            deadline = time.monotonic() + self.timeout_var.get()
+            deadline = time.monotonic() + self.command_timeout
             idle_deadline = time.monotonic() + 1.0
             while time.monotonic() < deadline:
                 line = self._readline_text()
@@ -604,7 +657,7 @@ class MyshellGui(tk.Tk):
             self._prepare_shell()
             self._write_command(command)
             started_at = time.monotonic()
-            deadline = time.monotonic() + self.timeout_var.get()
+            deadline = time.monotonic() + self.command_timeout
             while time.monotonic() < deadline:
                 line = self._readline_text()
                 if line is None:
@@ -626,23 +679,46 @@ class MyshellGui(tk.Tk):
                     return outcome
         raise TimeoutError("Timed out waiting for DIJKSTRA_END")
 
-    def _compare_dijkstra_profiles_worker(self):
-        uniform = self._dijkstra_path_worker(
-            dijkstra_profile_command("Uniform 1000"), draw=False
+    def _run_config_list_worker(self):
+        configs = []
+        with self.serial_lock:
+            self._append("\n> path configs\n")
+            self._prepare_shell()
+            self._write_command("path configs")
+            deadline = time.monotonic() + self.command_timeout
+            while time.monotonic() < deadline:
+                line = self._readline_text()
+                if line is None:
+                    continue
+                self._append(line + "\n")
+                parsed = parse_run_config(line)
+                if parsed is not None:
+                    configs.append(parsed)
+                if line == "RUN_CONFIG_END":
+                    if not configs:
+                        raise ValueError("走行設定が1件も取得できませんでした")
+                    self.ui_queue.put(("run_configs", configs))
+                    return
+        raise TimeoutError("RUN_CONFIG_END を待機中にタイムアウトしました")
+
+    def _compare_dijkstra_run_configs_worker(self, base_name, compare_name):
+        base = self._dijkstra_path_worker(
+            dijkstra_run_config_command(self.run_configs[base_name]), draw=False
         )
-        mixed = self._dijkstra_path_worker(
-            dijkstra_profile_command("Mixed 1600/1800"), draw=False
+        compared = self._dijkstra_path_worker(
+            dijkstra_run_config_command(self.run_configs[compare_name]), draw=False
         )
-        same_route = self._path_signature(uniform["path"]) == self._path_signature(mixed["path"])
+        same_route = self._path_signature(base["path"]) == self._path_signature(compared["path"])
         summary = (
-            f"Uniform: {uniform['time']} ms | Mixed: {mixed['time']} ms | "
-            f"route: {'same' if same_route else 'changed'}"
+            f"{base_name}: {base['time']} ms | {compare_name}: {compared['time']} ms | "
+            f"経路: {'同じ' if same_route else '変化あり'}"
         )
         self._append(
-            f"PATH_PROFILE_COMPARE uniform={uniform['time']} ms, "
-            f"mixed={mixed['time']} ms, route={'same' if same_route else 'changed'}\n"
+            f"RUN_CONFIG_COMPARE base={self.run_configs[base_name]}:{base['time']} ms, "
+            f"compared={self.run_configs[compare_name]}:{compared['time']} ms, "
+            f"route={'same' if same_route else 'changed'}\n"
         )
-        self.ui_queue.put(("draw_profile_compare", uniform["path"], mixed["path"]))
+        self.ui_queue.put(("draw_config_compare", base["path"], compared["path"]))
         self.ui_queue.put(("path_result", summary))
 
     @staticmethod
@@ -652,11 +728,14 @@ class MyshellGui(tk.Tk):
             for step in path_steps
         )
 
-    @staticmethod
-    def _format_path_result(command, outcome):
-        profile = "Mixed" if command.endswith("acc1600") else "Uniform"
+    def _format_path_result(self, command, outcome):
+        config_key = command.rsplit(" ", 1)[-1]
+        config_name = next(
+            (name for name, key in self.run_configs.items() if key == config_key),
+            config_key,
+        )
         cost = "-" if outcome["time"] is None else f"{outcome['time']} ms"
-        return f"{profile}: {outcome['status']} / {cost}"
+        return f"{config_name}: {outcome['status']} / {cost}"
 
     def _start_path_step(self):
         start_x, start_y = self.last_maze_start_cells[0]
@@ -676,8 +755,8 @@ class MyshellGui(tk.Tk):
         path_steps.append(step)
 
     def _maze_binary_worker(self):
-        width = self.width_var.get()
-        height = self.height_var.get()
+        width = self.command_width
+        height = self.command_height
         payload_size = width * height
         with self.serial_lock:
             self._append("\n> disp maze_bin\n")
@@ -688,11 +767,14 @@ class MyshellGui(tk.Tk):
             self.last_maze_binary = payload
             self.last_maze_wall_data = maze_binary_to_wall_data(payload, width, height)
             self.last_path_cells = []
-            self.last_profile_paths = {}
+            self.last_config_paths = {}
             self.last_maze_start_cells = [(0, 0)]
             self.last_maze_goal_area = DEFAULT_GOAL
             self.last_maze_goal_cells = goal_cells_from_area(DEFAULT_GOAL)
-            self.goal_var.set(f"Goal {DEFAULT_GOAL[0]},{DEFAULT_GOAL[1]} size {DEFAULT_GOAL[2]}")
+            self.ui_queue.put((
+                "goal_text",
+                f"Goal {DEFAULT_GOAL[0]},{DEFAULT_GOAL[1]} size {DEFAULT_GOAL[2]}",
+            ))
             self._append(f"Received maze binary: {len(payload)}/{payload_size} bytes\n")
             self.ui_queue.put(("draw_maze", payload, width, height))
 
@@ -728,7 +810,7 @@ class MyshellGui(tk.Tk):
             self._append("\n> disp log_bin\n")
             self._prepare_shell()
             self._write_command("disp log_bin")
-            deadline = time.monotonic() + self.timeout_var.get()
+            deadline = time.monotonic() + self.command_timeout
             while time.monotonic() < deadline:
                 line = self._readline_text()
                 if line is None:
@@ -762,7 +844,7 @@ class MyshellGui(tk.Tk):
         self._append(f"Saved CSV: {out_path}\n")
 
     def _wait_for_line(self, expected):
-        deadline = time.monotonic() + self.timeout_var.get()
+        deadline = time.monotonic() + self.command_timeout
         while time.monotonic() < deadline:
             line = self._readline_text()
             if line is None:
@@ -773,7 +855,7 @@ class MyshellGui(tk.Tk):
         raise TimeoutError(f"Timed out waiting for {expected}")
 
     def _wait_for_line_prefix(self, expected_prefix):
-        deadline = time.monotonic() + self.timeout_var.get()
+        deadline = time.monotonic() + self.command_timeout
         while time.monotonic() < deadline:
             line = self._readline_text()
             if line is None:
@@ -785,7 +867,7 @@ class MyshellGui(tk.Tk):
 
     def _read_exact(self, size):
         data = bytearray()
-        deadline = time.monotonic() + self.timeout_var.get()
+        deadline = time.monotonic() + self.command_timeout
         while len(data) < size and time.monotonic() < deadline:
             chunk = self.serial_port.read(size - len(data))
             if chunk:
@@ -838,10 +920,10 @@ class MyshellGui(tk.Tk):
             rect = self.canvas.create_rectangle(x1, y1, x2, y2, fill="#ffe5e5", outline="")
             self.canvas.tag_lower(rect)
 
-        if self.last_profile_paths:
-            self._draw_profile_comparison(
-                self.last_profile_paths.get("uniform", []),
-                self.last_profile_paths.get("mixed", []),
+        if self.last_config_paths:
+            self._draw_config_comparison(
+                self.last_config_paths.get("base", []),
+                self.last_config_paths.get("compared", []),
             )
         elif self.last_path_cells:
             self._draw_path(self.last_path_cells)
@@ -898,14 +980,14 @@ class MyshellGui(tk.Tk):
             fill="#111111", outline="", tags=("path", tag),
         )
 
-    def _draw_profile_comparison(self, uniform_path, mixed_path):
+    def _draw_config_comparison(self, base_path, compared_path):
         self.canvas.delete("path")
         self._draw_path(
-            uniform_path, color="#0067c0", tag="path_uniform",
+            base_path, color="#0067c0", tag="path_base",
             clear=False, width_scale=0.16,
         )
         self._draw_path(
-            mixed_path, color="#e87500", tag="path_mixed",
+            compared_path, color="#e87500", tag="path_compared",
             clear=False, width_scale=0.09,
         )
 
@@ -924,15 +1006,32 @@ class MyshellGui(tk.Tk):
                     self._draw_maze(payload, width, height)
                 elif item[0] == "draw_path":
                     _, path_cells = item
-                    self.last_profile_paths = {}
+                    self.last_config_paths = {}
                     self._draw_path(path_cells)
-                elif item[0] == "draw_profile_compare":
-                    _, uniform_path, mixed_path = item
-                    self.last_path_cells = mixed_path
-                    self.last_profile_paths = {"uniform": uniform_path, "mixed": mixed_path}
-                    self._draw_profile_comparison(uniform_path, mixed_path)
+                elif item[0] == "draw_config_compare":
+                    _, base_path, compared_path = item
+                    self.last_path_cells = compared_path
+                    self.last_config_paths = {"base": base_path, "compared": compared_path}
+                    self._draw_config_comparison(base_path, compared_path)
                 elif item[0] == "path_result":
                     self.path_result_var.set(item[1])
+                elif item[0] == "goal_text":
+                    self.goal_var.set(item[1])
+                elif item[0] == "run_configs":
+                    configs = item[1]
+                    previous_base = self.base_run_config_var.get()
+                    previous_compare = self.compare_run_config_var.get()
+                    self.run_configs = {config["name"]: config["key"] for config in configs}
+                    names = tuple(self.run_configs)
+                    self.base_run_config_combo["values"] = names
+                    self.compare_run_config_combo["values"] = names
+                    self.base_run_config_var.set(
+                        previous_base if previous_base in self.run_configs else names[0]
+                    )
+                    self.compare_run_config_var.set(
+                        previous_compare if previous_compare in self.run_configs else names[-1]
+                    )
+                    self._append(f"走行設定を更新しました: {len(configs)}件\n")
         except queue.Empty:
             pass
         self.after(50, self._drain_ui_queue)
@@ -1005,7 +1104,7 @@ class MyshellGui(tk.Tk):
         self.last_maze_binary = payload
         self.last_maze_wall_data = data.maze_wall_data.copy()
         self.last_path_cells = []
-        self.last_profile_paths = {}
+        self.last_config_paths = {}
         self.last_maze_start_cells = list(data.start_cells)
         self.last_maze_goal_area = goal_area
         self.last_maze_goal_cells = goal_cells_from_area(goal_area)

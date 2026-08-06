@@ -15,6 +15,7 @@
 #include "Component/Inc/controller.h"
 
 #include "Params/run_param.h"
+#include "Params/run_config.h"
 
 #include "Task/Inc/ctrl_task.h"
 #include "Task/Inc/run_typedef.h"
@@ -84,6 +85,7 @@ class calcRunTime
 		void turn_time_set(const t_param *const*const *mode  ,uint16_t mode_size);
 		void st_param_set(const t_straight_param *const *mode,uint16_t mode_size);
 		void di_param_set(const t_straight_param *const *mode,uint16_t mode_size);
+		void run_config_set(const t_run_config *config);
 		uint16_t return_turn_time(t_run_pattern run_pt);
 		uint16_t straight_time_set(float length);
 		uint16_t straight_time_set(float length,float start_velo,float end_velo);
@@ -195,17 +197,11 @@ class Dijkstra:public calcRunTime
 		t_bool check_DijkstraPath(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size);
 
 		void run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,
-						  const t_straight_param *const *st_mode,uint16_t size_st_mode,
-						  const t_straight_param *const *di_mode,uint16_t size_di_mode,
-						  const t_param *const *turn_mode,Motion *motion);
-		void run_Dijkstra_suction(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,int suction,
-								  const t_straight_param *const *st_mode,uint16_t size_st_mode,
-								  const t_straight_param *const *di_mode,uint16_t size_di_mode,
-								  const t_param *const *turn_mode , Motion *motion);
-		void run_Dijkstra_suction_acc(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,int suction,
-											  const t_straight_param *const *st_mode,uint16_t size_st_mode,
-											  const t_straight_param *const *di_mode,uint16_t size_di_mode,
-											  const t_param *const*const *turn_mode ,uint16_t size_turn_mode, Motion *motion);
+						  const t_run_config *config,Motion *motion);
+		void run_Dijkstra_suction(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,
+								  const t_run_config *config,Motion *motion);
+		void run_Dijkstra_suction_acc(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,
+											  const t_run_config *config,Motion *motion);
 		void expand(t_posDijkstra pos);
 		t_posDijkstra last_expand(t_posDijkstra pos,t_direction m_dir,t_position goal_pos,uint8_t goal_size);
 		uint16_t straight_section_num(t_posDijkstra s_pos,t_posDijkstra e_pos,t_direction dir);

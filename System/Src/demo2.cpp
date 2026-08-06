@@ -120,7 +120,7 @@ void Demo2()
 					Indicate_LED(mode|param);
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_1000);
+					run_path.run_config_set(find_run_config("uniform1000"));
 					t_bool flag = False;
 					flag = run_path.check_DijkstraPath(start, Dir_None, goal, MAZE_GOAL_SIZE);
 					if(flag == True)
@@ -157,9 +157,7 @@ void Demo2()
 			  		start.x = start.y = 0;start.dir = North;
 			  		goal.x = MAZE_GOAL_X, goal.y = MAZE_GOAL_Y;
 					Dijkstra run_path(&wall_data);
-			  run_path.di_param_set(di_mode_1000_v0, 1);
-			  		run_path.di_param_set(di_mode_1000_v0, 1);
-					run_path.turn_time_set(mode_1000);
+					run_path.run_config_set(find_run_config("uniform1000"));
 					run_path.check_run_Dijkstra(start, Dir_None, goal, 2);
 
 					//Mode_Disable();
@@ -176,10 +174,8 @@ void Demo2()
 					}
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_1000);
 					run_path.run_Dijkstra(		start, Dir_None, goal,MAZE_GOAL_SIZE,
-														st_mode_500_v0, (int)(sizeof(st_mode_500_v0)/sizeof(t_straight_param *const)),
-														di_mode_500_v0, (int)(sizeof(di_mode_500_v0)/sizeof(t_straight_param *const)), mode_500,motion);
+												find_run_config("plain500"),motion);
 
 
 					if(motion->motion_exeStatus_get() == error)
@@ -214,10 +210,8 @@ void Demo2()
 
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_1800);
-					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,700,
-														st_mode_1800_v1, (int)(sizeof(st_mode_1800_v1)/sizeof(t_straight_param *const)),
-														di_mode_1800_v1, (int)(sizeof(di_mode_1800_v1)/sizeof(t_straight_param *const)), mode_1800,motion);
+					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,
+												find_run_config("suction1800"),motion);
 
 					if(motion->motion_exeStatus_get() == error)
 					{
@@ -239,11 +233,8 @@ void Demo2()
 
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_2000);
-					run_path.run_Dijkstra_suction(	start, Dir_None, goal, MAZE_GOAL_SIZE,800,
-														st_mode_2000_v1, (int)(sizeof(st_mode_2000_v1)/sizeof(t_straight_param *const))	,
-														di_mode_2000_v1, (int)(sizeof(di_mode_2000_v1)/sizeof(t_straight_param *const))	,
-														mode_2000,motion);
+					run_path.run_Dijkstra_suction(	start, Dir_None, goal, MAZE_GOAL_SIZE,
+												find_run_config("suction2000"),motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
 						Mode::indicate_error();
@@ -264,11 +255,8 @@ void Demo2()
 
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_2000);
-					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,800,
-														st_mode_1800_v1, (int)(sizeof(st_mode_1800_v1)/sizeof(t_straight_param *const))	,
-														di_mode_1800_v1, (int)(sizeof(di_mode_1800_v1)/sizeof(t_straight_param *const))	,
-														acc_mode_1800_v1,(int)(sizeof(acc_mode_1800_v1)/sizeof(t_param *const*const))	,motion);
+					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,
+												find_run_config("acc1800_v1"),motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
 						Mode::indicate_error();
@@ -289,10 +277,8 @@ void Demo2()
 
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_1200);
-					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,600,
-														st_mode_1200_v0, (int)(sizeof(st_mode_1200_v0)/sizeof(t_straight_param *const)),
-														di_mode_1200_v0, (int)(sizeof(di_mode_1200_v0)/sizeof(t_straight_param *const)), mode_1200,motion);
+					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,
+												find_run_config("suction1200_v0"),motion);
 
 					if(motion->motion_exeStatus_get() == error)
 					{
@@ -315,10 +301,8 @@ void Demo2()
 
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_1400);
-					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,600,
-														st_mode_1200_v1, (int)(sizeof(st_mode_1200_v1)/sizeof(t_straight_param *const)),
-														di_mode_1200_v1, (int)(sizeof(di_mode_1200_v1)/sizeof(t_straight_param *const)), mode_1200,motion);
+					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,
+												find_run_config("suction1200_v1"),motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
 						Mode::indicate_error();
@@ -339,10 +323,8 @@ void Demo2()
 
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_1400);
-					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,650,
-														st_mode_1400_v0, (int)(sizeof(st_mode_1400_v0)/sizeof(t_straight_param *const)),
-														di_mode_1400_v0, (int)(sizeof(di_mode_1400_v0)/sizeof(t_straight_param *const)), mode_1400,motion);
+					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,
+												find_run_config("suction1400_v0"),motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
 						Mode::indicate_error();
@@ -363,10 +345,8 @@ void Demo2()
 
 
 					Dijkstra run_path(&wall_data);
-					run_path.turn_time_set(mode_1400);
-					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,650,
-														st_mode_1400_v1, (int)(sizeof(st_mode_1400_v1)/sizeof(t_straight_param *const)),
-														di_mode_1400_v1, (int)(sizeof(di_mode_1400_v1)/sizeof(t_straight_param *const)), mode_1400,motion);
+					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,
+												find_run_config("suction1400_v1_650"),motion);
 
 					if(motion->motion_exeStatus_get() == error)
 					{

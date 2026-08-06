@@ -549,10 +549,20 @@ static int usrcmd_load(int argc, char **argv)
 
 static int usrcmd_path(int argc, char **argv)
 {
+	if(argc == 2 && ntlibc_strcmp(argv[1], "configs") == 0) {
+		for(uint16_t i = 0; i < run_config_count; i++) {
+			printf("RUN_CONFIG key:%s type:%d suction:%d name:%s\r\n",
+					run_config_table[i].key, run_config_table[i].type,
+					run_config_table[i].suction, run_config_table[i].display_name);
+		}
+		printf("RUN_CONFIG_END\r\n");
+		return 0;
+	}
     if (argc < 2 || argc > 3) {
     	printf("path dijkstra\r\n");
 		printf("path dijkstra_queue\r\n");
-		printf("path dijkstra[_queue] acc1600\r\n");
+		printf("path configs\r\n");
+		printf("path dijkstra[_queue] run_config_key\r\n");
     	return 0;
     }
 	t_bool priority_queue = False;
@@ -569,21 +579,16 @@ static int usrcmd_path(int argc, char **argv)
     	t_position start, goal;
     	start.x = start.y = 0;
     	start.dir = North;
-    	goal.x = shell_goal_x;
-    	goal.y = shell_goal_y;
+	goal.x = shell_goal_x;
+	goal.y = shell_goal_y;
 
-	if(argc == 3 && ntlibc_strcmp(argv[2], "acc1600") == 0) {
-		run_path.st_param_set(st_mode_1600_v3, sizeof(st_mode_1600_v3) / sizeof(st_mode_1600_v3[0]));
-		run_path.di_param_set(di_mode_1600_v2, sizeof(di_mode_1600_v2) / sizeof(di_mode_1600_v2[0]));
-		run_path.turn_time_set(acc_mode_1600_v1, sizeof(acc_mode_1600_v1) / sizeof(acc_mode_1600_v1[0]));
-		printf("DIJKSTRA_PROFILE ACC1600_MIXED\r\n");
+	const t_run_config *config = find_run_config(argc == 3 ? argv[2] : "uniform1000");
+	if(config == nullptr) {
+		printf("RUN_CONFIG_ERROR key:%s\r\n", argv[2]);
+		return -1;
 	}
-	else {
-		run_path.st_param_set(st_mode_1000_v0, sizeof(st_mode_1000_v0) / sizeof(st_mode_1000_v0[0]));
-		run_path.di_param_set(di_mode_1000_v0, sizeof(di_mode_1000_v0) / sizeof(di_mode_1000_v0[0]));
-		run_path.turn_time_set(mode_1000);
-		printf("DIJKSTRA_PROFILE UNIFORM1000\r\n");
-	}
+	run_path.run_config_set(config);
+	printf("DIJKSTRA_RUN_CONFIG key:%s name:%s\r\n", config->key, config->display_name);
     	printf("DIJKSTRA_GOAL x:%d y:%d size:%d\r\n", shell_goal_x, shell_goal_y, shell_goal_size);
 		printf("DIJKSTRA_MODE PRIORITY_QUEUE%s\r\n", priority_queue == True ? "" : " (COMPAT_ALIAS)");
 	printf("DIJKSTRA_START\r\n");

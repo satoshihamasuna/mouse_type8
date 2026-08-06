@@ -336,3 +336,10 @@ void calcRunTime::di_param_set(const t_straight_param *const *mode,uint16_t mode
 	di_set_mode = mode;
 	di_mode_size = mode_size;
 }
+
+void calcRunTime::run_config_set(const t_run_config *config)
+{
+	st_param_set(config->straight_mode, config->straight_mode_size);
+	di_param_set(config->diagonal_mode, config->diagonal_mode_size);
+	turn_time_set(config->turn_mode, config->turn_mode_size);
+}

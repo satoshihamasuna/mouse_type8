@@ -6,13 +6,24 @@ TOOLS_DIR = Path(__file__).resolve().parents[1]
 if str(TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DIR))
 
-from myshell_gui import dijkstra_profile_command, parse_dijkstra_result
+from myshell_gui import dijkstra_run_config_command, parse_dijkstra_result, parse_run_config
 
 
-def test_dijkstra_profile_commands():
-    assert dijkstra_profile_command("Uniform 1000") == "path dijkstra_queue"
-    assert dijkstra_profile_command("Mixed 1600/1800") == "path dijkstra_queue acc1600"
-    assert dijkstra_profile_command("Mixed 1600/1800", queue_mode=False) == "path dijkstra acc1600"
+def test_dijkstra_run_config_commands():
+    assert dijkstra_run_config_command("uniform1000") == "path dijkstra_queue uniform1000"
+    assert dijkstra_run_config_command("acc1600_v1", queue_mode=False) == "path dijkstra acc1600_v1"
+
+
+def test_parse_run_config():
+    assert parse_run_config(
+        "RUN_CONFIG key:acc1600_v1 type:2 suction:700 name:Variable turn 1600 V1"
+    ) == {
+        "key": "acc1600_v1",
+        "name": "Variable turn 1600 V1",
+        "type": 2,
+        "suction": 700,
+    }
+    assert parse_run_config("RUN_CONFIG_END") is None
 
 
 def test_parse_dijkstra_goal_result():
