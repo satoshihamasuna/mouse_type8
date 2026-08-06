@@ -552,8 +552,8 @@ static int usrcmd_path(int argc, char **argv)
 	if(argc == 2 && ntlibc_strcmp(argv[1], "configs") == 0) {
 		for(uint16_t i = 0; i < run_config_count; i++) {
 			printf("RUN_CONFIG key:%s type:%d suction:%d name:%s\r\n",
-					run_config_table[i].key, run_config_table[i].type,
-					run_config_table[i].suction, run_config_table[i].display_name);
+					run_config_table[i]->key, run_config_table[i]->type,
+					run_config_table[i]->suction, run_config_table[i]->display_name);
 		}
 		printf("RUN_CONFIG_END\r\n");
 		return 0;

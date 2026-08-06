@@ -259,7 +259,7 @@ void Demo()
 					Indicate_LED(mode|param);
 
 					Dijkstra run_path(&wall_data);
-					run_path.run_config_set(find_run_config("uniform1000"));
+					run_path.run_config_set(&run_config_uniform1000);
 					t_bool flag = False;
 					flag = run_path.check_DijkstraPath(start, Dir_None, goal, MAZE_GOAL_SIZE);
 					if(flag == True)
@@ -293,7 +293,7 @@ void Demo()
 
 					Dijkstra run_path(&wall_data);
 					run_path.run_Dijkstra(		start, Dir_None, goal,MAZE_GOAL_SIZE,
-												find_run_config("plain700"),motion);
+											&run_config_plain700,motion);
 
 
 					if(motion->motion_exeStatus_get() == error)
@@ -342,7 +342,7 @@ void Demo()
 					
 					Dijkstra run_path(&wall_data);
 					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,
-												find_run_config("acc1600_v1"),motion);
+											&run_config_acc1600_v1,motion);
 
 
 					if(motion->motion_exeStatus_get() == error)
@@ -365,7 +365,7 @@ void Demo()
 
 					Dijkstra run_path(&wall_data);
 					run_path.run_Dijkstra_suction(		start, Dir_None, goal,MAZE_GOAL_SIZE,
-												find_run_config("suction1400_v1_600"),motion);
+											&run_config_suction1400_v1_600,motion);
 
 					if(motion->motion_exeStatus_get() == error)
 					{
@@ -387,7 +387,7 @@ void Demo()
 
 					Dijkstra run_path(&wall_data);
 					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,
-												find_run_config("suction1400_v2"),motion);
+											&run_config_suction1400_v2,motion);
 
 					if(motion->motion_exeStatus_get() == error)
 					{
@@ -410,7 +410,7 @@ void Demo()
 
 					Dijkstra run_path(&wall_data);
 					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,
-												find_run_config("suction1600_v1"),motion);
+											&run_config_suction1600_v1,motion);
 
 					if(motion->motion_exeStatus_get() == error)
 					{
@@ -433,7 +433,7 @@ void Demo()
 
 					Dijkstra run_path(&wall_data);
 					run_path.run_Dijkstra_suction(		start, Dir_None, goal, MAZE_GOAL_SIZE,
-												find_run_config("suction1600_v2"),motion);
+											&run_config_suction1600_v2,motion);
 
 					if(motion->motion_exeStatus_get() == error)
 					{
@@ -456,7 +456,7 @@ void Demo()
 
 					Dijkstra run_path(&wall_data);
 					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,
-												find_run_config("acc1600_v2"),motion);
+											&run_config_acc1600_v2,motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
 						Mode::indicate_error();
@@ -478,7 +478,7 @@ void Demo()
 
 					Dijkstra run_path(&wall_data);
 					run_path.run_Dijkstra_suction_acc(	start, Dir_None, goal, MAZE_GOAL_SIZE,
-												find_run_config("acc1600_v3"),motion);
+											&run_config_acc1600_v3,motion);
 					if(motion->motion_exeStatus_get() == error)
 					{
 						Mode::indicate_error();
