@@ -12,6 +12,7 @@
 #include "Peripheral/Inc/lsm6dsr_reg.h"
 #include "Peripheral/Inc/lsm6dsrx_reg.h"
 #include "Peripheral/Inc/lsm6dsv16x_reg.h"
+#include "Peripheral/Inc/lsm6dsv80x_reg.h"
 
 uint8_t imu_address = OUTX_L_G|0x80; //ACCEL_X_HIGH_BYTE
 uint8_t imu_value[13];
@@ -199,6 +200,66 @@ void IMU_initialize_lsm6dsv16x()
 	HAL_Delay(5);
 
 
+}
+
+void IMU_initialize_lsm6dsv80x()
+{
+	HAL_Delay(5);
+	HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin, GPIO_PIN_SET);
+	HAL_Delay(5);
+
+	read_byte(LSM6DSV80X_WHO_AM_I);
+	HAL_Delay(5);
+
+	write_byte(LSM6DSV80X_CTRL3_C, LSM6DSV80X_SW_RESET);
+	HAL_Delay(5);
+	write_byte(LSM6DSV80X_CTRL3_C,
+			   LSM6DSV80X_BOOT_NORMAL |
+			   LSM6DSV80X_BDU_EN |
+			   LSM6DSV80X_IF_INC_EN);
+	HAL_Delay(5);
+
+	/* HAODR mode must be selected while both sensors are powered down. */
+	write_byte(LSM6DSV80X_CTRL1_XL,
+			   LSM6DSV80X_XL_HA_MODE |
+			   LSM6DSV80X_XL_ODR_OFF);
+	HAL_Delay(5);
+	write_byte(LSM6DSV80X_CTRL2_G,
+			   LSM6DSV80X_G_HA_MODE |
+			   LSM6DSV80X_G_ODR_OFF);
+	HAL_Delay(5);
+	write_byte(LSM6DSV80X_HAODR_CFG,
+			   LSM6DSV80X_HAODR_SEL_1);
+	HAL_Delay(5);
+
+	/* Low-g accelerometer: 2 kHz-class HAODR, +/-8 g, LPF2 at ODR/4. */
+	write_byte(LSM6DSV80X_CTRL1_XL,
+			   LSM6DSV80X_XL_HA_MODE |
+			   LSM6DSV80X_XL_ODR_2KHZ);
+	HAL_Delay(5);
+	write_byte(LSM6DSV80X_CTRL9_C,
+			   LSM6DSV80X_XL_HP_REF_MODE_DIS |
+			   LSM6DSV80X_XL_HP_SLOPE_DIS |
+			   LSM6DSV80X_XL_FASTSETTL_MODE_EN |
+			   LSM6DSV80X_XL_LPF2_EN);
+	HAL_Delay(5);
+	write_byte(LSM6DSV80X_CTRL8_XL,
+			   LSM6DSV80X_XL_CF_ODR_4 |
+			   LSM6DSV80X_XL_FS_8G);
+	HAL_Delay(5);
+
+	/* Gyroscope: 2 kHz-class HAODR, +/-4000 dps, LPF1 bypassed. */
+	write_byte(LSM6DSV80X_CTRL2_G,
+			   LSM6DSV80X_G_HA_MODE |
+			   LSM6DSV80X_G_ODR_2KHZ);
+	HAL_Delay(5);
+	write_byte(LSM6DSV80X_CTRL6_G,
+			   LSM6DSV80X_G_LPF1_FTYPE_0 |
+			   LSM6DSV80X_G_FS_4000DPS);
+	HAL_Delay(5);
+	write_byte(LSM6DSV80X_CTRL7_C,
+			   LSM6DSV80X_G_LPF1_DISABLE);
+	HAL_Delay(5);
 }
 
 

@@ -27,6 +27,7 @@ void write_byte(uint8_t reg, uint8_t data);
 void IMU_initialize();
 void IMU_initialize_lsm6dsrx();
 void IMU_initialize_lsm6dsv16x();
+void IMU_initialize_lsm6dsv80x();
 uint16_t IMU_Check();
 void IMU_read_DMA_Start();
 float read_gyro_x_axis();
