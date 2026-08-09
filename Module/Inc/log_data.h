@@ -12,7 +12,7 @@
 #include "Component/Inc/half_float.h"
 #include "Component/Inc/singleton.h"
 
-#define LOG_DATA_SIZE 1000
+#define LOG_DATA_SIZE 400
 #define LOG_DATA_NUM  51
 #define LOG_DATA_PRIOD 1
 
