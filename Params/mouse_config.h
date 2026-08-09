@@ -10,16 +10,23 @@
 
 #include "Component/Inc/math_utils.h"
 
-// ===== 使用するマウスを選択 =====
-#define MOUSE_A
-//#define MOUSE_B
-// ================================
-
-// ===== 安全チェック =====
+/*
+ * The active machine is selected by the CMake build preset.
+ *
+ *   MOUSE_A: Param_A + LSM6DSV16X
+ *   MOUSE_B: Param_B + LSM6DSV80X
+ */
 #if defined(MOUSE_A) && defined(MOUSE_B)
-    #error "MOUSEA と MOUSEB は同時に定義できません。どちらか一方だけ有効にしてください。"
+#error "MOUSE_A and MOUSE_B cannot be enabled at the same time."
 #elif !defined(MOUSE_A) && !defined(MOUSE_B)
-    #error "MOUSEA または MOUSEB のどちらかを定義してください。"
+#error "Select MOUSE_A or MOUSE_B with a CMake build preset."
+#endif
+
+/* Hardware fitted to each machine. */
+#if defined(MOUSE_A)
+#define IMU_USE_LSM6DSV16X
+#elif defined(MOUSE_B)
+#define IMU_USE_LSM6DSV80X
 #endif
 
 #define SECTION				(90.0)

@@ -17,7 +17,7 @@ extern "C" {
  * Device ID
  * ============================== */
 #define LSM6DSV16X_WHO_AM_I        0x0F
-#define LSM6DSV16X_ID              0x6B
+#define LSM6DSV16X_ID              0x70
 
 
 /* ==============================

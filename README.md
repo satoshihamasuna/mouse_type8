@@ -27,7 +27,7 @@ STM32U535CEU6 を対象にしたマイクロマウス用ファームウェアで
 | `Params/` | 走行パラメータ、ターンテーブル、センサ閾値など。 |
 | `cmake/` | STM32CubeIDE for VS Code が生成した CMake 設定とツールチェーン設定。 |
 | `CMakeLists.txt` | プロジェクト本体の CMake エントリ。 |
-| `CMakePresets.json` | `Debug` / `Release` の CMake preset。 |
+| `CMakePresets.json` | MOUSE_A / MOUSE_B、それぞれの `Debug` / `Release` CMake preset。 |
 | `mouse_type8.ioc` | STM32CubeMX の設定ファイル。 |
 | `open-ioc.cmd` | 同じフォルダ内の `.ioc` ファイルを開くための Windows 用スクリプト。 |
 | `STM32U535CEUX_FLASH.ld` | Flash 用リンカスクリプト。 |
@@ -56,7 +56,16 @@ Ctrl + Shift + P
 CMake: Select Configure Preset
 ```
 
-通常のデバッグビルドでは `Debug`、最適化ビルドでは `Release` を選択します。
+機体とビルド種別に合わせて、以下の preset を選択します。
+
+| Preset | 機体 | パラメータ | IMU |
+| --- | --- | --- | --- |
+| `Debug-MouseA` | MOUSE_A | Param_A | LSM6DSV16X |
+| `Debug-MouseB` | MOUSE_B | Param_B | LSM6DSV80X |
+| `Release-MouseA` | MOUSE_A | Param_A | LSM6DSV16X |
+| `Release-MouseB` | MOUSE_B | Param_B | LSM6DSV80X |
+
+従来の `Debug` / `Release` preset は互換性のためMOUSE_Aとして扱われます。MOUSE_Bの開発では、必ず名前に `MouseB` が付いたpresetを選択してください。
 
 ### Configure
 
@@ -64,16 +73,16 @@ CMake: Select Configure Preset
 CMake: Configure
 ```
 
-ターミナルから実行する場合:
+ターミナルからMOUSE_Aを設定する場合:
 
 ```powershell
-cube-cmake --preset Debug
+cube-cmake --preset Debug-MouseA
 ```
 
-Release の場合:
+MOUSE_Bを設定する場合:
 
 ```powershell
-cube-cmake --preset Release
+cube-cmake --preset Debug-MouseB
 ```
 
 ### Build
@@ -82,23 +91,25 @@ cube-cmake --preset Release
 CMake: Build
 ```
 
-ターミナルから実行する場合:
+ターミナルからMOUSE_Aをビルドする場合:
 
 ```powershell
-cube-cmake --build --preset Debug
+cube-cmake --build --preset Debug-MouseA
 ```
 
-Release の場合:
+MOUSE_Bをビルドする場合:
 
 ```powershell
-cube-cmake --build --preset Release
+cube-cmake --build --preset Debug-MouseB
 ```
 
-Debug ビルドの成果物は以下に出力されます。
+Debugビルドの成果物は機体別のディレクトリに出力されます。
 
 ```text
-build/Debug/mouse_type8.elf
-build/Debug/mouse_type8.map
+build/Debug-MouseA/mouse_type8.elf
+build/Debug-MouseA/mouse_type8.map
+build/Debug-MouseB/mouse_type8.elf
+build/Debug-MouseB/mouse_type8.map
 ```
 
 ### Clean
@@ -112,7 +123,7 @@ CMake: Clean
 ターミナルから Ninja の clean を実行する場合:
 
 ```powershell
-cube-cmake --build --preset Debug --target clean
+cube-cmake --build --preset Debug-MouseA --target clean
 ```
 
 ### Rebuild
@@ -124,8 +135,10 @@ CMake: Clean Rebuild
 ターミナルから実行する場合:
 
 ```powershell
-cube-cmake --build --preset Debug --clean-first
+cube-cmake --build --preset Debug-MouseA --clean-first
 ```
+
+MOUSE_Bの場合は、presetを `Debug-MouseB` に置き換えます。
 
 ### compile_commands.json の更新
 
@@ -135,10 +148,11 @@ cube-cmake --build --preset Debug --clean-first
 CMake: Configure
 ```
 
-Debug preset の場合、以下のファイルが使われます。
+Debug preset の場合、機体ごとに以下のファイルが使われます。
 
 ```text
-build/Debug/compile_commands.json
+build/Debug-MouseA/compile_commands.json
+build/Debug-MouseB/compile_commands.json
 ```
 
 ### STM32CubeMX 設定を開く
@@ -154,20 +168,25 @@ Windows のターミナルから:
 ## よく使うターミナルコマンド
 
 ```powershell
-# Debug configure
-cube-cmake --preset Debug
+# MOUSE_A Debug configure
+cube-cmake --preset Debug-MouseA
 
-# Debug build
-cube-cmake --build --preset Debug
+# MOUSE_A Debug clean build
+cube-cmake --build --preset Debug-MouseA --clean-first
 
-# Debug clean build
-cube-cmake --build --preset Debug --clean-first
+# MOUSE_B Debug configure
+cube-cmake --preset Debug-MouseB
 
-# Release configure
-cube-cmake --preset Release
+# MOUSE_B Debug clean build
+cube-cmake --build --preset Debug-MouseB --clean-first
 
-# Release build
-cube-cmake --build --preset Release
+# MOUSE_A Release build
+cube-cmake --preset Release-MouseA
+cube-cmake --build --preset Release-MouseA
+
+# MOUSE_B Release build
+cube-cmake --preset Release-MouseB
+cube-cmake --build --preset Release-MouseB
 
 # .ioc を開く
 .\open-ioc.cmd
@@ -178,21 +197,35 @@ cube-cmake --build --preset Release
 - `cmake/vscode_generated.cmake` は STM32CubeIDE for VS Code が管理する生成ファイルです。ソース追加や CubeMX 設定変更後に再生成される可能性があります。
 - ユーザー定義の CMake 設定を追加する場合は、まず `CMakeLists.txt` の `User defined` セクションを使います。
 - `.ioc` を変更した後は、生成されたソースや CMake 設定に差分が出るため、ビルド前に `CMake: Configure` を実行してください。
-- Debug/Release のビルドディレクトリは `build/Debug`、`build/Release` です。
+- 機体別のビルドディレクトリは `build/Debug-MouseA`、`build/Debug-MouseB`、`build/Release-MouseA`、`build/Release-MouseB` です。
 
 ### Flash / Write to MCU
 
-Debug ビルド後、ST-LINK を接続して SWD 経由で書き込む場合:
+Debugビルド後、ST-LINKを接続してSWD経由で書き込みます。ビルドした機体と書き込み対象を必ず一致させてください。
+
+MOUSE_A:
 
 ```powershell
-cube programmer -c port=SWD -d .\build\Debug\mouse_type8.elf -v -rst
+cube-cmake --preset Debug-MouseA
+cube-cmake --build --preset Debug-MouseA --clean-first
+cube programmer -c port=SWD -d .\build\Debug-MouseA\mouse_type8.elf -v -rst
+```
+
+MOUSE_B:
+
+```powershell
+cube-cmake --preset Debug-MouseB
+cube-cmake --build --preset Debug-MouseB --clean-first
+cube programmer -c port=SWD -d .\build\Debug-MouseB\mouse_type8.elf -v -rst
 ```
 
 `cube programmer` が見つからない場合は、STM32CubeProgrammer の CLI を直接指定します:
 
 ```powershell
-& "C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe" -c port=SWD -d .\build\Debug\mouse_type8.elf -v -rst
+& "C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe" -c port=SWD -d .\build\Debug-MouseA\mouse_type8.elf -v -rst
 ```
+
+MOUSE_Bの場合は、書き込みファイルを `.\build\Debug-MouseB\mouse_type8.elf` に変更します。
 
 ## turnpattern GUI
 

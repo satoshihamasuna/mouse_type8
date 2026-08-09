@@ -14,7 +14,15 @@
 #include "Peripheral/Inc/lsm6dsv16x_reg.h"
 #include "Peripheral/Inc/lsm6dsv80x_reg.h"
 
-uint8_t imu_address = OUTX_L_G|0x80; //ACCEL_X_HIGH_BYTE
+#if defined(IMU_USE_LSM6DSV16X)
+#define IMU_OUTX_L_G_ADDRESS LSM6DSV16X_OUTX_L_G
+#elif defined(IMU_USE_LSM6DSV80X)
+#define IMU_OUTX_L_G_ADDRESS LSM6DSV80X_OUTX_L_G
+#else
+#error "Unsupported IMU selection."
+#endif
+
+uint8_t imu_address = IMU_OUTX_L_G_ADDRESS | 0x80U;
 uint8_t imu_value[13];
 
 int16_t accel_data[3];
@@ -44,10 +52,12 @@ void write_byte(uint8_t reg, uint8_t data){
 
 void IMU_initialize()
 {
-#if defined(MOUSE_A)
+#if defined(IMU_USE_LSM6DSV16X)
 	IMU_initialize_lsm6dsv16x();
-#elif defined(MOUSE_B)
-	IMU_initialize_lsm6dsrx();
+#elif defined(IMU_USE_LSM6DSV80X)
+	IMU_initialize_lsm6dsv80x();
+#else
+#error "Unsupported IMU selection."
 #endif
 }
 

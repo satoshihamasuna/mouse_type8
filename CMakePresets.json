@@ -25,22 +25,52 @@
             "name": "Debug",
             "inherits": "default",
             "cacheVariables": {
+                "MOUSE_TARGET": "A",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CUBE_CMAKE_C_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-std=gnu11;-g3;-DDEBUG;-DUSE_HAL_DRIVER;-DSTM32U535xx;-O0;-ffunction-sections;-fdata-sections;-Wall;-fstack-usage",
                 "CUBE_CMAKE_CXX_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-std=gnu++14;-g3;-DDEBUG;-DUSE_HAL_DRIVER;-DSTM32U535xx;-O0;-ffunction-sections;-fdata-sections;-fno-exceptions;-fno-rtti;-fno-use-cxa-atexit;-Wall;-fstack-usage",
                 "CUBE_CMAKE_ASM_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-g3;-DDEBUG;-x;assembler-with-cpp",
-                "CUBE_CMAKE_EXE_LINKER_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-TSTM32U535CEUX_FLASH.ld;-Wl,-Map=mouse_type8.map;-Wl,--gc-sections;-static"
+                "CUBE_CMAKE_EXE_LINKER_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-TSTM32U535CEUX_FLASH.ld;-Wl,-Map=mouse_type8.map;-Wl,--gc-sections;-Wl,-u,_printf_float;-static"
             }
         },
         {
             "name": "Release",
             "inherits": "default",
             "cacheVariables": {
+                "MOUSE_TARGET": "A",
                 "CMAKE_BUILD_TYPE": "Release",
                 "CUBE_CMAKE_C_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-std=gnu11;-DUSE_HAL_DRIVER;-DSTM32U535xx;-Os;-ffunction-sections;-fdata-sections;-Wall;-fstack-usage",
                 "CUBE_CMAKE_CXX_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-std=gnu++14;-DUSE_HAL_DRIVER;-DSTM32U535xx;-Os;-ffunction-sections;-fdata-sections;-fno-exceptions;-fno-rtti;-fno-use-cxa-atexit;-Wall;-fstack-usage",
                 "CUBE_CMAKE_ASM_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-x;assembler-with-cpp",
-                "CUBE_CMAKE_EXE_LINKER_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-TSTM32U535CEUX_FLASH.ld;-Wl,-Map=mouse_type8.map;-Wl,--gc-sections;-static"
+                "CUBE_CMAKE_EXE_LINKER_FLAGS": "-mfpu=fpv5-sp-d16;-mfloat-abi=hard;-mthumb;--specs=nano.specs;-mcpu=cortex-m33;-TSTM32U535CEUX_FLASH.ld;-Wl,-Map=mouse_type8.map;-Wl,--gc-sections;-Wl,-u,_printf_float;-static"
+            }
+        },
+        {
+            "name": "Debug-MouseA",
+            "inherits": "Debug",
+            "cacheVariables": {
+                "MOUSE_TARGET": "A"
+            }
+        },
+        {
+            "name": "Debug-MouseB",
+            "inherits": "Debug",
+            "cacheVariables": {
+                "MOUSE_TARGET": "B"
+            }
+        },
+        {
+            "name": "Release-MouseA",
+            "inherits": "Release",
+            "cacheVariables": {
+                "MOUSE_TARGET": "A"
+            }
+        },
+        {
+            "name": "Release-MouseB",
+            "inherits": "Release",
+            "cacheVariables": {
+                "MOUSE_TARGET": "B"
             }
         }
     ],
@@ -52,6 +82,22 @@
         {
             "name": "Release",
             "configurePreset": "Release"
+        },
+        {
+            "name": "Debug-MouseA",
+            "configurePreset": "Debug-MouseA"
+        },
+        {
+            "name": "Debug-MouseB",
+            "configurePreset": "Debug-MouseB"
+        },
+        {
+            "name": "Release-MouseA",
+            "configurePreset": "Release-MouseA"
+        },
+        {
+            "name": "Release-MouseB",
+            "configurePreset": "Release-MouseB"
         }
     ]
 }

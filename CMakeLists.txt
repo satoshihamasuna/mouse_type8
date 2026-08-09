@@ -12,8 +12,24 @@ enable_language(C CXX ASM)
 
 set(BUILD_UNIT_0_NAME mouse_type8)
 
+# Select the target machine. Build presets set this explicitly; A keeps
+# legacy command-line builds compatible with the machine developed so far.
+set(MOUSE_TARGET "A" CACHE STRING "Target machine (A or B)")
+set_property(CACHE MOUSE_TARGET PROPERTY STRINGS A B)
+string(TOUPPER "${MOUSE_TARGET}" MOUSE_TARGET_UPPER)
+
 # Create an executable object type
 add_executable(${BUILD_UNIT_0_NAME})
+
+if(MOUSE_TARGET_UPPER STREQUAL "A")
+  target_compile_definitions(${BUILD_UNIT_0_NAME} PRIVATE MOUSE_A)
+elseif(MOUSE_TARGET_UPPER STREQUAL "B")
+  target_compile_definitions(${BUILD_UNIT_0_NAME} PRIVATE MOUSE_B)
+else()
+  message(FATAL_ERROR "MOUSE_TARGET must be A or B (received: ${MOUSE_TARGET})")
+endif()
+
+message(STATUS "Building for MOUSE_${MOUSE_TARGET_UPPER}")
 
 # STM32CubeIDE for Visual Studio Code managed CMake file
 include(cmake/vscode_generated.cmake)
