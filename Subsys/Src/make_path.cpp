@@ -1009,6 +1009,11 @@ void Dijkstra::run_Dijkstra(t_position start_pos,t_direction start_wallPos,t_pos
 			break;
 		}
 	}
+	if(motion->motion_exeStatus_get() != error)
+	{
+		motion->Init_Motion_stop_brake(200);
+		motion->execute_Motion();
+	}
 	log_disable();
 	motion->Motion_end();
 	HAL_Delay(200);
