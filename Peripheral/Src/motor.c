@@ -183,8 +183,8 @@ void FAN_Motor_SetDuty(int16_t duty_f)
 	}
 
 	//HAL_GPIO_WritePin(fn1_GPIO_Port, fn1_Pin, 0);
-	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, TIM1->ARR - pulse_f);
-	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, TIM1->ARR - pulse_min);
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, TIM1->ARR - pulse_f);
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, TIM1->ARR - pulse_min);
 
 }
 
