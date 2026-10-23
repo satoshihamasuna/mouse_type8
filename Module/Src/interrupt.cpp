@@ -187,7 +187,8 @@ void Interrupt::preprocess()
 	Vehicle_type8::getInstance().battery.set(battery_voltage);
 
 	//update wall sensor information
-	IrSensTask_type8::getInstance().IrSensorSet(&Vehicle_type8::getInstance());
+	// enc_velo is this interrupt's signed encoder travel in mm.
+	IrSensTask_type8::getInstance().IrSensorSet(&Vehicle_type8::getInstance(), enc_velo);
 }
 
 void Interrupt::main()

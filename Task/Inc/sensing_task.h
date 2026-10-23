@@ -13,6 +13,7 @@
 #include "Component/Inc/typedef.h"
 #include "Component/Inc/maze_typedef.h"
 #include "Task/Inc/run_typedef.h"
+#include "Task/Inc/side_wall_stability.h"
 
 #define STRAIGHT_REF		(45.0)
 #define DIAGONAL_REF		(32.0)
@@ -78,6 +79,7 @@ class IrSensTask
 		t_bool	 isEnableIrSens = False;
 		t_irsens_motion irsens_motion;
 		int ir_log_cnt;
+		SideWallStability right_wall_stability, left_wall_stability;
 
 	public:
 
@@ -89,12 +91,12 @@ class IrSensTask
 		uint16_t r_corner_time,		l_corner_time;
 		param_element 	 r_corner_length,	l_corner_length;
 		t_wall_state conv_Sensin2Wall(t_sensor_dir sens_dir);
-		virtual 		void IrSensorSet(Vehicle *vehicle);
+		virtual 		void IrSensorSet(Vehicle *vehicle, float forward_step_mm);
 		void IrSensMotion_Set(t_irsens_motion _irsens_motion){irsens_motion = _irsens_motion;	}
 
 		void IrSensorReferenceSet(float ref_value);
 		void IrSensorDistanceSet(Vehicle *vehicle);
-		void IrSensorWallSet(Vehicle *vehicle);
+		void IrSensorWallSet(float forward_step_mm);
 		void SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms);
 		inline void EnableIrSens()		{isEnableIrSens = True;}
 		inline void DisableIrSens()			{isEnableIrSens = False;}
@@ -142,14 +144,14 @@ class IrSensTask
 class IrSensTask_type8: public IrSensTask,public Singleton<IrSensTask_type8>
 {
 	public:
-		void IrSensorSet(Vehicle *vehicle) override
+		void IrSensorSet(Vehicle *vehicle, float forward_step_mm) override
 		{
 			sen_fl.value =  Sensor_GetValue(sensor_fl);
 			sen_fr.value =  Sensor_GetValue(sensor_fr);
 			sen_l.value  =  Sensor_GetValue(sensor_sl);
 			sen_r.value  =  Sensor_GetValue(sensor_sr);
 			IrSensorDistanceSet(vehicle);
-			IrSensorWallSet(vehicle);
+			IrSensorWallSet(forward_step_mm);
 		}
 
 };
