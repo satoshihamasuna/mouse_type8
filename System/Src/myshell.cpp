@@ -46,6 +46,7 @@ static int usrcmd_load(int argc, char **argv);
 static int usrcmd_path(int argc, char **argv);
 static int usrcmd_search(int argc, char **argv);
 static int usrcmd_interface(int argc, char **argv);
+static int usrcmd_irsens(int argc, char **argv);
 typedef struct {
 	const char *cmd;
 	const char *desc;
@@ -63,7 +64,9 @@ static const cmd_table_t cmdlist[] = {
 	{ "load" ,"load saved maze data from flash.", usrcmd_load },
 	{ "path" ,"check path generation.", usrcmd_path },
 	{ "search" ,"replay search/map/virtual-wall logic without motion.", usrcmd_search },
-	{ "interface", "check IMU and photo sensor values.", usrcmd_interface }
+	{ "interface", "check IMU and photo sensor values.", usrcmd_interface },
+	{ "irsens", "Print IR values, distances and averages: irsens count [interval_ms].", usrcmd_irsens },
+	{ "ir_sensor", "Alias for irsens count [interval_ms].", usrcmd_irsens }
 };
 
 static ntshell_t nts;
@@ -392,6 +395,74 @@ static int usrcmd_info(int argc, char **argv)
     }
     printf("Unknown sub command found\r\n");
     return -1;
+}
+
+static void shell_irsens_usage(void)
+{
+	printf("irsens <count> [interval_ms] (alias: ir_sensor)\r\n");
+	printf("  count: 1-1000; interval_ms: 0-1000 (default: 10)\r\n");
+}
+
+static t_bool shell_irsens_parse_integer(const char *text, int minimum, int *value)
+{
+	if (text == nullptr || *text == '\0') return False;
+	int parsed = 0;
+	for (const char *p = text; *p != '\0'; ++p) {
+		if (*p < '0' || *p > '9') return False;
+		const int digit = *p - '0';
+		if (parsed > (1000 - digit) / 10) return False;
+		parsed = parsed * 10 + digit;
+	}
+	if (parsed < minimum) return False;
+	*value = parsed;
+	return True;
+}
+
+static int usrcmd_irsens(int argc, char **argv)
+{
+	int count = 0;
+	int interval_ms = 10;
+	if (argc < 2 || argc > 3
+		|| shell_irsens_parse_integer(argv[1], 1, &count) != True
+		|| (argc == 3 && shell_irsens_parse_integer(argv[2], 0, &interval_ms) != True)) {
+		shell_irsens_usage();
+		return argc == 1 ? 0 : -1;
+	}
+
+	IrSensTask &irsens = IrSensTask_type8::getInstance();
+	int32_t value_sums[4] = {};
+	double distance_sums[4] = {};
+	printf("IRSENS_START count:%d interval_ms:%d\r\n", count, interval_ms);
+	for (int i = 0; i < count; ++i) {
+		int16_t values[4];
+		float distances[4];
+		// Snapshot only: keep UART output and delays outside the interrupt mask.
+		const uint32_t saved_primask = __get_PRIMASK();
+		__disable_irq();
+		const t_sensor *sensors[4] = {&irsens.sen_fl, &irsens.sen_fr, &irsens.sen_l, &irsens.sen_r};
+		for (int channel = 0; channel < 4; ++channel) {
+			values[channel] = sensors[channel]->value;
+			distances[channel] = sensors[channel]->distance;
+		}
+		if (saved_primask == 0U) __enable_irq();
+		for (int channel = 0; channel < 4; ++channel) {
+			value_sums[channel] += values[channel];
+			distance_sums[channel] += (double)distances[channel];
+		}
+		printf("IRSENS index:%d value_fl:%d value_fr:%d value_sl:%d value_sr:%d "
+			"distance_fl_mm:%.3f distance_fr_mm:%.3f distance_sl_mm:%.3f distance_sr_mm:%.3f\r\n",
+			i, values[0], values[1], values[2], values[3],
+			(double)distances[0], (double)distances[1], (double)distances[2], (double)distances[3]);
+		if (i + 1 < count && interval_ms > 0) HAL_Delay((uint32_t)interval_ms);
+	}
+	printf("IRSENS_AVG count:%d value_fl:%.3f value_fr:%.3f value_sl:%.3f value_sr:%.3f "
+		"distance_fl_mm:%.3f distance_fr_mm:%.3f distance_sl_mm:%.3f distance_sr_mm:%.3f\r\n",
+		count, (double)value_sums[0] / count, (double)value_sums[1] / count,
+		(double)value_sums[2] / count, (double)value_sums[3] / count,
+		distance_sums[0] / count, distance_sums[1] / count,
+		distance_sums[2] / count, distance_sums[3] / count);
+	printf("IRSENS_END count:%d\r\n", count);
+	return 0;
 }
 
 static void shell_interface_usage(void)

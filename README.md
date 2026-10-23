@@ -227,6 +227,11 @@ cube programmer -c port=SWD -d .\build\Debug-MouseB\mouse_type8.elf -v -rst
 
 MOUSE_Bの場合は、書き込みファイルを `.\build\Debug-MouseB\mouse_type8.elf` に変更します。
 
+## 赤外線センサ表示
+
+センサ値と換算距離の表示は、shellモードで `irsens 100 100`（100回、行間に100 ms待機）を送信します。
+使い方は [myshell シリアル操作ガイド](tools/myshell_README.md#irセンサ表示) を参照してください。
+
 ## turnpattern GUI
 
 最大20個のターンを組み合わせて本体へ送信するGUIは、次のコマンドで起動します。

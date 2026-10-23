@@ -98,6 +98,9 @@ python tools\myshell_gui.py
 | `help` | コマンド一覧を表示します。 |
 | `info sys` | システム名を表示します。 |
 | `info ver` | ファームウェアのバージョン文字列を表示します。 |
+| `irsens count [interval_ms]` | 指定回数、4方向のIRセンサ値と換算距離[mm]を表示し、最後に平均値を出力します。 |
+| `ir_sensor count [interval_ms]` | `irsens` と同じコマンドです。 |
+| `interface ir [count] [interval_ms]` | IR差分値と発光ON/OFF時のADC値を表示します（`photo` も同じ）。 |
 | `load save` | flash に保存されている壁データを shell 側の `wall_data` に読み込みます。 |
 | `load maze_bin` | GUI からバイナリ迷路を受け取り、shell 側の `wall_data` に読み込みます。flash には書きません。 |
 | `load goal x y size` | Dijkstra 用のゴール左下座標 `(x, y)` と正方形サイズを RAM に設定します。 |
@@ -113,6 +116,29 @@ python tools\myshell_gui.py
 | `log mode0` | ログヘッダ出力を有効にします。 |
 | `log mode1` | ログヘッダ出力を無効にします。 |
 | `end exe` | myshell を終了します。 |
+
+## IRセンサ表示
+
+マウスをshellモードにして、GUIのコマンド入力欄またはシリアルターミナルから送信します。
+100回表示する場合（行間の待機は既定で10 ms）:
+
+```text
+irsens 100
+```
+
+20回表示し、行間に100 ms待機する場合:
+
+```text
+irsens 20 100
+```
+
+`ir_sensor 20 100` でも同じ動作になります。回数は1〜1000、待機時間は0〜1000 msです。
+待機時間にはシリアル送信の時間が別途加わります。0を指定すると、同じ最新標本を繰り返し表示する場合があります。
+
+`IRSENS_START` に続けて、指定回数の `IRSENS index:...` 行、平均値の `IRSENS_AVG`、`IRSENS_END` を出力します。
+各行の `value_fl/fr/sl/sr` は発光ON−OFFのADC差分、`distance_fl/fr/sl/sr_mm` は換算距離です。
+平均値は表示した全標本について小数点以下3桁で出力します。距離は各標本の換算距離を平均します。
+FLは前左、FRは前右、SLは左、SRは右です。連続取得中の値を読み取ります。
 
 ## Search診断
 
