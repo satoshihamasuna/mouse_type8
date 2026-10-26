@@ -373,7 +373,9 @@ static void integration_disabled()
 static void integration_speed_gate()
 {
     Fixture fixture;
-    fixture.task.sen_r.distance = 52.0f;
+    fixture.task.EnableIrSensDiagonal();
+    fixture.task.sen_l.distance = 30.0f;
+    fixture.task.sen_r.distance = 31.0f;
     fixture.qualify();
     fixture.vehicle.ego.x_point.set(7.0f);
     fixture.vehicle.ideal.velo.set(0.19f);
@@ -384,8 +386,8 @@ static void integration_speed_gate()
     fixture.vehicle.ideal.rad_velo.set(0.0f);
     fixture.vehicle.ego.velo.set(0.32f);
     fixture.task.SetWallControl_RadVelo(&fixture.vehicle, 1.0f);
-    CHECK(fixture.task.control_ir.get() == 1.0f);
-    CHECK(fixture.vehicle.ego.x_point.get() == 1.0f);
+    CHECK(fixture.task.control_ir.get() == 0.5f);
+    CHECK(fixture.vehicle.ego.x_point.get() == 7.0f);
     const float nominal_accel = fixture.vehicle.ideal.rad_accel.get();
     fixture.vehicle.ideal.rad_velo.set(0.0f);
     fixture.vehicle.ego.velo.set(0.64f);
@@ -415,6 +417,200 @@ static void integration_adc()
     CHECK(task.sen_l.control_cnt < 10 && task.sen_r.control_cnt < 10);
 }
 
+static ZirconiaWallControl::Input wall_input()
+{
+    ZirconiaWallControl::Input in;
+    in.enabled = in.sample_updated = true;
+    in.left_m = in.right_m = 0.045f;
+    in.left_signal = in.right_signal = 1000.0f;
+    in.travel_m = 0.001f;
+    in.velocity_mps = 1.0f;
+    return in;
+}
+
+static void zirconia_symmetry()
+{
+    ZirconiaWallControl a, b;
+    auto right_offset = wall_input();
+    right_offset.left_m = 0.050f;
+    right_offset.right_m = 0.040f;
+    auto left_offset = right_offset;
+    left_offset.left_m = 0.040f;
+    left_offset.right_m = 0.050f;
+    ZirconiaWallControl::Output ra, rb;
+    for (int i = 0; i < 150; ++i) {
+        ra = a.update(right_offset);
+        rb = b.update(left_offset);
+        CHECK(near(ra.omega_radps, -rb.omega_radps));
+        CHECK(std::fabs(ra.alpha_radps2) <= 20.001f);
+        CHECK(std::fabs(ra.omega_radps) <= 1.20001f);
+    }
+    CHECK(ra.phase == ZirconiaWallControl::Tracking && ra.trusted_mask == 3);
+    CHECK(ra.omega_radps > 0.0f && rb.omega_radps < 0.0f);
+    // At the same right offset, already pointing left must reduce steering.
+    right_offset.heading_rad = 0.15f;
+    const float before = ra.omega_radps;
+    for (int i = 0; i < 20; ++i) ra = a.update(right_offset);
+    CHECK(ra.omega_radps < before);
+}
+
+static void zirconia_independent()
+{
+    ZirconiaWallControl controller;
+    auto in = wall_input();
+    in.left_m = 0.040f;
+    ZirconiaWallControl::Output out;
+    for (int i = 0; i < 80; ++i) out = controller.update(in);
+    CHECK(out.trusted_mask == 3 && out.transition == 1.0f);
+    float previous = out.omega_radps;
+    // A close pillar on the right must not pollute the continuous left wall.
+    in.right_m = 0.030f;
+    in.right_signal = 3000.0f;
+    for (int i = 0; i < 3; ++i) out = controller.update(in);
+    CHECK(out.trusted_mask == 1 && out.phase == ZirconiaWallControl::Tracking);
+    CHECK(near(out.raw_error_m, -0.005f));
+    CHECK(out.pose_control && out.transition == 1.0f);
+    CHECK(std::fabs(out.omega_radps - previous) <= 0.06001f);
+    previous = out.omega_radps;
+    in.right_m = 0.080f;
+    out = controller.update(in);
+    CHECK(out.trusted_mask == 1 && out.observed_mask == 1);
+    CHECK(out.phase == ZirconiaWallControl::Tracking && out.transition == 1.0f);
+    CHECK(std::fabs(out.omega_radps - previous) <= 0.02001f);
+    // Losing the last reliable wall resets yaw, then ramps estimated control.
+    in.left_m = 0.080f;
+    in.estimated_error_m = 0.004f;
+    out = controller.update(in);
+    CHECK(out.phase == ZirconiaWallControl::Estimated && out.trusted_mask == 0);
+    CHECK(out.omega_radps == 0.0f);
+    for (int i = 0; i < 50; ++i) {
+        out = controller.update(in);
+        CHECK(std::fabs(out.alpha_radps2) <= 4.001f);
+        CHECK(std::fabs(out.omega_radps) <= 0.20001f);
+    }
+    CHECK(out.omega_radps > 0.0f);
+}
+
+static void zirconia_spatial_confidence()
+{
+    const float steps[] = {0.0002f, 0.0005f, 0.001f, 0.002f};
+    for (float step : steps) {
+        ZirconiaWallControl controller;
+        auto in = wall_input();
+        in.travel_m = step;
+        in.right_m = 0.080f;
+        in.left_m = 0.055f; // Far single wall: approaching it is eventually allowed.
+        ZirconiaWallControl::Output out;
+        float travel = 0.0f;
+        for (int i = 0; i < 200 && !out.pose_control; ++i) {
+            out = controller.update(in);
+            travel += step;
+        }
+        CHECK(out.pose_control && out.trusted_mask == 1);
+        CHECK(travel >= 0.006f && travel <= 0.0141f);
+        for (int i = 0; i < 150; ++i) out = controller.update(in);
+        CHECK(out.omega_radps > 0.0f);
+    }
+    ZirconiaWallControl controller;
+    auto in = wall_input();
+    in.travel_m = 0.0f;
+    ZirconiaWallControl::Output out;
+    for (int i = 0; i < 200; ++i) out = controller.update(in);
+    CHECK(out.phase == ZirconiaWallControl::Confirming && out.trusted_mask == 0);
+    CHECK(out.omega_radps == 0.0f);
+    in.travel_m = 0.001f;
+    in.heading_rad = 0.1f;
+    for (int i = 0; i < 80; ++i) {
+        const float lateral = in.travel_m * std::sin(in.heading_rad) * 1.7f;
+        in.left_m -= lateral;
+        in.right_m += lateral;
+        out = controller.update(in);
+        if (i > 20) CHECK(out.trusted_mask == 3);
+    }
+}
+
+static void zirconia_reset_and_sync()
+{
+    ZirconiaWallControl controller;
+    auto in = wall_input();
+    in.left_m = 0.046f;
+    in.right_m = 0.044f;
+    ZirconiaWallControl::Output out;
+    for (int i = 0; i < 60; ++i) out = controller.update(in);
+    CHECK(out.sync_estimator && near(out.raw_error_m, 0.001f));
+    in.enabled = false;
+    out = controller.update(in);
+    CHECK(out.phase == ZirconiaWallControl::Disabled && out.omega_radps == 0.0f);
+    in.enabled = true;
+    out = controller.update(in);
+    CHECK(out.phase == ZirconiaWallControl::Confirming && out.trusted_mask == 0);
+    in.heading_rad = std::numeric_limits<float>::quiet_NaN();
+    out = controller.update(in);
+    CHECK(out.phase == ZirconiaWallControl::Disabled && out.omega_radps == 0.0f);
+}
+
+static void zirconia_adc_adapter()
+{
+    IrSensTask_type8 task{};
+    Vehicle vehicle{};
+    task.EnableIrSensStraight();
+    vehicle.ideal.velo.set(0.5f);
+    vehicle.ego.velo.set(0.5f);
+    // Exact table points: right-of-center requires positive/left yaw.
+    side_wall_test_adc[sensor_sl] = sens_sl_table[5]; // 50 mm
+    side_wall_test_adc[sensor_sr] = sens_sr_table[3]; // 40 mm
+    side_wall_test_adc[sensor_fl] = sens_fl_table[0]; // Front wall must not suppress side control.
+    side_wall_test_adc[sensor_fr] = sens_fr_table[0];
+    for (int i = 0; i < 150; ++i) {
+        task.IrSensorSet(&vehicle, 0.5f);
+        task.SetWallControl_RadVelo(&vehicle, 1.0f);
+        if (i < 9) CHECK(vehicle.ideal.rad_velo.get() == 0.0f);
+        CHECK(std::fabs(vehicle.ideal.rad_velo.get()) <= 1.20001f);
+    }
+    CHECK(task.straight_wall_output.trusted_mask == 3);
+    CHECK(vehicle.ideal.rad_velo.get() > 0.0f);
+    CHECK(task.sen_l.is_control == True && task.sen_r.is_control == True);
+    // The output remains bounded even though last cycle's ideal yaw is nonzero.
+    CHECK(near(task.control_ir.get(), -5.0f));
+    vehicle.ideal.velo.set(0.19f);
+    task.IrSensorSet(&vehicle, 0.5f);
+    task.SetWallControl_RadVelo(&vehicle, 1.0f);
+    CHECK(vehicle.ideal.rad_velo.get() == 0.0f && vehicle.ideal.rad_accel.get() == 0.0f);
+    vehicle.ideal.velo.set(0.5f);
+    for (int i = 0; i < 100; ++i) {
+        task.IrSensorSet(&vehicle, 0.5f);
+        task.SetWallControl_RadVelo(&vehicle, 1.0f);
+    }
+    task.DisableIrSens();
+    task.SetWallControl_RadVelo(&vehicle, 1.0f);
+    CHECK(vehicle.ideal.rad_velo.get() == 0.0f);
+    task.EnableIrSensDiagonal();
+    CHECK(task.straight_wall_output.phase == ZirconiaWallControl::Disabled);
+    task.EnableIrSensStraight();
+    task.IrSensorSet(&vehicle, 0.5f);
+    task.SetWallControl_RadVelo(&vehicle, 1.0f);
+    CHECK(task.straight_wall_output.phase == ZirconiaWallControl::Confirming);
+    // Slalom exit from a diagonal approach primes the known wall layout.
+    task.EnableIrSensDiagonal();
+    task.PrimeStraightWallControl();
+    task.EnableIrSensStraight();
+    task.IrSensorSet(&vehicle, 0.5f);
+    task.SetWallControl_RadVelo(&vehicle, 1.0f);
+    CHECK(task.straight_wall_output.phase == ZirconiaWallControl::Tracking);
+    CHECK(task.straight_wall_output.trusted_mask == 0);
+    CHECK(task.straight_wall_output.pose_control);
+    // The heading term must survive legacy resets of ego.radian at wall edges.
+    vehicle.ego.rad_velo.set(1.0f);
+    for (int i = 0; i < 20; ++i) {
+        vehicle.ego.radian.set(0.0f);
+        task.IrSensorSet(&vehicle, 0.5f);
+        task.SetWallControl_RadVelo(&vehicle, 1.0f);
+    }
+    CHECK(near(task.control_ir_dot.get(), 0.020f));
+    task.ResetStraightWallControl();
+    CHECK(task.straight_wall_output.phase == ZirconiaWallControl::Disabled);
+}
+
 int main(int argc, char **argv)
 {
     struct Case { const char *name; void (*run)(); };
@@ -429,6 +625,9 @@ int main(int argc, char **argv)
         {"integration-loss", integration_loss}, {"integration-corner", integration_corner},
         {"integration-disabled", integration_disabled},
         {"integration-speed-gate", integration_speed_gate}, {"integration-adc", integration_adc},
+        {"zirconia-symmetry", zirconia_symmetry}, {"zirconia-independent", zirconia_independent},
+        {"zirconia-spatial", zirconia_spatial_confidence}, {"zirconia-reset", zirconia_reset_and_sync},
+        {"zirconia-adapter", zirconia_adc_adapter},
     };
     if (argc == 2) {
         for (const auto &test : cases) {

@@ -116,6 +116,7 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -373,6 +374,7 @@ void Motion::Init_Motion_long_turn	(	const t_param *turn_param,t_run_pattern run
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -559,6 +561,7 @@ void Motion::Init_Motion_long_turn_v90		(	const t_param *turn_param,t_run_patter
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 

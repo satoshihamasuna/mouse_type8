@@ -121,6 +121,12 @@ float IrSensTask::Sensor_CalcDistance(t_sensor_dir dir, int16_t value)
 
 void IrSensTask::IrSensorDistanceSet(Vehicle *vehicle)
 {
+	// Separate straight-control observations from legacy wall-edge histories.
+	straight_left_average.update(sen_l.value);
+	straight_right_average.update(sen_r.value);
+	straight_left_distance_mm = Sensor_CalcDistance(sensor_sl, straight_left_average.value());
+	straight_right_distance_mm = Sensor_CalcDistance(sensor_sr, straight_right_average.value());
+	wall_sample_updated = true;
 	static int i = 0;
 	i = i + 1;
 	if(i == 20) i = 0;
@@ -165,6 +171,7 @@ void IrSensTask::IrSensorDistanceSet(Vehicle *vehicle)
 
 void IrSensTask::IrSensorWallSet(float forward_step_mm)
 {
+	wall_forward_step_mm = forward_step_mm;
 	sen_fr.prev_is_wall 	= sen_fr.is_wall ;
 	sen_fl.prev_is_wall 	= sen_fl.is_wall ;
 	sen_r.prev_is_wall 	= sen_r.is_wall ;
@@ -379,6 +386,61 @@ float IrSensTask::IrSensorMaxValueFromLog(t_sensor_dir dir)
 
 void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 {
+	if (irsens_motion == STRAIGHT_IRSENS)
+	{
+		ZirconiaWallControl::Input input;
+		input.enabled = isEnableIrSens == True && vehicle->ideal.velo.get() > 0.20f
+			&& straight_left_average.ready() && straight_right_average.ready();
+		if (input.enabled)
+		{
+			if (straight_prime_pending)
+			{
+				straight_wall_control.prime_tracking(straight_left_distance_mm / 1000.0f,
+					straight_right_distance_mm / 1000.0f);
+				straight_prime_pending = false;
+			}
+			// Gyro heading relative to this straight-control interval. Keeping it
+			// separate avoids existing wall-edge/segment odometry resets erasing
+			// the heading damping term. Positive yaw is a left turn.
+			if (straight_heading_valid)
+				straight_heading_rad += vehicle->ego.rad_velo.get() * delta_tms / 1000.0f;
+			straight_heading_valid = true;
+		}
+		else
+		{
+			ResetStraightWallControl();
+		}
+		input.left_m = straight_left_distance_mm / 1000.0f;
+		input.right_m = straight_right_distance_mm / 1000.0f;
+		input.left_signal = straight_left_average.value();
+		input.right_signal = straight_right_average.value();
+		input.travel_m = wall_sample_updated ? wall_forward_step_mm / 1000.0f : 0.0f;
+		input.velocity_mps = vehicle->ego.velo.get();
+		input.heading_rad = straight_heading_rad;
+		// type8 x is positive left; zirconia's center error is positive right.
+		input.estimated_error_m = -vehicle->ego.x_point.get() / 1000.0f;
+		input.dt_s = delta_tms / 1000.0f;
+		input.sample_updated = wall_sample_updated;
+		straight_wall_output = straight_wall_control.update(input);
+		wall_sample_updated = false;
+		const auto &output = straight_wall_output;
+		sen_l.is_control = output.phase == ZirconiaWallControl::Tracking
+			&& (output.trusted_mask & 1) ? True : False;
+		sen_r.is_control = output.phase == ZirconiaWallControl::Tracking
+			&& (output.trusted_mask & 2) ? True : False;
+		sen_l.error = sen_l.is_control ? straight_left_distance_mm - STRAIGHT_REF : 0.0f;
+		sen_r.error = sen_r.is_control ? straight_right_distance_mm - STRAIGHT_REF : 0.0f;
+		if (output.sync_estimator)
+			vehicle->ego.x_point.set(-output.raw_error_m * 1000.0f);
+		control_ir.set(-output.error_m * 1000.0f);
+		control_ir_dot.set(straight_heading_rad);
+		// Straight trajectories have zero base yaw. Assign the external-loop
+		// correction once; adding it to last cycle's target would integrate twice.
+		vehicle->ideal.rad_velo.set(output.omega_radps);
+		vehicle->ideal.rad_accel.set(output.alpha_radps2);
+		return;
+	}
+
 	float ir_rad_acc_control = 0.0;
 	const float k1 = 1.0;
 	const float k2 = 19.0;

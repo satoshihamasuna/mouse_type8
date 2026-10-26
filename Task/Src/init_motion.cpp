@@ -13,6 +13,7 @@
 
 void Motion::Motion_start()
 {
+	ir_sens->ResetStraightWallControl();
 	Motor_Initialize();
 	vehicle->ego_initialize();
 	vehicle->ideal_initialize();
@@ -30,6 +31,7 @@ void Motion::Motion_start()
 
 void Motion::Motion_end()
 {
+	ir_sens->ResetStraightWallControl();
 	vehicle->ego_initialize();
 	vehicle->ideal_initialize();
 	vehicle->suctionStop();
@@ -47,6 +49,7 @@ void Motion::Motion_end()
 
 void Motion::Motion_error_handling()
 {
+	ir_sens->ResetStraightWallControl();
 	vehicle->ego_initialize();
 	vehicle->ideal_initialize();
 	motion_plan.velo.init();
@@ -179,6 +182,7 @@ void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 	ir_sens->r_corner_length.init();
@@ -280,6 +284,7 @@ void Motion::Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -357,6 +362,7 @@ void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,floa
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 	ir_sens->r_corner_length.init();
@@ -432,6 +438,7 @@ void Motion::Init_Motion_backward		(const t_pid_gain *sp_gain  ,const t_pid_gain
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -576,6 +583,7 @@ void Motion::Init_Motion_pivot_turn	(float rad_target,float rad_acc,float rad_ve
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -685,6 +693,7 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -937,6 +946,7 @@ void Motion::Init_Motion_long_turn	(const t_param *turn_param,t_run_pattern run_
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -1109,6 +1119,7 @@ void Motion::Init_Motion_long_turn_v90		(const t_param *turn_param,t_run_pattern
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -1175,6 +1186,7 @@ void Motion::Init_Motion_fix_wall		(float set_time,const t_pid_gain *sp_gain  ,c
 	run_time_ms_reset();
 	run_time_limit_ms_set(set_time);
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -1246,6 +1258,7 @@ void Motion::Init_Motion_suction_start	(float suction_voltage,float set_time,con
 	run_time_ms_reset();
 	run_time_limit_ms_set(set_time);
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -1312,6 +1325,7 @@ void Motion::Init_Motion_stop_brake	(float set_time,const t_pid_gain *sp_gain  ,
 	run_time_ms_reset();
 	run_time_limit_ms_set(set_time);
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -1379,6 +1393,7 @@ void Motion::Init_Motion_enkaigei	(float set_time,const t_pid_gain *sp_gain  ,co
 	run_time_ms_reset();
 	run_time_limit_ms_set(set_time);
 
+	ir_sens->ResetStraightWallControl();
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 

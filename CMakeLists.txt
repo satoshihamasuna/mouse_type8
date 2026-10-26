@@ -47,6 +47,7 @@ target_link_options(${BUILD_UNIT_0_NAME} PRIVATE
 # Add sources to executable/library
 target_sources(${BUILD_UNIT_0_NAME} PRIVATE
   # User defined sources
+  "Task/Src/zirconia_wall_control.cpp"
 )
 
 # Add include directories

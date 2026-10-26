@@ -77,7 +77,8 @@ class SideWallStabilityTest(unittest.TestCase):
                 "-std=c++14", "-O0", "-Wall", "-Wextra", "-fno-exceptions", "-fno-rtti",
                 "-DMOUSE_" + mouse, "-I", str(TEST_DIR / "side_wall_stubs"),
                 "-I", str(ROOT), str(TEST_DIR / "side_wall_stability_harness.cpp"),
-                str(ROOT / "Task" / "Src" / "ir_sens_task.cpp"), "-o", str(executable),
+                str(ROOT / "Task" / "Src" / "ir_sens_task.cpp"),
+                str(ROOT / "Task" / "Src" / "zirconia_wall_control.cpp"), "-o", str(executable),
             ]
             result = subprocess.run(invocation, capture_output=True, text=True,
                                     errors="replace", env=environment, timeout=240)
@@ -145,8 +146,23 @@ class SideWallStabilityTest(unittest.TestCase):
     def test_disabled_control_keeps_observing_without_applying_wall_errors(self):
         self.run_case("integration-disabled")
 
-    def test_existing_low_speed_gate_and_velocity_gain_are_preserved(self):
+    def test_diagonal_low_speed_gate_and_velocity_gain_are_preserved(self):
         self.run_case("integration-speed-gate")
+
+    def test_zirconia_steering_symmetry_heading_damping_and_limits(self):
+        self.run_case("zirconia-symmetry")
+
+    def test_zirconia_rejects_a_pillar_without_resetting_the_remaining_wall(self):
+        self.run_case("zirconia-independent")
+
+    def test_zirconia_spatial_confidence_stop_and_expected_heading_motion(self):
+        self.run_case("zirconia-spatial")
+
+    def test_zirconia_disable_invalid_input_and_estimator_sync(self):
+        self.run_case("zirconia-reset")
+
+    def test_zirconia_real_adc_adapter_front_wall_mode_and_speed_transitions(self):
+        self.run_case("zirconia-adapter")
 
     def test_real_adc_path_can_qualify_before_the_old_time_window_or_count_gate(self):
         self.run_case("integration-adc")

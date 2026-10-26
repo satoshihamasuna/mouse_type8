@@ -344,6 +344,7 @@ void Motion::handleTurnMain()
 			vehicle->ego.x_point.set(0.0f);
 
 			motion_plan.turn_state.set(Post_Turn);
+			ir_sens->PrimeStraightWallControl();
 			turn_start_time_ms_reset();
 
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*straight_motion_param.sp_gain);
