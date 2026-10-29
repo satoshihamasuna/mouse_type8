@@ -1,0 +1,3 @@
+interface:
+  display_name: "Mouse ログ解析"
+  short_description: "走行ログから FF 係数とターン長を解析し、測定条件と採用根拠を整理する"

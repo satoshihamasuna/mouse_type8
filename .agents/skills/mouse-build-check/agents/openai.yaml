@@ -1,0 +1,3 @@
+interface:
+  display_name: "Mouse ビルド・検証"
+  short_description: "機体 A/B の STM32 ファームウェアをビルドし、変更に合うテストを選んで検証する"

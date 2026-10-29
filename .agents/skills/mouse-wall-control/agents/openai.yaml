@@ -1,0 +1,3 @@
+interface:
+  display_name: "Mouse 壁制御"
+  short_description: "直進壁制御の単位と状態遷移を確認し、機体 A/B の回帰を検証する"
