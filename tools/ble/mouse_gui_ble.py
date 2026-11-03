@@ -4,6 +4,8 @@ from pathlib import Path
 import runpy
 import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / '.tools' / 'ble_python'))
+
 GUI_FILES = {
     'main': 'myshell_gui.py',
     'debug': 'myshell_debug.py',

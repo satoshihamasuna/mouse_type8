@@ -28,11 +28,11 @@ python -m unittest discover -s tools/tests -p test_side_wall_stability.py -v
 セットアップは [BLE 通信ツール](../ble/README.md#ホストテスト) を参照してください。
 
 ```powershell
-$blePython = (Get-ChildItem 'C:\ncs\toolchains\*\opt\bin\python.exe' | Sort-Object FullName | Select-Object -First 1).FullName
+$blePython = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
 & $blePython -m unittest discover -s tools/tests -p test_mouse_ble_transport.py -v
 ```
 
 localhost と模擬 BLE 相手を使い、実機には接続しません。シェルの改行・文字間隔、
-バイナリ保持、再送条件、GUI の自動検出と COM ポート互換性を確認します。
+バイナリ保持、再送条件、GUI の自動検出と COM ポート互換性、独立起動時のローカル依存の読込みを確認します。
 Python 3.10 未満または依存パッケージ不足ではスキップされるため、BLE の確認では
 上記を対応する Python で実行し、スキップなしの成功を確認してください。

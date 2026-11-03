@@ -60,6 +60,15 @@ PA9 / PA10 は MCU 端子名です。基板コネクターの位置は対象機�
 nRF Connect SDK v3.4.1 と対応ツールチェーンが必要です。
 Zephyr / BLE を含むため、STM32 用の `cube-cmake` ではビルドしません。
 
+この PC では [Nordic 公式の導入手順](https://nrfconnectdocs.nordicsemi.com/ncs/latest/nrf/installation/install_ncs.html) に従い、
+nRF Util と SDK Manager を `.tools/nrfutil/`、SDK とツールチェーンを `C:\ncs` に配置しています。
+導入済み構成は次のコマンドで確認できます。`NRFUTIL_HOME` はこの PowerShell 内だけで設定します。
+
+```powershell
+$env:NRFUTIL_HOME = Join-Path (Get-Location).Path '.tools\nrfutil\home'
+& .\.tools\nrfutil\nrfutil.exe sdk-manager list --install-dir C:\ncs
+```
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\firmware\hy0020\build.ps1
 ```
@@ -92,7 +101,7 @@ HY0020 へ 3.3 V を供給します。D1 と D2 は抵抗なしで短絡しま�
 FT232H の UART モニターなど、同じアダプターを使うプログラムは終了しておきます。
 
 ```powershell
-$openocdExe = Join-Path $env:USERPROFILE 'Downloads\xpack-openocd-0.12.0-7-win32-x64\xpack-openocd-0.12.0-7\bin\openocd.exe'
+$openocdExe = Join-Path (Get-Location).Path '.tools\openocd\xpack-openocd-0.12.0-7\bin\openocd.exe'
 
 # 接続確認（消去・書き込みなし）
 & $openocdExe -f firmware/hy0020/openocd/ft232h-hy0020.cfg -c 'init; shutdown'
@@ -101,7 +110,8 @@ $openocdExe = Join-Path $env:USERPROFILE 'Downloads\xpack-openocd-0.12.0-7-win32
 & $openocdExe -f firmware/hy0020/openocd/ft232h-hy0020.cfg -c 'adapter speed 100; program build/hy0020/mouse_uart_ble/zephyr/zephyr.hex verify reset exit'
 ```
 
-OpenOCD の配置は環境に合わせて変更してください。設定の既定速度は 10 kHz、
+この PC には [xPack OpenOCD v0.12.0-7](https://github.com/xpack-dev-tools/openocd-xpack/releases/tag/v0.12.0-7) を上記の場所へ導入しています。
+別の環境では OpenOCD の配置に合わせて変更してください。設定の既定速度は 10 kHz、
 中継版の書き込みはコピー元で確認済みの 100 kHz を明示します。
 終了コード 0、`Verified OK`、リセット完了を確認します。
 APPROTECT で保護されている場合の `nrf52_recover` は Flash 全域・UICR を消去するため、
@@ -150,3 +160,19 @@ Status は UART 破棄バイト数、UART エラー数、キュー満杯回数�
   コピー元との SHA-256 の一致を確認しました。PC ツールの構文と主要 4 コマンドの `--help` も確認しました。
 - 今回の作業では実機への書き込み、UART / BLE の実接続、走行は実施していません。
   FT232H 有線モニターの実受信と Mouse A / B それぞれでの通信は未確認です。
+
+## 現在の PC への環境導入（2026年11月3日）
+
+- nRF Util 8.2.1 / SDK Manager 1.16.1 で nRF Connect SDK v3.4.1 とツールチェーン `4f5b6ad6dd` を `C:\ncs` に導入しました。
+  SDK Manager の一覧で SDK / Toolchain の両方が `Installed` であることを確認しました。
+- 上記の `build.ps1` を GCC 14.3.0 で実行し、終了コード 0 で `zephyr.hex` / `zephyr.elf` を生成しました。
+  Flash 116776 byte、RAM 50792 byte で、コピー元の記録と同じ使用量です。対象は Mouse A / B 共通の HY0020 中継ファームウェアです。
+- xPack OpenOCD v0.12.0-7 を `.tools/openocd/` に導入し、公式配布の SHA-256 との一致、起動と既存 SWD 設定の読込みを確認しました。
+  `init` を実行せず、`ftdi` / `swd` / `nrf52.cpu` の設定認識を確認しています。
+- SDK 展開時に一部のシンボリックリンクが作成されませんでした。対象一覧は `.tools/nrfutil/sdk-symlink-skipped.txt` に保存しています。
+  HY0020 のビルドは上記のとおり成功しています。
+- Codex の通常サンドボックス内では SDK の Git 所有者チェックにより west の拡張読込みが止まったため、
+  SDK を導入したユーザー環境でビルドを確認しました。Git のグローバル設定は変更していません。
+
+今回の環境導入では実機への接続・書き込み・走行は行っていません。
+FT232H は接続デバイス一覧にないため、WinUSB ドライバーの割当てと SWD 実接続は未確認です。

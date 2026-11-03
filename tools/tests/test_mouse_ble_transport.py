@@ -3,8 +3,10 @@ import asyncio
 import contextlib
 import io
 from pathlib import Path
+import shutil
 import socket
 import struct
+import subprocess
 import sys
 import threading
 import tempfile
@@ -91,6 +93,26 @@ class SerialCompatibilityTests(unittest.TestCase):
 
 
 class GuiLauncherTests(unittest.TestCase):
+    def test_standalone_launcher_loads_local_pyserial(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            script = root / 'tools' / 'ble' / 'mouse_gui_ble.py'
+            script.parent.mkdir(parents=True)
+            shutil.copyfile(ROOT / 'tools' / 'ble' / 'mouse_gui_ble.py', script)
+            dependencies = root / '.tools' / 'ble_python'
+            dependencies.mkdir(parents=True)
+            shutil.copytree(Path(serial.__file__).parent, dependencies / 'serial')
+            code = (
+                'import runpy, sys\n'
+                "launcher = runpy.run_path(sys.argv[1], run_name='gui_test')\n"
+                "launcher['install_ble_port'](8765)\n"
+                'from serial.tools import list_ports\n'
+                "assert any(port.device == 'BLE' for port in list_ports.comports())\n"
+            )
+            result = subprocess.run([sys.executable, '-I', '-S', '-B', '-c', code, str(script)],
+                capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_defaults_to_this_repository(self):
         with patch.object(sys, 'argv', ['mouse_gui_ble.py', '--gui', 'debug']), \
              patch.object(sys, 'path', list(sys.path)), \

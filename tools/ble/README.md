@@ -30,15 +30,17 @@ python -m pip install --target .tools/ble_python -r tools/ble/requirements-ble.t
 python tools/ble/mouse_ble_shell.py --help
 ```
 
-この開発環境の通常の `python` は 3.8.3 のため、BLE には SDK 同梱 Python を指定できます。
+この PC では通常の Windows 版 Python 3.12 を使います。
 次の `$blePython` は使用する PowerShell ごとに設定してください。
 
 ```powershell
-$blePython = (Get-ChildItem 'C:\ncs\toolchains\*\opt\bin\python.exe' | Sort-Object FullName | Select-Object -First 1).FullName
+$blePython = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
 & $blePython --version
-& $blePython -m pip install --target .tools/ble_python -r tools/ble/requirements-ble.txt
+& $blePython -m pip install --target .tools/ble_python -r tools/ble/requirements-ble.txt pyserial==3.5
 ```
 
+専用シェルと中継は SDK 同梱の Python 3.10 以上でも使えます。
+GUI ランチャーを含む BLE ツールは `.tools/ble_python` の依存パッケージを自動で参照します。
 `.tools/` は Git 管理対象外です。別の環境では依存パッケージを導入してください。
 PC の Bluetooth をオンにし、スマホ・別の BLE モニターからは切断しておきます。
 同時に接続できるのは 1 台です。
@@ -84,7 +86,7 @@ PC の Bluetooth をオンにし、スマホ・別の BLE モニターからは�
 ターミナル 1（Python 3.10 以上）:
 
 ```powershell
-$blePython = (Get-ChildItem 'C:\ncs\toolchains\*\opt\bin\python.exe' | Sort-Object FullName | Select-Object -First 1).FullName
+$blePython = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
 & $blePython tools/ble/mouse_ble_gateway.py
 ```
 
@@ -93,7 +95,8 @@ GUI には既存の [tools/README.md](../README.md#セットアップ) の依存
 SDK 同梱 Python で Tk の DLL が不足する環境では、GUI は通常の Windows 版 Python で起動します。
 
 ```powershell
-python tools/ble/mouse_gui_ble.py --gui main
+$blePython = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
+& $blePython tools/ble/mouse_gui_ble.py --gui main
 ```
 
 GUI の Port で `BLE`、Baud で `115200` を選んで Connect します。
@@ -126,8 +129,8 @@ Windows 設定の Bluetooth を確認します。
 FT232H を使う有線受信はオプションです。
 
 ```powershell
-python -m pip install --target .tools/python -r tools/ble/requirements-uart.txt
-python tools/ble/uart_monitor.py --seconds 10
+& $blePython -m pip install --target .tools/python -r tools/ble/requirements-uart.txt
+& $blePython tools/ble/uart_monitor.py --seconds 10
 ```
 
 WinUSB のまま、HY0020 の P0.06 / TX → FT232H の D1 / RX、GND 同士を接続します。
@@ -172,3 +175,26 @@ BLE の検証としては、上記コマンドでスキップなしの成功を�
 今回の確認は BLE 検出とシェル・メイン GUI の基本通信です。
 実機の迷路・ログのバイナリ転送、debug / turnpattern / search GUI の操作、
 FT232H 有線モニター、機体 B は未確認です。ファームウェアの書き込みや走行は行っていません。
+
+## 現在の PC への環境導入（2026年11月3日）
+
+- Windows 版 Python 3.12.6 を使用し、`.tools/ble_python` に Bleak 3.0.2 / pyserial 3.5 と依存パッケージを導入しました。
+- `.tools/python` に `requirements-uart.txt` の FT232H 有線受信用パッケージを導入し、libusb backend の読込みを確認しました。
+- `test_mouse_ble_transport.py` は、GUI ランチャーの独立起動の回帰ケースを含む 12 件がすべて成功し、スキップはありません。
+- CLI 5 種の `--help` と GUI 4 種のモジュール読込みを確認しました。
+- Windows のアダプター情報から BLE 対応と Bluetooth が ON であることを確認しました。
+
+今回の環境導入では BLE のスキャン・接続・送信、実機への書き込み・走行は行っていません。
+FT232H は接続デバイス一覧にないため、WinUSB ドライバーの割当ては未確認です。
+
+## 現環境での実機通信確認（2026年11月3日）
+
+- ユーザーが Zadig で切り替えた FT232H（`0403:6014`）は、Service `WinUSB`、状態 `OK`、問題コード `0` を確認しました。
+- PC の Bluetooth アダプターから `HY0020-MOUSE`（`C1:B5:60:87:91:73`）の NUS 広告を検出しました。
+- 通常の Windows ユーザー環境で専用シェルを実行し、`info ver` / `info battery` の送受信が成功しました。
+  応答はマウス側の `Version 0.0.0` と `7515 mV`（下限 `7000 mV`、状態 `OK`）です。
+  生応答 122 byte を `build/hy0020/ble-check-20261103-175416.bin` に保存しています。
+- すでにシェル中だったため、開始時の `shell` には `Unknown command found.` が返りました。続く 2 コマンドは正常応答しました。
+- サンドボックス内では接続時に `BleakDeviceNotFoundError` となり、通常の Windows ユーザー環境で再実行して成功しました。
+
+搭載機体の A / B は今回未照合です。走行・Flash 書き込みは行わず、試験後に BLE 接続を終了しています。
