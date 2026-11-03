@@ -1,0 +1,6 @@
+board:
+  name: hy0020_dip
+  full_name: Akizuki AE-HY0020-DIP
+  vendor: fdk
+  socs:
+    - name: nrf52832

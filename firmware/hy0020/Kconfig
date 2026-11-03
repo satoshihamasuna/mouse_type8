@@ -1,0 +1,10 @@
+mainmenu "HY0020 mouse UART BLE bridge"
+source "Kconfig.zephyr"
+
+config MOUSE_UART_BYTE_GAP_US
+    int "Minimum pause between bytes sent to the mouse"
+    default 2000
+    range 0 100000
+    help
+      The upstream mouse GUI paces binary uploads by 2 ms per byte.
+      This also limits bursts when BLE groups multiple writes together.

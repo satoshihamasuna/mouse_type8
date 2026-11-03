@@ -35,6 +35,14 @@ Windows で別の COM 番号が割り当てられている場合は、GUI の `P
 python tools\myshell_gui.py
 ```
 
+## HY0020 経由の BLE 接続
+
+BLE の専用シェルは `tools/ble/mouse_ble_shell.py`、既存 GUI 用の接続は
+`mouse_ble_gateway.py` と `mouse_gui_ble.py` を使います。
+依存パッケージ、シェル移行、GUI での `BLE` ポートの選択は
+[BLE 通信ツールの説明](ble/README.md) を参照してください。
+マウス側のコマンドとバイナリ形式は有線接続と共通です。
+
 ## GUI で maze_data をアップロードして Dijkstra を走らせる手順
 
 1. `Port` に接続先の COM ポートを入れます。

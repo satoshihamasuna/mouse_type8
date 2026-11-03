@@ -8,6 +8,7 @@
 
 - `tools/` — シリアル通信、GUI、探索シミュレーターなどの実行ツールと共通モジュール
 - `tools/analysis/` — 保存済みログを解析してレポートを生成するツール
+- `tools/ble/` — HY0020 の BLE シェル、既存 GUI 用の中継、UART / BLE 診断ツール
 - `tools/tests/` — Pythonツールのユニットテスト
 - `tools/logs/` — 取得ログと解析結果（Git管理対象外）
 - `tools/maze_data/` — 迷路データ
@@ -20,6 +21,12 @@
 ```powershell
 pip install pyserial pandas numpy matplotlib scipy
 ```
+
+## HY0020 の BLE 通信
+
+専用シェル、既存 GUI の BLE 接続、診断の手順は [tools/ble/README.md](ble/README.md) を参照してください。
+BLE 通信には Python 3.10 以上と Bleak が必要です。
+HY0020 用ファームウェアは [firmware/hy0020/](../firmware/hy0020/README.md) にあります。
 
 ## myshell GUI
 

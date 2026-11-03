@@ -21,3 +21,18 @@ python -m unittest discover -s tools/tests -p test_side_wall_stability.py -v
 実機では、まず低速（0.3～0.5 m/s）の連続両壁・中央開始で、`ideal.rad_velo` と `ego.rad_velo` の追従を確認します。その後、左右への小さなオフセット、左連続壁＋右柱、左右反転、壁なしへの移行を別々に確認します。新ゲインはzirconia由来の初期値であり、type8での収束距離や安定性をホストテストは保証しません。高速走行の前に、持続的な飽和・蛇行・過度な壁への接近がないことを実測してください。今回、書き込みやモーター動作は実施しません。
 
 既存CSVの列数は変更していません。直進中の `control_ir` は制御に使った横偏差[mm]（左寄りが正）、`control_ir_dot` は新制御の姿勢偏差[rad]（左向きが正）です。斜め中は両列とも従来の意味です。詳細な採用マスク・phase・transition・飽和状態は `IrSensTask::straight_wall_output` をデバッガで参照できます。マスクは1=左、2=右、3=両側、phaseは0=無効、1=推定、2=確認、3=壁から離れる補正のみ、4=追従です。
+
+## HY0020 BLE 通信
+
+`test_mouse_ble_transport.py` は Python 3.10 以上と Bleak / pyserial を使用します。
+セットアップは [BLE 通信ツール](../ble/README.md#ホストテスト) を参照してください。
+
+```powershell
+$blePython = (Get-ChildItem 'C:\ncs\toolchains\*\opt\bin\python.exe' | Sort-Object FullName | Select-Object -First 1).FullName
+& $blePython -m unittest discover -s tools/tests -p test_mouse_ble_transport.py -v
+```
+
+localhost と模擬 BLE 相手を使い、実機には接続しません。シェルの改行・文字間隔、
+バイナリ保持、再送条件、GUI の自動検出と COM ポート互換性を確認します。
+Python 3.10 未満または依存パッケージ不足ではスキップされるため、BLE の確認では
+上記を対応する Python で実行し、スキップなしの成功を確認してください。

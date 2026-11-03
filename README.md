@@ -25,6 +25,8 @@ STM32U535CEU6 を対象にしたマイクロマウス用ファームウェアで
 | `System/` | モード選択、デバッグ、デモ、シェル、システムユーティリティ。 |
 | `Component/` | コントローラ、キュー、経路追従、数学ユーティリティ、ntshell などの汎用部品。 |
 | `Params/` | 走行パラメータ、ターンテーブル、センサ閾値など。 |
+| `firmware/hy0020/` | mouse_type8 の UART を BLE へ中継する HY0020 用ファームウェアと SWD 設定。 |
+| `tools/ble/` | HY0020 用の PC シェル、既存 GUI の BLE 接続、通信診断ツール。 |
 | `cmake/` | STM32CubeIDE for VS Code が生成した CMake 設定とツールチェーン設定。 |
 | `CMakeLists.txt` | プロジェクト本体の CMake エントリ。 |
 | `CMakePresets.json` | MOUSE_A / MOUSE_B、それぞれの `Debug` / `Release` CMake preset。 |
@@ -244,6 +246,13 @@ cube programmer -c port=SWD -d .\build\Debug-MouseB\mouse_type8.elf -v -rst
 ```
 
 MOUSE_Bの場合は、書き込みファイルを `.\build\Debug-MouseB\mouse_type8.elf` に変更します。
+
+## HY0020 による BLE 通信
+
+USART1 を HY0020 経由で BLE に中継するプログラムと PC ツールを同梱しています。
+配線・ビルド・書き込みは [firmware/hy0020/README.md](firmware/hy0020/README.md)、
+専用シェルと GUI の使い方は [tools/ble/README.md](tools/ble/README.md) を参照してください。
+対象は Mouse A / B 共通の UART インターフェースです。HY0020 は STM32 とは別にビルドします。
 
 ## 赤外線センサ表示
 
