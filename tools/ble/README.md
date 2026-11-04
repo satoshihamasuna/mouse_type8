@@ -437,6 +437,11 @@ $blePython = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
 ```
 
 GUI の Port で `BLE`、Baud は既定の `460800` で Connect します。
+`--gui debug`の走行調整GUIでは、続けて`Show device values`を押して設定値と電圧を確認します。
+`Char delay`は保守的な既定`0.08`秒で、明示した文字間隔も使用できます。
+最初の照会時にshellモードを自動準備するため、マウスが停止したモード選択状態でも接続後に取得できます。
+低電圧・照会の未応答時は設定変更や走行コマンドを送りません。画面の入力値は接続し直しても保持します。
+仮想シリアルのBaud欄は物理USARTの速度を変更しません。STM32とHY0020間の速度は双方のファームウェア設定で決まります。
 `--gui` は `main` / `debug` / `turnpattern` / `search` を選べます。
 タイムアウトを設定できる GUI は大きめ（例: 120 秒）にします。
 シェルの操作方法は [myshell シリアル操作ガイド](../myshell_README.md) と共通です。

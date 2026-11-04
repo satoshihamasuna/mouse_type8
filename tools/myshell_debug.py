@@ -160,10 +160,12 @@ class DebugGui(tk.Tk):
         self.geometry("1250x720")
         self.ser = None
         self.lock = threading.Lock()
+        self._connection_generation = 0
+        self._shell_ready = False
         self.events = queue.Queue()
         self.port = tk.StringVar(value="COM8")
         self.baud = tk.IntVar(value=460800)
-        self.char_delay = tk.DoubleVar(value=0.005)
+        self.char_delay = tk.DoubleVar(value=0.08)
         self.timeout = tk.DoubleVar(value=60.0)
         self.battery_status = tk.StringVar(value="Battery: --")
         self.motion = tk.StringVar(value="straight")
@@ -354,21 +356,42 @@ class DebugGui(tk.Tk):
             self.port.set(ports[0])
 
     def _toggle(self):
-        if self.ser and self.ser.is_open:
-            self.ser.close()
-            self.connect_button.configure(text="Connect")
-            return
-        if serial is None:
-            messagebox.showerror("pyserial missing", "pip install pyserial を実行してください。")
+        # A worker reads Tk variables, so waiting for its lock on the UI thread
+        # could deadlock. Leave the connection unchanged until it finishes.
+        if not self.lock.acquire(blocking=False):
+            self._append("通信処理中です。完了後に接続を切り替えてください。\n")
             return
         try:
-            self.ser = serial.Serial(self.port.get(), self.baud.get(), timeout=0.1)
-            time.sleep(0.2)
-            self.ser.reset_input_buffer()
-            self.connect_button.configure(text="Disconnect")
-            self._append(f"Connected: {self.port.get()} @ {self.baud.get()}\n")
-        except Exception as exc:
-            messagebox.showerror("Connect failed", str(exc))
+            if self.ser and self.ser.is_open:
+                self._connection_generation += 1
+                self._shell_ready = False
+                self.ser.close()
+                self.ser = None
+                self.connect_button.configure(text="Connect")
+                self.battery_status.set("Battery: --")
+                return
+            if serial is None:
+                messagebox.showerror("pyserial missing", "pip install pyserial を実行してください。")
+                return
+            opened = None
+            try:
+                opened = serial.Serial(self.port.get(), self.baud.get(), timeout=0.1)
+                time.sleep(0.2)
+                opened.reset_input_buffer()
+                self.ser = opened
+                self._connection_generation += 1
+                self._shell_ready = False
+                self.battery_status.set("Battery: --")
+                self.connect_button.configure(text="Disconnect")
+                self._append(f"Connected: {self.port.get()} @ {self.baud.get()}\n")
+            except Exception as exc:
+                if opened is not None:
+                    opened.close()
+                self.ser = None
+                self._shell_ready = False
+                messagebox.showerror("Connect failed", str(exc))
+        finally:
+            self.lock.release()
 
     def _load_defaults(self):
         ff_defaults = FF_DEFAULTS
@@ -578,7 +601,8 @@ class DebugGui(tk.Tk):
         if not self.ser or not self.ser.is_open:
             self._toggle()
         if self.ser and self.ser.is_open:
-            threading.Thread(target=self._log_binary_worker, daemon=True).start()
+            threading.Thread(target=self._log_binary_worker,
+                             args=(self._connection_generation,), daemon=True).start()
 
     def initialize_log(self):
         if not messagebox.askyesno("ログ初期化", "マイコン上のログをすべて消去しますか？"):
@@ -598,33 +622,57 @@ class DebugGui(tk.Tk):
             if delay > 0:
                 time.sleep(delay)
 
-    def _check_battery_voltage(self):
-        self.ser.reset_input_buffer()
-        self._write_command(BATTERY_COMMAND)
-        deadline = time.monotonic() + 5.0
+    def _assert_connection(self, generation):
+        if generation is not None and generation != self._connection_generation:
+            raise ConnectionError("Connection changed; queued command was cancelled.")
+        if not self.ser or not self.ser.is_open:
+            raise ConnectionError("Serial connection is not open.")
 
-        while time.monotonic() < deadline:
-            raw = self.ser.readline()
-            if not raw:
-                continue
-            line = raw.decode(errors="ignore").replace("\x00", "").strip()
-            match = BATTERY_RE.search(line)
-            if not match:
-                continue
-
-            voltage = int(match.group("voltage_mv")) / 1000.0
-            limit = int(match.group("limit_mv")) / 1000.0
-            self.events.put(("battery_status", voltage, limit))
-            if match.group("status") == "ERROR" or voltage < limit:
-                raise BatteryMonitorError(
-                    f"Battery voltage is too low: {voltage:.3f} V (limit: {limit:.3f} V). "
-                    "Command transmission was cancelled."
-                )
+    def _prepare_shell(self):
+        if self._shell_ready:
             return
+        self._append("shellモードを準備しています。\n")
+        self.ser.reset_input_buffer()
+        self._write_command("shell")
+        time.sleep(0.5)
+        self._shell_ready = True
+
+    def _check_battery_voltage(self):
+        # One retry also covers a powered-on mouse returning to mode selection
+        # while the PC serial/BLE connection remains open. Only read-only setup
+        # is retried; parameter and execution commands are never replayed here.
+        for attempt in range(2):
+            self._prepare_shell()
+            self.ser.reset_input_buffer()
+            self._write_command(BATTERY_COMMAND)
+            deadline = time.monotonic() + 5.0
+
+            while time.monotonic() < deadline:
+                raw = self.ser.readline()
+                if not raw:
+                    continue
+                line = raw.decode(errors="ignore").replace("\x00", "").strip()
+                match = BATTERY_RE.search(line)
+                if not match:
+                    continue
+
+                voltage = int(match.group("voltage_mv")) / 1000.0
+                limit = int(match.group("limit_mv")) / 1000.0
+                self.events.put(("battery_status", voltage, limit))
+                if match.group("status") == "ERROR" or voltage < limit:
+                    raise BatteryMonitorError(
+                        f"Battery voltage is too low: {voltage:.3f} V (limit: {limit:.3f} V). "
+                        "Command transmission was cancelled."
+                    )
+                return
+            self._shell_ready = False
+            if attempt == 0:
+                self._append("電圧照会の応答がないため、shellモードを再確認します。\n")
 
         raise BatteryMonitorError(
-            "Battery voltage check timed out. Flash firmware that supports 'info battery' "
-            "and check the serial connection. Command transmission was cancelled."
+            "Battery voltage check timed out after entering shell mode. Check power, "
+            "serial connection and firmware support for 'info battery'. "
+            "Command transmission was cancelled."
         )
 
     def _read_exact(self, size, deadline):
@@ -759,7 +807,7 @@ class DebugGui(tk.Tk):
             "error": "Timed out while waiting for the device settings response.",
         }
 
-    def _log_binary_worker(self):
+    def _log_binary_worker(self, connection_generation=None):
         from log_protocol import saved_log_frame
         try:
             LOG_DIR.mkdir(exist_ok=True)
@@ -773,6 +821,7 @@ class DebugGui(tk.Tk):
             device_settings = None
 
             with self.lock:
+                self._assert_connection(connection_generation)
                 self._check_battery_voltage()
                 device_settings = self._query_device_settings(motion_name)
                 self._append("\n> disp log_bin\n")
@@ -838,11 +887,12 @@ class DebugGui(tk.Tk):
         if not self.ser or not self.ser.is_open:
             self._toggle()
         if self.ser and self.ser.is_open:
-            threading.Thread(target=self._worker, args=(commands,), daemon=True).start()
+            threading.Thread(target=self._worker, args=(commands, self._connection_generation), daemon=True).start()
 
-    def _worker(self, commands):
+    def _worker(self, commands, connection_generation=None):
         try:
             with self.lock:
+                self._assert_connection(connection_generation)
                 for command in commands:
                     self._check_battery_voltage()
                     self._append(f"\n> {command}\n")
@@ -978,6 +1028,8 @@ class DebugGui(tk.Tk):
         self.after(50, self._drain)
 
     def _close(self):
+        self._connection_generation += 1
+        self._shell_ready = False
         if self.ser:
             self.ser.close()
         self.destroy()
