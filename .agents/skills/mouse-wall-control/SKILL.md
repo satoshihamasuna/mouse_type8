@@ -47,6 +47,7 @@ python -m unittest discover -s tools/tests -p test_side_wall_stability.py -v
 このテストは機体 A / B の実際の IR タスクと制御器をホストでコンパイルする。
 コンパイラ未検出のスキップと実行成功を区別する。ファームウェア変更後は A / B の Debug ビルドも確認する。
 実機評価の進め方とホスト検証の限界は [tools/tests/README.md](../../../tools/tests/README.md) を参照する。
+実機への書き込みや BLE での評価も依頼された場合は、[実機操作の前提](../mouse-build-check/SKILL.md#実機操作の前提) に従う。電源 ON/OFF と書き込み前後の配線作業をユーザーに案内し、書き込み後は配線切替・電源投入の完了を待ってから BLE 接続へ進む。
 
 ## 結果の読み方
 
