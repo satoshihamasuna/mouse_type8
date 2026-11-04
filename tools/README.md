@@ -3,6 +3,7 @@
 シリアルログの取得、迷路表示、ログ解析などに使用するPythonツールです。
 
 以下のコマンドはリポジトリのルートディレクトリで実行してください。
+有線シリアルの既定速度は460800 bps / 8N1です。接続先のUSART1設定に合わせてください。
 
 ## ディレクトリ構成
 
@@ -326,25 +327,25 @@ disp maze
 Python側のコマンド:
 
 ```powershell
-python tools\Serial_maze_view.py --port COM8 --baud 115200
+python tools\Serial_maze_view.py --port COM8 --baud 460800
 ```
 
 シリアル受信が不安定な場合は、文字の送信間隔を長くします。
 
 ```powershell
-python tools\Serial_maze_view.py --port COM8 --baud 115200 --char-delay 0.05
+python tools\Serial_maze_view.py --port COM8 --baud 460800 --char-delay 0.05
 ```
 
 受信したシリアルテキストをデバッグ表示する場合:
 
 ```powershell
-python tools\Serial_maze_view.py --port COM8 --baud 115200 --debug
+python tools\Serial_maze_view.py --port COM8 --baud 460800 --debug
 ```
 
 迷路画像を保存する場合:
 
 ```powershell
-python tools\Serial_maze_view.py --port COM8 --baud 115200 --save tools\logs\maze.png
+python tools\Serial_maze_view.py --port COM8 --baud 460800 --save tools\logs\maze.png
 ```
 
 シリアル通信の代わりに、保存済みのASCII迷路を読み込む場合:

@@ -400,7 +400,7 @@ def main():
         description="Receive myshell maze output and display it with maze.py."
     )
     parser.add_argument("--port", default="COM8")
-    parser.add_argument("--baud", type=int, default=115200)
+    parser.add_argument("--baud", type=int, default=460800)
     parser.add_argument("--width", type=int, default=32)
     parser.add_argument("--height", type=int, default=32)
     parser.add_argument("--command", default=None)

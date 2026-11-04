@@ -24,7 +24,7 @@ if sys.version_info < (3, 10):
 try:
     import serial
     from serial.tools import list_ports
-    from bleak.exc import BleakGATTProtocolError
+    from bleak.exc import BleakCharacteristicNotFoundError, BleakGATTProtocolError
 except ImportError as error:
     raise unittest.SkipTest('Install BLE test dependencies; see tools/ble/README.md: {}'.format(error))
 import mouse_ble_gateway as gateway
@@ -137,6 +137,182 @@ class GuiLauncherTests(unittest.TestCase):
                 launcher.main()
             install.assert_called_once_with(9876)
             run.assert_called_once_with(str(script), run_name='__main__')
+
+
+class DiagnosticsTests(unittest.IsolatedAsyncioTestCase):
+    @staticmethod
+    def expected_diagnostics():
+        return {
+            'version': 1, 'last_stop_reason': 0x80000001, 'stop_reason_or': 0x8000003F,
+            'overrun_count': 3, 'parity_count': 4, 'framing_count': 5, 'break_count': 6,
+            'collision_count': 7, 'noise_count': 8, 'other_reason_count': 9,
+            'rx_disabled_count': 10, 'rx_restart_attempts': 11, 'rx_restart_failures': 12,
+            'rx_buffer_alloc_failures': 13, 'rx_buffer_rsp_failures': 14,
+            'rx_buf_request_events': 15, 'rx_buffer_size': 252, 'rx_buffer_count': 4,
+            'rx_timeout_us': 1000, 'rx_mode_flags': 1,
+        }
+
+    def test_diagnostics_decodes_all_fields_and_preserves_unknown_reason_bits(self):
+        expected = self.expected_diagnostics()
+        payload = struct.pack('<20I', *expected.values())
+        self.assertEqual(gateway.decode_diagnostics(payload), expected)
+        self.assertEqual(gateway.DIAGNOSTICS_COUNTER_FIELDS, (
+            'overrun_count', 'parity_count', 'framing_count', 'break_count', 'collision_count',
+            'noise_count', 'other_reason_count', 'rx_disabled_count', 'rx_restart_attempts',
+            'rx_restart_failures', 'rx_buffer_alloc_failures', 'rx_buffer_rsp_failures',
+            'rx_buf_request_events',
+        ))
+
+    def test_diagnostics_rejects_wrong_length_and_unknown_version(self):
+        for payload in (bytes(79), bytes(81), struct.pack('<20I', 2, *range(19))):
+            with self.subTest(length=len(payload), version=payload[0]):
+                with self.assertRaises(ValueError):
+                    gateway.decode_diagnostics(payload)
+
+    async def test_diagnostics_read_uses_the_shared_request_lock(self):
+        lock = asyncio.Lock()
+        calls = []
+        expected = self.expected_diagnostics()
+
+        class Client:
+            async def read_gatt_char(self, uuid):
+                calls.append(uuid)
+                if not lock.locked():
+                    raise AssertionError('Diagnostic read did not acquire the transport lock')
+                return struct.pack('<20I', *expected.values())
+
+        await lock.acquire()
+        task = asyncio.create_task(gateway.read_diagnostics(Client(), lock))
+        try:
+            await asyncio.sleep(0)
+            self.assertEqual(calls, [])
+            lock.release()
+            self.assertEqual(await asyncio.wait_for(task, 1), expected)
+            self.assertEqual(calls, [gateway.DIAGNOSTICS])
+            self.assertFalse(lock.locked())
+        finally:
+            if lock.locked():
+                lock.release()
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+
+    async def test_diagnostics_is_optional_only_for_explicit_attribute_absence(self):
+        for error in (BleakCharacteristicNotFoundError(gateway.DIAGNOSTICS),
+                      BleakGATTProtocolError(0x0A)):
+            with self.subTest(error=type(error).__name__):
+                class Client:
+                    async def read_gatt_char(self, uuid):
+                        raise error
+
+                lock = asyncio.Lock()
+                self.assertIsNone(await gateway.read_diagnostics(Client(), lock))
+                self.assertFalse(lock.locked())
+
+    async def test_diagnostics_read_failures_are_not_reported_as_old_firmware(self):
+        for error in (BleakGATTProtocolError(0x0E), TimeoutError('read timed out'),
+                      ConnectionError('peer disconnected'), ValueError('invalid backend result')):
+            with self.subTest(error=type(error).__name__):
+                class Client:
+                    async def read_gatt_char(self, uuid):
+                        raise error
+
+                lock = asyncio.Lock()
+                with self.assertRaises(type(error)) as raised:
+                    await gateway.read_diagnostics(Client(), lock)
+                self.assertIs(raised.exception, error)
+                self.assertFalse(lock.locked())
+        with self.assertRaises(AttributeError):
+            await gateway.read_diagnostics(object(), asyncio.Lock())
+
+    async def test_invalid_diagnostics_read_payload_is_not_attribute_absence(self):
+        class Client:
+            async def read_gatt_char(self, uuid):
+                return bytes(16)
+
+        with self.assertRaises(ValueError):
+            await gateway.read_diagnostics(Client(), asyncio.Lock())
+
+
+class LinkDiagnosticsTests(unittest.IsolatedAsyncioTestCase):
+    @staticmethod
+    def wire():
+        return struct.pack('<24I', 1, 247, 15000, 0, 4000, 2, 1, 251, 1060, 120,
+                           1700, 500, 15000, 30, 7000, 2, 3, 4, 7, 10, 12, 251,
+                           16384, 0x80000001)
+
+    def test_link_codec_preserves_all_negotiated_and_relay_fields(self):
+        self.assertEqual(gateway.decode_link_diagnostics(self.wire()), {
+            'version': 1, 'mtu': 247, 'interval_us': 15000, 'latency': 0,
+            'supervision_timeout_ms': 4000, 'tx_phy': 2, 'rx_phy': 1,
+            'tx_max_len': 251, 'tx_max_time_us': 1060, 'rx_max_len': 120,
+            'rx_max_time_us': 1700, 'ring_bytes': 500, 'ring_highwater': 15000,
+            'notify_calls': 30, 'notify_bytes': 7000, 'notify_failures': 2,
+            'notify_call_max_ms': 3, 'notify_retry_events': 4, 'batch_flush_ms': 7,
+            'sdc_tx_packet_count': 10, 'acl_tx_count': 12, 'acl_tx_size': 251,
+            'ring_capacity': 16384, 'flags': 0x80000001,
+        })
+
+    def test_link_codec_rejects_wrong_length_and_unknown_version(self):
+        for payload in (bytes(95), bytes(97), bytes(96), struct.pack('<24I', 2, *range(23))):
+            with self.subTest(length=len(payload)):
+                with self.assertRaises(ValueError):
+                    gateway.decode_link_diagnostics(payload)
+
+    async def test_link_read_uses_shared_request_lock_and_exact_uuid(self):
+        lock = asyncio.Lock()
+        calls = []
+        payload = self.wire()
+        class Client:
+            async def read_gatt_char(self, uuid):
+                calls.append(uuid)
+                if not lock.locked():
+                    raise AssertionError('Link read did not acquire the transport lock')
+                return payload
+        await lock.acquire()
+        task = asyncio.create_task(gateway.read_link_diagnostics(Client(), lock))
+        try:
+            await asyncio.sleep(0)
+            self.assertEqual(calls, [])
+            lock.release()
+            self.assertEqual(await asyncio.wait_for(task, 1), gateway.decode_link_diagnostics(payload))
+            self.assertEqual(calls, [gateway.LINK_DIAGNOSTICS])
+            self.assertFalse(lock.locked())
+        finally:
+            if lock.locked():
+                lock.release()
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+
+    async def test_link_absence_is_the_only_unsupported_result(self):
+        for error in (BleakCharacteristicNotFoundError(gateway.LINK_DIAGNOSTICS),
+                      BleakGATTProtocolError(0x0A)):
+            with self.subTest(error=type(error).__name__):
+                class Client:
+                    async def read_gatt_char(self, uuid):
+                        raise error
+                self.assertIsNone(await gateway.read_link_diagnostics(Client(), asyncio.Lock()))
+
+    async def test_link_timeout_disconnect_and_other_att_errors_propagate(self):
+        for error in (TimeoutError('link timeout'), ConnectionError('disconnected'),
+                      BleakGATTProtocolError(0x0E)):
+            with self.subTest(error=type(error).__name__):
+                class Client:
+                    async def read_gatt_char(self, uuid):
+                        raise error
+                lock = asyncio.Lock()
+                with self.assertRaises(type(error)) as caught:
+                    await gateway.read_link_diagnostics(Client(), lock)
+                self.assertIs(caught.exception, error)
+                self.assertFalse(lock.locked())
+
+    async def test_link_invalid_payload_is_not_old_firmware(self):
+        class Client:
+            async def read_gatt_char(self, uuid):
+                return bytes(80)
+        with self.assertRaises(ValueError):
+            await gateway.read_link_diagnostics(Client(), asyncio.Lock())
 
 
 class GattTransportTests(unittest.IsolatedAsyncioTestCase):

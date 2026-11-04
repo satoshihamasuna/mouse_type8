@@ -73,6 +73,14 @@ static void request(const char *hex)
 	}
 }
 
+static uint16_t request_period(const char *hex)
+{
+	char low[] = {hex[8], hex[9], 0};
+	char high[] = {hex[10], hex[11], 0};
+	return static_cast<uint16_t>(strtoul(low, nullptr, 16) |
+		(strtoul(high, nullptr, 16) << 8));
+}
+
 int main(int argc, char **argv)
 {
 #ifdef _WIN32
@@ -84,7 +92,7 @@ int main(int argc, char **argv)
 	uint8_t byte;
 	if(strcmp(argv[1], "queue") == 0)
 	{
-		uint8_t bytes[128];
+		uint8_t bytes[512];
 		memset(bytes, 0x7b, sizeof(bytes));
 		test_primask = 1;
 		assert(Communicate_TxTryPushBuffer(bytes, sizeof(bytes)) == 1);
@@ -92,27 +100,27 @@ int main(int argc, char **argv)
 		assert(Communicate_TxTryPushBuffer(bytes, 1) == 0);
 		assert(test_primask == 1);
 		drain();
-		assert(transmitted.size() == 128);
+		assert(transmitted.size() == 512);
 		test_primask = 0;
 		assert(Communicate_TxTryPushBuffer(bytes, 2) == 1);
 		assert(test_primask == 0);
 		drain();
-		assert(transmitted.size() == 130);
+		assert(transmitted.size() == 514);
 		return 0;
 	}
 	if(strcmp(argv[1], "dma-wrap") == 0)
 	{
-		uint8_t a[90], b[30], c[80];
+		uint8_t a[380], b[100], c[200];
 		memset(a, 1, sizeof(a)); memset(b, 2, sizeof(b)); memset(c, 3, sizeof(c));
 		assert(Communicate_TxTryPushBuffer(a, sizeof(a)));
 		assert(Communicate_TxTryPushBuffer(b, sizeof(b)));
 		complete_one();
 		assert(Communicate_TxTryPushBuffer(c, sizeof(c)));
 		drain();
-		assert((transfers == std::vector<uint16_t>{90, 30, 8, 72}));
-		assert(transmitted.size() == 200);
+		assert((transfers == std::vector<uint16_t>{380, 100, 32, 168}));
+		assert(transmitted.size() == 680);
 		for(size_t i = 0; i < transmitted.size(); ++i)
-			assert(transmitted[i] == (i < 90 ? 1 : (i < 120 ? 2 : 3)));
+			assert(transmitted[i] == (i < 380 ? 1 : (i < 480 ? 2 : 3)));
 		return 0;
 	}
 	if(strcmp(argv[1], "dma-retry") == 0)
@@ -207,6 +215,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	assert(!Communicate_RxTryPopData(&byte));
+	const uint16_t period = request_period(argv[2]);
 	assert(LogStream::sample_due(tick));
 	half_float sample[LogStream::FIELD_COUNT];
 	for(uint16_t i = 0; i < LogStream::FIELD_COUNT; ++i) sample[i].bitPattern = 0x3c00 + i;
@@ -214,6 +223,18 @@ int main(int argc, char **argv)
 	assert(transfers.empty()); // ADC enqueue never starts DMA or computes a CRC.
 	Communicate_Service();
 	assert((transfers == std::vector<uint16_t>{LogStream::FRAME_SIZE}));
+	if(strcmp(argv[1], "deadline") == 0)
+	{
+		drain();
+		assert(!LogStream::sample_due(tick + period - 1U));
+		assert(LogStream::sample_due(tick + period));
+		LogStream::enqueue_sample(sample, tick + period);
+		LogStream::service(tick + period);
+		drain();
+		assert(transmitted.size() == 2 * LogStream::FRAME_SIZE);
+		fwrite(transmitted.data(), 1, transmitted.size(), stdout);
+		return 0;
+	}
 	if(strcmp(argv[1], "keepalive") == 0)
 	{
 		drain();
@@ -230,32 +251,37 @@ int main(int argc, char **argv)
 	}
 	if(strcmp(argv[1], "stream-stop") == 0)
 	{
-		tick += 20;
-		assert(LogStream::sample_due(tick));
-		LogStream::enqueue_sample(sample, tick);
-		Communicate_Service(); // Prepare, but TX is still full.
+		// Four whole frames fit in TX. Keep one prepared and one pending at stop.
+		for(uint32_t i = 1; i <= 5; ++i)
+		{
+			tick += period;
+			assert(LogStream::sample_due(tick));
+			LogStream::enqueue_sample(sample, tick);
+			Communicate_Service();
+		}
 		request(argv[3]);
 		Communicate_Service();
 		drain();
 		Communicate_Service();
-		assert(transmitted.size() == LogStream::FRAME_SIZE);
+		assert(transmitted.size() == 4 * LogStream::FRAME_SIZE);
+		fwrite(transmitted.data(), 1, transmitted.size(), stdout);
 		return 0;
 	}
-	assert(!LogStream::sample_due(tick + 19));
-	// Keep DMA blocked. The prepared frame + 8 ring slots hold the burst.
-	for(uint32_t i = 1; i <= 10; ++i)
+	assert(!LogStream::sample_due(tick + period - 1U));
+	// Keep DMA blocked. TX holds 4 frames, plus one prepared + 8 pending frames.
+	for(uint32_t i = 1; i <= 13; ++i)
 	{
-		assert(LogStream::sample_due(tick + 20 * i));
-		LogStream::enqueue_sample(sample, tick + 20 * i);
-		LogStream::service(tick + 20 * i);
+		assert(LogStream::sample_due(tick + period * i));
+		LogStream::enqueue_sample(sample, tick + period * i);
+		LogStream::service(tick + period * i);
 	}
 	drain();
 	for(uint8_t i = 0; i < 9; ++i) { Communicate_Service(); drain(); }
-	assert(transmitted.size() == 10 * LogStream::FRAME_SIZE);
-	assert(LogStream::sample_due(tick + 220));
-	LogStream::enqueue_sample(sample, tick + 220);
+	assert(transmitted.size() == 13 * LogStream::FRAME_SIZE);
+	assert(LogStream::sample_due(tick + period * 14U));
+	LogStream::enqueue_sample(sample, tick + period * 14U);
 	Communicate_Service(); drain();
-	assert(transmitted[10 * LogStream::FRAME_SIZE + 4] == 11); // Attempt 10 was dropped.
+	assert(transmitted[13 * LogStream::FRAME_SIZE + 4] == 14); // Attempt 13 was dropped.
 	assert(!LogStream::sample_due(tick + LogStream::LEASE_MS));
 	tick += 5000;
 	request(argv[2]);
@@ -265,8 +291,7 @@ int main(int argc, char **argv)
 	assert(argc >= 4);
 	request(argv[3]);
 	assert(!LogStream::sample_due(tick + 1000));
-	assert(transfers.size() == 12);
-	for(uint16_t length : transfers) assert(length == LogStream::FRAME_SIZE);
+	assert(transmitted.size() == 15 * LogStream::FRAME_SIZE);
 	fwrite(transmitted.data(), 1, transmitted.size(), stdout);
 	return 0;
 }

@@ -15,12 +15,13 @@
 
 #define _BS				0x08	// バックスペース
 #define _ESC			0x1b	// エスケープシーケンス
-#define TRX_BUFFER_SIZE 128		// 送受信バッファサイズ
+#define RX_BUFFER_SIZE 128		// 受信バッファサイズ
+#define TX_BUFFER_SIZE 512		// 複数のログフレームを DMA 完了前に予約する
 
 
-static uint8_t tx_buffer[TRX_BUFFER_SIZE];
+static uint8_t tx_buffer[TX_BUFFER_SIZE];
 static volatile uint16_t tx_read, tx_write, tx_used, tx_dma_size;
-ring_queue<TRX_BUFFER_SIZE,volatile uint8_t> rx_buffer;
+ring_queue<RX_BUFFER_SIZE,volatile uint8_t> rx_buffer;
 
 volatile uint8_t		rx_data;
 volatile uint8_t		rx_continuous_enabled;
@@ -42,7 +43,7 @@ static void rx_push_byte(uint8_t byte)
 // tailから読み出せばいい
 // headがtailに追いつくとバッファオーバーフローとなり正しく読み出せない
 
-	if(rx_buffer.queue_length() >= TRX_BUFFER_SIZE)
+	if(rx_buffer.queue_length() >= RX_BUFFER_SIZE)
 	{
 		return;
 	}
@@ -107,7 +108,7 @@ static void tx_start_dma()
 {
 	// Caller holds PRIMASK. Bytes remain reserved until UART TC, not DMA TC.
 	if(tx_dma_size != 0 || tx_used == 0 || huart1.gState != HAL_UART_STATE_READY) return;
-	const uint16_t contiguous = TRX_BUFFER_SIZE - tx_read;
+	const uint16_t contiguous = TX_BUFFER_SIZE - tx_read;
 	const uint16_t length = tx_used < contiguous ? tx_used : contiguous;
 	if(HAL_UART_Transmit_DMA(&huart1, tx_buffer + tx_read, length) == HAL_OK)
 	{
@@ -127,7 +128,7 @@ void Communicate_TxPushBuffer(uint8_t *buf, uint16_t len)
 {
 	while(len != 0)
 	{
-		const uint16_t length = len < TRX_BUFFER_SIZE ? len : TRX_BUFFER_SIZE;
+		const uint16_t length = len < TX_BUFFER_SIZE ? len : TX_BUFFER_SIZE;
 		while(Communicate_TxTryPushBuffer(buf, length) == 0U) {}
 		buf += length;
 		len -= length;
@@ -136,19 +137,19 @@ void Communicate_TxPushBuffer(uint8_t *buf, uint16_t len)
 
 uint8_t Communicate_TxTryPushBuffer(const uint8_t *buf, uint16_t len)
 {
-	if(buf == NULL || len == 0 || len > TRX_BUFFER_SIZE) return 0U;
+	if(buf == NULL || len == 0 || len > TX_BUFFER_SIZE) return 0U;
 	const uint32_t primask = __get_PRIMASK();
 	__disable_irq();
-	if(tx_used + len > TRX_BUFFER_SIZE)
+	if(tx_used + len > TX_BUFFER_SIZE)
 	{
 		__set_PRIMASK(primask);
 		return 0U;
 	}
-	const uint16_t contiguous = TRX_BUFFER_SIZE - tx_write;
+	const uint16_t contiguous = TX_BUFFER_SIZE - tx_write;
 	const uint16_t first = len < contiguous ? len : contiguous;
 	memcpy(tx_buffer + tx_write, buf, first);
 	if(first < len) memcpy(tx_buffer, buf + first, len - first);
-	tx_write = (tx_write + len) % TRX_BUFFER_SIZE;
+	tx_write = (tx_write + len) % TX_BUFFER_SIZE;
 	tx_used += len;
 	tx_start_dma();
 	__set_PRIMASK(primask);
@@ -159,7 +160,7 @@ void Communicate_TxPopData( void )
 {
 	const uint32_t primask = __get_PRIMASK();
 	__disable_irq();
-	tx_read = (tx_read + tx_dma_size) % TRX_BUFFER_SIZE;
+	tx_read = (tx_read + tx_dma_size) % TX_BUFFER_SIZE;
 	tx_used -= tx_dma_size;
 	tx_dma_size = 0;
 	if(tx_used == 0) tx_read = tx_write = 0;

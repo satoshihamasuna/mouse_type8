@@ -1023,7 +1023,7 @@ def show_animation(
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", default="COM8")
-    parser.add_argument("--baud", type=int, default=115200)
+    parser.add_argument("--baud", type=int, default=460800)
     parser.add_argument("--maze", type=Path, help=".bin, wall_history .txt, or standard maze_data .txt")
     parser.add_argument("--transcript", type=Path, help="parse an existing SEARCH_* transcript without serial")
     parser.add_argument("--goal", type=parse_goal, default=(7, 7, 2))

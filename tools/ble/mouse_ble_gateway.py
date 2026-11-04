@@ -12,6 +12,31 @@ for directory in ('ble_python', 'ble_python{}{}'.format(*sys.version_info[:2])):
 NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'
 NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'
 STATUS = '6e400004-b5a3-f393-e0a9-e50e24dcca9e'
+DIAGNOSTICS = '6e400005-b5a3-f393-e0a9-e50e24dcca9e'
+DIAGNOSTICS_FIELDS = (
+    'version', 'last_stop_reason', 'stop_reason_or', 'overrun_count', 'parity_count',
+    'framing_count', 'break_count', 'collision_count', 'noise_count', 'other_reason_count',
+    'rx_disabled_count', 'rx_restart_attempts', 'rx_restart_failures',
+    'rx_buffer_alloc_failures', 'rx_buffer_rsp_failures', 'rx_buf_request_events',
+    'rx_buffer_size', 'rx_buffer_count', 'rx_timeout_us', 'rx_mode_flags',
+)
+DIAGNOSTICS_COUNTER_FIELDS = (
+    'overrun_count', 'parity_count', 'framing_count', 'break_count', 'collision_count',
+    'noise_count', 'other_reason_count', 'rx_disabled_count', 'rx_restart_attempts',
+    'rx_restart_failures', 'rx_buffer_alloc_failures', 'rx_buffer_rsp_failures',
+    'rx_buf_request_events',
+)
+LINK_DIAGNOSTICS = '6e400006-b5a3-f393-e0a9-e50e24dcca9e'
+LINK_DIAGNOSTICS_FIELDS = (
+    'version', 'mtu', 'interval_us', 'latency', 'supervision_timeout_ms',
+    'tx_phy', 'rx_phy', 'tx_max_len', 'tx_max_time_us', 'rx_max_len', 'rx_max_time_us',
+    'ring_bytes', 'ring_highwater', 'notify_calls', 'notify_bytes', 'notify_failures',
+    'notify_call_max_ms', 'notify_retry_events', 'batch_flush_ms', 'sdc_tx_packet_count',
+    'acl_tx_count', 'acl_tx_size', 'ring_capacity', 'flags',
+)
+LINK_DIAGNOSTICS_COUNTER_FIELDS = (
+    'notify_calls', 'notify_bytes', 'notify_failures', 'notify_retry_events',
+)
 HOST = '127.0.0.1'
 
 
@@ -44,6 +69,58 @@ def check_status(initial, current):
     if any(current[index] != initial[index] for index in (0, 1, 3)):
         raise RuntimeError('UART/BLE data loss detected: dropped={}, UART errors={}, BLE errors={}'.format(
             current[0], current[1], current[3]))
+
+
+def decode_diagnostics(payload):
+    """Decode optional version-one diagnostics without changing status semantics."""
+    if len(payload) != 80:
+        raise ValueError('Unexpected bridge diagnostics length; expected 80 bytes')
+    values = struct.unpack('<20I', payload)
+    if values[0] != 1:
+        raise ValueError('Unsupported bridge diagnostics version: {}'.format(values[0]))
+    return dict(zip(DIAGNOSTICS_FIELDS, values))
+
+
+async def read_diagnostics(client, request_lock):
+    """Return None only when the peer explicitly lacks the optional characteristic."""
+    from bleak.exc import BleakCharacteristicNotFoundError, BleakGATTProtocolError
+
+    try:
+        async with request_lock:
+            payload = await client.read_gatt_char(DIAGNOSTICS)
+    except BleakCharacteristicNotFoundError:
+        return None
+    except BleakGATTProtocolError as error:
+        if int(error.code) == 0x0A:  # ATT Attribute Not Found.
+            return None
+        raise
+    return decode_diagnostics(payload)
+
+
+def decode_link_diagnostics(payload):
+    """Decode negotiated-link and relay metrics; zero negotiated values are unknown."""
+    if len(payload) != 96:
+        raise ValueError('Unexpected bridge link diagnostics length; expected 96 bytes')
+    values = struct.unpack('<24I', payload)
+    if values[0] != 1:
+        raise ValueError('Unsupported bridge link diagnostics version: {}'.format(values[0]))
+    return dict(zip(LINK_DIAGNOSTICS_FIELDS, values))
+
+
+async def read_link_diagnostics(client, request_lock):
+    """Return None only for explicit absence of the optional link characteristic."""
+    from bleak.exc import BleakCharacteristicNotFoundError, BleakGATTProtocolError
+
+    try:
+        async with request_lock:
+            payload = await client.read_gatt_char(LINK_DIAGNOSTICS)
+    except BleakCharacteristicNotFoundError:
+        return None
+    except BleakGATTProtocolError as error:
+        if int(error.code) == 0x0A:
+            return None
+        raise
+    return decode_link_diagnostics(payload)
 
 
 async def run(args):

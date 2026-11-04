@@ -20,7 +20,7 @@ except ImportError:
 from maze_io import MazeFileReader, save_maze_file
 
 
-DEFAULT_BAUD = 115200
+DEFAULT_BAUD = 460800
 DEFAULT_WIDTH = 32
 DEFAULT_HEIGHT = 32
 DEFAULT_GOAL = (7, 7, 2)

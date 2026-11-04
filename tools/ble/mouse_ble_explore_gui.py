@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 import mouse_ble_explore as explore
-from mouse_ble_log import LOG_LABELS
+from mouse_ble_log import LOG_LABELS, MIN_PERIOD_MS
 
 
 STATE_LABELS = {
@@ -70,7 +70,7 @@ class ExploreApp:
         self.address_entry = ttk.Entry(link, textvariable=self.address, width=22)
         self.address_entry.grid(row=0, column=3, padx=(6, 14))
         ttk.Label(link, text='ログ周期 [ms]').grid(row=0, column=4)
-        self.period_entry = ttk.Spinbox(link, from_=20, to=1000, increment=10, textvariable=self.period, width=6)
+        self.period_entry = ttk.Spinbox(link, from_=MIN_PERIOD_MS, to=1000, increment=1, textvariable=self.period, width=6)
         self.period_entry.grid(row=0, column=5, padx=6)
         self.connect_button = ttk.Button(link, text='BLE接続', command=self.connect)
         self.connect_button.grid(row=0, column=6, padx=6)

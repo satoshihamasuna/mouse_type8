@@ -16,9 +16,9 @@ def main():
     args = parser.parse_args()
     if libusb_package.get_libusb1_backend() is None:
         raise RuntimeError('libusb backend is not available')
-    print('FT232H UART RX: D1, 115200 8N1 (WinUSB)', flush=True)
+    print('FT232H UART RX: D1, 460800 8N1 (WinUSB)', flush=True)
     with pyftdi.serialext.serial_for_url(
-        'ftdi://ftdi:232h/1', baudrate=115200, bytesize=8,
+        'ftdi://ftdi:232h/1', baudrate=460800, bytesize=8,
         parity='N', stopbits=1, timeout=0.5,
         rtscts=False, xonxoff=False, dsrdtr=False
     ) as port:

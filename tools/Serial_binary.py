@@ -8,7 +8,7 @@ from log_protocol import saved_log_frame
 
 # ===== 設定 =====
 PORT = "COM6"
-BAUD = 115200          # ★必ず上げる
+BAUD = 460800          # マウスの USART1 設定に合わせる
 MOUSE = "type8a_MPQ"
 
 LOG_DATA_NUM = 55     # HEADER受信後に項目数から更新

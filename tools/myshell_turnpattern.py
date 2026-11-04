@@ -61,7 +61,7 @@ class TurnPatternGui(tk.Tk):
         self.current_file = None
 
         self.port = tk.StringVar(value="COM8")
-        self.baud = tk.IntVar(value=115200)
+        self.baud = tk.IntVar(value=460800)
         self.char_delay = tk.DoubleVar(value=0.005)
         self.timeout = tk.DoubleVar(value=60.0)
         self.new_turn = tk.StringVar(value=TURN_TYPES[0])

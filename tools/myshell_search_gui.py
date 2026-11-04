@@ -44,7 +44,7 @@ class SearchGui(tk.Tk):
         self.animation_playing = False
 
         self.port_var = tk.StringVar(value="COM8")
-        self.baud_var = tk.IntVar(value=115200)
+        self.baud_var = tk.IntVar(value=460800)
         self.connection_var = tk.StringVar(value="未接続")
         self.maze_var = tk.StringVar(value=str(DEFAULT_MAZE) if DEFAULT_MAZE.exists() else "")
         self.output_dir_var = tk.StringVar(value=str(DEFAULT_OUTPUT_DIR))

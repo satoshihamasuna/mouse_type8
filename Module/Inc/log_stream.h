@@ -5,7 +5,8 @@
 
 namespace LogStream
 {
-constexpr uint16_t MIN_PERIOD_MS = 20;
+// A 126-byte frame needs about 2.74 ms on the 460800-bps UART.
+constexpr uint16_t MIN_PERIOD_MS = 3;
 constexpr uint16_t MAX_PERIOD_MS = 1000;
 constexpr uint32_t LEASE_MS = 3000;
 constexpr uint16_t FIELD_COUNT = 55;

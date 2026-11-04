@@ -21,7 +21,7 @@ GUI の初期設定は以下です。
 
 ```text
 Port: COM8
-Baud: 115200
+Baud: 460800
 Line ending: CR
 Char delay: 0.08 s
 ```
@@ -42,6 +42,7 @@ BLE の専用シェルは `tools/ble/mouse_ble_shell.py`、既存 GUI 用の接�
 依存パッケージ、シェル移行、GUI での `BLE` ポートの選択は
 [BLE 通信ツールの説明](ble/README.md) を参照してください。
 マウス側のコマンドとバイナリ形式は有線接続と共通です。
+仮想ポート `BLE` のBaud欄は物理USARTの通信速度を変更しません。STM32とHY0020側をともに460800 bpsへ合わせてください。
 
 ## GUI で maze_data をアップロードして Dijkstra を走らせる手順
 
@@ -400,7 +401,7 @@ half_float data[55];
 古いコマンドラインツールも残しています。
 
 ```powershell
-python tools\Serial_maze_view.py --port COM8 --baud 115200 --binary
+python tools\Serial_maze_view.py --port COM8 --baud 460800 --binary
 python tools\Serial_binary.py
 ```
 

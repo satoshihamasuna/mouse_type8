@@ -345,6 +345,9 @@ class GuiTests(unittest.TestCase):
         root.withdraw()
         try:
             app = gui.ExploreApp(root)
+            self.assertEqual(app.period.get(), 20)
+            self.assertEqual(float(app.period_entry['from']), 3)
+            self.assertEqual(float(app.period_entry['increment']), 1)
             app.handle_event('state', 'idle')
             snapshot = {'rows': 10, 'lost': 0, 'crc_errors': 0, 'ready': True,
                         'state': 'idle', 'time_ms': 100, 'values': {'ego.velo': 0.3}}

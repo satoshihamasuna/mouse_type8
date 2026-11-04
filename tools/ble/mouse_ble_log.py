@@ -12,6 +12,8 @@ import sys
 import mouse_ble_gateway as transport
 
 
+MIN_PERIOD_MS = 3
+
 LOG_LABELS = (
     'ideal.velo', 'ego.velo', 'ideal.rad_velo', 'ego.rad_velo',
     'ideal.length', 'ego.length', 'ideal.radian', 'ego.radian',
@@ -35,8 +37,8 @@ CSV_HEADER = ('cnt', *LOG_LABELS, 'sequence', 'time_ms', 'period_ms', 'lost_fram
 
 
 def control_packet(period_ms, *, stop=False, action=None):
-    if not 20 <= period_ms <= 1000:
-        raise ValueError('period must be between 20 and 1000 ms')
+    if not MIN_PERIOD_MS <= period_ms <= 1000:
+        raise ValueError('period must be between {} and 1000 ms'.format(MIN_PERIOD_MS))
     action = (0 if stop else 1) if action is None else action
     if action not in (0, 1, 2, 3):
         raise ValueError('unknown stream/exploration action')
@@ -83,7 +85,7 @@ class StreamDecoder:
                 del self.buffer[0]
                 continue
             _, sequence, time_ms, period_ms, *values = frame.unpack_from(self.buffer)
-            if not 20 <= period_ms <= 1000:
+            if not MIN_PERIOD_MS <= period_ms <= 1000:
                 del self.buffer[0]
                 continue
             samples.append(Sample(sequence, time_ms, period_ms, tuple(values[:-1])))
@@ -210,15 +212,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--name', default='HY0020-MOUSE')
     parser.add_argument('--address')
-    parser.add_argument('--period-ms', type=int, default=20, help='20..1000 ms (default: 20 / 50 Hz)')
+    parser.add_argument('--period-ms', type=int, default=20, help='{}..1000 ms (default: 20 / 50 Hz)'.format(MIN_PERIOD_MS))
     parser.add_argument('--duration', type=float, default=0, help='seconds; 0 means until Ctrl+C')
     parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[1] /
                         'logs' / (datetime.now().strftime('%Y%m%d_%H%M%S_%f') + '_ble_live.csv'))
     args = parser.parse_args()
     if sys.version_info < (3, 10):
         parser.error('Python 3.10+ is required')
-    if not 20 <= args.period_ms <= 1000 or not 0 <= args.duration < float('inf'):
-        parser.error('period must be 20..1000 ms and duration must be finite and nonnegative')
+    if not MIN_PERIOD_MS <= args.period_ms <= 1000 or not 0 <= args.duration < float('inf'):
+        parser.error('period must be {}..1000 ms and duration must be finite and nonnegative'.format(MIN_PERIOD_MS))
     try:
         asyncio.run(run(args))
     except KeyboardInterrupt:

@@ -3,6 +3,8 @@
 mouse_type8 の UART を HY0020 経由で BLE 接続するツールです。
 すべてのコマンドは mouse_type8 リポジトリのルートから実行します。
 HY0020 側のプログラム・配線・書き込みは [firmware/hy0020/README.md](../../firmware/hy0020/README.md) を参照してください。
+現在のUARTは460800 bps / 8N1です。STM32とHY0020の両方へ同じ速度のファームウェアを書き込んでください。
+115200 bpsの旧ファームウェアが片側に残っていると通信できません。
 
 ## ツールの選び方
 
@@ -10,6 +12,7 @@ HY0020 側のプログラム・配線・書き込みは [firmware/hy0020/README.
 | --- | --- |
 | `mouse_ble_shell.py` | 専用の対話シェル・単発コマンド送受信（最初の動作確認用） |
 | `mouse_ble_log.py` | 全55項目（従来51項目＋割り込み計測4項目）を連続受信し、逐次CSVへ保存 |
+| `mouse_ble_benchmark.py` | 停止状態で配信周期を段階測定し、欠落・実効Hz・受信遅延傾向・IRQ時間を保存 |
 | `mouse_ble_explore_gui.py` | BLE接続・実機探索開始・ライブ表示・連続ログ保存を一画面で操作 |
 | `mouse_ble_gateway.py` | BLE と localhost TCP をつなぐ、既存 GUI 用の中継 |
 | `mouse_gui_ble.py` | 既存 GUI に `BLE` ポートを追加して起動 |
@@ -134,7 +137,7 @@ GUIは切断後の探索開始要求を自動再送しません。再接続後�
 ## ログを連続取得する
 
 ストリーム対応の STM32 ファームウェアを対象機体 A / B に書き込んだ後、次を実行します。
-HY0020 は既存の UART–BLE 中継ファームウェアをそのまま使います。
+HY0020 は460800 bpsに対応した UART–BLE 中継ファームウェアを使います。
 通常の GUI、中継、専用シェルなど、ほかの BLE クライアントは切断してください。
 
 ```powershell
@@ -153,7 +156,8 @@ python tools/ble/mouse_ble_log.py --period-ms 100 --duration 60 --output tools/l
 接続と通知購読の後に取得を自動開始し、既定では20 ms周期（50 Hz）で取得します。
 終了は Ctrl+C です。CSV の既定保存先は `tools/logs/<日時>_ble_live.csv` です。
 ファイルは受信ごとに flush し、既存ファイルは上書きしません。
-`--period-ms` は20～1000、`--duration` は秒単位で0なら継続取得です。
+`--period-ms` の要求許可範囲は3～1000 msで、既定は20 msです。`--duration` は秒単位で0なら継続取得です。
+20 ms未満の要求には、最短3 ms対応のSTM32ファームウェアへの更新が必要です。旧ファームウェアは20 ms未満の要求を無視します。
 
 シェルモードへの移行や `disp log_bin` は不要です。アイドル、Interface / Demo / Debug、
 シェルで取得でき、`log_enable` が無効な間も現在の55項目を送ります。
@@ -168,8 +172,11 @@ STM32 には BLE 接続状態が直接届かないため、受信ツールが0.5
 旧 STM32 ファームウェアなどで有効なフレームが5秒届かない場合はエラー終了します。
 切断後はツールを起動し直してください。
 
-全55項目を送るフレームは126 byteです。115200 bps / 8N1 のUARTで1 ms周期は帯域不足のため、
-最短周期は20 msです（約6300 byte/s）。制御割り込みはサンプルを8件の送信用リングへコピーし、
+全55項目を送るフレームは126 byteです。460800 bps / 8N1のUARTで1フレームの送信時間は約2.734 ms、
+20 ms周期では約6300 byte/sでUART帯域の約13.7%を使います。1 ms周期は帯域不足です。
+3 ms周期の要求は約333 Hz・42000 byte/sでUART帯域の約91.1%を使い、送信待ち時間の余裕は小さくなります。
+要求周期は実効受信周期や走行中の安定性を保証しません。`time_ms` の間隔、欠落、CRC、割り込み時間を確認してください。
+制御割り込みはサンプルを8件の送信用リングへコピーし、
 CRC計算・DMA送信は低優先度のSysTickから進めます。UARTが混雑している間は準備済みフレームを保持し、
 送信用リングも満杯になったときだけ新しいサンプルを見送ります。
 シェルの大量出力などが重なると欠落が増えます。
@@ -185,10 +192,142 @@ HY0020 側のバッファあふれ・UART/BLE異常ではエラー終了しま�
 フレームは1 msの内部ログの間引きであり、送られなかったサンプルの再送はありません。
 走行の実行や設定の変更は、この受信ツールからは行いません。
 
+### 停止状態で配信周期を段階測定する
+
+STM32 は最短3 ms対応版、HY0020 は460800 bps版へ更新し、UART 配線と電源投入を済ませます。
+ほかの BLE クライアントを切断し、マウスを停止したシェル状態にして実行します。
+
+```powershell
+# 20 → 10 → 5 → 4 → 3 msを各15秒測定する例
+& $blePython tools/ble/mouse_ble_benchmark.py --periods 20,10,5,4,3 --duration 15
+
+# 候補周期だけを60秒測定する例。別の実行で繰り返す
+& $blePython tools/ble/mouse_ble_benchmark.py --periods 5 --duration 60
+```
+
+引数なしの既定は20 / 10 / 5 / 4 / 3 msを各10秒です。`--duration` は1段あたり0より大きく60秒以下です。
+モード選択状態からシェルへ入る場合だけ `--enter-shell` を付けます。機体は既定Aで、Bは `--mouse B` を指定します。
+配信停止中に読み取り専用の `explore show` で対象機体と `state:idle` を確認し、同じ BLE 接続で全段を測定します。
+送るバイナリ要求はログ開始・継続の操作1とログ停止の操作0だけで、探索開始・許可・遠隔停止は送りません。
+各段の前後に配信を停止して残留受信を流し、最初の要求周期のフレームを受けてから集計します。
+
+各段はCRC・連番欠落・HY0020の4カウンター増加・途中の周期不一致・受信キューあふれ・5秒の有効フレーム未受信で失敗します。
+診断対応HY0020では、受信停止理由・RX再開失敗・受信バッファ割当/応答失敗のカウンター増加も失敗として記録します。
+リンク診断対応時は通知の最終失敗数の増加も失敗とし、資源不足による通常の再試行回数だけでは失敗にしません。
+欠落が0でも、2件以上のサンプルで時刻間隔が要求以上、平均間隔が要求の105%以下でなければ失敗です。
+画面の `effective_hz` と `mean_dt_ms` で実効周期を確認します。失敗時はログ停止を要求し、以降の段は実行しません。
+短い段階試験後、採用候補を60秒で複数回確認します。要求下限3 msは実機での安定受信を保証する値ではありません。
+
+保存先は `tools/logs/<日時>_ble_benchmark/` で、すべて新規作成します。
+
+| ファイル・項目 | 内容 |
+| --- | --- |
+| `NN_Pms.csv` | 要求周期に一致する55項目と連番・STM32時刻等の60列。列の意味は通常の連続取得と同じ |
+| `NN_Pms.notifications.bin` | 先頭ASCII `M8N1`。以後はlittle endianの `<dI>`（段開始からのPC単調時計の秒数double、通知長uint32）と、その長さの通知生バイト列を繰り返す |
+| `NN_Pms.json` | 合否、`sample.interval_ms` / `effective_hz`、通知byte数・通知間隔・受信キュー最大、HYカウンター前後差分、IRQ分布と累積最大値の開始・終了値 |
+| `summary.json` | 全段の結果、機体応答、取得できたATT MTU。リンク診断対応時は実conn interval・PHY・data lengthを保存し、未取得は `null` |
+
+`bridge_final_status_read` が偽の場合、切断などで終了時のカウンターを取得できていません。
+この場合 `bridge_after` / `bridge_delta` は `null`、直前の観測値は `bridge_last_observed` に分けて記録します。
+診断対応時は `diagnostics_before` / `diagnostics_after` / `diagnostics_delta` と `diagnostics_last_observed` も保存します。
+`diagnostics_final_read` が偽なら最終値を取得できておらず、`diagnostics_after` / `diagnostics_delta` は `null` です。
+診断特性のない旧HY0020は `diagnostics_supported:false` として通常測定を続けます。読取り失敗や不正な形式は未対応とせず、
+`diagnostics_read_error` に記録して測定を失敗にします。同じ接続で対応確認後に特性が消えた場合も失敗です。
+リンク診断は同様に `link_before` / `link_after` / `link_delta` / `link_last_observed` を保存します。
+`link_final_read:false` の場合、`link_after` / `link_delta` は `null` で、最後の観測値を最終値として扱いません。
+`link_supported:false` は明示的な特性欠如だけを示します。読取り失敗・不正形式・接続途中の特性消失は
+`link_read_error` に記録して失敗します。リンク診断がない旧版でも、既存Statusと受信停止診断の検証は続けます。
+
+`relative_lag_slope_ms_per_s` はPC受信時刻とSTM32時刻の相対的なずれの傾きで、バッファ滞留と両時計のドリフトが混ざります。
+絶対遅延やFIFO残量の直接測定ではありません。通知は複数フレームの一部を含められ、通知間隔とサンプル間隔は異なります。
+Windows/WinRTのATT MTUだけから実転送量やPHYは断定できません。キュー滞留はcallbackで記録する `connection_queue_highwater` も確認します。
+IRQ列は前回完了した制御処理の値で、累積最大値は各段の開始時にリセットしません。
+この合否は停止状態でのデータ取得の基準です。保存ログ有効時や走行中の制御負荷・壁判定の安定性は別途検証します。
+
+### HY0020の受信停止理由
+
+旧Status特性 `6e400004-b5a3-f393-e0a9-e50e24dcca9e` は、従来どおり4項目のlittle-endian uint32、16 byteです。
+診断対応ファームウェアは読取り専用特性 `6e400005-b5a3-f393-e0a9-e50e24dcca9e` を追加します。
+v1はlittle-endianの `<20I>`、80 byteで、順序は次のとおりです。
+
+| word（0始まり） | 項目 |
+| --- | --- |
+| 0 | `version`（1） |
+| 1～2 | `last_stop_reason`, `stop_reason_or` |
+| 3～9 | `overrun_count`, `parity_count`, `framing_count`, `break_count`, `collision_count`, `noise_count`, `other_reason_count` |
+| 10～15 | `rx_disabled_count`, `rx_restart_attempts`, `rx_restart_failures`, `rx_buffer_alloc_failures`, `rx_buffer_rsp_failures`, `rx_buf_request_events` |
+| 16～19 | `rx_buffer_size`, `rx_buffer_count`, `rx_timeout_us`, `rx_mode_flags` |
+
+理由bitmapはZephyrの `UART_RX_STOPPED` の生値で、bit0～5は順にoverrun / parity / framing / break / collision / noiseです。
+複数bitがあれば各理由カウンターへ加算します。理由0または未知bitを含む場合は `other_reason_count` も増えます。
+理由カウンターは起動からの全受信停止を累積し、旧Statusの `uart_errors`（接続・通知有効中の停止）とは集計条件が異なります。
+SDK v3.4.1のnRFドライバはERRORSRCの複数エラーから優先する1理由だけを返すため、全ハードウェアエラーの同時記録ではありません。
+`rx_mode_flags` のbit0はlegacy CBWT使用、バッファサイズ・個数・タイムアウトは実行時設定の確認用です。
+
+ベンチは13項目のカウンターだけをuint32 wrap対応で差分計算し、理由bitmapや設定値はそのまま保存します。
+正常動作でも増える受信無効化・再開試行・バッファ要求の回数だけでは失敗にしません。
+MTU23などで80 byteの読取りが複数のRead Blobに分かれた場合、全項目が厳密に同時取得されたことは保証しません。
+理由別カウンターの合計を受信停止回数や欠落byte数と同一視しないでください。
+
+### HY0020のBLEリンク・中継診断
+
+リンク診断対応版は読取り専用特性 `6e400006-b5a3-f393-e0a9-e50e24dcca9e` を追加します。
+v1はlittle-endianの `<24I>`、96 byteです。既存0004/0005の形式と動作は維持します。
+
+| word（0始まり） | 項目・単位 |
+| --- | --- |
+| 0～4 | `version`（1）, `mtu` [byte], `interval_us` [µs], `latency` [接続イベント数], `supervision_timeout_ms` [ms] |
+| 5～10 | `tx_phy`, `rx_phy`, `tx_max_len` [byte], `tx_max_time_us` [µs], `rx_max_len` [byte], `rx_max_time_us` [µs] |
+| 11～17 | `ring_bytes`, `ring_highwater` [byte], `notify_calls`, `notify_bytes`, `notify_failures`, `notify_call_max_ms` [ms], `notify_retry_events` |
+| 18～23 | `batch_flush_ms` [ms], `sdc_tx_packet_count`, `acl_tx_count`, `acl_tx_size` [byte], `ring_capacity` [byte], `flags` |
+
+PHY値は1=LE 1M、2=LE 2M、4=LE Codedです。実リンクの間隔・PHY・DLEを取得できない項目は0です。
+`flags` bit0は通知のバッチ化を示します。SDC/ACLの個数・サイズはビルド設定であり、実際の無線パケット数や実効帯域ではありません。
+`ring_bytes` はUART→BLEリングだけの残量で、送信待ちのローカル通知やBluetoothスタック内の待機分を含みません。
+`ring_highwater` と `notify_call_max_ms` は起動からの最大値です。各段の最大値へリセットしません。
+
+`notify_calls` は `bt_gatt_notify` の呼出数（再試行を含む）、`notify_bytes` はスタックに受理された通知byte数です。
+受理されたことだけでは無線到達を保証しません。`notify_failures` は再試行を打ち切った最終失敗数、
+`notify_retry_events` は資源不足などで再試行した回数です。この4項目だけをuint32 wrap対応で差分計算します。
+設定値・現在残量・累積ピークには差分計算を適用しません。複数項目の厳密な同時取得は保証しません。
+
+ベンチの `summary.link_at_connection` は接続直後、`link_last_observed` は最新の成功した観測です。
+`connection_interval_ms` / `phy` / `data_length` は最新の実リンク観測から更新します。
+取得元は `link_metrics_source` に保存し、特性がない場合は `unknown`、個々の未取得値は `null` とします。
+段階ごとの `link_last_observed_metrics` も最後の観測に対応し、最終値として使えるかは `link_final_read` で区別します。
+
+### 旧送受信構成での短周期確認（2026年11月4日）
+
+このPC、機体A、UART 460800 bps、ATT MTU報告値247、停止状態で、5 msは60秒×3回・計36,176件を正常受信しました。
+実効頻度は約199.4 Hz、欠落・CRCエラー・HY0020カウンター増分はすべて0です。既定20 msの約4倍の配信頻度です。
+4 msは2回ともBLE切断、3 msの単独試験も切断し、再接続時にHY0020のUART受信エラー累積値の増加を確認しました。
+試験当時のHY0020は128 byte×3の受信バッファで、停止理由を記録しておらず、overrunなどの内訳は未特定です。
+最初の受信対処版ではlegacy CBWTと252 byte×4を導入してUART受信停止は0になりましたが、4 ms長期では送信リングがあふれ、
+3 msではSTM32送信待機キューの見送りとBLE排出待ちが残りました。経緯は `tools/logs/20261104_hy0020_rxfix_ef0c2671/report.md` に保存しています。
+この旧構成での最短安定候補は5 msでした。現在の送受信対処版の結果は次節を参照してください。
+結果・raw・CSV・書き込み条件は `tools/logs/20261104_ble_fastlog_5b67da98/report.md` に保存しています。
+
+### 送受信対処版での3 ms確認（2026年11月4日）
+
+機体AとHY0020を更新し、停止状態で3 msを60秒×3回、計180秒・60,366件正常受信しました。
+実効332.6～332.7 Hzで、連番欠落・CRC・UART/BLEエラー・破棄カウンター増分はすべて0です。
+STM32のTX512/RX128、HY0020の最大244 byteまとめ送り（部分データの追加待ち最大7 ms）とSDC送信6/ACL送信12を使用しています。
+
+実リンクはCI15 ms・送受信PHY2 Mbps・DLE251 byte・MTU247でした。送信リングの累積最大は3470 / 16384 byte、
+通知APIの累積最大待ちは47 ms、IRQ累積最大は521 µsでした。終了時リング0で、持続的な到着遅れ増大はありませんでした。
+独立したraw/CSV照合と、ログ停止後のASCII応答・機体A idle・通常切断も確認しています。
+
+3 msは機体側の取得周期で、BLE通知はまとめ送りです。既定20 msは維持し、CLIの`--period-ms 3`やGUIの周期3 msで明示指定します。
+126 byte・8N1を名目460800 bpsで送るだけで約2.734 ms必要なため、同じ速度・フレームで2 msの持続配信はUART容量を超えます。
+走行中の探索負荷・壁判定と、機体Bの実機通信は未確認です。データと条件は
+`tools/logs/20261104_ble_fastlog_v2_9dc817ac/report.md`と`results.json`に保存しています。
+
 ### DMAと計算時間への影響
 
-UART TXは128 byteのリングから連続した領域をまとめてDMAに渡します。
+UART TXは512 byteのリングから連続した領域をまとめてDMAに渡します。RXは128 byteを維持します。
 DMA送信中の領域はUARTの送信完了まで確保し、リングの折り返しがあれば2回に分けます。
+複数のログフレームを予約して、1 msの送信サービス時刻とUART完了時刻のずれによる送信の空白を減らします。
+ログ停止時もUARTへ予約済みの最大512 byte（線上の送信時間は460800 bpsで約11.1 ms）は送出し、未予約のログだけを破棄します。
 通常の126 byteフレームを20 ms周期で送る場合、DMA起動と送信完了コールバックは各50回/秒です。
 不要なDMA半転送割り込みも無効にしています。
 RXはシェル互換の1 byte DMAを継続使用します。継続要求は8 byteを0.5秒ごとに送るため、16 byte/sです。
@@ -297,7 +436,7 @@ $blePython = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
 & $blePython tools/ble/mouse_gui_ble.py --gui main
 ```
 
-GUI の Port で `BLE`、Baud で `115200` を選んで Connect します。
+GUI の Port で `BLE`、Baud は既定の `460800` で Connect します。
 `--gui` は `main` / `debug` / `turnpattern` / `search` を選べます。
 タイムアウトを設定できる GUI は大きめ（例: 120 秒）にします。
 シェルの操作方法は [myshell シリアル操作ガイド](../myshell_README.md) と共通です。
@@ -332,7 +471,7 @@ FT232H を使う有線受信はオプションです。
 ```
 
 WinUSB のまま、HY0020 の P0.06 / TX → FT232H の D1 / RX、GND 同士を接続します。
-115200 bps、8N1、フロー制御なしです。配線変更時は電源を切り、SWD 用の配線を外します。
+460800 bps、8N1、フロー制御なしです。配線変更時は電源を切り、SWD 用の配線を外します。
 このモニターは受信専用です。中継版の UART には独立した定期 Hello 出力はありません。
 
 ## ホストテスト

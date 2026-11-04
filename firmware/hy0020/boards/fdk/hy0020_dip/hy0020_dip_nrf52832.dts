@@ -38,10 +38,16 @@
 &uart0 {
     status = "okay";
     compatible = "nordic,nrf-uarte";
-    current-speed = <115200>;
+    current-speed = <460800>;
+    timer = <&timer2>;
     pinctrl-0 = <&uart0_default>;
     pinctrl-1 = <&uart0_sleep>;
     pinctrl-names = "default", "sleep";
+};
+
+/* UARTE RX byte counter; TIMER0 is reserved by the Bluetooth controller/MPSL. */
+&timer2 {
+    status = "reserved";
 };
 
 /* HY0020 carrier's DC/DC wiring is not assumed; keep LDO mode. */

@@ -11,16 +11,23 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
+#include "batch_policy.h"
 
 #define NUS_UUID(n) BT_UUID_128_ENCODE(n, 0xb5a3, 0xf393, 0xe0a9, 0xe50e24dcca9e)
 #define MAX_PAYLOAD 244
+#define UART_TO_BLE_CAPACITY 16384
+#define BATCH_FLUSH_MS 7
 /* nRF52832 UARTE has an 8-bit MAXCNT register (at most 255 bytes).
  * Passing 256 to the HAL writes an effective length of zero.
  */
-#define RX_BUFFER_SIZE 128
+#define RX_BUFFER_SIZE 252
+#define RX_BUFFER_COUNT 4
+#define RX_TIMEOUT_US 1000
 BUILD_ASSERT(RX_BUFFER_SIZE > 0 &&
              RX_BUFFER_SIZE <= BIT_MASK(UARTE0_EASYDMA_MAXCNT_SIZE),
              "UART RX buffer exceeds the hardware EasyDMA MAXCNT limit");
+BUILD_ASSERT(IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER_LEGACY),
+             "UART RX requires hardware byte counting to avoid timeout STOPRX");
 
 struct uart_message {
     uint32_t session;
@@ -35,9 +42,18 @@ static struct k_spinlock stream_lock;
 static atomic_t linked, subscribed, session_id, fault_pending;
 /* Readable over the status characteristic; never mixed into the UART stream. */
 static atomic_t dropped_uart_bytes, uart_errors, queue_busy, ble_errors;
-RING_BUF_DECLARE(uart_to_ble, 16384);
+/* Lifetime diagnostics include errors outside a subscribed BLE session. */
+static atomic_t last_stop_reason, stop_reason_or;
+static atomic_t overrun_count, parity_count, framing_count, break_count;
+static atomic_t collision_count, noise_count, other_reason_count;
+static atomic_t rx_disabled_count, rx_restart_attempts, rx_restart_failures;
+static atomic_t rx_buffer_alloc_failures, rx_buffer_rsp_failures, rx_buf_request_events;
+/* Lifetime transmit counters are not reset on disconnect or CCC changes. */
+static atomic_t ring_highwater, notify_calls, notify_bytes, notify_failures;
+static atomic_t notify_call_max_ms, notify_retry_events;
+RING_BUF_DECLARE(uart_to_ble, UART_TO_BLE_CAPACITY);
 K_MSGQ_DEFINE(ble_to_uart, sizeof(struct uart_message), 8, 4);
-K_MEM_SLAB_DEFINE(rx_buffers, RX_BUFFER_SIZE, 3, 4);
+K_MEM_SLAB_DEFINE(rx_buffers, RX_BUFFER_SIZE, RX_BUFFER_COUNT, 4);
 K_SEM_DEFINE(rx_available, 0, 1);
 
 static struct bt_conn *connection_ref(void)
@@ -50,12 +66,40 @@ static struct bt_conn *connection_ref(void)
 
 static void reset_stream(void)
 {
-    atomic_inc(&session_id);
     k_spinlock_key_t key = k_spin_lock(&stream_lock);
+    atomic_inc(&session_id);
     ring_buf_reset(&uart_to_ble);
     k_spin_unlock(&stream_lock, key);
     k_msgq_purge(&ble_to_uart);
     k_sem_give(&rx_available);
+}
+
+static void update_peak(atomic_t *peak, uint32_t value)
+{
+    atomic_val_t previous = atomic_get(peak);
+    while (value > (uint32_t)previous &&
+           !atomic_cas(peak, previous, (atomic_val_t)value)) {
+        previous = atomic_get(peak);
+    }
+}
+
+/* Keep bytes in the shared ring while coalescing so a session reset discards
+ * partial batches too. New arrivals do not extend a partial waiting episode.
+ */
+static uint32_t uart_batch_get(struct uart_ble_batch_policy *policy,
+                                uint8_t *pending, uint16_t max_length,
+                                uint32_t *session, int64_t *wait_ms)
+{
+    k_spinlock_key_t key = k_spin_lock(&stream_lock);
+    *session = (uint32_t)atomic_get(&session_id);
+    uint32_t available = atomic_get(&subscribed) ? ring_buf_size_get(&uart_to_ble) : 0;
+    uint32_t length = 0;
+    if (uart_ble_batch_ready(policy, *session, available, max_length,
+                            k_uptime_get(), BATCH_FLUSH_MS, wait_ms)) {
+        length = ring_buf_get(&uart_to_ble, pending, max_length);
+    }
+    k_spin_unlock(&stream_lock, key);
+    return length;
 }
 
 static void ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -107,6 +151,89 @@ static ssize_t read_status(struct bt_conn *conn, const struct bt_gatt_attr *attr
     return bt_gatt_attr_read(conn, attr, buf, len, offset, status, sizeof(status));
 }
 
+static ssize_t read_diagnostics(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+                                void *buf, uint16_t len, uint16_t offset)
+{
+    /* One connection, serialized ATT reads. Keep Read Blob fragments on the
+     * same sample; individual counters are atomic, not a simultaneous snapshot.
+     */
+    static uint32_t snapshot[20];
+    if (offset == 0) {
+        uint32_t values[] = {
+            1,
+            (uint32_t)atomic_get(&last_stop_reason),
+            (uint32_t)atomic_get(&stop_reason_or),
+            (uint32_t)atomic_get(&overrun_count),
+            (uint32_t)atomic_get(&parity_count),
+            (uint32_t)atomic_get(&framing_count),
+            (uint32_t)atomic_get(&break_count),
+            (uint32_t)atomic_get(&collision_count),
+            (uint32_t)atomic_get(&noise_count),
+            (uint32_t)atomic_get(&other_reason_count),
+            (uint32_t)atomic_get(&rx_disabled_count),
+            (uint32_t)atomic_get(&rx_restart_attempts),
+            (uint32_t)atomic_get(&rx_restart_failures),
+            (uint32_t)atomic_get(&rx_buffer_alloc_failures),
+            (uint32_t)atomic_get(&rx_buffer_rsp_failures),
+            (uint32_t)atomic_get(&rx_buf_request_events),
+            RX_BUFFER_SIZE, RX_BUFFER_COUNT, RX_TIMEOUT_US, BIT(0),
+        };
+        BUILD_ASSERT(sizeof(values) == sizeof(snapshot));
+        for (size_t i = 0; i < ARRAY_SIZE(values); ++i) {
+            snapshot[i] = sys_cpu_to_le32(values[i]);
+        }
+    }
+    return bt_gatt_attr_read(conn, attr, buf, len, offset, snapshot, sizeof(snapshot));
+}
+
+static ssize_t read_link_diagnostics(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+                                     void *buf, uint16_t len, uint16_t offset)
+{
+    /* Fix Read Blob fragments at offset zero, as for UUID 0005. */
+    static uint32_t snapshot[24];
+    if (offset == 0) {
+        uint32_t values[24] = {1};
+        values[1] = bt_gatt_get_mtu(conn);
+        struct bt_conn_info info;
+        if (bt_conn_get_info(conn, &info) == 0 && info.type == BT_CONN_TYPE_LE &&
+            info.state == BT_CONN_STATE_CONNECTED) {
+            values[2] = info.le.interval_us;
+            values[3] = info.le.latency;
+            values[4] = (uint32_t)info.le.timeout * 10U;
+            if (info.le.phy != NULL) {
+                values[5] = info.le.phy->tx_phy;
+                values[6] = info.le.phy->rx_phy;
+            }
+            if (info.le.data_len != NULL) {
+                values[7] = info.le.data_len->tx_max_len;
+                values[8] = info.le.data_len->tx_max_time;
+                values[9] = info.le.data_len->rx_max_len;
+                values[10] = info.le.data_len->rx_max_time;
+            }
+        }
+        k_spinlock_key_t key = k_spin_lock(&stream_lock);
+        values[11] = ring_buf_size_get(&uart_to_ble);
+        k_spin_unlock(&stream_lock, key);
+        values[12] = (uint32_t)atomic_get(&ring_highwater);
+        values[13] = (uint32_t)atomic_get(&notify_calls);
+        values[14] = (uint32_t)atomic_get(&notify_bytes);
+        values[15] = (uint32_t)atomic_get(&notify_failures);
+        values[16] = (uint32_t)atomic_get(&notify_call_max_ms);
+        values[17] = (uint32_t)atomic_get(&notify_retry_events);
+        values[18] = BATCH_FLUSH_MS;
+        values[19] = CONFIG_BT_CTLR_SDC_TX_PACKET_COUNT;
+        values[20] = CONFIG_BT_BUF_ACL_TX_COUNT;
+        values[21] = CONFIG_BT_BUF_ACL_TX_SIZE;
+        values[22] = UART_TO_BLE_CAPACITY;
+        values[23] = BIT(0);
+        BUILD_ASSERT(sizeof(values) == sizeof(snapshot));
+        for (size_t i = 0; i < ARRAY_SIZE(values); ++i) {
+            snapshot[i] = sys_cpu_to_le32(values[i]);
+        }
+    }
+    return bt_gatt_attr_read(conn, attr, buf, len, offset, snapshot, sizeof(snapshot));
+}
+
 /* Standard NUS UUIDs. RX uses acknowledged writes to expose backpressure. */
 BT_GATT_SERVICE_DEFINE(bridge_service,
     BT_GATT_PRIMARY_SERVICE(BT_UUID_DECLARE_128(NUS_UUID(0x6e400001))),
@@ -116,7 +243,11 @@ BT_GATT_SERVICE_DEFINE(bridge_service,
     BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_128(NUS_UUID(0x6e400002)),
         BT_GATT_CHRC_WRITE, BT_GATT_PERM_WRITE, NULL, receive_bytes, NULL),
     BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_128(NUS_UUID(0x6e400004)),
-        BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_status, NULL, NULL)
+        BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_status, NULL, NULL),
+    BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_128(NUS_UUID(0x6e400005)),
+        BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_diagnostics, NULL, NULL),
+    BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_128(NUS_UUID(0x6e400006)),
+        BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_link_diagnostics, NULL, NULL)
 );
 
 static void restart_rx(struct k_work *work);
@@ -127,11 +258,14 @@ static void restart_rx(struct k_work *work)
     ARG_UNUSED(work);
     void *buffer;
     if (k_mem_slab_alloc(&rx_buffers, &buffer, K_NO_WAIT) != 0) {
+        atomic_inc(&rx_buffer_alloc_failures);
         k_work_reschedule(&rx_restart_work, K_MSEC(10));
         return;
     }
-    int err = uart_rx_enable(bridge_uart, buffer, RX_BUFFER_SIZE, 1000);
+    atomic_inc(&rx_restart_attempts);
+    int err = uart_rx_enable(bridge_uart, buffer, RX_BUFFER_SIZE, RX_TIMEOUT_US);
     if (err) {
+        atomic_inc(&rx_restart_failures);
         k_mem_slab_free(&rx_buffers, buffer);
         if (err != -EBUSY) {
             k_work_reschedule(&rx_restart_work, K_MSEC(10));
@@ -139,16 +273,35 @@ static void restart_rx(struct k_work *work)
     }
 }
 
+static void record_rx_stop(uint32_t reason)
+{
+    const uint32_t known = UART_ERROR_OVERRUN | UART_ERROR_PARITY | UART_ERROR_FRAMING |
+                           UART_BREAK | UART_ERROR_COLLISION | UART_ERROR_NOISE;
+    atomic_set(&last_stop_reason, (atomic_val_t)reason);
+    atomic_or(&stop_reason_or, (atomic_val_t)reason);
+    if (reason & UART_ERROR_OVERRUN) { atomic_inc(&overrun_count); }
+    if (reason & UART_ERROR_PARITY) { atomic_inc(&parity_count); }
+    if (reason & UART_ERROR_FRAMING) { atomic_inc(&framing_count); }
+    if (reason & UART_BREAK) { atomic_inc(&break_count); }
+    if (reason & UART_ERROR_COLLISION) { atomic_inc(&collision_count); }
+    if (reason & UART_ERROR_NOISE) { atomic_inc(&noise_count); }
+    if (reason == 0 || (reason & ~known)) { atomic_inc(&other_reason_count); }
+}
+
 static void uart_event(const struct device *dev, struct uart_event *event, void *data)
 {
     ARG_UNUSED(data);
     switch (event->type) {
     case UART_RX_BUF_REQUEST: {
+        atomic_inc(&rx_buf_request_events);
         void *buffer;
         if (k_mem_slab_alloc(&rx_buffers, &buffer, K_NO_WAIT) == 0) {
             if (uart_rx_buf_rsp(dev, buffer, RX_BUFFER_SIZE) != 0) {
+                atomic_inc(&rx_buffer_rsp_failures);
                 k_mem_slab_free(&rx_buffers, buffer);
             }
+        } else {
+            atomic_inc(&rx_buffer_alloc_failures);
         }
         break;
     }
@@ -163,6 +316,7 @@ static void uart_event(const struct device *dev, struct uart_event *event, void 
             size_t length = event->data.rx.len;
             uint32_t stored = ring_buf_put(&uart_to_ble,
                 event->data.rx.buf + event->data.rx.offset, length);
+            update_peak(&ring_highwater, ring_buf_size_get(&uart_to_ble));
             k_spin_unlock(&stream_lock, key);
             if (stored != length) {
                 atomic_add(&dropped_uart_bytes, length - stored);
@@ -175,12 +329,14 @@ static void uart_event(const struct device *dev, struct uart_event *event, void 
         break;
     }
     case UART_RX_STOPPED:
+        record_rx_stop((uint32_t)event->data.rx_stop.reason);
         if (atomic_get(&linked) && atomic_get(&subscribed)) {
             atomic_inc(&uart_errors);
             atomic_set(&fault_pending, 1);
         }
         break;
     case UART_RX_DISABLED:
+        atomic_inc(&rx_disabled_count);
         k_work_reschedule(&rx_restart_work, K_NO_WAIT);
         break;
     default:
@@ -269,6 +425,7 @@ int main(void)
     if (bt_enable(NULL)) { return 0; }
     k_work_reschedule(&advertise_work, K_NO_WAIT);
     uint8_t pending[MAX_PAYLOAD];
+    struct uart_ble_batch_policy batch = {0};
     for (;;) {
         struct bt_conn *conn = connection_ref();
         if (!conn) { k_sleep(K_MSEC(20)); continue; }
@@ -277,7 +434,6 @@ int main(void)
             bt_conn_unref(conn);
             continue;
         }
-        uint32_t session = (uint32_t)atomic_get(&session_id);
         uint16_t mtu = bt_gatt_get_mtu(conn);
         if (mtu <= 3) {
             /* ATT may already be gone while the disconnect callback is pending. */
@@ -286,24 +442,36 @@ int main(void)
             continue;
         }
         uint16_t max_length = MIN(MAX_PAYLOAD, mtu - 3);
-        k_spinlock_key_t key = k_spin_lock(&stream_lock);
-        uint32_t length = atomic_get(&subscribed) ?
-            ring_buf_get(&uart_to_ble, pending, max_length) : 0;
-        k_spin_unlock(&stream_lock, key);
+        uint32_t session;
+        int64_t wait_ms;
+        uint32_t length = uart_batch_get(&batch, pending, max_length, &session, &wait_ms);
         if (length == 0) {
             bt_conn_unref(conn);
-            k_sem_take(&rx_available, K_MSEC(20));
+            k_sem_take(&rx_available, K_MSEC(wait_ms));
             continue;
         }
         int64_t deadline = k_uptime_get() + 2000;
         while (atomic_get(&linked) && atomic_get(&subscribed) &&
                session == (uint32_t)atomic_get(&session_id)) {
+            int64_t started_ms = k_uptime_get();
+            atomic_inc(&notify_calls);
             int err = bt_gatt_notify(conn, &bridge_service.attrs[2], pending, length);
-            if (err == 0 || err == -ENOTCONN) { break; }
-            if ((err == -ENOMEM || err == -EAGAIN) && k_uptime_get() < deadline) {
-                k_sleep(K_MSEC(2));
-                continue;
+            uint32_t duration_ms = (uint32_t)MIN(k_uptime_get() - started_ms, UINT32_MAX);
+            update_peak(&notify_call_max_ms, duration_ms);
+            if (err == 0) {
+                /* Accepted by the host stack, not proof of over-the-air delivery. */
+                atomic_add(&notify_bytes, length);
+                break;
             }
+            if (err == -ENOTCONN) { break; }
+            if (err == -ENOMEM || err == -EAGAIN) {
+                if (k_uptime_get() < deadline) {
+                    atomic_inc(&notify_retry_events);
+                    k_sleep(K_MSEC(2));
+                    continue;
+                }
+            }
+            atomic_inc(&notify_failures);
             atomic_inc(&ble_errors);
             atomic_set(&fault_pending, 1);
             break;
