@@ -9,17 +9,19 @@
 
 #include "Peripheral/Inc/communicate.h"
 #include <stdio.h>
+#include <string.h>
 #include "Component/Inc/queue.h"
+#include "Module/Inc/log_stream.h"
 
 #define _BS				0x08	// バックスペース
 #define _ESC			0x1b	// エスケープシーケンス
 #define TRX_BUFFER_SIZE 128		// 送受信バッファサイズ
 
 
-ring_queue<TRX_BUFFER_SIZE,volatile uint8_t> tx_buffer;
+static uint8_t tx_buffer[TRX_BUFFER_SIZE];
+static volatile uint16_t tx_read, tx_write, tx_used, tx_dma_size;
 ring_queue<TRX_BUFFER_SIZE,volatile uint8_t> rx_buffer;
 
-volatile uint8_t		tx_data;
 volatile uint8_t		rx_data;
 volatile uint8_t		rx_continuous_enabled;
 
@@ -34,7 +36,7 @@ uint8_t Communicate_TerminalRecv( void )
 }
 
 
-void Communicate_RxPushData( void )
+static void rx_push_byte(uint8_t byte)
 {
 // head（DMACが受信データを書き込む位置）に新しく受信データが蓄積される．
 // tailから読み出せばいい
@@ -45,8 +47,13 @@ void Communicate_RxPushData( void )
 		return;
 	}
 
-	rx_buffer.push(rx_data);					// 書き込みポインタにデータを格納
+	rx_buffer.push(byte);					// 書き込みポインタにデータを格納
 
+}
+
+void Communicate_RxPushData( void )
+{
+	LogStream::receive_byte(rx_data, HAL_GetTick(), rx_push_byte);
 }
 
 uint8_t Communicate_RxPopData( void )
@@ -67,6 +74,7 @@ uint8_t Communicate_RxTryPopData( uint8_t *data )
 	}
 
 	__disable_irq();
+	LogStream::flush_rx(HAL_GetTick(), rx_push_byte);
 	if(rx_buffer.queue_length() == 0) {
 		__enable_irq();
 		return 0U;
@@ -95,71 +103,81 @@ void Communicate_RxStopContinuous( void )
 /* ---------------------------------------------------------------
 	UART1で1文字送信する関数
 --------------------------------------------------------------- */
+static void tx_start_dma()
+{
+	// Caller holds PRIMASK. Bytes remain reserved until UART TC, not DMA TC.
+	if(tx_dma_size != 0 || tx_used == 0 || huart1.gState != HAL_UART_STATE_READY) return;
+	const uint16_t contiguous = TRX_BUFFER_SIZE - tx_read;
+	const uint16_t length = tx_used < contiguous ? tx_used : contiguous;
+	if(HAL_UART_Transmit_DMA(&huart1, tx_buffer + tx_read, length) == HAL_OK)
+	{
+		tx_dma_size = length;
+		// Only completion is needed; avoid an otherwise unused half-transfer IRQ.
+		__HAL_DMA_DISABLE_IT(huart1.hdmatx, DMA_IT_HT);
+	}
+}
+
 void Communicate_TxPushData( int8_t data )
 {
-//// headに新しく追加する
-//// tailは次に送信されるデータを指す
-//// バッファに空きが無い（headがtailに追いついた）場合は待機する
-//
-//	// バッファ内データ数をカウントし，空きがない場合待機する
-//	// バッファフルで待機しているときには割り込みを許可するためにwhileループになっている
-	while(1) {
-		// この関数は多重に実行されるとまずいので割り込みを禁止する
-		__disable_irq();
-
-		// DMAを一時的に停止
-
-		// バッファに空きがあればループから抜ける
-		if( tx_buffer.queue_length() < TRX_BUFFER_SIZE ) {
-				break;
-		} else;
-
-		// DMA動作再開
-
-		// 割り込み許可
-		__enable_irq();
-
-		// バッファに空きができるまで待機（この間割り込みが発生してもよい）
-		while(tx_buffer.queue_length() >= TRX_BUFFER_SIZE);
-	}
-	// ここの時点でDMACは停止，割り込みは禁止されている
-
-	// 書き込みポインタにデータを格納
-	tx_buffer.push((uint8_t)data);
-	if(huart1.gState == HAL_UART_STATE_READY) {
-		tx_data = tx_buffer.pop();
-		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)(&tx_data), 1);
-	}
-
-	// DMA動作再開
-
-	// 割り込み許可
-	__enable_irq();
+	const uint8_t byte = static_cast<uint8_t>(data);
+	while(Communicate_TxTryPushBuffer(&byte, 1) == 0U) {}
 }
 
 void Communicate_TxPushBuffer(uint8_t *buf, uint16_t len)
 {
-    for(uint16_t i = 0; i < len; i++) {
-        Communicate_TxPushData(buf[i]);
-    }
+	while(len != 0)
+	{
+		const uint16_t length = len < TRX_BUFFER_SIZE ? len : TRX_BUFFER_SIZE;
+		while(Communicate_TxTryPushBuffer(buf, length) == 0U) {}
+		buf += length;
+		len -= length;
+	}
+}
+
+uint8_t Communicate_TxTryPushBuffer(const uint8_t *buf, uint16_t len)
+{
+	if(buf == NULL || len == 0 || len > TRX_BUFFER_SIZE) return 0U;
+	const uint32_t primask = __get_PRIMASK();
+	__disable_irq();
+	if(tx_used + len > TRX_BUFFER_SIZE)
+	{
+		__set_PRIMASK(primask);
+		return 0U;
+	}
+	const uint16_t contiguous = TRX_BUFFER_SIZE - tx_write;
+	const uint16_t first = len < contiguous ? len : contiguous;
+	memcpy(tx_buffer + tx_write, buf, first);
+	if(first < len) memcpy(tx_buffer, buf + first, len - first);
+	tx_write = (tx_write + len) % TRX_BUFFER_SIZE;
+	tx_used += len;
+	tx_start_dma();
+	__set_PRIMASK(primask);
+	return 1U;
 }
 
 void Communicate_TxPopData( void )
 {
-	// データがない場合
-	if(tx_buffer.queue_length() == 0)
+	const uint32_t primask = __get_PRIMASK();
+	__disable_irq();
+	tx_read = (tx_read + tx_dma_size) % TRX_BUFFER_SIZE;
+	tx_used -= tx_dma_size;
+	tx_dma_size = 0;
+	if(tx_used == 0) tx_read = tx_write = 0;
+	tx_start_dma();
+	__set_PRIMASK(primask);
+}
+
+void Communicate_Service( void )
+{
+	// Low-priority SysTick: retry a failed DMA start and prepare at most one frame.
+	if(tx_used != 0 && tx_dma_size == 0)
 	{
-		if(rx_continuous_enabled == 0U) {
-			HAL_UART_DMAStop(&huart1);
-		}
+		const uint32_t primask = __get_PRIMASK();
+		__disable_irq();
+		tx_start_dma();
+		__set_PRIMASK(primask);
 	}
-	else
-	{
-		// 読み出しデータの取り出し
-		tx_data = tx_buffer.pop();
-		// DMA動作再開
-		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)(&tx_data), 1);
-	}
+	LogStream::service(HAL_GetTick());
 }
 
 
@@ -191,6 +209,7 @@ void Communicate_Initialize( void )
 	setbuf(stdout, NULL);
 	setbuf(stdin, NULL);
 	rx_continuous_enabled = 0U;
+	tx_read = tx_write = tx_used = tx_dma_size = 0;
 }
 
 /* ---------------------------------------------------------------

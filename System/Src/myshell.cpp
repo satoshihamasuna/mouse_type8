@@ -9,6 +9,7 @@
 #include "core/ntlibc.h"
 #include "util/ntopt.h"
 #include "System/Inc/myshell.h"
+#include "System/Inc/explore.h"
 #include "Peripheral/Inc/communicate.h"
 #include "Module/Inc/log_data.h"
 #include "Module/Inc/flash.h"
@@ -54,6 +55,7 @@ typedef struct {
 } cmd_table_t;
 
 static const cmd_table_t cmdlist[] = {
+    { "explore", "Real exploration: show / start gx gy size plain|acc outward|roundtrip limit_s", shell_explore },
     { "help", "This is a description text string for help command.", usrcmd_help },
     { "info", "This is a description text string for info command.", usrcmd_info },
 	{ "disp", "This is a description text string for disp command.", usrcmd_disp },
@@ -1543,7 +1545,7 @@ static int shell_debug_turn_command(int argc, char **argv)
 		Indicate_LED(0x00);
 		motion->Motion_start();
 		shell_debug_suction_start(motion, debug->suction_enable, debug->suction_duty);
-		LogData::getInstance().data_count = 0;
+		LogData::getInstance().reset_log();
 		LogData::getInstance().log_enable = True;
 		if (shell_debug_turn_pre_run(motion, pattern, debug->table.velo, debug->pre_accel) != True) {
 			printf("DEBUG_TURN_ERROR unsupported_pre_run:%d\r\n", pattern);
@@ -1763,7 +1765,7 @@ static int shell_debug_search_command(int argc, char **argv)
 		shell_debug_wait_sensor(irsens);
 		motion->Motion_start();
 		shell_debug_suction_start(motion, debug->suction_enable, debug->suction_duty);
-		LogData::getInstance().data_count = 0;
+		LogData::getInstance().reset_log();
 		LogData::getInstance().log_enable = True;
 		motion->exe_Motion_straight(45.0f,
 			shell_debug_accel_in_length(debug->table.velo, 45.0f, debug->pre_accel), debug->table.velo,
@@ -1832,7 +1834,7 @@ static int shell_debug_pivot_command(int argc, char **argv)
 		Motion *motion = &CtrlTask_type8::getInstance(); IrSensTask *irsens = CtrlTask_type8::getInstance().return_irObj();
 		printf("DEBUG_WAIT_SENSOR\r\n"); shell_debug_wait_sensor(irsens);
 		motion->Motion_start(); shell_debug_suction_start(motion, param->suction_enable, param->suction_duty);
-		LogData::getInstance().data_count = 0; LogData::getInstance().log_enable = True;
+		LogData::getInstance().reset_log(); LogData::getInstance().log_enable = True;
 		motion->exe_Motion_pivot_turn(DEG2RAD(param->degree), param->rad_acc, param->rad_velo,
 			&param->sp_gain, &param->om_gain, &param->ff_gain);
 		LogData::getInstance().log_enable = False;
@@ -1931,7 +1933,7 @@ static int shell_debug_command(int argc, char **argv, const char *motion_name,
 		motion->Motion_start();
 		shell_debug_suction_start(motion, param->suction_enable, param->suction_duty);
 		const t_ff_gain *ff_gain = shell_debug_motion_ff(param, diagonal);
-		LogData::getInstance().data_count = 0;
+		LogData::getInstance().reset_log();
 		LogData::getInstance().log_enable = True;
 		if (diagonal == True) {
 			motion->Init_Motion_diagonal(param->distance, param->acc, param->max_velo,
@@ -2065,7 +2067,7 @@ static int shell_turnpattern_execute(void)
 
 	motion->Motion_start();
 	shell_debug_suction_start(motion, shell_turnpattern.suction_enable, shell_turnpattern.suction_duty);
-	LogData::getInstance().data_count = 0;
+	LogData::getInstance().reset_log();
 	LogData::getInstance().log_enable = True;
 	if (shell_debug_turn_pre_run(motion, shell_turnpattern.turns[0],
 			shell_turnpattern.turn_velo, shell_turnpattern.pre_accel) != True) {

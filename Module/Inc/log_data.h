@@ -11,9 +11,10 @@
 #include "Component/Inc/typedef.h"
 #include "Component/Inc/half_float.h"
 #include "Component/Inc/singleton.h"
+#include "Module/Inc/log_buffer.h"
 
 #define LOG_DATA_SIZE 400
-#define LOG_DATA_NUM  51
+#define LOG_DATA_NUM  55
 #define LOG_DATA_PRIOD 1
 
 #define LOG_MAGIC 0xA55A
@@ -23,25 +24,17 @@ class LogData:public Singleton<LogData>
 {
 
 	public:
-	    t_bool log_enable = False;
+	    volatile t_bool log_enable = False;
 		const int data_size = LOG_DATA_SIZE;
 		const int data_num  = LOG_DATA_NUM;
-		int data_count = 0;
 		uint8_t mode = 0;
-		half_float data[LOG_DATA_NUM][LOG_DATA_SIZE];
 		void indicate_data();
 		void indicate_data_binary();
+		void reset_log();
 		void init_log()
 		{
 			log_enable = False;
-			data_count = 0;
-			for(int i = 0; i < data_num ;i++)
-			{
-				for(int j = 0;j < data_size;j++)
-				{
-					data[i][j] = float_to_half(0.0f);
-				}
-			}
+			reset_log();
 		}
 
 		void set_logmode(uint8_t _mode)
@@ -57,6 +50,9 @@ class LogData:public Singleton<LogData>
 			}
 		}
 		void logging();
+	private:
+		LogBuffer<LOG_DATA_SIZE, LOG_DATA_NUM> buffer;
+		uint16_t log_tick = 0;
 };
 
 typedef struct __attribute__((packed))

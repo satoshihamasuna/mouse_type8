@@ -113,6 +113,7 @@ namespace Mode
 	{
 		uint8_t mode = 0;
 		uint8_t enable = 0;
+		// Keep receiving stream keepalives during Interface / Demo / Debug, too.
 		Communicate_RxStartContinuous();
 
 		while(1)
@@ -129,20 +130,17 @@ namespace Mode
 			switch((enable << 4)|mode)
 			{
 				case ENABLE|0x00:
-					Communicate_RxStopContinuous();
 					Mode::Interface_Check();
 					Communicate_RxStartContinuous();
 					enable = 0;
 					break;
 				case ENABLE|0x01:
-					Communicate_RxStopContinuous();
 					Mode::Demo();
 					Mode::Demo2();
 					Communicate_RxStartContinuous();
 					enable = 0;
 					break;
 				case ENABLE|0x02:
-					Communicate_RxStopContinuous();
 					Mode::Debug(&st_param_500,mode_500,0);
 					Mode::Debug(&st_param_700,mode_700,200);
 					//Mode::Debug(&st_param_1200,mode_1200,400);

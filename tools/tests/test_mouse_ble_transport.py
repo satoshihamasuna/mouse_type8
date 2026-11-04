@@ -17,6 +17,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[2]
 for directory in (ROOT / '.tools' / 'ble_python', ROOT / '.tools' / 'python', ROOT / 'tools' / 'ble'):
     sys.path.insert(0, str(directory))
+sys.path.insert(0, str(ROOT / '.tools' / ('ble_python{}{}'.format(*sys.version_info[:2]))))
 
 if sys.version_info < (3, 10):
     raise unittest.SkipTest('BLE transport tests require Python 3.10+; see tools/ble/README.md')
@@ -29,6 +30,7 @@ except ImportError as error:
 import mouse_ble_gateway as gateway
 import mouse_gui_ble as launcher
 import mouse_ble_shell as shell
+import mouse_ble_log as log
 
 
 class SerialCompatibilityTests(unittest.TestCase):
@@ -138,6 +140,87 @@ class GuiLauncherTests(unittest.TestCase):
 
 
 class GattTransportTests(unittest.IsolatedAsyncioTestCase):
+    async def test_live_capture_starts_renews_flushes_and_stops_without_shell_commands(self):
+        writes = []
+
+        class Scanner:
+            @staticmethod
+            async def find_device_by_name(*args, **kwargs):
+                return SimpleNamespace(address='TEST')
+
+        class Client:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+            def __init__(self, *args, **kwargs):
+                self.sequence = 0
+
+            async def read_gatt_char(self, uuid):
+                return bytes(16)
+
+            async def start_notify(self, uuid, callback):
+                self.notify = callback
+
+            async def write_gatt_char(self, uuid, data, response):
+                writes.append(bytes(data))
+                if data[3] == 1:
+                    payload = struct.pack('<4sIIH51e', b'L8S1', self.sequence,
+                                          100 + self.sequence * 20, 20, *range(51))
+                    import binascii
+                    payload += struct.pack('<H', binascii.crc_hqx(payload, 0xffff))
+                    self.notify(None, payload[:17])
+                    self.notify(None, payload[17:])
+                    self.sequence += 1
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'live.csv'
+            args = SimpleNamespace(name='TEST', address=None, period_ms=20, duration=0.65, output=output)
+            with patch('bleak.BleakClient', Client), patch('bleak.BleakScanner', Scanner), \
+                 contextlib.redirect_stdout(io.StringIO()):
+                capture = await log.run(args)
+            self.assertEqual(capture.rows, 2)
+            self.assertEqual(capture.lost, 0)
+            self.assertEqual(writes, [log.control_packet(20)] * 2 + [log.control_packet(20, stop=True)])
+            self.assertEqual(len(output.read_text(encoding='utf-8').splitlines()), 3)
+
+    async def test_live_capture_reports_missing_firmware_and_still_stops(self):
+        writes = []
+
+        class Scanner:
+            @staticmethod
+            async def find_device_by_name(*args, **kwargs):
+                return SimpleNamespace(address='TEST')
+
+        class Client:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+            async def read_gatt_char(self, uuid):
+                return bytes(16)
+
+            async def start_notify(self, uuid, callback):
+                pass
+
+            async def write_gatt_char(self, uuid, data, response):
+                writes.append(bytes(data))
+
+        with tempfile.TemporaryDirectory() as directory:
+            args = SimpleNamespace(name='TEST', address=None, period_ms=20, duration=0.01,
+                                   output=Path(directory) / 'empty.csv')
+            with patch('bleak.BleakClient', Client), patch('bleak.BleakScanner', Scanner), \
+                 contextlib.redirect_stdout(io.StringIO()), self.assertRaises(TimeoutError):
+                await log.run(args)
+            self.assertEqual(writes[-1], log.control_packet(20, stop=True))
+
     async def test_shell_enters_mode_without_ack_and_saves_exact_response(self):
         commands = []
         response = b'MOUSE_VERSION 1.0\r\n'

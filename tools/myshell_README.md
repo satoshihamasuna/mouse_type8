@@ -120,6 +120,8 @@ BLE の専用シェルは `tools/ble/mouse_ble_shell.py`、既存 GUI 用の接�
 | `path dijkstra` | 現在 RAM 上にある迷路とゴール設定で `check_run_Dijkstra()` を実行します。未ロードの場合は flash の保存迷路と既定ゴールを読みます。 |
 | `path dijkstra_queue` | 同じ迷路・開始地点・ゴールで優先度付きキュー版を実行します。 |
 | `search run start_x start_y N\|E\|S\|W goal\|full\|full_prune first\|second mask max_steps` | モーションを実行せず、実機C++の仮想壁・歩数マップ・足立法を連続再生します。`full_prune`はUNKNOWN開放仮定の枝刈り全面探索です。 |
+| `explore show` | 実機探索の対応プロトコル・機体A/B・既定ゴールを返します。動きません。 |
+| `explore start gx gy size plain\|acc outward\|roundtrip limit_seconds` | ログ配信と許可パケットが有効な場合、手かざし待ち後に実際の探索走行を開始します。専用GUIから操作します。 |
 | `search replay reset\|keep plain\|acc start_x start_y dir goal_x goal_y goal_size goal\|full\|full_prune first\|second mask max_steps` | `Search`と同じ壁観測・マップ更新順で、モーションだけをno-opにして逐次再生します。 |
 | `log mode0` | ログヘッダ出力を有効にします。 |
 | `log mode1` | ログヘッダ出力を無効にします。 |
@@ -355,6 +357,13 @@ GUI の迷路表示では、Dijkstra のノード種別をそのまま座標に�
 
 `disp log_bin` は ASCII のメタ情報を出した後、バイナリフレームを出力します。
 
+保存ログは最新400サンプルのリングです。満杯になると最古のサンプルを上書きします。
+`disp log` / `disp log_bin` は有効なサンプルだけを古い順に出力します。
+保存周期は `LOG_DATA_PRIOD` ms（既定1 ms）で、CSVの `cnt` は出力の先頭を0とする経過時間[ms]です。
+表示中は保存を一時停止して整合を保ち、表示後に元の保存状態へ戻します。
+走行開始時の `reset_log()` は読み書き位置と有効件数を初期化し、走行停止時は保存内容を残します。
+以前の保存領域400件に対して1000件を出力していた範囲外アクセスも解消しています。
+
 ```text
 START
 HEADER,cnt,...
@@ -369,10 +378,16 @@ END
 ```c
 uint16_t magic;       // 0xA55A
 uint16_t index;
-half_float data[51];
+half_float data[55];
 ```
 
 終了フレームは `magic = 0xFFFF` です。
+
+末尾4列は `irq.total_us,irq.logging_us,irq.max_us,irq.period_us`（いずれもµs）です。
+従来の51列の並びは維持し、新しい通常フレームは114 byteです。
+更新後のメイン・debug・turnpattern GUIは `log mode0` を指定し、HEADERの列数から新55項目・旧51項目のフレーム長を選びます。
+`Serial_binary.py` もHEADERから選択するため、取得前に `log mode0` にしてください。
+計測範囲と前回値の扱いは [割り込み時間のログ](ble/README.md#割り込み時間をログで確認する) を参照してください。
 
 ## トラブルシュート
 

@@ -28,6 +28,16 @@ pip install pyserial pandas numpy matplotlib scipy
 BLE 通信には Python 3.10 以上と Bleak が必要です。
 HY0020 用ファームウェアは [firmware/hy0020/](../firmware/hy0020/README.md) にあります。
 
+全55項目（従来51項目＋割り込み時間4項目）を連続取得する場合は `python tools/ble/mouse_ble_log.py` を使います。
+既定20 ms周期で受信し、`tools/logs/` にCSVを逐次保存します。Ctrl+Cで終了します。
+ストリーム対応STM32ファームウェアが必要です。詳細は [連続ログ取得](ble/README.md#ログを連続取得する) を参照してください。
+
+実機探索と連続ログ保存を一つのGUIで操作する場合は、
+`python tools/ble/mouse_ble_explore_gui.py` を使います（Python 3.10以上・Tk）。
+BLE接続後はログ配信を停止して待機し、探索開始時に記録を始め、前センサへの手かざし後に探索を実行します。
+探索終了・中断後はログ配信を停止し、BLE接続を維持します。
+導入手順は [探索GUI](ble/README.md#guiで実機探索と逐次ログを操作する) を参照してください。
+
 ## myshell GUI
 
 myshellの一般的な操作を行うGUIを起動します。

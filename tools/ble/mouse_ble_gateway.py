@@ -5,7 +5,9 @@ from pathlib import Path
 import struct
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / '.tools' / 'ble_python'))
+dependency_root = Path(__file__).resolve().parents[2] / '.tools'
+for directory in ('ble_python', 'ble_python{}{}'.format(*sys.version_info[:2])):
+    sys.path.insert(0, str(dependency_root / directory))
 
 NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'
 NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'

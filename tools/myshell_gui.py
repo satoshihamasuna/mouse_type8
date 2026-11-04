@@ -25,7 +25,7 @@ DEFAULT_WIDTH = 32
 DEFAULT_HEIGHT = 32
 DEFAULT_GOAL = (7, 7, 2)
 MAZE_DATA_DIR = Path(__file__).resolve().parent / "maze_data"
-LOG_DATA_NUM = 51
+LOG_DATA_NUM = 55
 LOG_MAGIC = 0xA55A
 LOG_MAGIC_END = 0xFFFF
 FRAME_FORMAT = "<HH" + "H" * LOG_DATA_NUM
@@ -808,6 +808,7 @@ class MyshellGui(tk.Tk):
             self._wait_for_line_prefix("GOAL_SET_DONE")
 
     def _log_binary_worker(self):
+        from log_protocol import saved_log_frame
         out_dir = Path(__file__).resolve().parent / "logs"
         out_dir.mkdir(exist_ok=True)
         out_path = out_dir / datetime.now().strftime("%Y%m%d_%H%M%S_myshell_log.csv")
@@ -817,6 +818,7 @@ class MyshellGui(tk.Tk):
         with self.serial_lock:
             self._append("\n> disp log_bin\n")
             self._prepare_shell()
+            self._write_command("log mode0")
             self._write_command("disp log_bin")
             deadline = time.monotonic() + self.command_timeout
             while time.monotonic() < deadline:
@@ -831,9 +833,10 @@ class MyshellGui(tk.Tk):
             else:
                 raise TimeoutError("Timed out waiting for BINARY marker")
 
+            frame = saved_log_frame(labels)
             while True:
-                raw = self._read_exact(FRAME_SIZE)
-                magic, index, *half_values = struct.unpack(FRAME_FORMAT, raw)
+                raw = self._read_exact(frame.size)
+                magic, index, *half_values = frame.unpack(raw)
                 if magic == LOG_MAGIC_END:
                     self._append("Binary END frame detected\n")
                     break

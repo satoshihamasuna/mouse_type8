@@ -55,13 +55,12 @@ static void dijkstra_open_queue_init()
 
 void log_enable()
 {
-	  LogData::getInstance().data_count = 0;
+	  LogData::getInstance().reset_log();
 	  LogData::getInstance().log_enable = True;
 }
 
 void log_disable()
 {
-	  LogData::getInstance().data_count = 0;
 	  LogData::getInstance().log_enable = False;
 }
 

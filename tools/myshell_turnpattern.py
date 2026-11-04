@@ -40,7 +40,7 @@ TURN_STATES = {
     "r_v90": (DIAGONAL, DIAGONAL), "l_v90": (DIAGONAL, DIAGONAL),
 }
 
-LOG_DATA_NUM = 51
+LOG_DATA_NUM = 55
 LOG_MAGIC = 0xA55A
 LOG_MAGIC_END = 0xFFFF
 LOG_FRAME_FORMAT = "<HH" + "H" * LOG_DATA_NUM
@@ -472,6 +472,7 @@ class TurnPatternGui(tk.Tk):
         return struct.unpack("<e", struct.pack("<H", value))[0]
 
     def _log_worker(self):
+        from log_protocol import saved_log_frame
         try:
             LOG_DIR.mkdir(exist_ok=True)
             name = self.current_file.stem if self.current_file else "unsaved"
@@ -483,6 +484,7 @@ class TurnPatternGui(tk.Tk):
             with self.serial_lock:
                 self._append("\n> disp log_bin\n")
                 self.ser.reset_input_buffer()
+                self._write_command("log mode0")
                 self._write_command("disp log_bin")
                 deadline = time.monotonic() + self.timeout.get()
                 while time.monotonic() < deadline:
@@ -498,13 +500,14 @@ class TurnPatternGui(tk.Tk):
                 else:
                     raise TimeoutError("BINARYマーカーを受信できませんでした。")
 
+                frame = saved_log_frame(labels)
                 with output_path.open("w", newline="", encoding="utf-8") as handle:
                     writer = csv.writer(handle)
                     if labels:
                         writer.writerow(labels)
                     while True:
-                        raw = self._read_exact(LOG_FRAME_SIZE, time.monotonic() + self.timeout.get())
-                        magic, index, *half_values = struct.unpack(LOG_FRAME_FORMAT, raw)
+                        raw = self._read_exact(frame.size, time.monotonic() + self.timeout.get())
+                        magic, index, *half_values = frame.unpack(raw)
                         if magic == LOG_MAGIC_END:
                             break
                         if magic != LOG_MAGIC:

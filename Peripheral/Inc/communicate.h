@@ -27,6 +27,8 @@ extern "C" {
 	void Communicate_RxPushData( void );
 	uint8_t Communicate_RecieveDMA( void );
 	void Communicate_TxPushBuffer(uint8_t *buf, uint16_t len);
+	uint8_t Communicate_TxTryPushBuffer(const uint8_t *buf, uint16_t len);
+	void Communicate_Service(void);
 
 
 #ifdef __cplusplus

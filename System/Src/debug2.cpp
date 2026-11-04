@@ -75,7 +75,7 @@ namespace Mode
 						  }
 
 						  motion->Motion_start();
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_straight( 45.0,6.0,0.32,0.32,&search_sp_gain,&search_om_gain);
 
@@ -103,7 +103,7 @@ namespace Mode
 						  }
 
 						  motion->Motion_start();
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_straight( 45.0,6.0,0.32,0.32,&search_sp_gain,&search_om_gain);
 
@@ -142,7 +142,7 @@ namespace Mode
 						  }
 						  motion->execute_Motion();
 
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_straight(SECTION,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
@@ -173,7 +173,7 @@ namespace Mode
 						  }
 
 						  motion->Motion_start();
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_straight( 270.0,6.0,0.32,0.0,&search_sp_gain,&search_om_gain);
 
@@ -196,7 +196,7 @@ namespace Mode
 						  }
 
 						  motion->Motion_start();
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_straight( 45.0,6.0,0.30,0.30,&search_sp_gain,&search_om_gain);
 
@@ -224,7 +224,7 @@ namespace Mode
 						  }
 
 						  motion->Motion_start();
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_straight( 45.0,6.0,0.28,0.28,&search_sp_gain,&search_om_gain);
 
@@ -262,7 +262,7 @@ namespace Mode
 
 						  motion->exe_Motion_straight(SECTION,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_turn_in(turn_mode[Turn_in_L45],Turn_in_L45,st_param->sp_gain,st_param->om_gain);
 
@@ -299,7 +299,7 @@ namespace Mode
 
 						  motion->exe_Motion_straight(SECTION,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_turn_in(turn_mode[Turn_in_R135],Turn_in_R135,st_param->sp_gain,st_param->om_gain);
 
@@ -336,7 +336,7 @@ namespace Mode
 
 						  motion->exe_Motion_straight(SECTION,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_turn_in(turn_mode[Turn_in_L135],Turn_in_L135,st_param->sp_gain,st_param->om_gain);
 
@@ -374,7 +374,7 @@ namespace Mode
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_turn_v90(turn_mode[Turn_RV90],Turn_RV90,st_param->sp_gain,st_param->om_gain);
 
@@ -412,7 +412,7 @@ namespace Mode
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_turn_v90(turn_mode[Turn_LV90],Turn_LV90,st_param->sp_gain,st_param->om_gain);
 
@@ -450,7 +450,7 @@ namespace Mode
 
 						  motion->exe_Motion_straight(SECTION,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_turn_in(turn_mode[Turn_in_L45],Turn_in_L45,st_param->sp_gain,st_param->om_gain);
 
@@ -486,7 +486,7 @@ namespace Mode
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_turn_out(turn_mode[Turn_out_L45],Turn_out_L45,st_param->sp_gain,st_param->om_gain);
 
@@ -522,7 +522,7 @@ namespace Mode
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_turn_out(turn_mode[Turn_out_L135],Turn_out_L135,st_param->sp_gain,st_param->om_gain);
 
@@ -557,7 +557,7 @@ namespace Mode
 
 						  motion->exe_Motion_diagonal(DIAG_SECTION*2,st_param->param->acc,st_param->param->max_velo,st_param->param->max_velo,st_param->sp_gain,st_param->om_gain);
 
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->exe_Motion_turn_v90(turn_mode[Turn_LV90],Turn_LV90,st_param->sp_gain,st_param->om_gain);
 

@@ -10,6 +10,8 @@
 #include <math.h>
 #include "Module/Inc/interrupt.h"
 #include "Module/Inc/log_data.h"
+#include "Module/Inc/remote_explore.h"
+#include "Module/Inc/interrupt_timing.h"
 
 #include "Peripheral/Inc/peripheral.h"
 #include "Params/mouse_config.h"
@@ -42,13 +44,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 	if(hadc == &hadc1){
+	const uint32_t entered = InterruptTiming::now();
 	Interrupt::getInstance().preprocess();
 	Interrupt::getInstance().main();
 	Interrupt::getInstance().postprocess();
+	InterruptTiming::record(entered, InterruptTiming::now());
 	}
 }
 
 void Interrupt_Initialize(){
+	InterruptTiming::initialize();
 	//HAL_TIM_Base_Start_IT(&htim5);
 }
 /*
@@ -193,6 +198,18 @@ void Interrupt::preprocess()
 
 void Interrupt::main()
 {
+	if(RemoteExplore::should_stop(HAL_GetTick()))
+	{
+		CtrlTask_type8::getInstance().motion_exeStatus_set(error);
+		CtrlTask_type8::getInstance().motion_disable_set();
+		Vehicle *vehicle = &Vehicle_type8::getInstance();
+		vehicle->suctionStop();
+		vehicle->V_r = vehicle->V_l = 0.0f;
+		vehicle->motor_out_r = vehicle->motor_out_l = 0;
+		Motor_SetDuty_Left(0);
+		Motor_SetDuty_Right(0);
+		return;
+	}
 	/*
 	controll_task::getInstance().motion_inInterrupt();
 	controll_task::getInstance().motionControll();
@@ -207,7 +224,9 @@ void Interrupt::postprocess()
 {
 
 
+	const uint32_t log_started = InterruptTiming::now();
 	LogData::getInstance().logging();
+	InterruptTiming::set_logging_cycles(InterruptTiming::now() - log_started);
 	time_count = time_count + 1;
 	IMU_read_DMA_Start();
 }

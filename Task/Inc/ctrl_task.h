@@ -62,7 +62,7 @@ class Motion
 		//define motion status
 		t_run_pattern		motion_pattern  	= No_run;
 		t_runControl		motion_control		= NOP_STATE;
-		t_exeStatus		    motion_exeStatus	= complete;
+		volatile t_exeStatus motion_exeStatus	= complete;
 		t_bool				is_motion_enable	= False;
 
 		//define motion parameter

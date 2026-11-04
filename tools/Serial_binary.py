@@ -4,13 +4,14 @@ import struct
 import numpy as np
 from datetime import datetime
 from pathlib import Path
+from log_protocol import saved_log_frame
 
 # ===== 設定 =====
 PORT = "COM6"
 BAUD = 115200          # ★必ず上げる
 MOUSE = "type8a_MPQ"
 
-LOG_DATA_NUM = 51     # ← STM32側と一致させる
+LOG_DATA_NUM = 55     # HEADER受信後に項目数から更新
 MAGIC = 0xA55A
 MAGIC_END = 0xFFFF
 
@@ -59,6 +60,8 @@ with open(fpath, "w", newline="") as f:
 
                 if line.startswith("HEADER,"):
                     header = line.split(",")[1:]
+                    frame = saved_log_frame(header)
+                    FRAME_FMT, FRAME_SIZE = frame.format, frame.size
                     writer.writerow(header)
                     header_written = True
                     print("HEADER written",header)

@@ -4,13 +4,16 @@ from pathlib import Path
 import runpy
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / '.tools' / 'ble_python'))
+dependency_root = Path(__file__).resolve().parents[2] / '.tools'
+for directory in ('ble_python', 'ble_python{}{}'.format(*sys.version_info[:2])):
+    sys.path.insert(0, str(dependency_root / directory))
 
 GUI_FILES = {
     'main': 'myshell_gui.py',
     'debug': 'myshell_debug.py',
     'turnpattern': 'myshell_turnpattern.py',
     'search': 'myshell_search_gui.py',
+    'explore': 'ble/mouse_ble_explore_gui.py',
 }
 
 
@@ -52,7 +55,8 @@ def main():
     script = args.mouse_repo.resolve() / 'tools' / GUI_FILES[args.gui]
     if not script.is_file():
         parser.error('GUI script not found: {}'.format(script))
-    install_ble_port(args.port)
+    if args.gui != 'explore':
+        install_ble_port(args.port)
     sys.path.insert(0, str(script.parent))
     sys.argv = [str(script)]
     runpy.run_path(str(script), run_name='__main__')

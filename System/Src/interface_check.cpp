@@ -138,7 +138,7 @@ namespace Mode
 								  }
 
 								  motion->Motion_start();
-								  LogData::getInstance().data_count = 0;
+								  LogData::getInstance().reset_log();
 								  LogData::getInstance().log_enable = True;
 								  motion->exe_Motion_pivot_turn(DEG2RAD(90.0f*8.0), 60.0*PI, 4.0*PI,
 									  &sp_gain_pivot_turn, &om_gain_pivot_turn, &ff_gain_pivot_turn_L);
@@ -158,7 +158,7 @@ namespace Mode
 						  }
 
 							  motion->Motion_start();
-							  LogData::getInstance().data_count = 0;
+							  LogData::getInstance().reset_log();
 							  LogData::getInstance().log_enable = True;
 							  motion->exe_Motion_fix_wall(3000);
 							  LogData::getInstance().log_enable = False;
@@ -175,7 +175,7 @@ namespace Mode
 							  HAL_Delay(50);
 						  }
 						  motion->Motion_start();
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->Init_Motion_straight(45.0, 4.0, 0.32f, 0.32f);
 						  motion->execute_Motion();
@@ -200,7 +200,7 @@ namespace Mode
 							  HAL_Delay(50);
 						  }
 						  motion->Motion_start();
-						  LogData::getInstance().data_count = 0;
+						  LogData::getInstance().reset_log();
 						  LogData::getInstance().log_enable = True;
 						  motion->Init_Motion_straight(90.0*3, 4.0, 0.32f, 0.0f);
 						  motion->execute_Motion();
@@ -263,7 +263,7 @@ namespace Mode
 						  }
 
 							  motion->Motion_start();
-							  LogData::getInstance().data_count = 0;
+							  LogData::getInstance().reset_log();
 							  LogData::getInstance().log_enable = True;
 							  motion->exe_Motion_enkaigei(3000);
 							  LogData::getInstance().log_enable = False;
