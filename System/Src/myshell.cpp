@@ -10,6 +10,7 @@
 #include "util/ntopt.h"
 #include "System/Inc/myshell.h"
 #include "System/Inc/explore.h"
+#include "System/Inc/shortest_run.h"
 #include "Peripheral/Inc/communicate.h"
 #include "Module/Inc/log_data.h"
 #include "Module/Inc/flash.h"
@@ -56,6 +57,7 @@ typedef struct {
 
 static const cmd_table_t cmdlist[] = {
     { "explore", "Real exploration: show / start gx gy size plain|acc outward|roundtrip limit_s", shell_explore },
+	{ "shortest", "Real shortest run: show / start gx gy size profile ram|flash limit_s", shell_shortest },
     { "help", "This is a description text string for help command.", usrcmd_help },
     { "info", "This is a description text string for info command.", usrcmd_info },
 	{ "disp", "This is a description text string for disp command.", usrcmd_disp },

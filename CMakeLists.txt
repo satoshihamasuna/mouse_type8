@@ -52,6 +52,7 @@ target_sources(${BUILD_UNIT_0_NAME} PRIVATE
   "Module/Src/remote_explore.cpp"
   "Module/Src/interrupt_timing.cpp"
   "System/Src/explore.cpp"
+  "System/Src/shortest_run.cpp"
 )
 
 # Add include directories

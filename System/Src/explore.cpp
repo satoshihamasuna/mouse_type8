@@ -10,6 +10,13 @@
 
 namespace
 {
+bool maze_ready = false;
+wall_class *explore_maze()
+{
+	static wall_class wall(CtrlTask_type8::getInstance().return_irObj());
+	return &wall;
+}
+
 const char *result_name()
 {
 	switch(RemoteExplore::stop_reason())
@@ -23,6 +30,8 @@ const char *result_name()
 
 bool stopped() { return RemoteExplore::should_stop(HAL_GetTick()); }
 }
+
+wall_class *explore_completed_maze() { return maze_ready ? explore_maze() : nullptr; }
 
 int shell_explore(int argc, char **argv)
 {
@@ -65,7 +74,8 @@ int shell_explore(int argc, char **argv)
 	Motion *motion = &CtrlTask_type8::getInstance();
 	IrSensTask *ir = motion->return_irObj();
 	// Reuse static storage, rather than adding a maze to the foreground stack.
-	static wall_class wall(ir);
+	wall_class &wall = *explore_maze();
+	maze_ready = false;
 	wall.init_maze();
 	wall.wall_history.history_init();
 	Search search;
@@ -106,6 +116,7 @@ int shell_explore(int argc, char **argv)
 		}
 	}
 	if(result == nullptr) result = result_name();
+	maze_ready = ntlibc_strcmp(result, "complete") == 0;
 	LogData::getInstance().log_enable = False;
 	motion->Motion_end();
 	RemoteExplore::finish();

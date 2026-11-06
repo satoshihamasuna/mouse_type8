@@ -36,6 +36,26 @@ def sample(sequence):
 
 
 class OptionsTests(unittest.TestCase):
+    def test_shortest_command_rejects_invalid_map_and_command_injection(self):
+        self.assertEqual(explore.ShortestOptions().command(), 'shortest start 7 7 2 plain700 ram 120')
+        for options in (explore.ShortestOptions(profile='plain700\r'), explore.ShortestOptions(maze_source='other'),
+                        explore.ShortestOptions(goal_size=99), explore.ShortestOptions(profile='p;bad')):
+            with self.assertRaises(ValueError):
+                options.command()
+
+    def test_shortest_requires_firmware_support_and_a_completed_ram_map(self):
+        session = explore.ExploreSession()
+        session.state, session.battery_ok = 'idle', True
+        session.capability = {'protocol': '1'}
+        self.assertTrue(session.ready())
+        self.assertFalse(session.ready(explore.ShortestOptions(maze_source='flash')))
+        session.shortest_capability = {'profiles': 'plain700,acc1600_v1', 'ram_maze': '0'}
+        self.assertFalse(session.ready(explore.ShortestOptions()))
+        self.assertTrue(session.ready(explore.ShortestOptions(maze_source='flash')))
+        session.shortest_capability['ram_maze'] = '1'
+        self.assertTrue(session.ready(explore.ShortestOptions()))
+        self.assertFalse(session.ready(explore.ShortestOptions(profile='unknown')))
+
     def test_real_start_command_and_boundaries(self):
         self.assertEqual(explore.ExploreOptions().command(), 'explore start 7 7 2 plain roundtrip 360')
         self.assertEqual(explore.ExploreOptions(1, 0, 1, True, False, 20).command(),
@@ -77,6 +97,7 @@ class FirmwareCommandTests(unittest.TestCase):
                 '-I', str(ROOT / 'Component/ntshell-v0.3.1/src/lib'),
                 '-x', 'c++',
                 str(ROOT / 'tools/tests/explore_harness.cpp'), str(ROOT / 'System/Src/explore.cpp'),
+                str(ROOT / 'tools/tests/shortest_harness.cpp'), str(ROOT / 'System/Src/shortest_run.cpp'),
                 str(ROOT / 'Module/Src/remote_explore.cpp'),
                 str(ROOT / 'Component/ntshell-v0.3.1/src/lib/core/ntlibc.c'), '-o', str(executable),
             ], capture_output=True, env=environment, timeout=240)
@@ -112,6 +133,26 @@ class FirmwareCommandTests(unittest.TestCase):
     def test_invalid_goal_size_does_not_start_motion(self):
         self.check_case('bad_goal', 'EXPLORE_ERROR invalid_argument')
 
+    def test_shortest_capability_and_profiles_do_not_start_motion(self):
+        self.check_case('shortest_show', 'SHORTEST_CAP protocol:1')
+
+    def test_shortest_reuses_completed_ram_maze_and_existing_profile_types(self):
+        for case in ('complete', 'suction', 'acc', 'flash'):
+            self.check_case('shortest_' + case, 'SHORTEST_END result:complete')
+
+    def test_shortest_requires_map_path_battery_arm_and_stream(self):
+        for case, expected in (('missing_maze', 'END result:missing_maze'), ('no_path', 'END result:no_path'),
+                               ('no_arm', 'ERROR not_armed_or_no_stream'), ('no_stream', 'ERROR not_armed_or_no_stream'),
+                               ('low_battery', 'ERROR low_battery'), ('bad_profile', 'ERROR unknown_profile'),
+                               ('bad_goal', 'ERROR invalid_argument'), ('bad_number', 'ERROR invalid_argument')):
+            self.check_case('shortest_' + case, 'SHORTEST_' + expected)
+
+    def test_shortest_cancellation_and_motion_error_never_report_complete(self):
+        for case, result in (('stop_plan', 'stopped'), ('stop_wait', 'stopped'),
+                             ('stop_motion', 'stopped'), ('time_limit', 'time_limit'),
+                             ('link_timeout', 'link_timeout'), ('motion_error', 'motion_error')):
+            self.check_case('shortest_' + case, 'SHORTEST_END result:' + result)
+
 
 class SessionTests(unittest.IsolatedAsyncioTestCase):
     async def exercise(self, scenario='complete'):
@@ -122,7 +163,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
         def emit(kind, data):
             events.append((kind, data))
             if kind == 'state' and data == 'waiting_sensor':
-                if scenario == 'stop':
+                if scenario in ('stop', 'shortest_stop'):
                     session.action('stop')
                 elif scenario == 'disconnect':
                     session.action('disconnect')
@@ -143,6 +184,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                 self.exploring = False
                 self.streaming = False
                 self.last_request = None
+                self.run_tag = 'EXPLORE'
                 clients.append(self)
 
             async def __aenter__(self):
@@ -190,7 +232,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                         raise AssertionError('Arm arrived before the first log sample')
                     elif data[3] == 2 and self.exploring:
                         self.exploring = False
-                        self.text(b'EXPLORE_END result:stopped x:0 y:0 dir:0\r\n')
+                        self.text((self.run_tag + '_END result:stopped x:0 y:0 dir:0\r\n').encode())
                         await asyncio.sleep(0)  # ACK can arrive before the write await returns.
                     return
                 if data == b'\x03':
@@ -205,24 +247,29 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                     commands.append(command)
                     if command == 'explore show' and scenario != 'old_firmware':
                         self.text(b'EXPLORE_CAP protocol:1 mouse:A goal_x:7 goal_y:7 goal_size:2 max_x:31 max_y:31 state:idle\r\n')
+                    elif command == 'shortest show' and scenario != 'old_firmware':
+                        self.text(b'SHORTEST_CAP protocol:1 mouse:A goal_x:7 goal_y:7 goal_size:2 max_x:31 max_y:31 state:idle ram_maze:0 profiles:plain700,acc1600_v1\r\n')
                     elif command == 'info battery':
                         self.text(b'BATTERY voltage_mv:7500 limit_mv:7000 status:OK\r\n')
-                    elif command.startswith('explore start'):
+                    elif command.startswith(('explore start', 'shortest start')):
+                        self.run_tag = 'SHORTEST' if command.startswith('shortest') else 'EXPLORE'
                         self.assert_stream_ready()
                         if scenario == 'start_error':
                             self.text(b'EXPLORE_ERROR low_battery voltage_mv:6900 limit_mv:7000\r\n')
                             return
                         self.exploring = True
-                        self.text(b'EXPLORE_WAIT_SENSOR goal:7,7,2 motion:plain route:roundtrip\r\n')
-                        if scenario in ('complete', 'restart', 'duplex_sensitive'):
+                        self.text((self.run_tag + '_WAIT_SENSOR goal:7,7,2 motion:plain route:roundtrip\r\n').encode())
+                        if scenario in ('complete', 'restart', 'duplex_sensitive', 'explore_then_shortest'):
                             async def complete():
                                 await asyncio.sleep(0.1)
-                                self.text(b'EXPLORE_PHASE name:outward\r\n')
-                                await asyncio.sleep(0.25)
-                                self.text(b'EXPLORE_PHASE name:return\r\n')
+                                self.text((self.run_tag + '_PHASE name:outward\r\n').encode())
+                                await asyncio.sleep(3.4 if self.run_tag == 'SHORTEST' else 0.25)
+                                if self.run_tag == 'SHORTEST':
+                                    self.assert_stream_ready()  # Longer than a 3 s lease: renewal must continue.
+                                self.text((self.run_tag + '_PHASE name:return\r\n').encode())
                                 await asyncio.sleep(0.25)
                                 self.exploring = False
-                                self.text(b'EXPLORE_END result:complete x:0 y:0 dir:0\r\n')
+                                self.text((self.run_tag + '_END result:complete x:0 y:0 dir:0\r\n').encode())
                             self.complete_task = asyncio.create_task(complete())
 
             def assert_stream_ready(self):
@@ -252,9 +299,13 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                 self.assertTrue(session.ready())
                 session.action('disconnect')
                 return
-            for run in range(2 if scenario == 'restart' else 1):
+            for run in range(2 if scenario in ('restart', 'explore_then_shortest') else 1):
                 previous_results = sum(kind in ('result', 'run_error') for kind, _ in events)
-                session.action('start', explore.ExploreOptions())
+                options = (explore.ShortestOptions() if scenario == 'explore_then_shortest' and run == 1 else
+                           explore.ShortestOptions(maze_source='flash') if scenario == 'shortest_stop' else explore.ExploreOptions())
+                if isinstance(options, explore.ShortestOptions):
+                    self.assertTrue(session.ready(options))
+                session.action('start', options)
                 if scenario in ('disconnect', 'no_log'):
                     return
                 await wait_until(lambda: sum(kind in ('result', 'run_error') for kind, _ in events) > previous_results)
@@ -275,9 +326,9 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                 try:
                     if scenario == 'no_log':
                         with self.assertRaisesRegex(TimeoutError, 'ログを受信できない'):
-                            await asyncio.wait_for(session.run(), timeout=15)
+                            await asyncio.wait_for(session.run(), timeout=20)
                     else:
-                        await asyncio.wait_for(session.run(), timeout=22)
+                        await asyncio.wait_for(session.run(), timeout=30)
                     await driver
                 finally:
                     driver.cancel()
@@ -301,8 +352,15 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                 if scenario != 'no_log':
                     self.assertFalse(list(session.directory.glob('run_*.json')))
             else:
-                count = 2 if scenario == 'restart' else 1
-                self.assertEqual(sum(command.startswith('explore start') for command in commands), count)
+                count = 2 if scenario in ('restart', 'explore_then_shortest') else 1
+                self.assertEqual(sum(command.startswith(('explore start', 'shortest start')) for command in commands), count)
+                if scenario == 'explore_then_shortest':
+                    self.assertEqual(sum(command.startswith('shortest start') for command in commands), 1)
+                    self.assertEqual(len(clients), 1)
+                    self.assertGreaterEqual(controls.count(1), 8)
+                    settings = [json.loads(p.read_text(encoding='utf-8')) for p in sorted(session.directory.glob('run_*.json'))]
+                    self.assertEqual([s['run_type'] for s in settings], ['explore', 'shortest'])
+                    self.assertEqual(settings[1]['options']['maze_source'], 'ram')
                 self.assertIn(3, controls)
                 self.assertEqual(len(list(session.directory.glob('run_*.json'))), count)
                 self.assertTrue(any(kind == ('run_error' if scenario == 'start_error' else 'result') for kind, _ in events))
@@ -326,6 +384,12 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
     async def test_next_exploration_restarts_logs_on_the_same_connection(self):
         await self.exercise('restart')
 
+    async def test_exploration_then_shortest_reuses_one_connection_and_updates_ram_map(self):
+        await self.exercise('explore_then_shortest')
+
+    async def test_shortest_stop_waits_for_end_and_stops_logging(self):
+        await self.exercise('shortest_stop')
+
     async def test_rejected_start_stops_logs_and_stays_connected(self):
         await self.exercise('start_error')
 
@@ -340,6 +404,33 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
 
 
 class GuiTests(unittest.TestCase):
+    def test_shortest_map_gate_profile_selection_and_stop_controls(self):
+        root = gui.tk.Tk()
+        root.withdraw()
+        try:
+            app = gui.ExploreApp(root)
+            app.handle_event('shortest_capability', {'mouse': 'B', 'profiles': 'plain700,acc1600_v1', 'ram_maze': '0'})
+            app.run_mode.set('最短走行')
+            snapshot = {'rows': 0, 'lost': 0, 'crc_errors': 0, 'ready': True, 'shortest_ready': True,
+                        'shortest_supported': True, 'ram_maze': False, 'state': 'idle', 'time_ms': None, 'values': {}}
+            app.handle_event('telemetry', snapshot)
+            self.assertEqual(str(app.start_button['state']), 'disabled')
+            app.maze_source.set('保存済み迷路（Flash）')
+            app.update_run_mode()
+            self.assertEqual(str(app.start_button['state']), 'normal')
+            self.assertEqual(str(app.profile_choice['state']), 'readonly')
+            self.assertEqual(str(app.explore_controls[0]['state']), 'disabled')
+            actions = []
+            app.session = SimpleNamespace(action=lambda *args: actions.append(args))
+            app.start()
+            self.assertIsInstance(actions[0][1], explore.ShortestOptions)
+            self.assertEqual(actions[0][1].maze_source, 'flash')
+            app.handle_event('state', 'running')
+            self.assertEqual(str(app.mode_choice['state']), 'disabled')
+            self.assertEqual(str(app.stop_button['state']), 'normal')
+        finally:
+            root.destroy()
+
     def test_start_gate_live_values_and_running_buttons(self):
         root = gui.tk.Tk()
         root.withdraw()

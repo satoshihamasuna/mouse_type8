@@ -177,6 +177,8 @@ class Dijkstra:public calcRunTime
 		t_posDijkstra run_pos_buff[DIJKSTRA_PATH_MAX];
 		uint8_t run_pt_buff[DIJKSTRA_PATH_MAX];
 		wall_class *wall_property;
+		// Optional remote-run cancellation check, also used after path planning.
+		bool (*abort_requested)() = nullptr;
 		Dijkstra(wall_class *_wall_property)
 		{
 			wall_property = _wall_property;

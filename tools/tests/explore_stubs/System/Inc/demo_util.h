@@ -4,7 +4,7 @@
 #include "Component/Inc/typedef.h"
 #include "Core/Inc/main.h"
 #include "Task/Inc/run_typedef.h"
-enum t_direction { North = 0 };
+enum t_direction { North = 0, Dir_None = 4 };
 struct t_position { uint8_t x, y; t_direction dir; };
 #define MAZE_GOAL_X 7
 #define MAZE_GOAL_Y 7
@@ -33,6 +33,7 @@ class wall_class
 public:
 	explicit wall_class(IrSensTask *) {}
 	void init_maze() {}
+	void history2wall_append() {}
 	struct History { void history_init() {} } wall_history;
 };
 class Search

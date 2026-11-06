@@ -10,6 +10,7 @@ uint32_t test_primask, tick;
 int test_sensor = 3000, test_motion_calls, test_motion_ends;
 bool test_stop_during_motion, stream = true, low_battery;
 bool stop_in_wait;
+int shortest_case(const char *);
 uint32_t HAL_GetTick() { return tick; }
 void HAL_Delay(uint32_t ms)
 {
@@ -31,6 +32,7 @@ t_position DemoUtil::run_search(Search *, search_type_t, t_position, t_position 
 int main(int argc, char **argv)
 {
 	assert(argc == 2);
+	if(strncmp(argv[1], "shortest_", 9) == 0) return shortest_case(argv[1] + 9);
 	if(strcmp(argv[1], "show") == 0)
 	{
 		char *args[] = {const_cast<char *>("explore"), const_cast<char *>("show")};
@@ -60,5 +62,6 @@ int main(int argc, char **argv)
 		assert(result == -1 && test_motion_calls == 0 && test_motion_ends == 0);
 	assert(!RemoteExplore::running());
 	assert(LogData::getInstance().log_enable == False);
+	assert((explore_completed_maze() != nullptr) == (result == 0));
 	return 0;
 }

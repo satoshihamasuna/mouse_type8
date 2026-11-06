@@ -123,6 +123,8 @@ BLE の専用シェルは `tools/ble/mouse_ble_shell.py`、既存 GUI 用の接�
 | `search run start_x start_y N\|E\|S\|W goal\|full\|full_prune first\|second mask max_steps` | モーションを実行せず、実機C++の仮想壁・歩数マップ・足立法を連続再生します。`full_prune`はUNKNOWN開放仮定の枝刈り全面探索です。 |
 | `explore show` | 実機探索の対応プロトコル・機体A/B・既定ゴールを返します。動きません。 |
 | `explore start gx gy size plain\|acc outward\|roundtrip limit_seconds` | ログ配信と許可パケットが有効な場合、手かざし待ち後に実際の探索走行を開始します。専用GUIから操作します。 |
+| `shortest show` | 最短走行の対応機体・プロファイル一覧・正常完了したBLE探索のRAM迷路の有無を返します。動きません。 |
+| `shortest start gx gy size profile ram\|flash limit_seconds` | ログ配信・許可パケット・電圧・経路を確認し、手かざし後に最短走行します。BLE探索GUIの「最短走行」から操作します。 |
 | `search replay reset\|keep plain\|acc start_x start_y dir goal_x goal_y goal_size goal\|full\|full_prune first\|second mask max_steps` | `Search`と同じ壁観測・マップ更新順で、モーションだけをno-opにして逐次再生します。 |
 | `log mode0` | ログヘッダ出力を有効にします。 |
 | `log mode1` | ログヘッダ出力を無効にします。 |

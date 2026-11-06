@@ -1,4 +1,4 @@
-"""One BLE connection with telemetry enabled only for an exploration."""
+"""One BLE connection with telemetry enabled for exploration and shortest runs."""
 import asyncio
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -38,6 +38,26 @@ def fields(line):
     return dict(item.split(':', 1) for item in line.split()[1:] if ':' in item)
 
 
+@dataclass(frozen=True)
+class ShortestOptions:
+    goal_x: int = 7
+    goal_y: int = 7
+    goal_size: int = 2
+    profile: str = 'plain700'
+    maze_source: str = 'ram'
+    limit_seconds: int = 120
+
+    def command(self, max_x=31, max_y=31):
+        ExploreOptions(self.goal_x, self.goal_y, self.goal_size,
+                       limit_seconds=self.limit_seconds).command(max_x, max_y)
+        if (not self.profile or not self.profile.isascii() or
+                not all(c.isalnum() or c == '_' for c in self.profile) or
+                self.maze_source not in ('ram', 'flash')):
+            raise ValueError('走行プロファイルまたは迷路の指定が不正です')
+        return 'shortest start {} {} {} {} {} {}'.format(
+            self.goal_x, self.goal_y, self.goal_size, self.profile, self.maze_source, self.limit_seconds)
+
+
 class ExploreSession:
     """UI and tests enqueue actions; one task owns the link and all CSV writes."""
     def __init__(self, *, name='HY0020-MOUSE', address=None, period_ms=20,
@@ -48,6 +68,7 @@ class ExploreSession:
         self.emit = emit or (lambda kind, data: None)
         self.actions = queue.Queue()
         self.capability = None
+        self.shortest_capability = None
         self.battery_ok = False
         self.state = 'disconnected'
         self.capture = None
@@ -90,30 +111,40 @@ class ExploreSession:
             # ntshell can prefix a prompt/echo; protocol tags are line-local.
             text = line.decode('ascii', errors='replace').strip()
             self._event('text', text)
+            shortest = text.startswith('SHORTEST_')
+            tag = 'SHORTEST' if shortest else 'EXPLORE'
             if text.startswith('EXPLORE_CAP '):
                 capability = fields(text)
                 if capability.get('protocol') == '1':
                     self.capability = capability
                     self._event('capability', capability)
+            elif text.startswith('SHORTEST_CAP '):
+                capability = fields(text)
+                if capability.get('protocol') == '1':
+                    self.shortest_capability = capability
+                    self._event('shortest_capability', capability)
             elif text.startswith('BATTERY '):
                 status = fields(text)
                 self.battery_ok = status.get('status') == 'OK'
                 self._event('battery', status)
-            elif text.startswith('EXPLORE_WAIT_SENSOR '):
+            elif text.startswith(tag + '_WAIT_SENSOR '):
                 self._run_requested_at = None
                 self._set_state('waiting_sensor')
-            elif text.startswith('EXPLORE_PHASE '):
+            elif text.startswith(tag + '_PHASE '):
                 self._run_requested_at = None
                 self._set_state('running')
                 self._event('phase', fields(text).get('name', ''))
-            elif text.startswith('EXPLORE_END '):
+            elif text.startswith(tag + '_END '):
                 self._run_requested_at = self._stop_requested_at = None
                 self._finish_stream()
+                if not shortest and self.shortest_capability is not None:
+                    self.shortest_capability['ram_maze'] = '1' if fields(text).get('result') == 'complete' else '0'
+                    self._event('shortest_capability', self.shortest_capability)
                 self._event('result', fields(text))
                 self._set_state('idle')
                 if self._disconnect_requested:
                     self._closed = True
-            elif text.startswith('EXPLORE_ERROR '):
+            elif text.startswith(tag + '_ERROR '):
                 self._run_requested_at = self._stop_requested_at = None
                 self._finish_stream()
                 self._event('run_error', text)
@@ -127,9 +158,15 @@ class ExploreSession:
         self._stream_started_at = None
         self._stream_stop_pending = True
 
-    def ready(self):
-        return (self.state == 'idle' and self.capability is not None and self.battery_ok
-                and not self._stream_stop_pending)
+    def ready(self, options=None):
+        capability = self.shortest_capability if isinstance(options, ShortestOptions) else self.capability
+        if not (self.state == 'idle' and capability is not None and self.battery_ok
+                and not self._stream_stop_pending):
+            return False
+        if isinstance(options, ShortestOptions):
+            return (options.profile in capability.get('profiles', '').split(',') and
+                    (options.maze_source == 'flash' or capability.get('ram_maze') == '1'))
+        return True
 
     async def _command(self, client, lock, command, *, enter=True):
         if '\r' in command or '\n' in command:
@@ -242,6 +279,7 @@ class ExploreSession:
                         await self._command(client, lock, '')
                         await self._command(client, lock, 'shell')
                         await self._command(client, lock, 'explore show')
+                        await self._command(client, lock, 'shortest show')
                         await self._command(client, lock, 'info battery')
                         self._set_state('idle')
                         while not self._closed:
@@ -268,21 +306,23 @@ class ExploreSession:
                                 self._run_requested_at = None
                                 self._set_state('stopping')
                                 self._stop_requested_at = now
-                                self._event('run_error', '探索開始の応答がありません。停止を要求しました')
+                                self._event('run_error', '走行開始の応答がありません。停止を要求しました')
                             if self._stop_requested_at and now - self._stop_requested_at > 4:
-                                raise TimeoutError('探索停止の応答がありません。接続を閉じます')
+                                raise TimeoutError('走行停止の応答がありません。接続を閉じます')
                             try:
                                 action, payload = self.actions.get_nowait()
                             except queue.Empty:
                                 continue
                             if action == 'start':
-                                if not self.ready():
-                                    self._event('run_error', '探索対応・電圧の確認と前回のログ配信停止を待ってから開始してください')
+                                if not isinstance(payload, (ExploreOptions, ShortestOptions)):
+                                    raise ValueError('invalid run options')
+                                if not self.ready(payload):
+                                    self._event('run_error', '走行コマンド対応・迷路・プロファイル・電圧の確認と前回のログ配信停止が必要です')
                                     continue
-                                if not isinstance(payload, ExploreOptions):
-                                    raise ValueError('invalid exploration options')
-                                command = payload.command(int(self.capability['max_x']), int(self.capability['max_y']))
-                                settings = {'options': asdict(payload), 'firmware': self.capability,
+                                capability = self.shortest_capability if isinstance(payload, ShortestOptions) else self.capability
+                                command = payload.command(int(capability['max_x']), int(capability['max_y']))
+                                settings = {'options': asdict(payload), 'firmware': capability,
+                                            'run_type': 'shortest' if isinstance(payload, ShortestOptions) else 'explore',
                                             'period_ms': self.period_ms, 'wait_sensor': True}
                                 with (self.directory / ('run_' + datetime.now().strftime('%H%M%S_%f') + '.json')).open('x', encoding='utf-8') as f:
                                     json.dump(settings, f, ensure_ascii=False, indent=2)
@@ -300,7 +340,7 @@ class ExploreSession:
                                 try:
                                     await asyncio.wait_for(first_sample.wait(), timeout=5)
                                 except asyncio.TimeoutError as error:
-                                    raise TimeoutError('ログを受信できないため探索を開始しません。対応STM32ファームウェアを確認してください') from error
+                                    raise TimeoutError('ログを受信できないため走行を開始しません。対応STM32ファームウェアを確認してください') from error
                                 await transport.write_bytes(client, control_packet(self.period_ms, action=3), lock)
                                 # Once CR is attempted, its delivery may be uncertain: never replay it.
                                 uncommitted_command = False
@@ -355,5 +395,9 @@ class ExploreSession:
                 'lost': self.capture.lost if self.capture else 0,
                 'crc_errors': self.capture.decoder.crc_errors if self.capture else 0,
                 'ready': self.ready(), 'state': self.state, 'streaming': self._streaming,
+                'shortest_supported': self.shortest_capability is not None,
+                'shortest_ready': (self.state == 'idle' and self.shortest_capability is not None and
+                                   self.battery_ok and not self._stream_stop_pending),
+                'ram_maze': (self.shortest_capability or {}).get('ram_maze') == '1',
                 'time_ms': sample.time_ms if sample else None,
                 'values': dict(zip(LOG_LABELS, sample.values)) if sample else {}}

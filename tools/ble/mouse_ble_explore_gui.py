@@ -1,4 +1,4 @@
-"""BLE exploration GUI: start after a hand gesture and record telemetry continuously."""
+"""BLE探索・最短走行GUI: 同じ接続で走行を切り替え、ログを逐次保存する。"""
 import argparse
 import asyncio
 from collections import deque
@@ -18,8 +18,8 @@ from mouse_ble_log import LOG_LABELS, MIN_PERIOD_MS
 STATE_LABELS = {
     'disconnected': '未接続', 'connecting': 'BLEを接続中', 'checking': '接続を確認中',
     'idle': 'BLE接続中・ログ配信停止',
-    'starting': '探索開始を要求中', 'waiting_sensor': '前センサに手をかざしてください',
-    'running': '探索走行中', 'stopping': '探索停止を要求中',
+    'starting': '走行開始を要求中', 'waiting_sensor': '前センサに手をかざしてください',
+    'running': '経路計算・走行中', 'stopping': '走行停止を要求中',
 }
 RUN_STATES = ('starting', 'waiting_sensor', 'running', 'stopping')
 
@@ -40,14 +40,18 @@ class ExploreApp:
         self.goal_x, self.goal_y, self.goal_size = tk.IntVar(value=7), tk.IntVar(value=7), tk.IntVar(value=2)
         self.limit = tk.IntVar(value=360)
         self.roundtrip, self.accelerated = tk.BooleanVar(value=True), tk.BooleanVar(value=False)
+        self.run_mode = tk.StringVar(value='探索')
+        self.profile = tk.StringVar(value='plain700')
+        self.maze_source = tk.StringVar(value='直近のBLE探索（RAM）')
+        self.profiles = []
         self.status = tk.StringVar(value='未接続')
         self.summary = tk.StringVar(value='受信 0 件  /  欠落 0 件  /  CRC 0 件')
         self.battery_text = tk.StringVar(value='電池 — V')
         self.battery_limit = None
-        self.readiness = tk.StringVar(value='BLE接続後、電圧・探索コマンド対応を確認します。ログ配信は探索開始時に有効になります。')
+        self.readiness = tk.StringVar(value='BLE接続後、電圧・走行コマンド対応を確認します。ログ配信は走行開始時に有効になります。')
         self.file_path = tk.StringVar(value='保存先: 接続すると新しい記録フォルダを作成します')
         self.graph_field = tk.StringVar(value='ego.velo')
-        root.title('mouse_type8 — BLE探索・逐次ログ')
+        root.title('mouse_type8 — BLE探索・最短走行・逐次ログ')
         root.geometry('1180x820')
         root.minsize(960, 720)
         root.protocol('WM_DELETE_WINDOW', self.close)
@@ -59,7 +63,7 @@ class ExploreApp:
         panel.pack(fill='both', expand=True)
         header = ttk.Frame(panel)
         header.pack(fill='x')
-        ttk.Label(header, text='BLE探索・逐次ログ', font=('Yu Gothic UI', 18, 'bold')).pack(side='left')
+        ttk.Label(header, text='BLE探索・最短走行・逐次ログ', font=('Yu Gothic UI', 18, 'bold')).pack(side='left')
         ttk.Label(header, textvariable=self.status, font=('Yu Gothic UI', 12, 'bold')).pack(side='right')
         link = ttk.LabelFrame(panel, text='BLE接続', padding=10)
         link.pack(fill='x', pady=(10, 8))
@@ -82,10 +86,11 @@ class ExploreApp:
         ttk.Button(link, text='選択', command=self.choose_output).grid(row=1, column=7, pady=(8, 0))
         link.columnconfigure(3, weight=1)
 
-        run = ttk.LabelFrame(panel, text='実機の探索走行', padding=10)
+        run = ttk.LabelFrame(panel, text='実機走行', padding=10)
         run.pack(fill='x', pady=(0, 8))
         ttk.Label(run, text='開始位置 (0, 0)・北向き     ゴール X / Y / サイズ').grid(row=0, column=0, sticky='w')
         self.run_controls = []
+        self.explore_controls = []
         for column, variable in enumerate((self.goal_x, self.goal_y, self.goal_size), 1):
             widget = ttk.Spinbox(run, from_=0 if column < 3 else 1, to=31, textvariable=variable, width=5)
             widget.grid(row=0, column=column, padx=4)
@@ -94,15 +99,28 @@ class ExploreApp:
             widget = ttk.Checkbutton(run, text=text, variable=variable)
             widget.grid(row=0, column=column, padx=8)
             self.run_controls.append(widget)
+            self.explore_controls.append(widget)
         ttk.Label(run, text='制限 [秒]').grid(row=0, column=6)
         widget = ttk.Spinbox(run, from_=1, to=3600, textvariable=self.limit, width=6)
         widget.grid(row=0, column=7, padx=4)
         self.run_controls.append(widget)
-        self.start_button = ttk.Button(run, text='探索開始 → 手かざし待ち', command=self.start, state='disabled')
-        self.start_button.grid(row=1, column=0, columnspan=3, sticky='ew', pady=(10, 0))
-        self.stop_button = ttk.Button(run, text='探索を停止', command=self.stop, state='disabled')
-        self.stop_button.grid(row=1, column=3, columnspan=2, sticky='ew', padx=8, pady=(10, 0))
-        ttk.Label(run, text='手かざし待ち・探索中だけログを記録します。').grid(row=1, column=5, columnspan=3, sticky='w', pady=(10, 0))
+        self.mode_choice = ttk.Combobox(run, textvariable=self.run_mode, values=('探索', '最短走行'), state='readonly', width=10)
+        self.mode_choice.grid(row=1, column=0, sticky='w', pady=(8, 0))
+        self.mode_choice.bind('<<ComboboxSelected>>', lambda event: self.update_run_mode())
+        ttk.Label(run, text='最短プロファイル').grid(row=1, column=1, columnspan=2, pady=(8, 0))
+        self.profile_choice = ttk.Combobox(run, textvariable=self.profile, values=('plain700',), state='disabled', width=24)
+        self.profile_choice.grid(row=1, column=3, columnspan=2, pady=(8, 0))
+        self.profile_choice.bind('<<ComboboxSelected>>', lambda event: self.update_run_mode())
+        self.maze_choice = ttk.Combobox(run, textvariable=self.maze_source,
+                                       values=('直近のBLE探索（RAM）', '保存済み迷路（Flash）'), state='disabled', width=25)
+        self.maze_choice.grid(row=1, column=5, columnspan=3, pady=(8, 0))
+        self.maze_choice.bind('<<ComboboxSelected>>', lambda event: self.update_run_mode())
+        self.run_controls.extend((self.mode_choice, self.profile_choice, self.maze_choice))
+        self.start_button = ttk.Button(run, text='走行開始 → 手かざし待ち', command=self.start, state='disabled')
+        self.start_button.grid(row=2, column=0, columnspan=3, sticky='ew', pady=(10, 0))
+        self.stop_button = ttk.Button(run, text='走行を停止', command=self.stop, state='disabled')
+        self.stop_button.grid(row=2, column=3, columnspan=2, sticky='ew', padx=8, pady=(10, 0))
+        ttk.Label(run, text='手かざし待ち・経路計算・走行中にログを記録します。').grid(row=2, column=5, columnspan=3, sticky='w', pady=(10, 0))
         ttk.Label(panel, textvariable=self.readiness, wraplength=1100).pack(fill='x', pady=(0, 5))
         status_line = ttk.Frame(panel)
         status_line.pack(fill='x')
@@ -114,7 +132,7 @@ class ExploreApp:
         tabs.pack(fill='both', expand=True)
         live, messages = ttk.Frame(tabs, padding=8), ttk.Frame(tabs, padding=8)
         tabs.add(live, text='ライブ値・波形')
-        tabs.add(messages, text='探索イベント・応答')
+        tabs.add(messages, text='走行イベント・応答')
         chart = ttk.Frame(live)
         chart.pack(side='left', fill='both', expand=True, padx=(0, 12))
         picker = ttk.Frame(chart)
@@ -165,7 +183,8 @@ class ExploreApp:
         self.battery_text.set('電池 — V')
         self.battery_limit = None
         self.file_path.set('保存先: 接続後に新しい記録フォルダを作成します')
-        self.readiness.set('BLE接続・電圧・探索コマンド対応を確認中です。')
+        self.readiness.set('BLE接続・電圧・走行コマンド対応を確認中です。')
+        self.profiles = []
         for field in LOG_LABELS:
             self.values.item(field, values=(field, '—'))
         self.draw_graph()
@@ -183,11 +202,15 @@ class ExploreApp:
 
     def start(self):
         try:
-            options = explore.ExploreOptions(self.goal_x.get(), self.goal_y.get(), self.goal_size.get(),
-                                             self.accelerated.get(), self.roundtrip.get(), self.limit.get())
+            if self.run_mode.get() == '最短走行':
+                options = explore.ShortestOptions(self.goal_x.get(), self.goal_y.get(), self.goal_size.get(),
+                                                   self.profile.get(), self.selected_maze(), self.limit.get())
+            else:
+                options = explore.ExploreOptions(self.goal_x.get(), self.goal_y.get(), self.goal_size.get(),
+                                                 self.accelerated.get(), self.roundtrip.get(), self.limit.get())
             options.command()
         except (ValueError, tk.TclError) as error:
-            messagebox.showerror('探索設定', str(error), parent=self.root)
+            messagebox.showerror('走行設定', str(error), parent=self.root)
             return
         if self.session:
             self.start_button.configure(state='disabled')
@@ -196,6 +219,24 @@ class ExploreApp:
     def stop(self):
         if self.session:
             self.session.action('stop')
+
+    def selected_maze(self):
+        return 'flash' if self.maze_source.get() == '保存済み迷路（Flash）' else 'ram'
+
+    def update_run_mode(self, state=None):
+        state = state or self.snapshot.get('state', 'disconnected')
+        busy = state in RUN_STATES
+        shortest = self.run_mode.get() == '最短走行'
+        self.mode_choice.configure(state='disabled' if busy else 'readonly')
+        for widget in (self.profile_choice, self.maze_choice):
+            widget.configure(state='readonly' if shortest and not busy else 'disabled')
+        for widget in self.explore_controls:
+            widget.configure(state='disabled' if shortest or busy else 'normal')
+        ready = self.snapshot.get('ready', False)
+        if shortest:
+            ready = (self.snapshot.get('shortest_ready', False) and self.profile.get() in self.profiles and
+                     (self.selected_maze() == 'flash' or self.snapshot.get('ram_maze', False)))
+        self.start_button.configure(state='normal' if ready and state == 'idle' else 'disabled')
 
     def disconnect(self):
         if self.session:
@@ -232,26 +273,35 @@ class ExploreApp:
                 widget.configure(state='disabled' if connected or data == 'connecting' else 'normal')
             for widget in self.run_controls:
                 widget.configure(state='disabled' if busy else 'normal')
+            self.update_run_mode(data)
         elif kind == 'capability':
             self.goal_x.set(int(data['goal_x']))
             self.goal_y.set(int(data['goal_y']))
             self.goal_size.set(int(data['goal_size']))
             self._message('探索対応ファームウェア: 機体 ' + data['mouse'])
+        elif kind == 'shortest_capability':
+            self.profiles = data.get('profiles', '').split(',')
+            self.profile_choice.configure(values=self.profiles)
+            if self.profile.get() not in self.profiles:
+                self.profile.set(self.profiles[0] if self.profiles else '')
+            self._message('最短走行対応: 機体 {} / RAM迷路 {}'.format(data['mouse'], 'あり' if data.get('ram_maze') == '1' else 'なし'))
         elif kind == 'output':
             self.file_path.set('保存先: ' + data)
         elif kind == 'telemetry':
             new_sample = data['time_ms'] != self.snapshot.get('time_ms')
             self.snapshot = data
             self.summary.set('受信 {:,} 件  /  欠落 {:,} 件  /  CRC {:,} 件'.format(data['rows'], data['lost'], data['crc_errors']))
-            self.start_button.configure(state='normal' if data['ready'] else 'disabled')
-            if data['ready']:
-                self.readiness.set('BLE通信・電圧・探索コマンド対応を確認済み。ログ配信は停止中です。探索開始時に配信を開始します。')
+            self.update_run_mode()
+            if str(self.start_button['state']) == 'normal':
+                self.readiness.set('開始可能。機体を (0, 0) 北向きに置いてください。開始後にログ受信・手かざし確認を行います。')
             elif data['state'] == 'starting':
                 self.readiness.set('開始コマンドを準備し、ログ受信を確認中です。まだ走行を開始していません。')
             elif data['state'] in RUN_STATES:
-                self.readiness.set('ログを保存しながら探索中です。停止ボタンで探索を中断できます。')
+                self.readiness.set('ログを保存中です。停止ボタンで走行・手かざし待ちを中断できます。')
+            elif self.run_mode.get() == '最短走行' and data.get('shortest_supported') and self.selected_maze() == 'ram' and not data.get('ram_maze'):
+                self.readiness.set('RAM迷路がありません。同じ電源投入中にBLE探索を完了するか、保存済み迷路（Flash）を選んでください。')
             else:
-                self.readiness.set('接続中。探索コマンド応答と電圧の確認が必要です。開始できない場合は対応ファームウェアを確認してください。')
+                self.readiness.set('走行コマンド応答と電圧を確認してください。最短走行には対応STM32ファームウェアが必要です。')
             for field, value in data['values'].items():
                 self.values.item(field, values=(field, '{:.6g}'.format(value)))
             if 'Battery' in data['values']:
@@ -263,9 +313,9 @@ class ExploreApp:
                 self.history.append((data['time_ms'] / 1000, data['values'][field], data['values'].get(target, float('nan'))))
             self.draw_graph()
         elif kind == 'phase':
-            self._message('往路探索' if data == 'outward' else '復路探索')
+            self._message({'outward': '往路探索', 'return': '復路探索', 'planning': '最短経路を計算中', 'running': '最短走行中'}.get(data, data))
         elif kind == 'result':
-            self._message('探索終了: ' + str(data))
+            self._message('走行終了: ' + str(data))
         elif kind == 'battery':
             self.battery_limit = int(data['limit_mv']) / 1000
             self.battery_text.set('電池 {:.2f} V（下限 {:.2f} V）'.format(int(data['voltage_mv']) / 1000, self.battery_limit))
