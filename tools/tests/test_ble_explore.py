@@ -36,8 +36,15 @@ def sample(sequence):
 
 
 class OptionsTests(unittest.TestCase):
+    def test_wall_mode_is_validated_without_changing_the_motion_command(self):
+        for cls in (explore.ExploreOptions, explore.ShortestOptions):
+            self.assertEqual(cls(wall_ekf_mode='control').command(), cls().command())
+            for mode in ('', 'unknown', 'control\r', 'control\nexplore start'):
+                with self.assertRaises(ValueError):
+                    cls(wall_ekf_mode=mode).command()
+
     def test_shortest_command_rejects_invalid_map_and_command_injection(self):
-        self.assertEqual(explore.ShortestOptions().command(), 'shortest start 7 7 2 plain700 ram 120')
+        self.assertEqual(explore.ShortestOptions().command(), 'shortest start 7 7 2 plain500 ram 120')
         for options in (explore.ShortestOptions(profile='plain700\r'), explore.ShortestOptions(maze_source='other'),
                         explore.ShortestOptions(goal_size=99), explore.ShortestOptions(profile='p;bad')):
             with self.assertRaises(ValueError):
@@ -49,7 +56,7 @@ class OptionsTests(unittest.TestCase):
         session.capability = {'protocol': '1'}
         self.assertTrue(session.ready())
         self.assertFalse(session.ready(explore.ShortestOptions(maze_source='flash')))
-        session.shortest_capability = {'profiles': 'plain700,acc1600_v1', 'ram_maze': '0'}
+        session.shortest_capability = {'profiles': 'plain500,plain700,acc1600_v1', 'ram_maze': '0'}
         self.assertFalse(session.ready(explore.ShortestOptions()))
         self.assertTrue(session.ready(explore.ShortestOptions(maze_source='flash')))
         session.shortest_capability['ram_maze'] = '1'
@@ -70,6 +77,71 @@ class OptionsTests(unittest.TestCase):
         self.assertEqual(control_packet(20, action=3)[3], 3)
         with self.assertRaises(ValueError):
             control_packet(20, action=4)
+
+
+class TurnDiagnosticsParserTests(unittest.TestCase):
+    def make_session(self, run_type='explore'):
+        session = explore.ExploreSession()
+        session._text_file = io.StringIO()
+        session._run_settings = {'run_type': run_type}
+        return session
+
+    def test_missing_or_duplicate_records_are_not_marked_complete(self):
+        for indices in ([0], [0, 0], [1, 0]):
+            with self.subTest(indices=indices):
+                session = self.make_session()
+                session._text(b'EXPLORE_TURN_STATS stored:2 total:2\r\n')
+                for index in indices:
+                    session._text(('EXPLORE_TURN index:{} reason:normal\r\n'.format(index)).encode())
+                session._finish_run({'result': 'complete'})
+                self.assertFalse(session._run_settings['turn_diagnostics']['complete'])
+
+    def test_shortest_wall_stats_are_kept_only_for_the_active_shortest_run(self):
+        line = b'SHORTEST_WALL_STATS diagonal_cycles:100 diagonal_ekf_cycles:60 diagonal_updates:4\r\n'
+        session = self.make_session('shortest')
+        session.state = 'idle'
+        session._text(line)
+        self.assertNotIn('wall_control_stats', session._run_settings)
+        session.state = 'running'
+        session._text(line)
+        self.assertEqual(session._run_settings['wall_control_stats']['diagonal_ekf_cycles'], '60')
+        session._run_settings = {'run_type': 'explore'}
+        session._text(line)
+        self.assertNotIn('wall_control_stats', session._run_settings)
+
+    def test_old_or_shortest_runs_do_not_acquire_unrelated_turn_records(self):
+        session = self.make_session()
+        session._finish_run({'result': 'complete'})
+        self.assertNotIn('turn_diagnostics', session._run_settings)
+        session = self.make_session('shortest')
+        session._text(b'EXPLORE_TURN_STATS stored:0 total:0\r\n')
+        self.assertNotIn('turn_diagnostics', session._run_settings)
+
+    def test_diagonal_fallback_version_and_gate_counts_are_saved(self):
+        session = self.make_session('shortest')
+        session.state = 'running'
+        session._text(b'SHORTEST_WALL_STATS diagonal_cycles:100 diagonal_ekf_cycles:6 '
+                      b'diagonal_updates:1 diagonal_segments:2 diagonal_controller:2 '
+                      b'diagonal_fallback_cycles:94 diagonal_front_blocked_cycles:8 '
+                      b'diagonal_edge:1 diagonal_edges_right:12 diagonal_edges_left:13 '
+                      b'diagonal_edge_delay_max_mm:2.500\r\n')
+        stats = session._run_settings['wall_control_stats']
+        self.assertEqual(stats['diagonal_controller'], '2')
+        self.assertEqual(stats['diagonal_fallback_cycles'], '94')
+        self.assertEqual(stats['diagonal_front_blocked_cycles'], '8')
+        self.assertEqual(stats['diagonal_edge'], '1')
+        self.assertEqual(stats['diagonal_edges_right'], '12')
+        self.assertEqual(stats['diagonal_edges_left'], '13')
+        self.assertEqual(stats['diagonal_edge_delay_max_mm'], '2.500')
+
+    def test_diagnostic_buffer_is_bounded_and_invalid_header_stays_incomplete(self):
+        session = self.make_session()
+        session._text(b'EXPLORE_TURN_STATS stored:999999999 total:999999999\r\n')
+        for index in range(70):
+            session._text(('EXPLORE_TURN index:{} reason:normal\r\n'.format(index)).encode())
+        session._finish_run({'result': 'complete'})
+        self.assertEqual(len(session._run_settings['turn_diagnostics']['events']), 64)
+        self.assertFalse(session._run_settings['turn_diagnostics']['complete'])
 
 
 class FirmwareCommandTests(unittest.TestCase):
@@ -182,6 +254,10 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                     session.action('stop')
                 elif scenario == 'disconnect':
                     session.action('disconnect')
+            elif kind == 'state' and data == 'starting' and scenario == 'cancel_wall_prepare':
+                session.action('stop')
+            elif kind == 'stream' and data['enabled'] and scenario == 'cancel_log_prepare':
+                session.action('stop')
             elif kind == 'telemetry' and data['state'] == 'running':
                 running_rows.append(data['rows'])
 
@@ -200,6 +276,10 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                 self.streaming = False
                 self.last_request = None
                 self.run_tag = 'EXPLORE'
+                self.wall_mode = 'shadow'
+                self.wall_shows = 0
+                self.wall_sets = 0
+                self.ever_started = False
                 clients.append(self)
 
             async def __aenter__(self):
@@ -224,6 +304,15 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                 for start in range(0, len(wire), 19):
                     self.notify(None, wire[start:start + 19])
 
+            def end(self, result):
+                if self.run_tag == 'EXPLORE' and scenario != 'no_wall_ekf':
+                    self.text(b'EXPLORE_TURN_STATS total:2 normal:1 side:0 front_diff:1 front_near:0 suppressed:1 stored:2 dropped:0\r\n')
+                    self.text(b'EXPLORE_TURN index:0 ms:1234 x:1 y:2 heading:0 turn:R reason:normal flags:13 sl_mm:45.0 sr_mm:80.0 fl_mm:100.0 fr_mm:111.0 e_mm:0.0 psi_rad:0.01 sigma_e_mm:1.0 sigma_psi_rad:0.02\r\n')
+                    self.text(b'EXPLORE_TURN index:1 ms:1300 x:2 y:2 heading:2 turn:L reason:front_diff flags:7\r\n')
+                if self.run_tag == 'SHORTEST':
+                    self.text(b'SHORTEST_WALL_STATS diagonal_cycles:100 diagonal_ekf_cycles:60 diagonal_updates:4 diagonal_segments:2\r\n')
+                self.text((self.run_tag + '_END result:' + result + ' x:0 y:0 dir:0\r\n').encode())
+
             async def start_notify(self, uuid, callback):
                 self.notify = callback
 
@@ -247,7 +336,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                         raise AssertionError('Arm arrived before the first log sample')
                     elif data[3] == 2 and self.exploring:
                         self.exploring = False
-                        self.text((self.run_tag + '_END result:stopped x:0 y:0 dir:0\r\n').encode())
+                        self.end('stopped')
                         await asyncio.sleep(0)  # ACK can arrive before the write await returns.
                     return
                 if data == b'\x03':
@@ -263,9 +352,33 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                     if command == 'explore show' and scenario != 'old_firmware':
                         self.text(b'EXPLORE_CAP protocol:1 mouse:A goal_x:7 goal_y:7 goal_size:2 max_x:31 max_y:31 state:idle\r\n')
                     elif command == 'shortest show' and scenario != 'old_firmware':
-                        self.text(b'SHORTEST_CAP protocol:1 mouse:A goal_x:7 goal_y:7 goal_size:2 max_x:31 max_y:31 state:idle ram_maze:0 profiles:plain700,acc1600_v1\r\n')
+                        self.text(b'SHORTEST_CAP protocol:1 mouse:A goal_x:7 goal_y:7 goal_size:2 max_x:31 max_y:31 state:idle ram_maze:0 diagonal_ekf:1 profiles:plain500,plain700,acc1600_v1\r\n')
                     elif command == 'info battery':
                         self.text(b'BATTERY voltage_mv:7500 limit_mv:7000 status:OK\r\n')
+                    elif command.startswith('wall_ekf '):
+                        if self.streaming:
+                            raise AssertionError('Wall-mode command overlapped the telemetry stream')
+                        mode = command.split()[1]
+                        if scenario == 'wall_probe_timeout' or (scenario == 'wall_after_timeout' and self.ever_started):
+                            return
+                        if scenario in ('old_firmware', 'no_wall_ekf', 'unsupported_wall_switch'):
+                            self.text(b'Unknown command found.\r\n')
+                            return
+                        if mode == 'show':
+                            self.wall_shows += 1
+                            if scenario == 'wall_timeout' and self.wall_sets:
+                                return
+                            if scenario == 'wall_readback_mismatch' and self.wall_sets:
+                                self.wall_mode = 'legacy'
+                        else:
+                            self.wall_sets += 1
+                            if scenario == 'wall_busy':
+                                self.text(b'WALL_EKF_ERROR busy\r\n')
+                                return
+                            self.wall_mode = 'legacy' if scenario == 'wall_mismatch' else mode
+                        self.text(('WALL_EKF mode:{} active:0 e_mm:1.0 psi_rad:0.01 var_e_mm2:2.0 '
+                                   'var_psi_rad2:0.0001 candidate:3 accepted:3 nis_l:0.2 nis_r:0.3 updates:{} corners:2\r\n'
+                                   .format(self.wall_mode, 7 if self.ever_started and self.wall_mode != 'legacy' else 0)).encode())
                     elif command.startswith(('explore start', 'shortest start')):
                         self.run_tag = 'SHORTEST' if command.startswith('shortest') else 'EXPLORE'
                         self.assert_stream_ready()
@@ -273,8 +386,10 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                             self.text(b'EXPLORE_ERROR low_battery voltage_mv:6900 limit_mv:7000\r\n')
                             return
                         self.exploring = True
+                        self.ever_started = True
                         self.text((self.run_tag + '_WAIT_SENSOR goal:7,7,2 motion:plain route:roundtrip\r\n').encode())
-                        if scenario in ('complete', 'restart', 'duplex_sensitive', 'explore_then_shortest'):
+                        if scenario in ('complete', 'restart', 'duplex_sensitive', 'explore_then_shortest',
+                                        'wall_modes', 'no_wall_ekf', 'wall_after_timeout'):
                             async def complete():
                                 await asyncio.sleep(0.1)
                                 self.text((self.run_tag + '_PHASE name:outward\r\n').encode())
@@ -284,7 +399,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                                 self.text((self.run_tag + '_PHASE name:return\r\n').encode())
                                 await asyncio.sleep(0.25)
                                 self.exploring = False
-                                self.text((self.run_tag + '_END result:complete x:0 y:0 dir:0\r\n').encode())
+                                self.end('complete')
                             self.complete_task = asyncio.create_task(complete())
 
             def assert_stream_ready(self):
@@ -299,7 +414,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
             await wait_until(lambda: session.state == 'idle')
             self.assertEqual(session.capture.rows, 0)
             self.assertNotIn(1, controls)
-            if scenario == 'old_firmware':
+            if scenario in ('old_firmware', 'wall_probe_timeout'):
                 self.assertFalse(session.ready())
                 session.action('start', explore.ExploreOptions())
                 await asyncio.sleep(0.2)
@@ -314,10 +429,14 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                 self.assertTrue(session.ready())
                 session.action('disconnect')
                 return
-            for run in range(2 if scenario in ('restart', 'explore_then_shortest') else 1):
+            for run in range(2 if scenario in ('restart', 'explore_then_shortest', 'wall_modes') else 1):
                 previous_results = sum(kind in ('result', 'run_error') for kind, _ in events)
-                options = (explore.ShortestOptions() if scenario == 'explore_then_shortest' and run == 1 else
-                           explore.ShortestOptions(maze_source='flash') if scenario == 'shortest_stop' else explore.ExploreOptions())
+                options = (explore.ExploreOptions(wall_ekf_mode='legacy' if run == 0 else 'control') if scenario == 'wall_modes' else
+                           explore.ExploreOptions(wall_ekf_mode='control') if scenario in (
+                               'wall_busy', 'wall_mismatch', 'wall_readback_mismatch', 'wall_timeout',
+                               'unsupported_wall_switch', 'cancel_wall_prepare') else
+                           explore.ShortestOptions() if scenario == 'explore_then_shortest' and run == 1 else
+                           explore.ShortestOptions(maze_source='flash', wall_ekf_mode='control') if scenario == 'shortest_stop' else explore.ExploreOptions())
                 if isinstance(options, explore.ShortestOptions):
                     self.assertTrue(session.ready(options))
                 session.action('start', options)
@@ -336,7 +455,8 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             session = explore.ExploreSession(output_root=directory, emit=emit)
-            with patch('bleak.BleakClient', Client), patch('bleak.BleakScanner', Scanner):
+            with patch('bleak.BleakClient', Client), patch('bleak.BleakScanner', Scanner), \
+                 patch.object(explore, 'SHELL_CHAR_INTERVAL_S', .001), patch.object(explore, 'WALL_EKF_TIMEOUT_S', .1):
                 driver = asyncio.create_task(drive())
                 try:
                     if scenario == 'no_log':
@@ -351,7 +471,9 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
             with (session.directory / 'telemetry.csv').open(encoding='utf-8', newline='') as f:
                 rows = list(csv.DictReader(f))
             records = [json.loads(line) for line in (session.directory / 'events.jsonl').read_text(encoding='utf-8').splitlines()]
-            if scenario in ('idle', 'old_firmware', 'no_log'):
+            rejected_wall = scenario in ('wall_busy', 'wall_mismatch', 'wall_readback_mismatch', 'wall_timeout',
+                                         'unsupported_wall_switch', 'cancel_wall_prepare')
+            if scenario in ('idle', 'old_firmware', 'no_log', 'wall_probe_timeout') or rejected_wall:
                 self.assertEqual(len(rows), 0)
             else:
                 self.assertGreater(len(rows), 0)
@@ -361,13 +483,16 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(clients[0].command, b'')
             self.assertEqual(controls[-2:], [2, 0])
             self.assertTrue(any(record['event'] == 'summary' for record in records))
-            if scenario in ('old_firmware', 'idle', 'no_log'):
+            if scenario in ('old_firmware', 'idle', 'no_log', 'wall_probe_timeout', 'cancel_log_prepare') or rejected_wall:
                 self.assertFalse(any(command.startswith('explore start') for command in commands))
                 self.assertNotIn(3, controls)
-                if scenario != 'no_log':
+                if scenario not in ('no_log', 'cancel_log_prepare'):
                     self.assertFalse(list(session.directory.glob('run_*.json')))
+                if scenario == 'cancel_log_prepare':
+                    setting = json.loads(next(session.directory.glob('run_*.json')).read_text(encoding='utf-8'))
+                    self.assertEqual(setting['result']['result'], 'cancelled_before_start')
             else:
-                count = 2 if scenario in ('restart', 'explore_then_shortest') else 1
+                count = 2 if scenario in ('restart', 'explore_then_shortest', 'wall_modes') else 1
                 self.assertEqual(sum(command.startswith(('explore start', 'shortest start')) for command in commands), count)
                 if scenario == 'explore_then_shortest':
                     self.assertEqual(sum(command.startswith('shortest start') for command in commands), 1)
@@ -378,6 +503,45 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual(settings[1]['options']['maze_source'], 'ram')
                 self.assertIn(3, controls)
                 self.assertEqual(len(list(session.directory.glob('run_*.json'))), count)
+                settings = [json.loads(p.read_text(encoding='utf-8')) for p in sorted(session.directory.glob('run_*.json'))]
+                for setting in settings:
+                    self.assertIn('wall_ekf', setting)
+                    if setting['run_type'] == 'shortest' and scenario != 'start_error':
+                        self.assertEqual(setting['wall_control_stats']['diagonal_ekf_cycles'], '60')
+                        self.assertEqual(setting['wall_control_stats']['diagonal_segments'], '2')
+                    if setting['run_type'] == 'explore':
+                        self.assertNotIn('wall_control_stats', setting)
+                    if setting['run_type'] == 'explore' and scenario not in ('no_wall_ekf', 'start_error'):
+                        diagnostics = setting['turn_diagnostics']
+                        self.assertTrue(diagnostics['complete'])
+                        self.assertEqual(diagnostics['summary']['front_diff'], '1')
+                        self.assertEqual([e['index'] for e in diagnostics['events']], ['0', '1'])
+                        self.assertEqual(diagnostics['events'][0]['ms'], '1234')
+                    else:
+                        self.assertNotIn('turn_diagnostics', setting)
+                    if scenario != 'no_wall_ekf':
+                        self.assertEqual(setting['wall_ekf']['confirmed_mode'], setting['wall_ekf']['before']['mode'])
+                        if scenario == 'wall_after_timeout':
+                            self.assertIsNone(setting['wall_ekf']['after'])
+                            self.assertIn('after_error', setting['wall_ekf'])
+                        else:
+                            expected_updates = '7' if scenario != 'start_error' and setting['wall_ekf']['confirmed_mode'] != 'legacy' else '0'
+                            self.assertEqual(setting['wall_ekf']['after']['updates'], expected_updates)
+                        self.assertIn('telemetry_start', setting)
+                        self.assertIn('telemetry_end', setting)
+                        self.assertIn('result', setting)
+                    else:
+                        self.assertIsNone(setting['wall_ekf']['confirmed_mode'])
+                if scenario == 'wall_modes':
+                    self.assertEqual([s['wall_ekf']['confirmed_mode'] for s in settings], ['legacy', 'control'])
+                    self.assertEqual([s['wall_ekf']['after']['mode'] for s in settings], ['legacy', 'control'])
+                    for mode in ('legacy', 'control'):
+                        self.assertIn('wall_ekf ' + mode, commands)
+                    self.assertGreaterEqual(commands.count('wall_ekf show'), 5)
+                if scenario == 'no_wall_ekf':
+                    self.assertEqual([c for c in commands if c.startswith('wall_ekf')], ['wall_ekf show'])
+                if scenario == 'shortest_stop':
+                    self.assertEqual(settings[0]['wall_ekf']['confirmed_mode'], 'control')
                 self.assertTrue(any(kind == ('run_error' if scenario == 'start_error' else 'result') for kind, _ in events))
             if scenario == 'complete':
                 self.assertGreater(len(running_rows), 1)
@@ -417,8 +581,107 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
     async def test_older_firmware_never_receives_a_motion_command(self):
         await self.exercise('old_firmware')
 
+    async def test_wall_modes_are_applied_read_back_and_saved_per_run_on_one_link(self):
+        await self.exercise('wall_modes')
+
+    async def test_older_exploration_firmware_can_run_without_claiming_a_wall_mode(self):
+        await self.exercise('no_wall_ekf')
+
+    async def test_failed_wall_mode_verification_never_arms_or_starts_motion(self):
+        for scenario in ('wall_busy', 'wall_mismatch', 'wall_readback_mismatch', 'wall_timeout', 'unsupported_wall_switch'):
+            with self.subTest(scenario=scenario):
+                await self.exercise(scenario)
+
+    async def test_stop_during_wall_mode_preparation_never_starts_motion(self):
+        await self.exercise('cancel_wall_prepare')
+
+    async def test_stop_after_logs_start_cancels_the_typed_motion_command(self):
+        await self.exercise('cancel_log_prepare')
+
+    async def test_silent_probe_is_not_treated_as_unsupported_firmware(self):
+        await self.exercise('wall_probe_timeout')
+
+    async def test_post_run_query_failure_is_saved_without_fabricating_state(self):
+        await self.exercise('wall_after_timeout')
+
 
 class GuiTests(unittest.TestCase):
+    def test_turn_500_maps_to_plain500_and_diagonal_stats_are_visible(self):
+        root = gui.tk.Tk()
+        root.withdraw()
+        try:
+            app = gui.ExploreApp(root)
+            app.handle_event('shortest_capability', {'mouse': 'A', 'profiles': 'plain700,plain500', 'ram_maze': '1', 'diagonal_ekf': '1'})
+            app.run_mode.set('最短走行')
+            app.handle_event('telemetry', {'rows': 0, 'lost': 0, 'crc_errors': 0, 'ready': True,
+                'shortest_ready': True, 'ram_maze': True, 'state': 'idle', 'time_ms': None, 'values': {},
+                'wall_ekf_supported': True})
+            actions = []
+            app.session = SimpleNamespace(action=lambda *args: actions.append(args))
+            app.wall_ekf_mode.set('EKF制御（control）')
+            self.assertIn('turn_500', app.profile.get())
+            app.start()
+            self.assertEqual(actions[-1][1].profile, 'plain500')
+            self.assertEqual(actions[-1][1].wall_ekf_mode, 'control')
+            app.handle_event('wall_stats', {'diagonal_cycles': '100', 'diagonal_ekf_cycles': '60', 'diagonal_updates': '4', 'diagonal_segments': '2'})
+            self.assertIn('60/100', app.diagonal_stats_text.get())
+            self.assertIn('2区間', app.diagonal_stats_text.get())
+            app.handle_event('wall_stats', {'diagonal_cycles': '100', 'diagonal_ekf_cycles': '60',
+                'diagonal_updates': '4', 'diagonal_segments': '2', 'diagonal_controller': '2',
+                'diagonal_fallback_cycles': '40', 'diagonal_front_blocked_cycles': '3'})
+            self.assertIn('従来入力 40周期', app.diagonal_stats_text.get())
+            self.assertIn('前方除外 3周期', app.diagonal_stats_text.get())
+            app.handle_event('wall_stats', {'diagonal_cycles': '100', 'diagonal_ekf_cycles': '60',
+                'diagonal_updates': '4', 'diagonal_segments': '2', 'diagonal_edges_right': '12', 'diagonal_edges_left': '13'})
+            self.assertIn('壁切れ 右 12回・左 13回', app.diagonal_stats_text.get())
+            app.start()
+            self.assertNotIn('60/100', app.diagonal_stats_text.get())
+        finally:
+            root.destroy()
+
+    def test_turn_reason_counters_are_visible_after_exploration(self):
+        root = gui.tk.Tk()
+        root.withdraw()
+        try:
+            app = gui.ExploreApp(root)
+            app.handle_event('turn_stats', {'side': '2', 'front_diff': '3', 'front_near': '1', 'suppressed': '4'})
+            self.assertIn('2回', app.turn_stats_text.get())
+            self.assertIn('3回', app.turn_stats_text.get())
+            self.assertIn('4回', app.turn_stats_text.get())
+        finally:
+            root.destroy()
+
+    def test_wall_mode_selection_reaches_both_run_types_and_is_locked_while_running(self):
+        root = gui.tk.Tk()
+        root.withdraw()
+        try:
+            app = gui.ExploreApp(root)
+            snapshot = {'rows': 0, 'lost': 0, 'crc_errors': 0, 'ready': True, 'shortest_ready': True,
+                        'state': 'idle', 'time_ms': None, 'values': {}, 'wall_ekf_supported': True,
+                        'wall_ekf': {'mode': 'shadow'}}
+            app.handle_event('telemetry', snapshot)
+            self.assertEqual(str(app.wall_ekf_choice['state']), 'readonly')
+            self.assertIn('shadow', app.wall_ekf_text.get())
+            actions = []
+            app.session = SimpleNamespace(action=lambda *args: actions.append(args))
+            app.wall_ekf_mode.set('EKF制御（control）')
+            app.start()
+            self.assertEqual(actions[-1][1].wall_ekf_mode, 'control')
+            app.wall_ekf_mode.set('従来制御（legacy）')
+            app.run_mode.set('最短走行')
+            app.handle_event('shortest_capability', {'mouse': 'A', 'profiles': 'plain500,plain700', 'ram_maze': '1', 'diagonal_ekf': '1'})
+            app.start()
+            self.assertIsInstance(actions[-1][1], explore.ShortestOptions)
+            self.assertEqual(actions[-1][1].wall_ekf_mode, 'legacy')
+            app.handle_event('state', 'running')
+            self.assertEqual(str(app.wall_ekf_choice['state']), 'disabled')
+            self.assertEqual(str(app.stop_button['state']), 'normal')
+            app.handle_event('telemetry', dict(snapshot, wall_ekf_supported=False, wall_ekf=None))
+            self.assertEqual(str(app.wall_ekf_choice['state']), 'disabled')
+            self.assertEqual(app.selected_wall_ekf_mode(), 'keep')
+        finally:
+            root.destroy()
+
     def test_shortest_map_gate_profile_selection_and_stop_controls(self):
         root = gui.tk.Tk()
         root.withdraw()

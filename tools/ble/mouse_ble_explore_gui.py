@@ -22,6 +22,11 @@ STATE_LABELS = {
     'running': '経路計算・走行中', 'stopping': '走行停止を要求中',
 }
 RUN_STATES = ('starting', 'waiting_sensor', 'running', 'stopping')
+WALL_EKF_CHOICES = {
+    '従来制御（legacy）': 'legacy',
+    'EKF制御（control）': 'control',
+    '従来制御＋EKF並行計算（shadow）': 'shadow',
+}
 
 
 class ExploreApp:
@@ -32,6 +37,7 @@ class ExploreApp:
         self.closing = False
         self.close_requested_at = None
         self.snapshot = {}
+        self.last_run_error = None
         self.history = deque(maxlen=300)
         self.name = tk.StringVar(value='HY0020-MOUSE')
         self.address = tk.StringVar()
@@ -41,8 +47,14 @@ class ExploreApp:
         self.limit = tk.IntVar(value=360)
         self.roundtrip, self.accelerated = tk.BooleanVar(value=True), tk.BooleanVar(value=False)
         self.run_mode = tk.StringVar(value='探索')
-        self.profile = tk.StringVar(value='plain700')
+        self.profile = tk.StringVar(value='turn_500（plain500）')
         self.maze_source = tk.StringVar(value='直近のBLE探索（RAM）')
+        self.wall_ekf_mode = tk.StringVar(value='従来制御＋EKF並行計算（shadow）')
+        self.wall_ekf_text = tk.StringVar(value='機体の壁制御モード: 未確認')
+        self.turn_stats_text = tk.StringVar(value='探索の補正回数: 走行後に表示')
+        self.diagonal_stats_text = tk.StringVar(value='斜めEKF: 接続後に対応確認')
+        self.diagonal_ekf_supported = False
+        self.turn_diagnostics_supported = False
         self.profiles = []
         self.status = tk.StringVar(value='未接続')
         self.summary = tk.StringVar(value='受信 0 件  /  欠落 0 件  /  CRC 0 件')
@@ -108,7 +120,7 @@ class ExploreApp:
         self.mode_choice.grid(row=1, column=0, sticky='w', pady=(8, 0))
         self.mode_choice.bind('<<ComboboxSelected>>', lambda event: self.update_run_mode())
         ttk.Label(run, text='最短プロファイル').grid(row=1, column=1, columnspan=2, pady=(8, 0))
-        self.profile_choice = ttk.Combobox(run, textvariable=self.profile, values=('plain700',), state='disabled', width=24)
+        self.profile_choice = ttk.Combobox(run, textvariable=self.profile, values=('turn_500（plain500）',), state='disabled', width=24)
         self.profile_choice.grid(row=1, column=3, columnspan=2, pady=(8, 0))
         self.profile_choice.bind('<<ComboboxSelected>>', lambda event: self.update_run_mode())
         self.maze_choice = ttk.Combobox(run, textvariable=self.maze_source,
@@ -116,12 +128,20 @@ class ExploreApp:
         self.maze_choice.grid(row=1, column=5, columnspan=3, pady=(8, 0))
         self.maze_choice.bind('<<ComboboxSelected>>', lambda event: self.update_run_mode())
         self.run_controls.extend((self.mode_choice, self.profile_choice, self.maze_choice))
+        ttk.Label(run, text='壁制御').grid(row=2, column=0, sticky='w', pady=(8, 0))
+        self.wall_ekf_choice = ttk.Combobox(run, textvariable=self.wall_ekf_mode,
+                                           values=tuple(WALL_EKF_CHOICES), state='disabled', width=30)
+        self.wall_ekf_choice.grid(row=2, column=1, columnspan=3, sticky='w', pady=(8, 0))
+        ttk.Label(run, textvariable=self.wall_ekf_text, wraplength=440).grid(
+            row=2, column=4, columnspan=4, sticky='w', padx=(8, 0), pady=(8, 0))
         self.start_button = ttk.Button(run, text='走行開始 → 手かざし待ち', command=self.start, state='disabled')
-        self.start_button.grid(row=2, column=0, columnspan=3, sticky='ew', pady=(10, 0))
+        self.start_button.grid(row=3, column=0, columnspan=3, sticky='ew', pady=(10, 0))
         self.stop_button = ttk.Button(run, text='走行を停止', command=self.stop, state='disabled')
-        self.stop_button.grid(row=2, column=3, columnspan=2, sticky='ew', padx=8, pady=(10, 0))
-        ttk.Label(run, text='手かざし待ち・経路計算・走行中にログを記録します。').grid(row=2, column=5, columnspan=3, sticky='w', pady=(10, 0))
+        self.stop_button.grid(row=3, column=3, columnspan=2, sticky='ew', padx=8, pady=(10, 0))
+        ttk.Label(run, text='選択した壁制御は走行開始前に適用・記録します。').grid(row=3, column=5, columnspan=3, sticky='w', pady=(10, 0))
         ttk.Label(panel, textvariable=self.readiness, wraplength=1100).pack(fill='x', pady=(0, 5))
+        ttk.Label(panel, textvariable=self.turn_stats_text).pack(fill='x', pady=(0, 4))
+        ttk.Label(panel, textvariable=self.diagonal_stats_text, wraplength=1100).pack(fill='x', pady=(0, 4))
         status_line = ttk.Frame(panel)
         status_line.pack(fill='x')
         ttk.Label(status_line, textvariable=self.summary, font=('Yu Gothic UI', 11, 'bold')).pack(side='left')
@@ -178,10 +198,16 @@ class ExploreApp:
             return
         self.session = session
         self.snapshot = {}
+        self.last_run_error = None
         self.history.clear()
         self.summary.set('受信 0 件  /  欠落 0 件  /  CRC 0 件')
         self.battery_text.set('電池 — V')
         self.battery_limit = None
+        self.wall_ekf_text.set('機体の壁制御モード: 未確認')
+        self.turn_diagnostics_supported = False
+        self.turn_stats_text.set('探索の補正回数: 走行後に表示')
+        self.diagonal_stats_text.set('斜めEKF: 接続後に対応確認')
+        self.diagonal_ekf_supported = False
         self.file_path.set('保存先: 接続後に新しい記録フォルダを作成します')
         self.readiness.set('BLE接続・電圧・走行コマンド対応を確認中です。')
         self.profiles = []
@@ -204,15 +230,25 @@ class ExploreApp:
         try:
             if self.run_mode.get() == '最短走行':
                 options = explore.ShortestOptions(self.goal_x.get(), self.goal_y.get(), self.goal_size.get(),
-                                                   self.profile.get(), self.selected_maze(), self.limit.get())
+                                                   self.selected_profile(), self.selected_maze(), self.limit.get(),
+                                                   self.selected_wall_ekf_mode())
             else:
                 options = explore.ExploreOptions(self.goal_x.get(), self.goal_y.get(), self.goal_size.get(),
-                                                 self.accelerated.get(), self.roundtrip.get(), self.limit.get())
+                                                 self.accelerated.get(), self.roundtrip.get(), self.limit.get(),
+                                                 self.selected_wall_ekf_mode())
             options.command()
         except (ValueError, tk.TclError) as error:
             messagebox.showerror('走行設定', str(error), parent=self.root)
             return
         if self.session:
+            self.last_run_error = None
+            self.diagonal_stats_text.set('斜めEKF: 走行後に適用周期・観測更新数を表示'
+                if isinstance(options, explore.ShortestOptions) and self.diagonal_ekf_supported
+                else '斜めEKF: このファームウェアは未対応' if isinstance(options, explore.ShortestOptions)
+                else '斜めの集計: 探索は対象外')
+            self.turn_stats_text.set('探索の補正集計: 最短走行は対象外' if isinstance(options, explore.ShortestOptions)
+                                     else '探索の補正回数: 走行後に表示' if self.turn_diagnostics_supported
+                                     else '補正理由の記録: このファームウェアは未対応')
             self.start_button.configure(state='disabled')
             self.session.action('start', options)
 
@@ -223,18 +259,32 @@ class ExploreApp:
     def selected_maze(self):
         return 'flash' if self.maze_source.get() == '保存済み迷路（Flash）' else 'ram'
 
+    @staticmethod
+    def profile_label(key):
+        return 'turn_{}（{}）'.format(key[5:], key) if key.startswith('plain') and key[5:].isdigit() else key
+
+    def selected_profile(self):
+        return next((key for key in self.profiles if self.profile_label(key) == self.profile.get()), self.profile.get())
+
+    def selected_wall_ekf_mode(self):
+        if not self.snapshot.get('wall_ekf_supported', False):
+            return 'keep'
+        return WALL_EKF_CHOICES[self.wall_ekf_mode.get()]
+
     def update_run_mode(self, state=None):
         state = state or self.snapshot.get('state', 'disconnected')
         busy = state in RUN_STATES
         shortest = self.run_mode.get() == '最短走行'
         self.mode_choice.configure(state='disabled' if busy else 'readonly')
+        self.wall_ekf_choice.configure(state='readonly' if state == 'idle' and
+                                       self.snapshot.get('wall_ekf_supported', False) else 'disabled')
         for widget in (self.profile_choice, self.maze_choice):
             widget.configure(state='readonly' if shortest and not busy else 'disabled')
         for widget in self.explore_controls:
             widget.configure(state='disabled' if shortest or busy else 'normal')
         ready = self.snapshot.get('ready', False)
         if shortest:
-            ready = (self.snapshot.get('shortest_ready', False) and self.profile.get() in self.profiles and
+            ready = (self.snapshot.get('shortest_ready', False) and self.selected_profile() in self.profiles and
                      (self.selected_maze() == 'flash' or self.snapshot.get('ram_maze', False)))
         self.start_button.configure(state='normal' if ready and state == 'idle' else 'disabled')
 
@@ -275,29 +325,61 @@ class ExploreApp:
                 widget.configure(state='disabled' if busy else 'normal')
             self.update_run_mode(data)
         elif kind == 'capability':
+            self.turn_diagnostics_supported = data.get('turn_diag') == '1'
+            if not self.turn_diagnostics_supported:
+                self.turn_stats_text.set('補正理由の記録: このファームウェアは未対応')
             self.goal_x.set(int(data['goal_x']))
             self.goal_y.set(int(data['goal_y']))
             self.goal_size.set(int(data['goal_size']))
             self._message('探索対応ファームウェア: 機体 ' + data['mouse'])
         elif kind == 'shortest_capability':
             self.profiles = data.get('profiles', '').split(',')
-            self.profile_choice.configure(values=self.profiles)
-            if self.profile.get() not in self.profiles:
-                self.profile.set(self.profiles[0] if self.profiles else '')
+            self.profile_choice.configure(values=[self.profile_label(key) for key in self.profiles])
+            if self.selected_profile() not in self.profiles:
+                self.profile.set(self.profile_label('plain500' if 'plain500' in self.profiles else self.profiles[0]) if self.profiles else '')
+            self.diagonal_ekf_supported = data.get('diagonal_ekf') == '1'
+            self.diagonal_stats_text.set('斜めEKF: 対応（controlで使用、shadowで比較計算）'
+                                         if self.diagonal_ekf_supported else '斜めEKF: このファームウェアは未対応')
             self._message('最短走行対応: 機体 {} / RAM迷路 {}'.format(data['mouse'], 'あり' if data.get('ram_maze') == '1' else 'なし'))
         elif kind == 'output':
             self.file_path.set('保存先: ' + data)
+        elif kind == 'turn_stats':
+            self.turn_stats_text.set('探索の補正: 側壁 {}回 / 前壁左右差 {}回 / 前壁接近 {}回 / 未確認の閾値超え除外 {}回'.format(
+                data.get('side', '?'), data.get('front_diff', '?'), data.get('front_near', '?'), data.get('suppressed', '?')))
+            self._message('探索補正の集計: ' + str(data))
+        elif kind == 'wall_stats':
+            self.diagonal_stats_text.set('斜め {}区間: EKF適用 {}/{}周期 ／ 観測更新 {}回'.format(
+                data.get('diagonal_segments', '?'), data.get('diagonal_ekf_cycles', '?'),
+                data.get('diagonal_cycles', '?'), data.get('diagonal_updates', '?'))
+                + (' ／ 従来入力 {}周期 ／ 前方除外 {}周期'.format(
+                    data['diagonal_fallback_cycles'], data.get('diagonal_front_blocked_cycles', '?'))
+                   if 'diagonal_fallback_cycles' in data else '')
+                + ('（斜めの制御対象なし）' if data.get('diagonal_cycles') == '0' else ''))
+            if 'diagonal_edges_right' in data:
+                self.diagonal_stats_text.set(self.diagonal_stats_text.get()
+                    + ' ／ 壁切れ 右 {}回・左 {}回'.format(data['diagonal_edges_right'], data.get('diagonal_edges_left', '?')))
+            self._message('最短走行の壁制御: ' + str(data))
+        elif kind == 'wall_ekf':
+            self.wall_ekf_text.set('機体: {} ／ 選択値は次回開始時に適用'.format(data['mode']))
+            self._message('壁制御: ' + str(data))
+        elif kind == 'wall_ekf_unavailable':
+            self.wall_ekf_text.set('壁制御モード未確認・切替非対応の場合は機体設定を維持')
+            self._message(data)
         elif kind == 'telemetry':
             new_sample = data['time_ms'] != self.snapshot.get('time_ms')
             self.snapshot = data
+            if data.get('wall_ekf'):
+                self.wall_ekf_text.set('機体: {} ／ 選択値は次回開始時に適用'.format(data['wall_ekf']['mode']))
             self.summary.set('受信 {:,} 件  /  欠落 {:,} 件  /  CRC {:,} 件'.format(data['rows'], data['lost'], data['crc_errors']))
             self.update_run_mode()
             if str(self.start_button['state']) == 'normal':
-                self.readiness.set('開始可能。機体を (0, 0) 北向きに置いてください。開始後にログ受信・手かざし確認を行います。')
+                self.readiness.set(self.last_run_error or '開始可能。機体を (0, 0) 北向きに置いてください。開始後にログ受信・手かざし確認を行います。')
             elif data['state'] == 'starting':
-                self.readiness.set('開始コマンドを準備し、ログ受信を確認中です。まだ走行を開始していません。')
+                self.readiness.set('壁制御モードの適用・確認と、ログ受信の確認中です。まだ走行を開始していません。')
             elif data['state'] in RUN_STATES:
                 self.readiness.set('ログを保存中です。停止ボタンで走行・手かざし待ちを中断できます。')
+            elif data.get('wall_ekf_probe_failed'):
+                self.readiness.set('壁制御モードの応答を確認できません。機体との通信を確認して再接続してください。')
             elif self.run_mode.get() == '最短走行' and data.get('shortest_supported') and self.selected_maze() == 'ram' and not data.get('ram_maze'):
                 self.readiness.set('RAM迷路がありません。同じ電源投入中にBLE探索を完了するか、保存済み迷路（Flash）を選んでください。')
             else:
@@ -323,6 +405,7 @@ class ExploreApp:
         elif kind in ('error', 'run_error', 'text'):
             self._message(data)
             if kind in ('error', 'run_error'):
+                self.last_run_error = str(data)
                 self.readiness.set(str(data))
 
     def poll(self):
