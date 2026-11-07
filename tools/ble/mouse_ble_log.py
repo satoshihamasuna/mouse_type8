@@ -82,10 +82,14 @@ class StreamDecoder:
             checksum = struct.unpack_from('<H', self.buffer, frame.size - 2)[0]
             if binascii.crc_hqx(self.buffer[:frame.size - 2], 0xffff) != checksum:
                 self.crc_errors += 1
+                if text_sink:
+                    text_sink(bytes(self.buffer[:1]))
                 del self.buffer[0]
                 continue
             _, sequence, time_ms, period_ms, *values = frame.unpack_from(self.buffer)
             if not MIN_PERIOD_MS <= period_ms <= 1000:
+                if text_sink:
+                    text_sink(bytes(self.buffer[:1]))
                 del self.buffer[0]
                 continue
             samples.append(Sample(sequence, time_ms, period_ms, tuple(values[:-1])))

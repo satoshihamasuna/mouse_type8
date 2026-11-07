@@ -1,6 +1,8 @@
 """Expose the HY0020 mouse UART bridge as a local, binary-safe TCP stream."""
 import argparse
 import asyncio
+import contextlib
+import json
 from pathlib import Path
 import struct
 import sys
@@ -123,7 +125,61 @@ async def read_link_diagnostics(client, request_lock):
     return decode_link_diagnostics(payload)
 
 
+class GuiCapture:
+    """Record live frames while forwarding non-stream UART bytes unchanged."""
+    def __init__(self, output, period_ms):
+        from mouse_ble_log import CsvCapture, control_packet
+        control_packet(period_ms)
+        self.output, self.period_ms = Path(output), period_ms
+        self.output.parent.mkdir(parents=True, exist_ok=True)
+        self.files = contextlib.ExitStack()
+        try:
+            csv_file = self.files.enter_context(self.output.open('x', newline='', encoding='utf-8'))
+            self.raw = self.files.enter_context(self.output.with_suffix('.raw.bin').open('xb'))
+            self.shell = self.files.enter_context(self.output.with_suffix('.shell.bin').open('xb'))
+            self.capture = CsvCapture(csv_file)
+        except BaseException:
+            self.files.close()
+            raise
+
+    def feed(self, data, forward):
+        self.raw.write(data)
+        def text(data):
+            self.shell.write(data)
+            forward(data)
+        self.capture.feed(data, text)
+
+    def report(self):
+        latest = self.capture.latest
+        status = {'period_ms': self.period_ms, 'rows': self.capture.rows,
+                  'lost': self.capture.lost, 'crc_errors': self.capture.decoder.crc_errors,
+                  'latest_sequence': latest.sequence if latest else None,
+                  'latest_time_ms': latest.time_ms if latest else None}
+        temporary = self.output.with_suffix('.status.tmp')
+        temporary.write_text(json.dumps(status, indent=2), encoding='utf-8')
+        temporary.replace(self.output.with_suffix('.status.json'))
+        self.raw.flush()
+        self.shell.flush()
+        return status
+
+    def close(self):
+        try:
+            self.report()
+        finally:
+            self.files.close()
+
+
 async def run(args):
+    output = getattr(args, 'capture_output', None)
+    recorder = GuiCapture(output, getattr(args, 'capture_period_ms', 5)) if output else None
+    try:
+        return await run_link(args, recorder)
+    finally:
+        if recorder:
+            recorder.close()
+
+
+async def run_link(args, recorder=None):
     from bleak import BleakClient, BleakScanner
 
     print('Searching for {}...'.format(args.name), flush=True)
@@ -141,7 +197,7 @@ async def run(args):
     failure = None
     request_lock = asyncio.Lock()
 
-    def received(characteristic, data):
+    def forward(data):
         nonlocal failure
         if active_writer is None or active_writer.is_closing():
             return  # Do not replay bytes generated before a GUI session.
@@ -151,6 +207,17 @@ async def run(args):
             client_done.set()
             return
         active_writer.write(data)  # No text decoding or newline conversion.
+
+    def received(characteristic, data):
+        nonlocal failure
+        try:
+            if recorder:
+                recorder.feed(data, forward)
+            else:
+                forward(data)
+        except Exception as error:
+            failure = error
+            client_done.set()
 
     options = {'winrt': {'use_cached_services': False}} if sys.platform == 'win32' else {}
     async with BleakClient(device, disconnected_callback=lambda _: disconnected.set(), **options) as client:
@@ -167,7 +234,13 @@ async def run(args):
             session_task = asyncio.current_task()
             print('GUI connected; forwarding raw UART bytes', flush=True)
             try:
-                while data := await reader.read(1024):
+                while True:
+                    try:
+                        data = await reader.read(1024)
+                    except ConnectionResetError:
+                        break  # Windows GUI close can reset its localhost socket.
+                    if not data:
+                        break
                     await write_bytes(client, data, request_lock)
             except Exception as error:
                 failure = error
@@ -181,6 +254,10 @@ async def run(args):
 
         async def watch_health():
             while True:
+                if recorder:
+                    from mouse_ble_log import control_packet
+                    await write_bytes(client, control_packet(recorder.period_ms), request_lock)
+                    recorder.report()
                 await asyncio.sleep(1)
                 async with request_lock:
                     current = decode_status(await client.read_gatt_char(STATUS))
@@ -216,6 +293,12 @@ async def run(args):
             for task in (health_task, disconnected_task, done_task):
                 task.cancel()
             await asyncio.gather(health_task, disconnected_task, done_task, return_exceptions=True)
+            if recorder and not disconnected.is_set():
+                from mouse_ble_log import control_packet
+                try:
+                    await asyncio.wait_for(write_bytes(client, control_packet(recorder.period_ms, stop=True), request_lock), 1)
+                except Exception:
+                    pass  # The firmware stream lease also expires after disconnect.
     print('GUI session ended; BLE disconnected', flush=True)
 
 
@@ -224,9 +307,13 @@ def main():
     parser.add_argument('--name', default='HY0020-MOUSE')
     parser.add_argument('--address', help='optional Bluetooth address')
     parser.add_argument('--port', type=int, default=8765, help='localhost TCP port')
+    parser.add_argument('--capture-output', type=Path, help='record live frames to a new CSV while the GUI remains usable')
+    parser.add_argument('--capture-period-ms', type=int, default=5, help='live capture period, 3..1000 ms (default: 5)')
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error('--port must be between 1 and 65535')
+    if not 3 <= args.capture_period_ms <= 1000:
+        parser.error('--capture-period-ms must be between 3 and 1000')
     if sys.version_info < (3, 10):
         parser.error('Use Python 3.10+ with tools/ble/requirements-ble.txt installed')
     try:

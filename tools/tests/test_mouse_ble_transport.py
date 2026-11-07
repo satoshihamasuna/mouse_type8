@@ -1,7 +1,10 @@
 """Protocol tests use localhost and fake BLE peers; they never contact a robot."""
 import asyncio
+import binascii
 import contextlib
+import csv
 import io
+import json
 from pathlib import Path
 import shutil
 import socket
@@ -31,6 +34,45 @@ import mouse_ble_gateway as gateway
 import mouse_gui_ble as launcher
 import mouse_ble_shell as shell
 import mouse_ble_log as log
+
+
+class GuiCaptureTests(unittest.TestCase):
+    def test_live_frames_are_saved_and_other_binary_bytes_are_unchanged(self):
+        payload = struct.pack('<4sIIH55e', log.MAGIC, 7, 100, 5, *range(55))
+        live_frame = payload + struct.pack('<H', binascii.crc_hqx(payload, 0xffff))
+        saved_frame = struct.pack('<HH51H', 0xA55A, 7, *range(51))
+        other = b'DEBUG_WAIT_SENSOR\r\nBINARY\r\n' + saved_frame + b'\r\n> '
+        wire = other[:10] + live_frame + other[10:]
+        forwarded = []
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'trial.csv'
+            recorder = gateway.GuiCapture(output, 5)
+            try:
+                for offset in range(0, len(wire), 7):
+                    recorder.feed(wire[offset:offset + 7], forwarded.append)
+                self.assertEqual(recorder.report()['rows'], 1)
+            finally:
+                recorder.close()
+            self.assertEqual(b''.join(forwarded), other)
+            self.assertEqual(output.with_suffix('.raw.bin').read_bytes(), wire)
+            self.assertEqual(output.with_suffix('.shell.bin').read_bytes(), other)
+            status = json.loads(output.with_suffix('.status.json').read_text())
+            self.assertEqual((status['rows'], status['lost'], status['crc_errors']), (1, 0, 0))
+            with output.open(newline='') as handle:
+                rows = list(csv.DictReader(handle))
+            self.assertEqual(rows[0]['sequence'], '7')
+            self.assertEqual(rows[0]['time_ms'], '100')
+
+    def test_existing_csv_is_not_overwritten_and_invalid_period_creates_no_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'trial.csv'
+            with self.assertRaises(ValueError):
+                gateway.GuiCapture(output, 1)
+            self.assertFalse(output.exists())
+            output.write_text('keep this measurement', encoding='utf-8')
+            with self.assertRaises(FileExistsError):
+                gateway.GuiCapture(output, 5)
+            self.assertEqual(output.read_text(encoding='utf-8'), 'keep this measurement')
 
 
 class SerialCompatibilityTests(unittest.TestCase):
@@ -455,7 +497,7 @@ class GattTransportTests(unittest.IsolatedAsyncioTestCase):
             await shell.send_command(client, '日本語', asyncio.Lock(), 0)
         self.assertEqual(b''.join(client.writes), b'info ver\r')
 
-    async def test_gateway_round_trip_with_a_fake_ble_peer(self):
+    async def test_gateway_round_trip_and_gui_reset_with_a_fake_ble_peer(self):
         server_ready = asyncio.Event()
         listen_port = []
         original_start_server = asyncio.start_server
@@ -500,8 +542,10 @@ class GattTransportTests(unittest.IsolatedAsyncioTestCase):
                 writer.write(payload)
                 await writer.drain()
                 self.assertEqual(await asyncio.wait_for(reader.readexactly(len(payload)), timeout=3), payload)
-                writer.close()
-                await writer.wait_closed()
+                linger_format = 'HH' if sys.platform == 'win32' else 'ii'
+                writer.get_extra_info('socket').setsockopt(
+                    socket.SOL_SOCKET, socket.SO_LINGER, struct.pack(linger_format, 1, 0))
+                writer.transport.abort()
                 await asyncio.wait_for(task, timeout=3)
             finally:
                 if not task.done():

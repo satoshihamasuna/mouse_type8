@@ -53,6 +53,15 @@ class DecoderTests(unittest.TestCase):
         self.assertEqual([sample.sequence for sample in samples], [2])
         self.assertEqual(decoder.crc_errors, 1)
 
+    def test_invalid_frame_magic_inside_other_binary_is_preserved(self):
+        decoder = log.StreamDecoder()
+        text = []
+        binary = b'BINARY\r\n' + log.MAGIC + bytes(log.FRAME.size) + b'\r\n> '
+        samples = decoder.feed(binary + frame(), text.append)
+        self.assertEqual(len(samples), 1)
+        self.assertEqual(b''.join(text), binary)
+        self.assertEqual(decoder.crc_errors, 1)
+
     def test_csv_counts_missing_frames_and_timestamp_and_sequence_wrap(self):
         output = io.StringIO()
         capture = log.CsvCapture(output)
