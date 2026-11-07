@@ -17,6 +17,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from video_marker_pose import profile_log_time_s
+
 
 ROOT = Path(__file__).resolve().parents[2]
 VIDEO_ROOT = ROOT.parent / "video3"
@@ -173,13 +175,13 @@ def video_result(metrics_path: Path, target_x: float, target_y: float) -> dict:
     start_s = float(metrics.get(
         "profile_video_start_s",
         float(metrics["log_time_zero_at_video_s"])
-        + .001 * float(metrics["log_omega_start_frame"])
+        + profile_log_time_s(metrics, "start")
         * float(metrics["slow_motion_factor"]),
     ))
     end_s = float(metrics.get(
         "profile_video_end_s",
         float(metrics["log_time_zero_at_video_s"])
-        + .001 * float(metrics["log_omega_end_frame"])
+        + profile_log_time_s(metrics, "end")
         * float(metrics["slow_motion_factor"]),
     ))
     xy_start = interp_xy(pose, start_s)

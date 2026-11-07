@@ -14,7 +14,7 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from video_marker_pose import ARUCO_INNER_CORNERS, WORLD_CORNERS
+from video_marker_pose import ARUCO_CORNER_IDS, WORLD_CORNERS, inner_aruco_points
 
 
 OUTPUT_NAME = "trajectory_overlay_profile_points.jpg"
@@ -32,16 +32,12 @@ def marker_points(image: np.ndarray) -> dict[int, np.ndarray]:
         int(marker_id): quad.reshape(4, 2)
         for marker_id, quad in zip(ids.ravel(), corners)
     }
-    return {
-        marker_id: found[marker_id][corner]
-        for marker_id, corner in ARUCO_INNER_CORNERS.items()
-        if marker_id in found
-    }
+    return inner_aruco_points(found)
 
 
 def complete_quad(points: dict[int, np.ndarray]) -> np.ndarray | None:
     """Return the four field corners; infer one missing corner as a parallelogram."""
-    order = list(ARUCO_INNER_CORNERS)
+    order = list(ARUCO_CORNER_IDS)
     indexed = {order.index(marker_id): point for marker_id, point in points.items()}
     if len(indexed) == 4:
         return np.float32([indexed[i] for i in range(4)])

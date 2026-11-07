@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 
 GRID_MM = 360.0
-ARUCO_INNER_CORNERS = {5: 2, 7: 3, 6: 1, 4: 0}
+ARUCO_CORNER_IDS = (5, 7, 6, 4)
 WORLD_CORNERS = np.float32(
     [[0.0, GRID_MM], [GRID_MM, GRID_MM], [0.0, 0.0], [GRID_MM, 0.0]]
 )
@@ -55,17 +55,27 @@ def colour_components(frame: np.ndarray, colour: str) -> list[tuple[np.ndarray, 
     return result
 
 
+def inner_aruco_points(found: dict[int, np.ndarray]) -> dict[int, np.ndarray]:
+    found = {marker_id: found[marker_id] for marker_id in ARUCO_CORNER_IDS if marker_id in found}
+    if not found:
+        return {}
+    # Printed markers may be rotated independently on the board. Their decoded
+    # vertex indices rotate too, so choose the vertex nearest the board centre.
+    centre = np.mean([quad.mean(axis=0) for quad in found.values()], axis=0)
+    return {marker_id: quad[np.argmin(np.sum((quad - centre) ** 2, axis=1))]
+            for marker_id, quad in found.items()}
+
+
 def detect_aruco_quad(frame: np.ndarray) -> np.ndarray | None:
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     corners, ids, _ = cv2.aruco.ArucoDetector(dictionary).detectMarkers(frame)
     if ids is None:
         return None
     found = {int(marker_id): quad.reshape(4, 2) for marker_id, quad in zip(ids.ravel(), corners)}
-    if not all(marker_id in found for marker_id in ARUCO_INNER_CORNERS):
+    if not all(marker_id in found for marker_id in ARUCO_CORNER_IDS):
         return None
-    return np.float32(
-        [found[marker_id][corner] for marker_id, corner in ARUCO_INNER_CORNERS.items()]
-    )
+    points = inner_aruco_points(found)
+    return np.float32([points[marker_id] for marker_id in ARUCO_CORNER_IDS])
 
 
 def transform_points(points: np.ndarray, homography: np.ndarray) -> np.ndarray:
@@ -257,9 +267,33 @@ def read_video_pose(
     return pose, fixed_quad, fps, len(valid_quads) / len(frames)
 
 
+def log_elapsed_seconds(raw: pd.DataFrame) -> np.ndarray:
+    """Use recorded milliseconds, relative to the first row, including tick wrap."""
+    key = "time_ms" if "time_ms" in raw else "cnt"
+    ticks = raw[key].to_numpy(float)
+    if not len(ticks) or not np.isfinite(ticks).all():
+        raise ValueError("log timestamps must be finite and nonempty")
+    steps = np.diff(ticks)
+    if key == "time_ms":
+        steps = np.mod(steps, 2 ** 32)
+        if np.any(steps >= 2 ** 31):
+            raise ValueError("log timestamps moved backwards")
+    if np.any(steps <= 0):
+        raise ValueError("log timestamps must be strictly increasing")
+    return np.concatenate(([0.0], np.cumsum(steps))) * .001
+
+
+def profile_log_time_s(metrics: dict, boundary: str) -> float:
+    """New metrics record seconds; legacy metrics used 1 ms row indexes."""
+    key = f"log_omega_{boundary}_time_s"
+    if key in metrics:
+        return float(metrics[key])
+    return .001 * float(metrics[f"log_omega_{boundary}_frame"])
+
+
 def integrate_log(path: Path) -> pd.DataFrame:
     raw = pd.read_csv(path)
-    time_s = raw["cnt"].to_numpy(float) * .001
+    time_s = log_elapsed_seconds(raw)
     velocity_mm_s = raw["ego.velo"].to_numpy(float) * 1000.0
     omega = raw["ego.rad_velo"].to_numpy(float)
     x = np.zeros(len(raw))
@@ -288,6 +322,7 @@ def integrate_log(path: Path) -> pd.DataFrame:
 def measure_log_length_phases(path: Path) -> dict[str, float | int]:
     """Measure Lstart/Lend-like distances from the log's length resets."""
     raw = pd.read_csv(path)
+    time_s = log_elapsed_seconds(raw)
     ideal_length = raw["ideal.length"].to_numpy(float)
     ego_length = raw["ego.length"].to_numpy(float)
     ideal_omega = raw["ideal.rad_velo"].to_numpy(float)
@@ -306,6 +341,8 @@ def measure_log_length_phases(path: Path) -> dict[str, float | int]:
         "log_front_reset_frame": reset_before,
         "log_omega_start_frame": omega_start,
         "log_omega_end_frame": omega_end,
+        "log_omega_start_time_s": float(time_s[omega_start]),
+        "log_omega_end_time_s": float(time_s[omega_end]),
         "log_rear_reset_frame": reset_after,
         "log_rear_next_reset_frame": reset_next,
         "log_measured_front_distance_mm": float(
@@ -417,12 +454,8 @@ def estimate_profile_matched_lengths(
     x = pose.center_x_mm.to_numpy()
     y = pose.center_y_mm.to_numpy()
     heading = np.unwrap(pose.heading_rad.to_numpy())
-    video_start = video_time_zero + .001 * float(
-        log_lengths["log_omega_start_frame"]
-    ) * slow_factor
-    video_end = video_time_zero + .001 * float(
-        log_lengths["log_omega_end_frame"]
-    ) * slow_factor
+    video_start = video_time_zero + profile_log_time_s(log_lengths, "start") * slow_factor
+    video_end = video_time_zero + profile_log_time_s(log_lengths, "end") * slow_factor
     start_heading = float(np.median(heading[:20]))
     end_heading = float(np.median(heading[-20:]))
     start_forward = np.array([math.cos(start_heading), math.sin(start_heading)])

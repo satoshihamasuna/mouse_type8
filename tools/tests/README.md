@@ -1,5 +1,11 @@
 # Pythonテスト
 
+動画の盤面較正は`python -m unittest discover -s tools/tests -p test_video_marker_pose.py -v`で確認します。
+OpenCVのArUco機能・NumPy・pandas・Matplotlibを使用し、印刷マーカーの回転によらない内側頂点の選択と、
+動画解析・プロファイル点の注記での較正の一致を検証します。
+切出しログの時刻原点、5/6 msの不等間隔、32 bit tick折返し、不正時刻の拒否、
+実時刻での距離積分と旋回区間の動画時刻変換も確認します。実機カメラには接続しません。
+
 リポジトリのルートディレクトリから、次のコマンドで全テストを実行します。
 
 ```powershell
