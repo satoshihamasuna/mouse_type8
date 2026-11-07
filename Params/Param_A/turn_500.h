@@ -45,10 +45,13 @@ const static t_ff_gain ff_gain_v90_L_500 = {
 
 const static t_pid_gain sp_gain_turn90_500 = {2.0,0.016,0.00};
 const static t_pid_gain om_gain_turn90_500 = {0.10f,0.01f,0.0f};
+// 2026-11-07 Mouse A, legacy/suction OFF: right-90 A/B logs in
+// tools/logs/20261107_033834_turn500_tuning/comparison_90/README.md.
+const static t_pid_gain om_gain_turn90_R_500 = {0.10f,0.008f,0.0f};
 const static t_turn_param_table slalom_L90_500_table = {0.50f, 37.5f,39.05,39.80, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_500_table = {0.50f,-37.5f,39.05,39.80,-90.0f,Turn_R};
 const static t_param param_L90_500 = {&slalom_L90_500_table,&sp_gain_turn90_500,&om_gain_turn90_500,&ff_gain_long_turn_L_500};
-const static t_param param_R90_500 = {&slalom_R90_500_table,&sp_gain_turn90_500,&om_gain_turn90_500,&ff_gain_long_turn_R_500};
+const static t_param param_R90_500 = {&slalom_R90_500_table,&sp_gain_turn90_500,&om_gain_turn90_R_500,&ff_gain_long_turn_R_500};
 
 const static t_pid_gain sp_gain_turn180_500 = {2.0,0.016,0.00};
 const static t_pid_gain om_gain_turn180_500 = {0.10f,0.01f,0.0f};
