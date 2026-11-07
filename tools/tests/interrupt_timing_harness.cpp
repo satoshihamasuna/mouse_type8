@@ -43,6 +43,21 @@ int main()
 	InterruptTiming::record(100, 132);
 	assert(InterruptTiming::sample().max_us == 0.5f);
 	assert(std::isnan(InterruptTiming::sample().period_us));
+	// The same microsecond durations must survive the 50 -> 100 MHz core change.
+	const uint32_t test_frequencies[] = {50000000U, 100000000U};
+	for (const uint32_t hz : test_frequencies) {
+		CycleCounter::state().hz = hz;
+		InterruptTiming::initialize();
+		unavailable();
+		InterruptTiming::set_logging_cycles(hz / 50000U);
+		InterruptTiming::record(0U, hz / 4000U);
+		InterruptTiming::record(hz / 1000U, hz / 1000U + hz / 4000U);
+		value = InterruptTiming::sample();
+		assert(fabsf(value.total_us - 250.0f) < 0.01f);
+		assert(fabsf(value.logging_us - 20.0f) < 0.01f);
+		assert(fabsf(value.period_us - 1000.0f) < 0.01f);
+		assert(fabsf(value.max_us - 250.0f) < 0.01f);
+	}
 	CycleCounter::state().supported = false;
 	InterruptTiming::initialize();
 	assert(!InterruptTiming::available() && InterruptTiming::now() == 0);

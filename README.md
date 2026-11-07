@@ -60,6 +60,35 @@ type8の横位置推定値（左正・mm）をzirconiaの偏差（右正・m）�
 3. `System/Src/mode.cpp` の `Mode::Select_Mode()` でエンコーダとボタンによるモード選択を行います。
 4. 選択したモードに応じて、インターフェース確認、デモ走行、デバッグ走行、シェル実行などを呼び出します。
 
+## クロック設定
+
+機体A/B共通で、PLLのSYSCLK出力100 MHzをHCLKへ分周せずに渡し、コアを100 MHzで動かします。
+タイマ入力クロックと既存のPWM・センサ周期は維持します。
+
+| 対象 | 従来 | 現在 |
+| --- | --- | --- |
+| SYSCLK（PLL出力） | 100 MHz | 100 MHz |
+| コア / HCLK | 50 MHz（SYSCLK / 2） | 100 MHz（SYSCLK / 1） |
+| APB1 / APB2バス | 50 MHz（HCLK / 1） | 25 MHz（HCLK / 4） |
+| TIM1/2/3/4/8入力 | 50 MHz | 50 MHz（APB分周ありのためPCLK × 2） |
+| APB3バス | 50 MHz | 50 MHz（HCLK / 2） |
+| IR用LPTIM1 / ADC4トリガ用LPTIM3 | HSI16 / MSIK | 同じクロック源・分周・周期を維持 |
+| ADC1 / ADC4変換クロック | HCLK 50 MHz / 2 = 25 MHz | HCLK 100 MHz / 4 = 25 MHz |
+| SPI2 SCK | SYSCLK 100 MHz / 32 = 3.125 MHz | 同じ |
+| USART1ボーレート生成用クロック | PCLK2 50 MHz / 1 | SYSCLK 100 MHz / 2 = 50 MHz |
+
+TIMのPSC・ARR・比較値とエンコーダ設定は変更しません。モータPWM 200 kHz、ファンPWM 100 kHz、
+既存の約1 ms制御周期、UART設定460800 bpsを維持します。
+`Peripheral/Src/motor.c`の既存の`PCLK1`/`PCLK2`定数はタイマ入力50 MHzとして使われており、
+今回のAPBバスクロック25 MHzへ置き換えないでください。
+電圧スケールはRange 2を維持し、Flash待ち時間を1 WSから3 WSへ変更します。
+100 MHz・Range 2での待ち時間は[STのFlash解説](https://www.st.com/resource/en/product_training/stm32u5-memory-flash.pdf)を参照してください。
+
+`SystemClock_Config()`、ADC・USARTの初期化と`mouse_type8.ioc`を対応させています。
+単にAHB分周だけを外すとPWM・ADC・通信速度も変わるため、周辺設定も同時に扱ってください。
+HALのSysTickはHCLKに追従し、割り込み時間計測のDWT換算も`SystemCoreClock`を使用します。
+実機では更新後ログの`irq.total_us`・`irq.max_us`・`irq.period_us`で処理余裕と周期を再確認します。
+
 ## VS Code コマンド集
 
 ### CMake preset の選択

@@ -50,7 +50,7 @@ void MX_ADC1_Init(void)
   /** Common config
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.GainCompensation = 0;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
@@ -184,7 +184,7 @@ void MX_ADC4_Init(void)
   /** Common config
   */
   hadc4.Instance = ADC4;
-  hadc4.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2;
+  hadc4.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
   hadc4.Init.Resolution = ADC_RESOLUTION_12B;
   hadc4.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc4.Init.ScanConvMode = ADC4_SCAN_ENABLE;

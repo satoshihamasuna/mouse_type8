@@ -49,7 +49,7 @@ void MX_USART1_UART_Init(void)
   huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart1.Init.ClockPrescaler = UART_PRESCALER_DIV2;
   huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
   if (HAL_UART_Init(&huart1) != HAL_OK)
   {
@@ -87,7 +87,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
   /** Initializes the peripherals clock
   */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
-    PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+    PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_SYSCLK;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
       Error_Handler();
