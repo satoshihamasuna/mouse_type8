@@ -49,6 +49,7 @@ static int usrcmd_path(int argc, char **argv);
 static int usrcmd_search(int argc, char **argv);
 static int usrcmd_interface(int argc, char **argv);
 static int usrcmd_irsens(int argc, char **argv);
+static int usrcmd_wall_ekf(int argc, char **argv);
 typedef struct {
 	const char *cmd;
 	const char *desc;
@@ -70,6 +71,7 @@ static const cmd_table_t cmdlist[] = {
 	{ "search" ,"replay search/map/virtual-wall logic without motion.", usrcmd_search },
 	{ "interface", "check IMU and photo sensor values.", usrcmd_interface },
 	{ "irsens", "Print IR values, distances and averages: irsens count [interval_ms].", usrcmd_irsens },
+	{ "wall_ekf", "Straight wall EKF: show / legacy / shadow / control (idle only).", usrcmd_wall_ekf },
 	{ "ir_sensor", "Alias for irsens count [interval_ms].", usrcmd_irsens }
 };
 
@@ -399,6 +401,45 @@ static int usrcmd_info(int argc, char **argv)
     }
     printf("Unknown sub command found\r\n");
     return -1;
+}
+
+static int usrcmd_wall_ekf(int argc, char **argv)
+{
+	IrSensTask &ir = IrSensTask_type8::getInstance();
+	IrSensTask::WallEkfMode requested = ir.WallEkfMode_Get();
+	const bool show = argc == 1 || (argc == 2 && ntlibc_strcmp(argv[1], "show") == 0);
+	if (!show)
+	{
+		if (argc != 2) { printf("wall_ekf show|legacy|shadow|control\r\n"); return -1; }
+		if (ntlibc_strcmp(argv[1], "legacy") == 0) requested = IrSensTask::WallEkfMode::Legacy;
+		else if (ntlibc_strcmp(argv[1], "shadow") == 0) requested = IrSensTask::WallEkfMode::Shadow;
+		else if (ntlibc_strcmp(argv[1], "control") == 0) requested = IrSensTask::WallEkfMode::Control;
+		else { printf("wall_ekf show|legacy|shadow|control\r\n"); return -1; }
+	}
+	// Only copy/change fixed-size state under the IRQ mask; never print there.
+	const uint32_t mask = __get_PRIMASK();
+	__disable_irq();
+	if (!show && (CtrlTask_type8::getInstance().is_control_enable() == True
+		|| CtrlTask_type8::getInstance().motion_exeStatus_get() == execute))
+	{
+		__set_PRIMASK(mask);
+		printf("WALL_EKF_ERROR busy\r\n");
+		return -1;
+	}
+	if (!show) ir.WallEkfMode_Set(requested);
+	const auto mode = ir.WallEkfMode_Get();
+	const auto pose = ir.straight_wall_estimate;
+	const bool active = ir.straight_wall_ekf_active;
+	const unsigned candidate = ir.straight_wall_candidate_mask;
+	__set_PRIMASK(mask);
+	const char *name = mode == IrSensTask::WallEkfMode::Legacy ? "legacy"
+		: mode == IrSensTask::WallEkfMode::Shadow ? "shadow" : "control";
+	printf("WALL_EKF mode:%s active:%u e_mm:%.4f psi_rad:%.6f var_e_mm2:%.5f var_psi_rad2:%.7f candidate:%u accepted:%u nis_l:%.3f nis_r:%.3f updates:%lu corners:%lu\r\n",
+		name, active ? 1U : 0U, static_cast<double>(pose.lateral_m * 1000.0f), static_cast<double>(pose.heading_rad),
+		static_cast<double>(pose.variance_lateral_m2 * 1000000.0f), static_cast<double>(pose.variance_heading_rad2),
+		candidate, static_cast<unsigned>(pose.accepted_mask), static_cast<double>(pose.nis_left), static_cast<double>(pose.nis_right),
+		static_cast<unsigned long>(pose.wall_updates), static_cast<unsigned long>(pose.corner_updates));
+	return 0;
 }
 
 static void shell_irsens_usage(void)

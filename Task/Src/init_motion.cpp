@@ -13,6 +13,8 @@
 
 void Motion::Motion_start()
 {
+	search_turn_heading.clear();
+	ir_sens->ResetWallCornerDetection();
 	ir_sens->ResetStraightWallControl();
 	Motor_Initialize();
 	vehicle->ego_initialize();
@@ -31,6 +33,8 @@ void Motion::Motion_start()
 
 void Motion::Motion_end()
 {
+	search_turn_heading.clear();
+	ir_sens->ResetWallCornerDetection();
 	ir_sens->ResetStraightWallControl();
 	vehicle->ego_initialize();
 	vehicle->ideal_initialize();
@@ -49,6 +53,8 @@ void Motion::Motion_end()
 
 void Motion::Motion_error_handling()
 {
+	search_turn_heading.clear();
+	ir_sens->ResetWallCornerDetection();
 	ir_sens->ResetStraightWallControl();
 	vehicle->ego_initialize();
 	vehicle->ideal_initialize();
@@ -122,6 +128,8 @@ void Motion::Init_Motion_free_rotation_set(float time,uint16_t duty)
 
 void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain, const t_ff_gain *ff_gain)
 {
+	const bool continue_wall_pose = motion_control_get() == STRAIGHT_STATE
+		&& motion_is_enable_get() == True && ir_sens->CanContinueStraightWallPose();
 	if(motion_exeStatus_get() == error)
 	{
 		Motion_error_handling();
@@ -182,7 +190,7 @@ void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
-	ir_sens->ResetStraightWallControl();
+	ir_sens->ResetStraightWallControl(continue_wall_pose);
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 	ir_sens->r_corner_length.init();
@@ -195,7 +203,8 @@ void Motion::Init_Motion_search_straight(float len_target,float acc,float max_sp
 
 void Motion::Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
 {
-
+	const bool continue_wall_pose = motion_control_get() == STRAIGHT_STATE
+		&& motion_is_enable_get() == True && ir_sens->CanContinueStraightWallPose();
 	if(motion_exeStatus_get() == error)
 	{
 		Motion_error_handling();
@@ -267,7 +276,8 @@ void Motion::Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain
 	float diff = vehicle->ego.x_point.get()*1.0;
 	if(ABS(diff) > 10.0)
 	{
-		diff = SIGN(diff) * diff;
+		// Keep the lateral sign while limiting the exit-length correction [mm].
+		diff = SIGN(diff) * 10.0f;
 	}
 	if(turn_param->param->turn_dir == Turn_R)
 	{
@@ -284,7 +294,8 @@ void Motion::Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
-	ir_sens->ResetStraightWallControl();
+	search_turn_heading.clear();
+	ir_sens->ResetStraightWallControl(continue_wall_pose);
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 
@@ -294,6 +305,8 @@ void Motion::Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain
 
 void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain, const t_ff_gain *ff_gain)
 {
+	const bool continue_wall_pose = motion_control_get() == STRAIGHT_STATE
+		&& motion_is_enable_get() == True && ir_sens->CanContinueStraightWallPose();
 	if(motion_exeStatus_get() == error)
 	{
 		Motion_error_handling();
@@ -362,7 +375,7 @@ void Motion::Init_Motion_straight		(float len_target,float acc,float max_sp,floa
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
-	ir_sens->ResetStraightWallControl();
+	ir_sens->ResetStraightWallControl(continue_wall_pose);
 	ir_sens->EnableIrSensStraight();
 	ir_sens->Division_Wall_Correction_Reset();
 	ir_sens->r_corner_length.init();
@@ -449,6 +462,7 @@ void Motion::Init_Motion_backward		(const t_pid_gain *sp_gain  ,const t_pid_gain
 
 void Motion::Init_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain, const t_ff_gain *ff_gain)
 {
+	const bool continue_diagonal_pose = motion_control_get() == DIAGONAL_STATE && motion_is_enable_get() == True;
 	if(motion_exeStatus_get() == error)
 	{
 		Motion_error_handling();
@@ -511,6 +525,10 @@ void Motion::Init_Motion_diagonal		(float len_target,float acc,float max_sp,floa
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
+	if (!continue_diagonal_pose) {
+		ir_sens->ResetDiagonalWallControl();
+		ir_sens->ResetWallCornerDetection();
+	}
 	ir_sens->EnableIrSensDiagonal();
 	ir_sens->Division_Wall_Correction_Reset();
 	ir_sens->r_corner_length.init();

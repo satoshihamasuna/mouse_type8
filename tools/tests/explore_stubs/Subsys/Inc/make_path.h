@@ -5,10 +5,11 @@
 enum t_run_config_type { RUN_CONFIG_PLAIN, RUN_CONFIG_SUCTION, RUN_CONFIG_VARIABLE_TURN };
 struct t_run_config { const char *key; t_run_config_type type; };
 static const t_run_config plain = {"plain700", RUN_CONFIG_PLAIN};
+static const t_run_config plain500 = {"plain500", RUN_CONFIG_PLAIN};
 static const t_run_config suction = {"suction1200_v0", RUN_CONFIG_SUCTION};
 static const t_run_config acc = {"acc1600_v1", RUN_CONFIG_VARIABLE_TURN};
-static const t_run_config *const run_config_table[] = {&plain, &suction, &acc};
-static const uint16_t run_config_count = 3;
+static const t_run_config *const run_config_table[] = {&plain500, &plain, &suction, &acc};
+static const uint16_t run_config_count = 4;
 inline const t_run_config *find_run_config(const char *key)
 {
 	for(auto config : run_config_table) if(strcmp(key, config->key) == 0) return config;

@@ -9,6 +9,7 @@
 extern uint32_t tick;
 extern bool stream, low_battery, stop_in_wait;
 bool test_no_path;
+bool test_shortest_running;
 int test_plan_calls, shortest_calls, flash_reads;
 bool cancel_plan, lose_link, motion_failure, cancel_motion;
 t_run_config_type expected_type = RUN_CONFIG_PLAIN;
@@ -27,6 +28,8 @@ void test_shortest_run(t_run_config_type type, bool (*abort_requested)(), wall_c
 	assert(abort_requested && !abort_requested());
 	assert(LogData::getInstance().log_enable == True);
 	++shortest_calls;
+	test_shortest_running = true;
+	motion->ir.stats = {100, 60, 4, 2, 40, 3, 12, 13, 2.5f};
 	if(cancel_motion) RemoteExplore::request_stop();
 	if(motion_failure) motion->status = error;
 }
@@ -56,6 +59,7 @@ int shortest_case(const char *scenario)
 		const_cast<char *>("ram"), const_cast<char *>("120")};
 	if(strcmp(scenario, "suction") == 0) { args[5] = const_cast<char *>("suction1200_v0"); expected_type = RUN_CONFIG_SUCTION; }
 	if(strcmp(scenario, "acc") == 0) { args[5] = const_cast<char *>("acc1600_v1"); expected_type = RUN_CONFIG_VARIABLE_TURN; }
+	if(strcmp(scenario, "plain500") == 0) args[5] = const_cast<char *>("plain500");
 	if(strcmp(scenario, "flash") == 0) { args[6] = const_cast<char *>("flash"); expected_wall = nullptr; }
 	if(strcmp(scenario, "bad_goal") == 0) args[4] = const_cast<char *>("2147483647");
 	if(strcmp(scenario, "bad_number") == 0) args[2] = const_cast<char *>("7garbage");
@@ -72,7 +76,7 @@ int shortest_case(const char *scenario)
 	if(strcmp(scenario, "no_arm") != 0) RemoteExplore::arm();
 	const int result = shell_shortest(8, args);
 	const bool success = strcmp(scenario, "complete") == 0 || strcmp(scenario, "suction") == 0 ||
-		strcmp(scenario, "acc") == 0 || strcmp(scenario, "flash") == 0;
+		strcmp(scenario, "acc") == 0 || strcmp(scenario, "flash") == 0 || strcmp(scenario, "plain500") == 0;
 	assert(result == (success ? 0 : -1));
 	assert(shortest_calls == (success || motion_failure || cancel_motion ? 1 : 0));
 	assert(flash_reads == (strcmp(scenario, "flash") == 0 ? 1 : 0));

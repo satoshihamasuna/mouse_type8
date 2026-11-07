@@ -91,15 +91,15 @@ void Motion::Adjust_wall_corner()
 
 			if(ir_sens->r_wall_corner == True)	{
 				Indicate_LED((0x01 << 4)|Return_LED_Status());
-				ir_sens->r_corner_length.set(vehicle->ego.length.get());
+				ir_sens->RecordStraightCorner(true, vehicle->ego.length.get());
 			}
 			if(ir_sens->l_wall_corner == True)	{
 				Indicate_LED((0x01 << 5)|Return_LED_Status());
-				ir_sens->l_corner_length.set(vehicle->ego.length.get());
+				ir_sens->RecordStraightCorner(false, vehicle->ego.length.get());
 			}
 
 			straight_diff = ir_sens->r_corner_length.get() - ir_sens->l_corner_length.get();
-			if(ABS(straight_diff) < (8.0)
+			if(ir_sens->StraightCornerPairValid() && ABS(straight_diff) < (8.0)
 						&& motion_plan.end_length.get() >= 90.0f)
 			{
 				int diff_time_ms = (ir_sens->r_corner_time - ir_sens->l_corner_time);
@@ -108,7 +108,7 @@ void Motion::Adjust_wall_corner()
 				if(diff != 0.0f && vehicle->ideal.velo.get() > 0.30)
 				{
 					vehicle->ego.radian.set(-diff/84.0*0.0);
-					vehicle->ego.x_point.set(42.0*diff/65.0);
+					ir_sens->CorrectStraightWallCorner(vehicle, 42.0f * diff / 65.0f);
 					Indicate_LED((0x0f)|Return_LED_Status());
 				}
 			}
@@ -148,82 +148,23 @@ void Motion::Adjust_wall_corner()
 	}
 	else if(motion_control_get()== DIAGONAL_STATE)
 	{
-		if((ir_sens->r_wall_corner == True || ir_sens->l_wall_corner == True) && vehicle->ideal.velo.get() > 0.2 )
+		if ((ir_sens->r_wall_corner == True || ir_sens->l_wall_corner == True) && vehicle->ideal.velo.get() > 0.2f)
 		{
-			//ir_sens->Division_Wall_Correction();
-			float diagonal_diff = 0.0;
-
-			float prev_r_corner_length = 0.0;
-			if(ir_sens->r_wall_corner == True)	{
+			if (ir_sens->r_wall_corner == True) {
 				Indicate_LED((0x01 << 4)|Return_LED_Status());
-				prev_r_corner_length = ir_sens->r_corner_length.get();
-				ir_sens->r_corner_length.set(vehicle->ego.length.get());
-
-				diagonal_diff = ir_sens->r_corner_length.get() - ir_sens->l_corner_length.get();
-
-				/*
-				if(diagonal_diff >= DIAG_SECTION * 1.5 && diagonal_diff < DIAG_SECTION * 2.5)
-					diagonal_diff = (ir_sens->r_corner_length.get() - prev_r_corner_length)/2.0;
-				*/
-				if(diagonal_diff >= DIAG_SECTION * 2 && diagonal_diff < DIAG_SECTION * 3.5)
-					diagonal_diff = diagonal_diff/3.0f;
-				else if(diagonal_diff < 0.0)
-					diagonal_diff = 0.0f;
-
+				ir_sens->RecordDiagonalCorner(true, vehicle->ego.length.get());
 			}
-
-			float prev_l_corner_length = 0.0;
-			if(ir_sens->l_wall_corner == True)	{
+			if (ir_sens->l_wall_corner == True) {
 				Indicate_LED((0x01 << 5)|Return_LED_Status());
-				prev_l_corner_length = ir_sens->r_corner_length.get();
-				ir_sens->l_corner_length.set(vehicle->ego.length.get());
-
-				diagonal_diff = ir_sens->l_corner_length.get() - ir_sens->r_corner_length.get();
-				/*
-				if(diagonal_diff >= DIAG_SECTION * 1.5 && diagonal_diff < DIAG_SECTION * 2.5)
-					diagonal_diff = (ir_sens->l_corner_length.get() - prev_l_corner_length)/2.0;
-				*/
-				if(diagonal_diff >= DIAG_SECTION * 2.0 && diagonal_diff < DIAG_SECTION * 3.5)
-					diagonal_diff = (ir_sens->l_corner_length.get() - prev_l_corner_length)/3.0;
-				else if(diagonal_diff < 0.0)
-					diagonal_diff = 0.0f;
+				ir_sens->RecordDiagonalCorner(false, vehicle->ego.length.get());
 			}
-
-
-			int time_diff = ABS(ir_sens->r_corner_time - ir_sens->l_corner_time);
-
-			/*
-			if(ABS((time_diff*vehicle->ideal.velo.get())-DIAG_SECTION) < (int)((10.0)) && motion_plan.end_length.get() > DIAG_SECTION)
-			{
-			*/
-			if(ABS(diagonal_diff-DIAG_SECTION) < 20.0f && motion_plan.end_length.get() > DIAG_SECTION)
-			{
-
-				//float diff = (time_diff*vehicle->ideal.velo.get())-DIAG_SECTION;
-				float diff = -(diagonal_diff-DIAG_SECTION);
-
-				if(ir_sens->r_wall_corner == True && ir_sens->l_wall_corner == False)
-				{
-					diff = diff;
-				}
-				else if(ir_sens->l_wall_corner == True && ir_sens->r_wall_corner == False)
-				{
-					diff = -diff;
-				}
-
-				if(diff != 0.0f)
-				{
-
-					vehicle->ego.radian.set(-(diff/DIAG_SECTION)/2.0*0.0);
-					vehicle->ego.x_point.set(diff/2);
-					//ir_sens->Division_Wall_Correction_Reset();
-					Indicate_LED((0x0f)|Return_LED_Status());
-
-				}
-
+			float lateral_mm = 0.0f;
+			if (motion_plan.end_length.get() > DIAG_SECTION && ir_sens->DiagonalCornerLateralCorrection(lateral_mm) && lateral_mm != 0.0f) {
+				vehicle->ego.radian.set(0.0f);
+				vehicle->ego.x_point.set(lateral_mm);
+				Indicate_LED((0x0f)|Return_LED_Status());
 			}
 		}
-
 
 		if(vehicle->ideal.velo.get() > 0.2)
 		{
@@ -279,9 +220,10 @@ void  Motion::SetIdeal_search_straight(){
 		{
 			if(motion_plan.end_length.get()== 90.0f)
 			{
-				if(ABS(vehicle->ego.length.get() - SEARCH_CORRECTION) < 8.0f)
+				const float corrected_progress = SEARCH_CORRECTION + ir_sens->StraightCornerDelay();
+				if(ABS(vehicle->ego.length.get() - corrected_progress) < 8.0f)
 				{
-					vehicle->ego.length.set((vehicle->ego.length.get() + SEARCH_CORRECTION)/2.0f);
+					vehicle->ego.length.set((vehicle->ego.length.get() + corrected_progress)/2.0f);
 				}
 			}
 		}
@@ -292,15 +234,15 @@ void  Motion::SetIdeal_search_straight(){
 
 			if(ir_sens->r_wall_corner == True)	{
 				Indicate_LED((0x01 << 4)|Return_LED_Status());
-				ir_sens->r_corner_length.set(vehicle->ego.length.get());
+				ir_sens->RecordStraightCorner(true, vehicle->ego.length.get());
 			}
 			if(ir_sens->l_wall_corner == True)	{
 				Indicate_LED((0x01 << 5)|Return_LED_Status());
-				ir_sens->l_corner_length.set(vehicle->ego.length.get());
+				ir_sens->RecordStraightCorner(false, vehicle->ego.length.get());
 			}
 
 			straight_diff = ir_sens->r_corner_length.get() - ir_sens->l_corner_length.get();
-			if(ABS(straight_diff) < (5.0))
+			if(ir_sens->StraightCornerPairValid() && ABS(straight_diff) < (5.0))
 			{
 				int diff_time_ms = (ir_sens->r_corner_time - ir_sens->l_corner_time);
 				//float diff = ((float)diff_time_ms) * vehicle->ideal.velo.get();
@@ -308,7 +250,7 @@ void  Motion::SetIdeal_search_straight(){
 				if(diff != 0.0f)
 				{
 					//vehicle->ego.radian.set(-diff/84.0);
-					vehicle->ego.x_point.set(42.0*diff/65.0);
+					ir_sens->CorrectStraightWallCorner(vehicle, 42.0f * diff / 65.0f);
 					Indicate_LED((0x0f)|Return_LED_Status());
 				}
 			}
@@ -386,6 +328,8 @@ void  Motion::SetIdeal_search_straight(){
 void  Motion::SetIdeal_search_turn()
 {
 	static float turn_start_time_ms;
+	if (motion_plan.turn_state.get() == turn_motion_param.param->turn_dir)
+		search_turn_heading.predict(vehicle->ego.rad_velo.get(), static_cast<float>(deltaT_ms) / 1000.0f);
 	vehicle->ideal.velo.set(motion_plan.velo.get());
 	vehicle->ideal.accel.set(0.0f);
 	if(motion_plan.turn_state.get() == Prev_Turn)
@@ -397,6 +341,13 @@ void  Motion::SetIdeal_search_turn()
 		}
 		else
 		{
+			// Heading is relative to the incoming passage. Its last wall-control
+			// update precedes this IRQ's measured gyro increment.
+			search_turn_heading.begin(ir_sens->StraightHeadingForTurn()
+				+ vehicle->ego.rad_velo.get() * static_cast<float>(deltaT_ms) / 1000.0f,
+				DEG2RAD(turn_motion_param.param->degree), ir_sens->StraightHeadingVarianceForTurn()
+				+ wall_ekf_param.heading_walk_rad_sqrt_s * wall_ekf_param.heading_walk_rad_sqrt_s
+					* static_cast<float>(deltaT_ms) / 1000.0f);
 			motion_plan.turn_state.set(turn_motion_param.param->turn_dir);
 			turn_start_time_ms = run_time_ms_get();
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*turn_motion_param.sp_gain);
@@ -455,7 +406,8 @@ void  Motion::SetIdeal_search_turn()
 			vehicle->ego.x_point.set(0.0f);
 
 			motion_plan.turn_state.set(Post_Turn);
-			ir_sens->PrimeStraightWallControl();
+			ir_sens->PrimeSearchTurnExit(search_turn_heading.residual_rad(), search_turn_heading.valid(),
+				search_turn_heading.variance_rad2());
 			turn_start_time_ms = 0.0f;
 
 			vehicle->Vehicle_controller.speed_ctrl.Gain_Set(*straight_motion_param.sp_gain);

@@ -14,7 +14,7 @@
 #define ZIRCONIA_WALL_CONTROL_H_
 
 #include <stdint.h>
-#include "Params/zirconia_wall_param.h"
+#include "Params/wall_param.h"
 
 // Adapted from program_zirconia/zirconia/software/Control/Src/wall_control.c
 // (independent_side_pose_v3). No hardware or trajectory ownership here.
@@ -29,6 +29,9 @@ public:
         float heading_rad = 0.0f, estimated_error_m = 0.0f;
         float base_omega_radps = 0.0f, dt_s = 0.001f;
         bool enabled = false, sample_updated = false;
+        // Optional externally estimated pose. Defaults preserve legacy callers.
+        bool use_estimated_pose = false, prediction_trusted = false;
+        uint8_t permitted_mask = 3, measurement_mask = 3;
     };
     struct Output {
         float error_m = 0.0f, raw_error_m = 0.0f;

@@ -3,6 +3,7 @@
 #include "Module/Inc/remote_explore.h"
 #include "Module/Inc/log_stream.h"
 #include "Module/Inc/log_data.h"
+#include "Subsys/Inc/search_turn_diagnostics.h"
 #include <cassert>
 #include <cstring>
 
@@ -25,6 +26,9 @@ t_position DemoUtil::run_search(Search *, search_type_t, t_position, t_position 
 	++test_motion_calls;
 	assert(test_sensor >= 2000);
 	assert(LogData::getInstance().log_enable == True);
+	SearchTurnGuard::Decision decision;
+	decision.reason = test_motion_calls == 1 ? SearchTurnGuard::Normal : SearchTurnGuard::FrontDifference;
+	SearchTurnDiagnostics::instance().record(tick, 1, 2, 0, decision);
 	if(test_stop_during_motion) RemoteExplore::request_stop();
 	return goal;
 }

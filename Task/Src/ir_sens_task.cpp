@@ -121,7 +121,15 @@ float IrSensTask::Sensor_CalcDistance(t_sensor_dir dir, int16_t value)
 
 void IrSensTask::IrSensorDistanceSet(Vehicle *vehicle)
 {
-	// Separate straight-control observations from legacy wall-edge histories.
+	search_turn_gyro_radps = vehicle->ego.rad_velo.get();
+	search_turn_guard_enabled = isEnableIrSens == True && irsens_motion == STRAIGHT_IRSENS
+		&& vehicle->ideal.velo.get() > 0.20f && isfinite(search_turn_gyro_radps)
+		&& fabsf(search_turn_gyro_radps) <= 2.0f;
+	straight_edge_rotation_valid = isfinite(vehicle->ego.rad_velo.get())
+		&& fabsf(vehicle->ego.rad_velo.get()) <= wall_edge_param.maximum_yaw_rate_radps;
+	diagonal_edge_motion_valid = vehicle->ideal.velo.get() > 0.0f && isfinite(vehicle->ego.rad_velo.get())
+		&& fabsf(vehicle->ego.rad_velo.get()) <= diagonal_edge_param.maximum_yaw_rate_radps;
+	// Keep straight-control ADC averages separate from diagnostic range history.
 	straight_left_average.update(sen_l.value);
 	straight_right_average.update(sen_r.value);
 	straight_left_distance_mm = Sensor_CalcDistance(sensor_sl, straight_left_average.value());
@@ -172,6 +180,7 @@ void IrSensTask::IrSensorDistanceSet(Vehicle *vehicle)
 void IrSensTask::IrSensorWallSet(float forward_step_mm)
 {
 	wall_forward_step_mm = forward_step_mm;
+	search_turn_guard.update(sen_fl.distance, sen_fr.distance, forward_step_mm, search_turn_guard_enabled);
 	sen_fr.prev_is_wall 	= sen_fr.is_wall ;
 	sen_fl.prev_is_wall 	= sen_fl.is_wall ;
 	sen_r.prev_is_wall 	= sen_r.is_wall ;
@@ -182,75 +191,41 @@ void IrSensTask::IrSensorWallSet(float forward_step_mm)
 	sen_r.is_wall 	= (sen_r.distance <= SIDE_THRESHOLD)? True:False;
 	sen_l.is_wall  	= (sen_l.distance <= SIDE_THRESHOLD)? True:False;
 
-	if(sen_r.is_wall == False && sen_r.prev_is_wall == True)
+	r_wall_corner = l_wall_corner = False;
+	r_corner_delay_mm = l_corner_delay_mm = 0.0f;
+	if (r_corner_time < 65535U) ++r_corner_time;
+	if (l_corner_time < 65535U) ++l_corner_time;
+	if (irsens_motion == STRAIGHT_IRSENS)
 	{
-		if(irsens_motion == STRAIGHT_IRSENS)
-		{
-			r_wall_corner = True;
-			r_corner_time = 0;
+		right_diagonal_edge.reset(); left_diagonal_edge.reset();
+		const auto right = right_wall_edge.update(sen_r.distance, forward_step_mm, straight_edge_rotation_valid);
+		const auto left = left_wall_edge.update(sen_l.distance, forward_step_mm, straight_edge_rotation_valid);
+		if (right.detected) {
+			r_wall_corner = True; r_corner_time = right.age_ticks; r_corner_delay_mm = right.delay_mm;
 		}
-	}
-	else if(sen_r.is_wall == False && sen_r.prev_is_wall == True
-		&& (sen_r.prev_diff) < 2.0 && (sen_r.diff) > 2.0)
-	{
-		if(irsens_motion == STRAIGHT_IRSENS)
-		{
-			r_wall_corner = True;
-			r_corner_time = 0;
+		if (left.detected) {
+			l_wall_corner = True; l_corner_time = left.age_ticks; l_corner_delay_mm = left.delay_mm;
 		}
-
-	}
-	else if( (sen_r.diff > 0.0) && (sen_r.prev_diff < 0.0))
-	{
-
-		if(irsens_motion == DIAGONAL_IRSENS && sen_r.distance < CORNER_R_THRESHOLD	)
-		{
-				r_wall_corner = True;
-				r_corner_time = 0;
-		}
-
 	}
 	else
 	{
-		r_wall_corner = False;
-		r_corner_time++;
-	}
-
-
-
-	if(sen_l.is_wall == False && sen_l.prev_is_wall == True)
-	{
-		if(irsens_motion == STRAIGHT_IRSENS)
-		{
-			l_wall_corner = True;
-			l_corner_time = 0;
+		right_wall_edge.reset(); left_wall_edge.reset();
+		if (irsens_motion == DIAGONAL_IRSENS) {
+			const auto right = right_diagonal_edge.update(sen_r.distance, forward_step_mm, diagonal_edge_motion_valid);
+			const auto left = left_diagonal_edge.update(sen_l.distance, forward_step_mm, diagonal_edge_motion_valid);
+			if (right.detected) {
+				r_wall_corner = True; r_corner_time = right.age_ticks; r_corner_delay_mm = right.delay_mm;
+				++diagonal_wall_stats.edges_right;
+				diagonal_wall_stats.edge_delay_max_mm = fmaxf(diagonal_wall_stats.edge_delay_max_mm, right.delay_mm);
+			}
+			if (left.detected) {
+				l_wall_corner = True; l_corner_time = left.age_ticks; l_corner_delay_mm = left.delay_mm;
+				++diagonal_wall_stats.edges_left;
+				diagonal_wall_stats.edge_delay_max_mm = fmaxf(diagonal_wall_stats.edge_delay_max_mm, left.delay_mm);
+			}
 		}
+		else { right_diagonal_edge.reset(); left_diagonal_edge.reset(); }
 	}
-	else if(sen_l.is_wall == False && sen_l.prev_is_wall == True
-		&& (sen_l.prev_diff) < 2.0 && (sen_l.diff) > 2.0)
-	{
-		if(irsens_motion == STRAIGHT_IRSENS)
-		{
-			l_wall_corner = True;
-			l_corner_time = 0;
-		}
-	}
-	else if( (sen_l.diff > 0.0) && (sen_l.prev_diff < 0.0))
-	{
-
-		if(irsens_motion == DIAGONAL_IRSENS && sen_l.distance < CORNER_L_THRESHOLD	)
-		{
-				l_wall_corner = True;
-				l_corner_time = 0;
-		}
-
-	}
-	else
-	{
-		l_wall_corner = False;
-		l_corner_time++;
-	}
-
 
 	sen_fr.control_cnt = (sen_fr.is_wall == True) ? sen_fr.control_cnt + 1 : 0;
 	sen_fl.control_cnt = (sen_fl.is_wall == True) ? sen_fl.control_cnt + 1 : 0;
@@ -389,11 +364,11 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 	if (irsens_motion == STRAIGHT_IRSENS)
 	{
 		ZirconiaWallControl::Input input;
-		input.enabled = isEnableIrSens == True && vehicle->ideal.velo.get() > 0.20f
-			&& straight_left_average.ready() && straight_right_average.ready();
-		if (input.enabled)
+		const bool moving_enabled = isEnableIrSens == True && vehicle->ideal.velo.get() > 0.20f;
+		input.enabled = moving_enabled && straight_left_average.ready() && straight_right_average.ready();
+		if (moving_enabled)
 		{
-			if (straight_prime_pending)
+			if (input.enabled && straight_prime_pending)
 			{
 				straight_wall_control.prime_tracking(straight_left_distance_mm / 1000.0f,
 					straight_right_distance_mm / 1000.0f);
@@ -402,8 +377,13 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 			// Gyro heading relative to this straight-control interval. Keeping it
 			// separate avoids existing wall-edge/segment odometry resets erasing
 			// the heading damping term. Positive yaw is a left turn.
-			if (straight_heading_valid)
+			if (straight_heading_valid && !straight_heading_skip_once)
+			{
 				straight_heading_rad += vehicle->ego.rad_velo.get() * delta_tms / 1000.0f;
+				straight_heading_variance_rad2 += wall_ekf_param.heading_walk_rad_sqrt_s
+					* wall_ekf_param.heading_walk_rad_sqrt_s * delta_tms / 1000.0f;
+			}
+			straight_heading_skip_once = false;
 			straight_heading_valid = true;
 		}
 		else
@@ -422,6 +402,74 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 		input.dt_s = delta_tms / 1000.0f;
 		input.sample_updated = wall_sample_updated;
 		straight_wall_output = straight_wall_control.update(input);
+		straight_wall_ekf_used = false;
+		if (input.enabled && wall_ekf_mode != WallEkfMode::Legacy)
+		{
+			// Predict from signed travel for THIS IRQ, never from ego.length
+			// differences: wall-edge corrections may rebase that progress value.
+			const bool already_started = straight_wall_filter.estimate().initialized;
+			if (!already_started)
+				straight_wall_filter.start(vehicle->ego.x_point.get() / 1000.0f, straight_heading_rad,
+					straight_heading_variance_rad2);
+			else
+				straight_wall_filter.predict(input.travel_m, vehicle->ego.rad_velo.get() * input.dt_s, input.dt_s);
+			// Motion generation sees the current wall edge before this call.
+			// Assimilate it only after predicting to that same sensor timestamp.
+			if (corner_pending)
+			{
+				straight_wall_filter.observe_corner_lateral(pending_corner_lateral_m);
+				corner_pending = false;
+			}
+			const float ds = fabsf(input.travel_m);
+			left_edge_guard_m = fmaxf(0.0f, left_edge_guard_m - ds);
+			right_edge_guard_m = fmaxf(0.0f, right_edge_guard_m - ds);
+			if (input.sample_updated && (left_wall_edge.pending() || l_wall_corner == True)) left_edge_guard_m = wall_ekf_param.edge_guard_m;
+			if (input.sample_updated && (right_wall_edge.pending() || r_wall_corner == True)) right_edge_guard_m = wall_ekf_param.edge_guard_m;
+			// Legacy side-quality gates are evaluated before the current EKF wall
+			// correction. A corner is a separate event, not a large lateral step.
+			uint8_t candidates = straight_wall_output.trusted_mask;
+			if (left_edge_guard_m > 0.0f) candidates &= ~1U;
+			if (right_edge_guard_m > 0.0f) candidates &= ~2U;
+			straight_wall_candidate_mask = candidates;
+			const uint8_t accepted = straight_wall_filter.observe_walls(input.left_m, input.right_m,
+				candidates, input.sample_updated);
+			straight_wall_estimate = straight_wall_filter.estimate();
+			straight_wall_ekf_active = straight_wall_estimate.initialized;
+			ZirconiaWallControl::Input filtered = input;
+			filtered.use_estimated_pose = true;
+			filtered.prediction_trusted = CanUseStraightWallEkfPose();
+			// Keep the concurrently running legacy output until the complete pose
+			// is usable. Reset the EKF controller while gated out: an old saturated
+			// yaw command must not survive loss of wall/pose trust.
+			// Keep the existing close-wall, away-only response while a wall is
+			// being confirmed. Only the tracking measurement needs EKF acceptance.
+			filtered.permitted_mask = straight_wall_output.observed_mask;
+			if (left_edge_guard_m > 0.0f) filtered.permitted_mask &= ~1U;
+			if (right_edge_guard_m > 0.0f) filtered.permitted_mask &= ~2U;
+			filtered.enabled = filtered.prediction_trusted
+				&& (accepted != 0 || filtered.permitted_mask == 0);
+			filtered.measurement_mask = straight_wall_filter.lateral_trusted() ? accepted : 0;
+			filtered.heading_rad = filtered.prediction_trusted ? straight_wall_estimate.heading_rad : straight_heading_rad;
+			filtered.estimated_error_m = -straight_wall_estimate.lateral_m;
+			straight_wall_ekf_control_output = ekf_wall_control.update(filtered);
+			// Lateral observation and yaw validity are separate. Fresh accepted
+			// ranges can still update position while yaw control uses the gyro.
+			if (wall_ekf_mode == WallEkfMode::Control && accepted && straight_wall_filter.lateral_trusted())
+				vehicle->ego.x_point.set(straight_wall_estimate.lateral_m * 1000.0f);
+			if (wall_ekf_mode == WallEkfMode::Control && filtered.enabled
+				&& (straight_wall_ekf_control_output.pose_control
+					|| straight_wall_ekf_control_output.phase == ZirconiaWallControl::Estimated))
+			{
+				straight_wall_ekf_used = true;
+				straight_wall_output = straight_wall_ekf_control_output;
+				vehicle->ego.x_point.set(straight_wall_estimate.lateral_m * 1000.0f);
+			}
+			else if (wall_ekf_mode == WallEkfMode::Control && filtered.permitted_mask == 0)
+			{
+				// No visible wall and no usable heading: do not centre on stale x.
+				straight_wall_output = straight_wall_ekf_control_output;
+			}
+		}
 		wall_sample_updated = false;
 		const auto &output = straight_wall_output;
 		sen_l.is_control = output.phase == ZirconiaWallControl::Tracking
@@ -430,10 +478,11 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 			&& (output.trusted_mask & 2) ? True : False;
 		sen_l.error = sen_l.is_control ? straight_left_distance_mm - STRAIGHT_REF : 0.0f;
 		sen_r.error = sen_r.is_control ? straight_right_distance_mm - STRAIGHT_REF : 0.0f;
-		if (output.sync_estimator)
+		if (output.sync_estimator && !straight_wall_ekf_used)
 			vehicle->ego.x_point.set(-output.raw_error_m * 1000.0f);
 		control_ir.set(-output.error_m * 1000.0f);
-		control_ir_dot.set(straight_heading_rad);
+		control_ir_dot.set(straight_wall_ekf_used
+			? straight_wall_estimate.heading_rad : straight_heading_rad);
 		// Straight trajectories have zero base yaw. Assign the external-loop
 		// correction once; adding it to last cycle's target would integrate twice.
 		vehicle->ideal.rad_velo.set(output.omega_radps);
@@ -441,6 +490,46 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 		return;
 	}
 
+	if (irsens_motion == DIAGONAL_IRSENS)
+	{
+		const bool enabled = isEnableIrSens == True && vehicle->ideal.velo.get() > 0.20f;
+		if (enabled && !diagonal_segment_active) ++diagonal_wall_stats.segments;
+		diagonal_segment_active = enabled;
+		if (enabled) ++diagonal_wall_stats.cycles;
+		if (wall_ekf_mode != WallEkfMode::Legacy)
+		{
+			DiagonalWallControl::Input input;
+			input.enabled = enabled;
+			input.fresh = wall_sample_updated;
+			input.travel_m = wall_sample_updated ? wall_forward_step_mm / 1000.0f : 0.0f;
+			input.dt_s = delta_tms / 1000.0f;
+			input.gyro_radps = vehicle->ego.rad_velo.get();
+			input.left_m = sen_l.distance / 1000.0f;
+			input.right_m = sen_r.distance / 1000.0f;
+			input.front_left_m = sen_fl.distance / 1000.0f;
+			input.front_right_m = sen_fr.distance / 1000.0f;
+			input.eligible_mask = (sen_l.is_wall == True && l_wall_corner == False ? 1U : 0U)
+				| (sen_r.is_wall == True && r_wall_corner == False ? 2U : 0U);
+			diagonal_wall_output = diagonal_wall_control.update(input);
+			if (diagonal_wall_output.updated) ++diagonal_wall_stats.updates;
+			if (diagonal_wall_output.front_blocked) ++diagonal_wall_stats.front_blocked;
+			if (wall_ekf_mode == WallEkfMode::Control)
+			{
+				if (!enabled) {
+					control_ir.init(); control_ir_dot.init();
+					vehicle->ideal.rad_velo.set(0.0f);
+					vehicle->ideal.rad_accel.set(0.0f);
+					wall_sample_updated = false;
+					return;
+				}
+			}
+			else
+			{
+				diagonal_wall_output.used_ekf = false; // Shadow observes without applying.
+			}
+		}
+		wall_sample_updated = false;
+	}
 	float ir_rad_acc_control = 0.0;
 	const float k1 = 1.0;
 	const float k2 = 19.0;
@@ -475,6 +564,18 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 
 
 
+	// Keep the existing diagonal trajectory law, its velocity gain and damping.
+	// Sparse EKF observations replace only the current lateral input. Losing
+	// them must not remove the odometry/IR response between pillars.
+	if (irsens_motion == DIAGONAL_IRSENS && wall_ekf_mode == WallEkfMode::Control)
+	{
+		if (diagonal_wall_output.used_ekf) {
+			ir_xposition = diagonal_wall_output.error_m * 1000.0f;
+			++diagonal_wall_stats.used;
+		}
+		else ++diagonal_wall_stats.fallback;
+	}
+
 	if(irsens_motion == STRAIGHT_IRSENS){
 		//deviation_rad = vehicle->ego.radian.get();
 	}
@@ -499,7 +600,59 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 	float target_rad_velo	= vehicle->ideal.rad_velo.get() + target_rad_acc*delta_tms/1000.0f;
 	vehicle->ideal.rad_accel.set(target_rad_acc);
 	vehicle->ideal.rad_velo.set(target_rad_velo);
+	if (irsens_motion == DIAGONAL_IRSENS && wall_ekf_mode == WallEkfMode::Control)
+	{
+		diagonal_wall_output.error_m = ir_xposition / 1000.0f;
+		diagonal_wall_output.omega_radps = target_rad_velo;
+		diagonal_wall_output.alpha_radps2 = target_rad_acc;
+		// Preserve the diagonal Control log unit [rad]. It is diagnostic only;
+		// the trajectory derivative above stays in the shared control law.
+		control_ir_dot.set(diagonal_wall_output.estimate.heading_rad);
+	}
 
+}
+
+SearchTurnGuard::Decision IrSensTask::SearchTurnDecision(bool right_turn, bool front_wall) const
+{
+	SearchTurnGuard::Input input;
+	SearchTurnGuard::History history;
+	{
+		const StateLock lock;
+		input.right_turn = right_turn; input.front_wall = front_wall;
+		input.left_mm = sen_l.distance; input.right_mm = sen_r.distance;
+		input.front_left_mm = sen_fl.distance; input.front_right_mm = sen_fr.distance;
+		input.left_wall = sen_l.is_wall == True; input.right_wall = sen_r.is_wall == True;
+		input.ekf_control = wall_ekf_mode == WallEkfMode::Control;
+		input.ekf_pose_used = straight_wall_ekf_used;
+		input.pose_trusted = straight_wall_ekf_used && CanUseStraightWallEkfPose()
+			&& straight_wall_filter.estimate().accepted_mask != 0 && straight_wall_output.phase == ZirconiaWallControl::Tracking;
+		const auto &pose = straight_wall_filter.estimate();
+		input.lateral_mm = pose.lateral_m * 1000.0f; input.heading_rad = pose.heading_rad;
+		input.lateral_variance_mm2 = pose.variance_lateral_m2 * 1000000.0f;
+		input.heading_variance_rad2 = pose.variance_heading_rad2;
+		input.gyro_radps = search_turn_gyro_radps;
+		history = search_turn_guard.history();
+	}
+	return SearchTurnGuard::decide(input, history);
+}
+
+bool IrSensTask::CorrectStraightWallCorner(Vehicle *vehicle, float left_positive_mm)
+{
+	const StateLock lock;
+	if (!isfinite(left_positive_mm)) return false;
+	if (irsens_motion == STRAIGHT_IRSENS && wall_ekf_mode != WallEkfMode::Legacy
+		&& straight_wall_filter.estimate().initialized)
+	{
+		if (wall_ekf_mode == WallEkfMode::Control && fabsf(left_positive_mm) > STRAIGHT_REF) return false;
+		pending_corner_lateral_m = left_positive_mm / 1000.0f;
+		corner_pending = true;
+		if (wall_ekf_mode == WallEkfMode::Control)
+			return true;
+	}
+	// Shadow/legacy modes preserve the existing correction exactly. If the
+	// filter is not initialized there is no second estimate to correct yet.
+	vehicle->ego.x_point.set(left_positive_mm);
+	return true;
 }
 
 

@@ -1,5 +1,10 @@
 # 解析ツール
 
+実機用の通路内2状態EKFは`Task/Inc/straight_wall_ekf.h`です。横偏差・姿勢偏差の運動式を
+共有し、取得済みCSVの間引き値ではなく各制御回の移動量を使います。
+壁制御への接続と`legacy/shadow/control`の切替は[直進壁EKF](../myshell_README.md#直進壁ekf)を参照してください。
+以下のPython解析結果と実機の走行性能は区別して評価します。
+
 ## 速度も状態に含めて経路を比較する逐次センサEKF
 
 `sensor_path_ekf.py` は、位置・姿勢・前進速度・角速度・ジャイロバイアス・

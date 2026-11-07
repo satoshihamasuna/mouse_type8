@@ -1,6 +1,7 @@
 #ifndef TEST_EXPLORE_DEMO_UTIL_H_
 #define TEST_EXPLORE_DEMO_UTIL_H_
 #include <stdint.h>
+#include <cassert>
 #include "Component/Inc/typedef.h"
 #include "Core/Inc/main.h"
 #include "Task/Inc/run_typedef.h"
@@ -13,7 +14,18 @@ struct t_position { uint8_t x, y; t_direction dir; };
 #define MAZE_SIZE_Y 32
 extern int test_sensor, test_motion_calls, test_motion_ends;
 extern bool test_stop_during_motion;
-class IrSensTask { public: int IrSensor_Avg() { return test_sensor; } };
+extern bool test_shortest_running;
+class IrSensTask {
+public:
+	struct DiagonalWallStats {
+		uint32_t cycles = 0, used = 0, updates = 0, segments = 0, fallback = 0, front_blocked = 0;
+		uint32_t edges_right = 0, edges_left = 0;
+		float edge_delay_max_mm = 0.0f;
+	} stats;
+	int IrSensor_Avg() { return test_sensor; }
+	void ResetDiagonalWallDiagnostics() { stats = DiagonalWallStats{}; }
+	DiagonalWallStats DiagonalWallDiagnostics() const { assert(!test_shortest_running); return stats; }
+};
 class Motion
 {
 public:
@@ -21,7 +33,7 @@ public:
 	t_exeStatus status = complete;
 	IrSensTask *return_irObj() { return &ir; }
 	t_exeStatus motion_exeStatus_get() { return status; }
-	void Motion_end() { ++test_motion_ends; }
+	void Motion_end() { ++test_motion_ends; test_shortest_running = false; }
 };
 class CtrlTask_type8 : public Motion
 {

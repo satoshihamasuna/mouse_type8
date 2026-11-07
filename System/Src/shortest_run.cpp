@@ -48,7 +48,7 @@ int shell_shortest(int argc, char **argv)
 #else
 		const char *mouse = "B";
 #endif
-		printf("SHORTEST_CAP protocol:1 mouse:%s goal_x:%d goal_y:%d goal_size:%d max_x:%d max_y:%d state:%s ram_maze:%d profiles:",
+		printf("SHORTEST_CAP protocol:1 mouse:%s goal_x:%d goal_y:%d goal_size:%d max_x:%d max_y:%d state:%s ram_maze:%d diagonal_ekf:1 diagonal_controller:2 diagonal_edge:1 profiles:",
 			mouse, MAZE_GOAL_X, MAZE_GOAL_Y, MAZE_GOAL_SIZE, MAZE_SIZE_X - 1, MAZE_SIZE_Y - 1,
 			RemoteExplore::running() ? "running" : "idle", explore_completed_maze() != nullptr ? 1 : 0);
 		for(uint16_t i = 0; i < run_config_count; ++i)
@@ -85,6 +85,7 @@ int shell_shortest(int argc, char **argv)
 		return -1;
 	}
 	Motion *motion = &CtrlTask_type8::getInstance();
+	motion->return_irObj()->ResetDiagonalWallDiagnostics();
 	wall_class *wall = explore_completed_maze();
 	if(ntlibc_strcmp(argv[6], "flash") == 0)
 	{
@@ -136,6 +137,13 @@ int shell_shortest(int argc, char **argv)
 	motion->Motion_end();
 	RemoteExplore::finish();
 	Indicate_LED(0x30);
+	const auto wall_stats = motion->return_irObj()->DiagonalWallDiagnostics();
+	printf("SHORTEST_WALL_STATS diagonal_cycles:%lu diagonal_ekf_cycles:%lu diagonal_updates:%lu diagonal_segments:%lu diagonal_controller:2 diagonal_fallback_cycles:%lu diagonal_front_blocked_cycles:%lu diagonal_edge:1 diagonal_edges_right:%lu diagonal_edges_left:%lu diagonal_edge_delay_max_mm:%.3f\r\n",
+		static_cast<unsigned long>(wall_stats.cycles), static_cast<unsigned long>(wall_stats.used),
+		static_cast<unsigned long>(wall_stats.updates), static_cast<unsigned long>(wall_stats.segments),
+		static_cast<unsigned long>(wall_stats.fallback), static_cast<unsigned long>(wall_stats.front_blocked),
+		static_cast<unsigned long>(wall_stats.edges_right), static_cast<unsigned long>(wall_stats.edges_left),
+		static_cast<double>(wall_stats.edge_delay_max_mm));
 	// Endpoint is the commanded goal, not an independently measured position.
 	printf("SHORTEST_END result:%s goal_x:%d goal_y:%d goal_size:%d profile:%s maze:%s\r\n",
 		result, gx, gy, size, config->key, argv[6]);

@@ -114,9 +114,14 @@ class FirmwareCommandTests(unittest.TestCase):
 
     def test_capability_reports_target_without_starting(self):
         self.check_case('show', 'EXPLORE_CAP protocol:1')
+        self.check_case('show', 'turn_cov:1')
 
     def test_complete_roundtrip_keeps_log_enabled_until_end(self):
         self.check_case('complete', 'EXPLORE_END result:complete')
+
+    def test_exploration_reports_actual_decision_counters_and_records(self):
+        self.check_case('complete', 'EXPLORE_TURN_STATS total:2 normal:1 side:0 front_diff:1 front_near:0')
+        self.check_case('stop_wait', 'EXPLORE_TURN_STATS total:0')
 
     def test_stopping_the_hand_gesture_wait_does_not_start_motion(self):
         self.check_case('stop_wait', 'EXPLORE_END result:stopped')
@@ -135,10 +140,20 @@ class FirmwareCommandTests(unittest.TestCase):
 
     def test_shortest_capability_and_profiles_do_not_start_motion(self):
         self.check_case('shortest_show', 'SHORTEST_CAP protocol:1')
+        self.check_case('shortest_show', 'diagonal_ekf:1')
+        self.check_case('shortest_show', 'diagonal_controller:2')
+        self.check_case('shortest_show', 'diagonal_edge:1')
+        self.check_case('shortest_show', 'profiles:plain500,plain700')
 
     def test_shortest_reuses_completed_ram_maze_and_existing_profile_types(self):
-        for case in ('complete', 'suction', 'acc', 'flash'):
+        for case in ('complete', 'plain500', 'suction', 'acc', 'flash'):
             self.check_case('shortest_' + case, 'SHORTEST_END result:complete')
+
+    def test_shortest_diagonal_stats_are_dumped_after_motor_stop(self):
+        self.check_case('shortest_plain500', 'SHORTEST_WALL_STATS diagonal_cycles:100 diagonal_ekf_cycles:60 diagonal_updates:4 diagonal_segments:2')
+        self.check_case('shortest_plain500', 'diagonal_controller:2 diagonal_fallback_cycles:40 diagonal_front_blocked_cycles:3')
+        self.check_case('shortest_plain500', 'diagonal_edge:1 diagonal_edges_right:12 diagonal_edges_left:13 diagonal_edge_delay_max_mm:2.500')
+        self.check_case('shortest_stop_wait', 'SHORTEST_WALL_STATS diagonal_cycles:0')
 
     def test_shortest_requires_map_path_battery_arm_and_stream(self):
         for case, expected in (('missing_maze', 'END result:missing_maze'), ('no_path', 'END result:no_path'),

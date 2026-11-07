@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include "Task/Inc/sensing_task.h"
+#include "Task/Inc/search_turn_heading.h"
 
 #include "Params/run_param.h"
 
@@ -83,6 +84,7 @@ class Motion
 		float run_time_ms;
 		float run_time_ms_limit;
 		float turn_start_time_ms;
+		SearchTurnHeading search_turn_heading;
 
 		void Motion_EndSetting_turn();
 		void Motion_EndSetting_straight();

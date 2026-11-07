@@ -15,19 +15,12 @@
 #include "Subsys/Inc/adachi_class.h"
 #include "Subsys/Inc/virtual_wall_class.h"
 #include "Params/run_param.h"
+#include "Subsys/Inc/search_turn_diagnostics.h"
 #include "Task/Inc/ctrl_task.h"
 //#include "glob_var_machine.h"
 
 #ifndef ENABLE_VIRTUAL_WALL
 #define ENABLE_VIRTUAL_WALL 1
-#endif
-
-#if defined(MOUSE_A)
-#define ALLOW_SIDE_DIFF 	15.0
-#define ALLOW_FRONT_DIFF 	10.0
-#elif defined(MOUSE_B)
-#define ALLOW_SIDE_DIFF		15.0
-#define ALLOW_FRONT_DIFF 	10.0
 #endif
 
 t_bool Search::i_am_goal(int x,int y,int gx,int gy,int goal_size){
@@ -144,7 +137,10 @@ t_exeStatus Search::turn_right_process(t_position my_position,t_position tmp_my_
 {
 	IrSensTask *ir_sens = (_wall->return_irObj());
 	t_exeStatus result;
-	if(ir_sens->sen_l.is_wall == True && ABS(ir_sens->sen_l.distance - 45.0) >= ALLOW_SIDE_DIFF)
+	const auto decision = ir_sens->SearchTurnDecision(true, _wall->get_WallState(my_position) == WALL);
+	SearchTurnDiagnostics::instance().record(HAL_GetTick(), my_position.x, my_position.y,
+		static_cast<uint8_t>(my_position.dir), decision);
+	if(decision.reason == SearchTurnGuard::Side)
 	{
 		result = updateMap_half_straight_and_stop(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, 0x01,_map,motion);
 
@@ -161,7 +157,7 @@ t_exeStatus Search::turn_right_process(t_position my_position,t_position tmp_my_
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
-	else if(_wall->get_WallState(my_position) == WALL && ABS(ir_sens->sen_fr.distance - ir_sens->sen_fl.distance) >= ALLOW_FRONT_DIFF)
+	else if(decision.reason == SearchTurnGuard::FrontDifference)
 	{
 		result = updateMap_half_straight_and_stop(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 
@@ -174,7 +170,7 @@ t_exeStatus Search::turn_right_process(t_position my_position,t_position tmp_my_
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
-	else if(_wall->get_WallState(my_position) == WALL && ((ir_sens->sen_fr.distance + ir_sens->sen_fl.distance)/2.0 - 90.0) < -10.0)
+	else if(decision.reason == SearchTurnGuard::FrontNear)
 		{
 			result = updateMap_half_straight_and_stop(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 
@@ -200,7 +196,10 @@ t_exeStatus Search::turn_left_process (	t_position my_position,t_position tmp_my
 {
 	IrSensTask *ir_sens = (_wall->return_irObj());
 	t_exeStatus result;
-	if(ir_sens->sen_r.is_wall == True && ABS(ir_sens->sen_r.distance - 45.0) >= ALLOW_SIDE_DIFF)
+	const auto decision = ir_sens->SearchTurnDecision(false, _wall->get_WallState(my_position) == WALL);
+	SearchTurnDiagnostics::instance().record(HAL_GetTick(), my_position.x, my_position.y,
+		static_cast<uint8_t>(my_position.dir), decision);
+	if(decision.reason == SearchTurnGuard::Side)
 	{
 		result = updateMap_half_straight_and_stop(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 
@@ -217,7 +216,7 @@ t_exeStatus Search::turn_left_process (	t_position my_position,t_position tmp_my
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
-	else if(_wall->get_WallState(my_position) == WALL && ABS(ir_sens->sen_fr.distance - ir_sens->sen_fl.distance) >= ALLOW_FRONT_DIFF)
+	else if(decision.reason == SearchTurnGuard::FrontDifference)
 	{
 		result = updateMap_half_straight_and_stop(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 
@@ -229,7 +228,7 @@ t_exeStatus Search::turn_left_process (	t_position my_position,t_position tmp_my
 
 		result = motion->exe_Motion_straight(45.0, search_st_param.param->acc, search_st_param.param->max_velo, search_st_param.param->max_velo);
 	}
-	else if(_wall->get_WallState(my_position) == WALL && ((ir_sens->sen_fr.distance + ir_sens->sen_fl.distance)/2.0 - 90.0) < -10.0)
+	else if(decision.reason == SearchTurnGuard::FrontNear)
 	{
 		result = updateMap_half_straight_and_stop(goal_pos.x, goal_pos.y, tmp_my_pos, goal_size, mask,_map,motion);
 

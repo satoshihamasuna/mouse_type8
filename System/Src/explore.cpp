@@ -5,6 +5,7 @@
 #include "Module/Inc/remote_explore.h"
 #include "Peripheral/Inc/battery.h"
 #include "Peripheral/Inc/peripheral.h"
+#include "Subsys/Inc/search_turn_diagnostics.h"
 #include "core/ntlibc.h"
 #include <stdio.h>
 
@@ -42,7 +43,7 @@ int shell_explore(int argc, char **argv)
 #else
 		const char *mouse = "B";
 #endif
-		printf("EXPLORE_CAP protocol:1 mouse:%s goal_x:%d goal_y:%d goal_size:%d max_x:%d max_y:%d state:%s\r\n",
+		printf("EXPLORE_CAP protocol:1 mouse:%s goal_x:%d goal_y:%d goal_size:%d max_x:%d max_y:%d state:%s turn_diag:1 turn_cov:1\r\n",
 			mouse, MAZE_GOAL_X, MAZE_GOAL_Y, MAZE_GOAL_SIZE, MAZE_SIZE_X - 1, MAZE_SIZE_Y - 1,
 			RemoteExplore::running() ? "running" : "idle");
 		return 0;
@@ -72,6 +73,7 @@ int shell_explore(int argc, char **argv)
 		return -1;
 	}
 	Motion *motion = &CtrlTask_type8::getInstance();
+	SearchTurnDiagnostics::instance().begin();
 	IrSensTask *ir = motion->return_irObj();
 	// Reuse static storage, rather than adding a maze to the foreground stack.
 	wall_class &wall = *explore_maze();
@@ -121,6 +123,7 @@ int shell_explore(int argc, char **argv)
 	motion->Motion_end();
 	RemoteExplore::finish();
 	Indicate_LED(0x30);
+	SearchTurnDiagnostics::instance().finish_and_print();
 	printf("EXPLORE_END result:%s x:%d y:%d dir:%d\r\n", result, position.x, position.y, position.dir);
 	return ntlibc_strcmp(result, "complete") == 0 ? 0 : -1;
 }

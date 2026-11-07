@@ -23,8 +23,8 @@ void ZirconiaWallControl::prime_tracking(float left_m, float right_m)
 {
     reset();
     if (!isfinite(left_m) || !isfinite(right_m)) return;
-    left_detected_ = left_m <= ZirconiaWallParams::found_m;
-    right_detected_ = right_m <= ZirconiaWallParams::found_m;
+    left_detected_ = left_m <= wall_control_param.found_m;
+    right_detected_ = right_m <= wall_control_param.found_m;
     observed_mask_ = (left_detected_ ? 1U : 0U) | (right_detected_ ? 2U : 0U);
     phase_ = observed_mask_ ? Tracking : Estimated;
 }
@@ -32,21 +32,20 @@ void ZirconiaWallControl::prime_tracking(float left_m, float right_m)
 void ZirconiaWallControl::Side::update(bool available, float distance,
     float signal_value, float travel, float predicted, bool sample_updated)
 {
-    using namespace ZirconiaWallParams;
     if (!available) { *this = Side{}; return; }
     travel_m += fabsf(travel);
     predicted_m += predicted;
-    if (!sample_updated || (anchor && travel_m < derivative_window_m)) return;
+    if (!sample_updated || (anchor && travel_m < wall_control_param.derivative_window_m)) return;
     if (anchor) {
         const float residual = fabsf((distance - distance_m - predicted_m) / travel_m);
         const float signal_slope = (signal_value - signal) / (fmaxf(100.0f, signal) * travel_m);
-        if (residual > residual_reject
-            || (residual > residual_accept && fabsf(signal_slope) > signal_slope_reject_per_m)) {
+        if (residual > wall_control_param.residual_reject
+            || (residual > wall_control_param.residual_accept && fabsf(signal_slope) > wall_control_param.signal_slope_reject_per_m)) {
             stable = false;
             recovery_m = 0.0f;
-        } else if (residual < residual_accept) {
+        } else if (residual < wall_control_param.residual_accept) {
             recovery_m += travel_m;
-            if (recovery_m >= ZirconiaWallParams::recovery_m) stable = true;
+            if (recovery_m >= wall_control_param.recovery_m) stable = true;
         } else {
             recovery_m = 0.0f;
         }
@@ -59,7 +58,6 @@ void ZirconiaWallControl::Side::update(bool available, float distance,
 
 ZirconiaWallControl::Output ZirconiaWallControl::update(const Input &in)
 {
-    using namespace ZirconiaWallParams;
     Output out;
     if (!in.enabled || !isfinite(in.left_m) || !isfinite(in.right_m)
         || !isfinite(in.left_signal) || !isfinite(in.right_signal)
@@ -70,20 +68,23 @@ ZirconiaWallControl::Output ZirconiaWallControl::update(const Input &in)
         return out;
     }
     if (in.sample_updated) {
-        left_detected_ = in.left_m <= (left_detected_ ? lost_m : found_m);
-        right_detected_ = in.right_m <= (right_detected_ ? lost_m : found_m);
+        left_detected_ = in.left_m <= (left_detected_ ? wall_control_param.lost_m : wall_control_param.found_m);
+        right_detected_ = in.right_m <= (right_detected_ ? wall_control_param.lost_m : wall_control_param.found_m);
     }
+    if (!(in.permitted_mask & 1)) left_detected_ = false;
+    if (!(in.permitted_mask & 2)) right_detected_ = false;
     const float ds = fabsf(in.travel_m);
-    const float predicted = in.travel_m * sinf(in.heading_rad) * tracking_motion_scale;
+    const float predicted = in.travel_m * sinf(in.heading_rad)
+        * (in.use_estimated_pose ? 1.0f : wall_control_param.tracking_motion_scale);
     left_.update(left_detected_, in.left_m, in.left_signal, in.travel_m, -predicted, in.sample_updated);
     right_.update(right_detected_, in.right_m, in.right_signal, in.travel_m, predicted, in.sample_updated);
     const uint8_t mask = (left_detected_ ? 1U : 0U) | (right_detected_ ? 2U : 0U);
-    const uint8_t trusted = (left_.stable ? 1U : 0U) | (right_.stable ? 2U : 0U);
+    const uint8_t trusted = ((left_.stable ? 1U : 0U) | (right_.stable ? 2U : 0U)) & in.measurement_mask;
     const uint8_t previous_mask = observed_mask_;
     if (phase_ == Tracking && (mask & previous_mask & trusted) != 0) {
         observed_mask_ = mask;
         phase_distance_m_ += ds;
-        transition_ = fminf(1.0f, transition_ + ds / transition_m);
+        transition_ = fminf(1.0f, transition_ + ds / wall_control_param.transition_m);
     } else if (phase_ == Disabled || mask != observed_mask_) {
         observed_mask_ = mask;
         phase_ = mask ? Confirming : Estimated;
@@ -92,13 +93,13 @@ ZirconiaWallControl::Output ZirconiaWallControl::update(const Input &in)
     } else {
         phase_distance_m_ += ds;
         if (phase_ == Confirming) {
-            if (phase_distance_m_ >= confirm_m) {
+            if (phase_distance_m_ >= wall_control_param.confirm_m) {
                 phase_ = AwayOnly;
                 phase_distance_m_ = transition_ = 0.0f;
             }
         } else {
-            transition_ = fminf(1.0f, transition_ + ds / transition_m);
-            if (phase_ == AwayOnly && (trusted || phase_distance_m_ >= away_only_m)) {
+            transition_ = fminf(1.0f, transition_ + ds / wall_control_param.transition_m);
+            if (phase_ == AwayOnly && (trusted || phase_distance_m_ >= wall_control_param.away_only_m)) {
                 phase_ = Tracking;
                 phase_distance_m_ = transition_ = 0.0f;
             }
@@ -107,14 +108,15 @@ ZirconiaWallControl::Output ZirconiaWallControl::update(const Input &in)
     if ((previous_mask & static_cast<uint8_t>(~mask)) != 0
         && (previous_mask & mask & trusted) == 0) omega_ = 0.0f;
 
-    const float left_error = in.left_m - reference_m;
-    const float right_error = reference_m - in.right_m;
+    const float left_error = in.left_m - wall_control_param.reference_m;
+    const float right_error = wall_control_param.reference_m - in.right_m;
     const uint8_t error_mask = trusted ? trusted : mask;
     float raw_error = error_mask == 3 ? 0.5f * (left_error + right_error)
         : error_mask == 1 ? left_error : error_mask == 2 ? right_error : 0.0f;
-    const bool measurement_trusted = phase_ == Tracking && fabsf(raw_error) <= trusted_error_m;
+    const bool measurement_trusted = phase_ == Tracking && fabsf(raw_error) <= wall_control_param.trusted_error_m
+        && (!in.use_estimated_pose || trusted);
     const bool pose_control = phase_ == Tracking && mask
-        && (trusted || tracking_valid_ || mask == 3);
+        && (in.use_estimated_pose ? trusted != 0 : (trusted || tracking_valid_ || mask == 3));
     float error = raw_error;
     if (phase_ == Estimated) error = in.estimated_error_m;
     else if (phase_ == Confirming) error = 0.0f;
@@ -125,32 +127,40 @@ ZirconiaWallControl::Output ZirconiaWallControl::update(const Input &in)
         }
         tracking_error_m_ -= predicted;
         if (trusted) {
-            tracking_error_m_ += fminf(1.0f, ds / measurement_blend_m)
+            tracking_error_m_ += fminf(1.0f, ds / wall_control_param.measurement_blend_m)
                 * (raw_error - tracking_error_m_);
         }
-        tracking_error_m_ = limit(tracking_error_m_, reference_m);
+        tracking_error_m_ = limit(tracking_error_m_, wall_control_param.reference_m);
         error = tracking_error_m_;
     } else if (phase_ == AwayOnly || !measurement_trusted) {
         const float left_away = (mask & 1) ? fminf(0.0f, left_error) : 0.0f;
         const float right_away = (mask & 2) ? fmaxf(0.0f, right_error) : 0.0f;
         error = fabsf(left_away) >= fabsf(right_away) ? left_away : right_away;
     }
+    if (in.use_estimated_pose && pose_control) error = in.estimated_error_m;
+    if (in.use_estimated_pose && phase_ == Estimated) error = 0.0f;
 
     float step;
-    if (pose_control) {
+    if (in.use_estimated_pose && phase_ == Estimated && in.prediction_trusted) {
+        // During a short wall gap hold the last observed passage heading;
+        // there is no wall-centre observation to justify lateral centring.
+        const float desired = limit(-wall_control_param.tracking_heading_komega * in.heading_rad, wall_control_param.omega_limit);
+        step = limit(desired - omega_, wall_control_param.alpha_limit * in.dt_s);
+        out.alpha_saturated = fabsf(desired - omega_) > wall_control_param.alpha_limit * in.dt_s;
+    } else if (pose_control) {
         const float desired_raw = transition_
-            * (tracking_distance_komega * error - tracking_heading_komega * in.heading_rad);
-        const float desired = limit(desired_raw, tracking_omega_limit);
-        step = limit(desired - omega_, tracking_alpha_limit * in.dt_s);
-        out.alpha_saturated = fabsf(desired - omega_) > tracking_alpha_limit * in.dt_s;
+            * (wall_control_param.tracking_distance_komega * error - wall_control_param.tracking_heading_komega * in.heading_rad);
+        const float desired = limit(desired_raw, wall_control_param.tracking_omega_limit);
+        step = limit(desired - omega_, wall_control_param.tracking_alpha_limit * in.dt_s);
+        out.alpha_saturated = fabsf(desired - omega_) > wall_control_param.tracking_alpha_limit * in.dt_s;
         out.omega_saturated = desired != desired_raw;
     } else {
-        const float alpha_raw = distance_kp * error * transition_
-            - (omega_kd + velocity_damping * fabsf(in.velocity_mps)) * (in.base_omega_radps + omega_);
-        const float alpha = limit(alpha_raw, alpha_limit);
+        const float alpha_raw = wall_control_param.distance_kp * error * transition_
+            - (wall_control_param.omega_kd + wall_control_param.velocity_damping * fabsf(in.velocity_mps)) * (in.base_omega_radps + omega_);
+        const float alpha = limit(alpha_raw, wall_control_param.alpha_limit);
         const float candidate = omega_ + alpha * in.dt_s;
-        const float desired = limit(candidate, omega_limit);
-        step = limit(desired - omega_, alpha_limit * in.dt_s);
+        const float desired = limit(candidate, wall_control_param.omega_limit);
+        step = limit(desired - omega_, wall_control_param.alpha_limit * in.dt_s);
         out.alpha_saturated = alpha_raw != alpha;
         out.omega_saturated = omega_ + step != candidate;
     }
@@ -169,18 +179,18 @@ ZirconiaWallControl::Output ZirconiaWallControl::update(const Input &in)
     // Conservative synchronization of the caller's lateral estimate; the
     // heading used for damping is deliberately not changed by this operation.
     sync_travel_m_ += ds;
-    if (!measurement_trusted || !trusted || transition_ < 1.0f || fabsf(raw_error) > sync_error_m) {
+    if (!measurement_trusted || !trusted || transition_ < 1.0f || fabsf(raw_error) > wall_control_param.sync_error_m) {
         sync_valid_ = false;
         sync_stable_m_ = sync_travel_m_ = 0.0f;
     } else if (in.sample_updated) {
         const bool stable = sync_valid_ && mask == sync_mask_ && sync_travel_m_ > 0.0f
-            && fabsf(raw_error - sync_error_m_) <= sync_travel_m_ * sync_slope;
+            && fabsf(raw_error - sync_error_m_) <= sync_travel_m_ * wall_control_param.sync_slope;
         sync_stable_m_ = stable ? sync_stable_m_ + sync_travel_m_ : 0.0f;
         sync_error_m_ = raw_error;
         sync_mask_ = mask;
         sync_valid_ = true;
         sync_travel_m_ = 0.0f;
     }
-    out.sync_estimator = sync_valid_ && sync_stable_m_ >= sync_confirm_m;
+    out.sync_estimator = sync_valid_ && sync_stable_m_ >= wall_control_param.sync_confirm_m;
     return out;
 }
