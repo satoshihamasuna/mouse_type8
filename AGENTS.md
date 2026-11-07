@@ -110,6 +110,7 @@ python -m pytest tools/tests/test_myshell_gui.py -q
 | スキル | 用途 |
 | --- | --- |
 | [mouse-build-check](.agents/skills/mouse-build-check/SKILL.md) | 機体 A / B のビルド、変更に対応するホストテスト、ビルド不具合の切り分け |
+| [mouse-turn-tuning](.agents/skills/mouse-turn-tuning/SKILL.md) | 既存GUIとBLEによる単体・連続ターン調整、設定付きログ取得、機体別の採用値への接続 |
 | [mouse-wall-control](.agents/skills/mouse-wall-control/SKILL.md) | 直進側壁制御、IR 観測の採用判定、状態遷移の変更と回帰検証 |
 | [mouse-log-analysis](.agents/skills/mouse-log-analysis/SKILL.md) | 保存済みログの FF 解析、動画からの Lstart/Lend 測定、採用根拠の整理 |
 

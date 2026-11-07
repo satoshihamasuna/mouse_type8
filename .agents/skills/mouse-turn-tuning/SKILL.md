@@ -1,0 +1,52 @@
+---
+name: mouse-turn-tuning
+description: "mouse_type8 の既存GUIとBLEで最短ターンを単体調整・連続検証し、設定付きログと機体別パラメータへ結び付ける。以前作ったターン調整ツールの確認や、そのGUIの操作・改善依頼にも使う。取得済みログの解析だけなら mouse-log-analysis を使う。"
+---
+
+# mouse_type8 のターン調整
+
+既存の調整ツールを起点にする。実装を探さずに「単体試験のGUIを新しく用意する必要がある」と判断しない。
+
+| 目的 | 既存ツール |
+| --- | --- |
+| 1種類のターンの半径・Lstart/Lend・角度補償・PID/FFを調整し、実機値付きログを取得 | `tools/myshell_debug.py` |
+| 入出力が直進/斜めでつながる最大20ターンを組み、連続走行を確認 | `tools/myshell_turnpattern.py` |
+| 上記GUIをBLEで起動 | `tools/ble/mouse_ble_gateway.py` ＋ `tools/ble/mouse_gui_ble.py --gui debug` または `--gui turnpattern` |
+| 探索・最短経路を通した評価 | `tools/ble/mouse_ble_explore_gui.py`。単体ターン調整とは別の入口 |
+
+操作・接続・ログ取得では[既存GUIの手順](references/gui-workflow.md)を読む。
+実装の変更では、そこに挙げたPythonと`System/Src/myshell.cpp`、関連READMEを先に確認する。
+
+## 単体調整の条件を揃える
+
+- 対象機体A/B、ターン名、速度プリセット、吸引、前走加速度、壁制御モード、壁切れ方式を記録する。
+  500調整は各ターンの実機応答で`preset:500`と`velo:0.5`を確認する。GUI初期値の700や、速度欄だけの変更を500テーブルの読込みと同一視しない。
+- 調整対象は左右14パターン。まず単体の回数1で入口と出口を揃え、反復・連続では直進/斜めの接続を確認する。
+  `plain500`は最短走行のプロファイル名で、単体GUIの500プリセットとは別。最短の直線は500〜700 mm/sになり得る。
+- 目標と実測の角速度追従を確認し、軌道の半径・入口・出口を評価する。位置のずれをLstart/Lendへ反映する場合は動画と対応付ける。
+  取得済みCSV・設定JSON・動画の分析は[mouse-log-analysis](../mouse-log-analysis/SKILL.md)、Lstart/Lendの条件はその[測定手順](../mouse-log-analysis/references/turn-lengths.md)へ進む。
+- `Get log CSV`のCSVと同名`.settings.json`を一組にし、`unknown`や設定取得`error`を調整済みの証拠にしない。
+  デバッグGUIに探索GUIと同じ壁制御の自動切替・記録があるとは限らない。未記録のモードをファイル名や日時から推測しない。
+
+## 調整値を連続・最短へつなぐ
+
+**単体GUIのRAM上の調整値は、連続・最短へ自動反映されない。**
+
+- `debug turn ... set`はデバッグ用RAM設定。`preset`・`reset`・再起動で初期値へ戻る。
+- 現在の`turnpattern`は実行時に各ターンを`shell_debug_turn_get(..., True)`でプリセットから読み直す。
+  パターンJSONはターン列と共通設定であり、単体GUIで編集した各ターンの係数一式ではない。
+- 最短`plain500`はコンパイル済みの機体別`mode_500`を使う。GUIでうまく回ったことだけを、最短の調整完了とは扱わない。
+
+採用値の反映まで依頼されている場合は、機体に対応する`Params/Param_A/turn_500.h`または`Param_B/turn_500.h`へ根拠とともに反映し、
+[mouse-build-check](../mouse-build-check/SKILL.md)で該当する検証を行う。反映未依頼なら候補と入力の対応を保存する。
+RAM設定を保つ連続評価が必要なら、既存turnpatternの設定読込みを確認し、依頼された範囲で改善する。
+
+## 作業範囲
+
+ツール調査・スキル作成だけの依頼では実機接続や`set/exe`を行わない。
+走行や設定変更は依頼された範囲で行い、すでにある許可を引き継ぐ。書込み・配線変更も必要な場合は
+[実機操作の前提](../mouse-build-check/SKILL.md#実機操作の前提)を参照する。
+`exe`や`Apply and execute`の送信後は、完了テキストがなくても自動再送しない。前センサ待ちから走行する実装を考慮する。
+
+操作方法を変更した場合は関連READMEを更新し、GUI・パーサの変更には既存ホストテストを使う。
+スキルや文書だけの変更では参照先・コマンド・記述の整合を確認し、不要な実機走行やファームウェアのビルドを追加しない。

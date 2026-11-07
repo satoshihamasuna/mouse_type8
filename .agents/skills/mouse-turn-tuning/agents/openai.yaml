@@ -1,0 +1,3 @@
+interface:
+  display_name: "Mouse ターン調整"
+  short_description: "既存GUIとBLEで単体・連続ターンを調整し、設定付きログと最短走行へ接続する"
