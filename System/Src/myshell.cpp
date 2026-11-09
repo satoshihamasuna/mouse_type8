@@ -9,6 +9,7 @@
 #include "core/ntlibc.h"
 #include "util/ntopt.h"
 #include "System/Inc/myshell.h"
+#include "System/Inc/camera_run_permit.h"
 #include "System/Inc/explore.h"
 #include "System/Inc/shortest_run.h"
 #include "Peripheral/Inc/communicate.h"
@@ -1270,6 +1271,25 @@ static t_bool shell_parse_float(const char *text, float *value)
 	return True;
 }
 
+static CameraRunPermit shell_camera_run_permit;
+
+static int shell_debug_camera_command(int argc, char **argv)
+{
+	if (argc == 3 && ntlibc_strcmp(argv[2], "show") == 0) {
+		printf("DEBUG_CAMERA_CAP protocol:1 ttl_ms:%lu\r\n", (unsigned long)CameraRunPermit::ttl_ms);
+		return 0;
+	}
+	uint32_t token = 0;
+	if (argc == 4 && ntlibc_strcmp(argv[2], "arm") == 0 && CameraRunPermit::parse_token(argv[3], &token)) {
+		shell_camera_run_permit.arm(token, HAL_GetTick());
+		printf("DEBUG_CAMERA_ARMED token:%lu\r\n", (unsigned long)token);
+		return 0;
+	}
+	shell_camera_run_permit.clear();
+	printf("DEBUG_CAMERA_ERROR arguments\r\n");
+	return -1;
+}
+
 static void shell_debug_wait_sensor(IrSensTask *irsens)
 {
 	// The board has six LEDs. Return_LED_Status() therefore returns 0x00-0x3f.
@@ -1574,14 +1594,31 @@ static int shell_debug_turn_command(int argc, char **argv)
 		printf("DEBUG_TURN_SET_DONE\r\n");
 		return 0;
 	}
-	if (ntlibc_strcmp(argv[3], "exe") == 0) {
+	const bool camera_run = ntlibc_strcmp(argv[3], "exe_camera") == 0;
+	if (ntlibc_strcmp(argv[3], "exe") == 0 || camera_run) {
 		Motion *motion = &CtrlTask_type8::getInstance();
 		IrSensTask *irsens = CtrlTask_type8::getInstance().return_irObj();
-		printf("DEBUG_WAIT_SENSOR\r\n");
-		shell_debug_wait_sensor(irsens);
-		for (int i = 0; i < 21; i++) {
-			Indicate_LED((i % 2 == 0) ? 0xff : 0x00);
-			HAL_Delay(50);
+		if (camera_run) {
+			uint32_t token = 0;
+			if (argc != 5 || !CameraRunPermit::parse_token(argv[4], &token) || debug->turn_count != 1 ||
+				!shell_camera_run_permit.consume(token, HAL_GetTick())) {
+				shell_camera_run_permit.clear();
+				printf("DEBUG_CAMERA_ERROR permit\r\n");
+				return -1;
+			}
+			if (Battery_IsVoltageError(Battery_GetAverageVoltage())) {
+				printf("DEBUG_CAMERA_ERROR battery\r\n");
+				return -1;
+			}
+			printf("DEBUG_CAMERA_RUN_START token:%lu\r\n", (unsigned long)token);
+		} else {
+			shell_camera_run_permit.clear();
+			printf("DEBUG_WAIT_SENSOR\r\n");
+			shell_debug_wait_sensor(irsens);
+			for (int i = 0; i < 21; i++) {
+				Indicate_LED((i % 2 == 0) ? 0xff : 0x00);
+				HAL_Delay(50);
+			}
 		}
 		// The indicator is reserved for the turn segment below.  Keep it off
 		// during the approach run, after the sensor-ready flashing has ended.
@@ -1646,6 +1683,7 @@ static int shell_debug_turn_command(int argc, char **argv)
 		motion->Motion_end();
 		Indicate_LED(0x03<<4);
 		HAL_Delay(500);
+		if (camera_run) printf("DEBUG_CAMERA_RUN_DONE\r\n");
 		return 0;
 	}
 	printf("Unknown debug turn command found\r\n");
@@ -2004,8 +2042,10 @@ static int usrcmd_debug(int argc, char **argv)
 		printf("debug turn type show|reset|set|exe\r\n");
 		printf("debug pivot_turn right|left show|reset|set|exe\r\n");
 		printf("debug search_turn right|left show|reset|preset speed|set|exe\r\n");
+		printf("debug camera show|arm token; debug turn type exe_camera token (recording only)\r\n");
 		return 0;
 	}
+	if (ntlibc_strcmp(argv[1], "camera") == 0) return shell_debug_camera_command(argc, argv);
 	if (ntlibc_strcmp(argv[1], "straight") == 0)
 	{
 		return shell_debug_command(argc, argv, "straight", &shell_debug_straight_param, False);
