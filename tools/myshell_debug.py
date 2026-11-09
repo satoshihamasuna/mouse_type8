@@ -157,7 +157,8 @@ class DebugGui(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("myshell debug parameter tuner")
-        self.geometry("1250x720")
+        self.geometry("1250x920")
+        self._camera_busy = False
         self.ser = None
         self.lock = threading.Lock()
         self._connection_generation = 0
@@ -297,8 +298,15 @@ class DebugGui(tk.Tk):
         ttk.Button(actions, text="Get log CSV", command=self.receive_log_csv).pack(side=tk.LEFT, padx=5)
         ttk.Button(actions, text="ログ初期化", command=self.initialize_log).pack(side=tk.LEFT, padx=5)
 
-        self.output = tk.Text(root, height=13, wrap=tk.WORD)
+        notebook = ttk.Notebook(root)
+        notebook.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+        log_tab = ttk.Frame(notebook)
+        notebook.add(log_tab, text='通信ログ')
+        self.output = tk.Text(log_tab, height=13, wrap=tk.WORD)
         self.output.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+        from pixel_camera_tuning_panel import PixelTuningPanel
+        self.camera_panel = PixelTuningPanel(self, notebook)
+        notebook.select(self.camera_panel.tab)
         self._refresh()
 
     def _on_motion_changed(self, _event=None):
@@ -356,6 +364,9 @@ class DebugGui(tk.Tk):
             self.port.set(ports[0])
 
     def _toggle(self):
+        if getattr(self, '_camera_busy', False):
+            self._append('撮影処理中です。接続の切替は完了後に行ってください。\n')
+            return
         # A worker reads Tk variables, so waiting for its lock on the UI thread
         # could deadlock. Leave the connection unchanged until it finishes.
         if not self.lock.acquire(blocking=False):
@@ -821,6 +832,8 @@ class DebugGui(tk.Tk):
             device_settings = None
 
             with self.lock:
+                if getattr(self, '_camera_busy', False):
+                    raise RuntimeError('撮影処理中のため追加のログ受信を取り消しました')
                 self._assert_connection(connection_generation)
                 self._check_battery_voltage()
                 device_settings = self._query_device_settings(motion_name)
@@ -884,6 +897,9 @@ class DebugGui(tk.Tk):
             self._append(f"ERROR: {exc}\n")
 
     def _start(self, *commands):
+        if getattr(self, '_camera_busy', False):
+            self._append('撮影処理中です。追加コマンドは送信しません。\n')
+            return
         if not self.ser or not self.ser.is_open:
             self._toggle()
         if self.ser and self.ser.is_open:
@@ -893,6 +909,8 @@ class DebugGui(tk.Tk):
         try:
             with self.lock:
                 self._assert_connection(connection_generation)
+                if getattr(self, '_camera_busy', False):
+                    raise RuntimeError('撮影処理中のため、待機していたGUIコマンドを取り消しました')
                 for command in commands:
                     self._check_battery_voltage()
                     self._append(f"\n> {command}\n")
@@ -992,7 +1010,9 @@ class DebugGui(tk.Tk):
         try:
             while True:
                 item = self.events.get_nowait()
-                if isinstance(item, tuple) and item[0] == "turn_params":
+                if isinstance(item, tuple) and item[0].startswith('pixel_'):
+                    self.camera_panel.handle(item)
+                elif isinstance(item, tuple) and item[0] == "turn_params":
                     _, values, ff_values, suction_enable, suction_duty, preset_speed, turn_count, pre_accel = item
                     for (_, name), value in zip(FIELDS, values):
                         self.values[name].set(value)
@@ -1028,6 +1048,11 @@ class DebugGui(tk.Tk):
         self.after(50, self._drain)
 
     def _close(self):
+        if getattr(self, '_camera_busy', False):
+            messagebox.showinfo('撮影処理中', '実行結果と保存の確認が終わるまでお待ちください。実行は再送しません。')
+            return
+        if hasattr(self, 'camera_panel'):
+            self.camera_panel.close()
         self._connection_generation += 1
         self._shell_ready = False
         if self.ser:

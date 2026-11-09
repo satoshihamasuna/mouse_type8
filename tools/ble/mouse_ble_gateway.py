@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import struct
 import sys
+import time
 
 dependency_root = Path(__file__).resolve().parents[2] / '.tools'
 for directory in ('ble_python', 'ble_python{}{}'.format(*sys.version_info[:2])):
@@ -137,6 +138,7 @@ class GuiCapture:
             csv_file = self.files.enter_context(self.output.open('x', newline='', encoding='utf-8'))
             self.raw = self.files.enter_context(self.output.with_suffix('.raw.bin').open('xb'))
             self.shell = self.files.enter_context(self.output.with_suffix('.shell.bin').open('xb'))
+            self.health = self.files.enter_context(self.output.with_suffix('.health.jsonl').open('x', encoding='utf-8'))
             self.capture = CsvCapture(csv_file)
         except BaseException:
             self.files.close()
@@ -158,6 +160,8 @@ class GuiCapture:
         temporary = self.output.with_suffix('.status.tmp')
         temporary.write_text(json.dumps(status, indent=2), encoding='utf-8')
         temporary.replace(self.output.with_suffix('.status.json'))
+        self.health.write(json.dumps(dict(status, monotonic=time.monotonic())) + '\n')
+        self.health.flush()
         self.raw.flush()
         self.shell.flush()
         return status

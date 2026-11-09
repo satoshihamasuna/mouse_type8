@@ -307,6 +307,17 @@ class DebugSessionTests(unittest.TestCase):
         self.assertFalse(gui.lock.locked())
         error.assert_called_once()
 
+    def test_camera_transaction_blocks_queued_commands_and_connection_switch(self):
+        port=FakeSerial(self.clock)
+        gui=HeadlessGui(port)
+        gui._camera_busy=True
+        gui._worker(('debug straight exe',),1)
+        gui._start('debug straight exe')
+        gui._toggle()
+        self.assertEqual(port.commands,[])
+        self.assertTrue(port.is_open)
+        self.assertFalse(gui.lock.locked())
+
 
 if __name__ == '__main__':
     unittest.main()

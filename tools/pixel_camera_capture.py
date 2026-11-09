@@ -53,10 +53,22 @@ def wait_recording(client, recording_id, timeout=12):
     raise TimeoutError("録画中を確認できません。TYPE8の動作を開始しないでください")
 
 
-def record_trial(client, project, seconds=30, mouse="unknown", label="", on_ready=None):
-    """on_readyは実録画開始後に一度だけ呼ぶ。指定秒数で録画する。"""
-    from pixel_camera.transfer import atomic_json
+def inspect_trial_video(result, seconds, stop=None):
+    """保存済み資料にも同じ検査を適用する。カメラや機体へ接続しない。"""
     from pixel_camera.stability import inspect_recording
+    inspection = inspect_recording(result, seconds)
+    if stop is not None:
+        from pixel_camera_stop import inspect_controlled_stop, video_time_base
+        metadata = json.loads(result.metadata_path.read_text(encoding='utf-8'))
+        if metadata.get('stop_reason') == 'USER_OR_ACTIVITY_STOP':
+            inspection['mp4_time_base_seconds'] = video_time_base(result.file_path)
+        inspection = inspect_controlled_stop(inspection, metadata, seconds, stop)
+    return inspection
+
+
+def record_trial(client, project, seconds=30, mouse="unknown", label="", on_ready=None, stop_policy=None):
+    """on_readyは実録画開始後に一度だけ呼ぶ。stop_policy省略時は指定秒数で録画する。"""
+    from pixel_camera.transfer import atomic_json
     if not 1 <= seconds <= 30:
         raise ValueError("録画時間は1〜30秒です")
     folder = Path(project) / "tools/logs/pixel_camera"
@@ -83,10 +95,30 @@ def record_trial(client, project, seconds=30, mouse="unknown", label="", on_read
         print("RECORDING_READY: " + recording_id + " / TYPE8の既存操作から動作を開始できます", flush=True)
         if on_ready is not None:
             on_ready()
+        if stop_policy is not None:
+            from pixel_camera_stop import owned_recording
+            stop = dict(stop_policy(client, recording_id, seconds), stop_write_attempted=False)
+            value['recording_stop'] = stop
+            atomic_json(manifest, value)
+            if stop.get('request_stop'):
+                try:
+                    status = client.get_status()
+                    elapsed = float(status.get('device', {}).get('elapsed_seconds', -1))
+                    if owned_recording(status, client, recording_id) and 0 <= elapsed < seconds-.5:
+                        stop.update(stop_write_attempted=True, request_camera_seconds=elapsed,
+                                    request_at=datetime.now(timezone.utc).isoformat())
+                        # 応答喪失でも二度目の停止要求を送らない。要求前に記録する。
+                        atomic_json(manifest, value)
+                        stop['response'] = client.stop_recording()
+                    else:
+                        stop['fallback_reason'] = 'recording_changed_before_stop'
+                except Exception as stop_error:
+                    stop['stop_error'] = type(stop_error).__name__ + ': ' + str(stop_error)
+                atomic_json(manifest, value)
         result = client.wait_for_transfer(timeout=seconds + 120, recording_id=recording_id)
         value.update(video_file=str(result.file_path), metadata_file=str(result.metadata_path),
                      sha256=result.sha256, size_bytes=result.size, source_deleted=result.source_deleted)
-        inspection = inspect_recording(result, seconds)
+        inspection = inspect_trial_video(result, seconds, value.get('recording_stop'))
         value.update(state="PASSED" if inspection["passed"] else "FAILED", video_inspection=inspection)
     except (Exception, KeyboardInterrupt) as error:
         value.update(state="INTERRUPTED" if isinstance(error, KeyboardInterrupt) else "FAILED",
@@ -95,7 +127,8 @@ def record_trial(client, project, seconds=30, mouse="unknown", label="", on_read
         if recording_id is not None and result is None:
             try:
                 status = client.get_status().get("device", {})
-                if status.get("recording_id") == recording_id and status.get("owner") == client.client_id \
+                if not value.get('recording_stop', {}).get('stop_write_attempted') \
+                        and status.get("recording_id") == recording_id and status.get("owner") == client.client_id \
                         and status.get("phase") in {"PREPARING", "RECORDING"}:
                     client.stop_recording()
                 recovered = client.wait_for_transfer(timeout=150, recording_id=recording_id)

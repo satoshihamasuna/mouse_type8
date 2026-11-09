@@ -58,6 +58,10 @@ class GuiCaptureTests(unittest.TestCase):
             self.assertEqual(output.with_suffix('.shell.bin').read_bytes(), other)
             status = json.loads(output.with_suffix('.status.json').read_text())
             self.assertEqual((status['rows'], status['lost'], status['crc_errors']), (1, 0, 0))
+            health=[json.loads(line) for line in output.with_suffix('.health.jsonl').read_text().splitlines()]
+            self.assertTrue(health)
+            self.assertEqual(health[-1]['latest_sequence'],7)
+            self.assertIn('monotonic',health[-1])
             with output.open(newline='') as handle:
                 rows = list(csv.DictReader(handle))
             self.assertEqual(rows[0]['sequence'], '7')
