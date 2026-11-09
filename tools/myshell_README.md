@@ -5,6 +5,26 @@
 
 ## セットアップ
 
+### Pixel録画中だけ使う撮影専用ターン
+
+通常の`debug turn type exe`は従来どおり前センサへの手かざしを待ちます。
+Pixel撮影と連動する`tools/pixel_camera_turn_capture.py --execute`と、既存debug GUIの「Pixel撮影・結果」タブは、録画ID・所有者・RECORDING状態を照合してから、
+次の撮影専用経路で手かざしなしの単体1回を実行します。詳しくは[Pixelカメラ撮影](pixel_camera_README.md)を参照してください。
+
+| コマンド | 動作 |
+| --- | --- |
+| `debug camera show` | 撮影専用プロトコルと許可の有効時間を照会する |
+| `debug camera arm token` | 撮影中のPCが送る1〜99999999のトークンを、15秒間だけ一回分保存する。単独では動かない |
+| `debug turn type exe_camera token` | 一致する有効な許可を消費し、電圧と回数1を確認して前センサ待ちなしで実行する |
+
+許可の不一致・期限切れ・再利用は拒否します。通常の`exe`に入る場合も撮影用許可を消去します。
+この撮影専用経路はカメラ側の録画状態を確認するPC入口と一緒に使い、動画を撮らない通常操作には使いません。
+失敗や応答なしで実行コマンドを自動再送しません。
+撮影タブは`tools/Start_Pixel_Tuning.cmd`から開けます。接続を保持してGUI値の反映・照合を行い、「撮影して1回走行」で記録と結果をまとめて保存します。
+以前のCLIへGUIのRAM調整値を渡す場合は、`Apply`と`Show device values`で確認後に切断し、
+撮影スクリプトの`--use-device-settings --expected-settings`で実機値を照合して引き継ぎます。
+`Apply and execute`では撮影準備を確認しません。詳細は上記のPixel撮影手順を参照してください。
+
 リポジトリのルートで Python 依存パッケージを入れます。
 
 ```powershell

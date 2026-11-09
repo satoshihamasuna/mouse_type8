@@ -1,5 +1,11 @@
 # 解析ツール
 
+Pixel撮影タブの解析は`pixel_camera_tuning_report.py --trial PATH --stride 4`（速報）／`--stride 1`（全フレーム詳細）です。
+録画・走行はせず、保存済みの動画・CSV・実機設定・プロファイルだけを使います。出力は試行内のquick/とfull/で区別し、既存出力を上書きしません。
+速報は元のPTS・フレーム番号を保った約60fpsで、PROVISIONALとして扱います。全フレーム用キャッシュと混用しません。
+停止確認は指令後の実測速度・角速度と、映像の停止後の安定性・必須区間の観測率を併用します。採用パラメータは自動更新しません。
+UIの操作と保存先は[Pixel撮影・調整](../pixel_camera_README.md#調整guiで撮影と単体走行をまとめる)を参照してください。
+
 実機用の通路内2状態EKFは`Task/Inc/straight_wall_ekf.h`です。横偏差・姿勢偏差の運動式を
 共有し、取得済みCSVの間引き値ではなく各制御回の移動量を使います。
 壁制御への接続と`legacy/shadow/control`の切替は[直進壁EKF](../myshell_README.md#直進壁ekf)を参照してください。
@@ -435,6 +441,64 @@ long180だけは始終方向が平行で連立方程式からLstart/Lendを一�
 - [`../turn_analysis/2000/video_20260725_lzero/README.md`](../turn_analysis/2000/video_20260725_lzero/README.md)
 
 ## その他の現行ツール
+
+### 登録済みマーカー2枚以上での盤面補正
+
+`video_marker_pose.py`へ`--marker-reference`を指定すると、基準画像と共通する任意の2枚以上のArUcoの各4頂点を照合し、射影変換で較正します。
+3枚読めた場合は12頂点を使用します。基礎方式は特定の隅の検出を必要としません。
+調整用基準の`grid_refinement.enabled`がONの場合は、45 mm格子も使ってフレームごとに再校正し、未使用の格子点で検査します。詳細は[Pixel撮影手順](../pixel_camera_README.md)を参照してください。
+
+```powershell
+& D:/venv/venv3-11/Scripts/python.exe tools/analysis/video_marker_pose.py `
+  --video C:/path/to/video.mp4 --log C:/path/to/motion.csv --output tools/logs/video_analysis/new_run `
+  --front-color red --marker-reference tools/logs/pixel_camera/marker_reference.json
+```
+
+出力の`marker_reference_used.json`へ使った基準を保存し、`metrics.json`の`marker_calibration`へ基準ID・使用ID・較正成立率を記録します。
+`aruco_complete_frame_rate`は4枚を実検出した率のままで、2～3枚による較正成立率と混同しません。
+登録基準指定時はMP4自動回転を無効にし、TYPE8の横向き画像座標を使います。
+指定がなければ従来の4枚による較正を維持します。基準の作成と撮影側の設定は[Pixel撮影手順](../pixel_camera_README.md)を参照してください。
+絶対mm精度は元の基準校正に依存します。現在の盤面での[45 mm格子による検査結果](../logs/pixel_camera/20261109_accuracy_final/README.md)を確認してください。Lstart/Lendの採用値への自動反映は行いません。
+
+### 機体マーカーの高さと動画の時間軸
+
+`video_marker_pose.py --body-geometry tools/logs/pixel_camera/body_geometry_A.json`で、赤10 mm・黄約1 mmを個別に補正できます。
+カメラ中心の盤面座標x/y/z（mm）が必要で、未確定なら解析開始前に停止します。
+機体Aの運用設定は`camera_height_policy=per_measurement`です。解析ごとに`--camera-height-mm`（例: 800）を指定し、前回の高さは自動流用しません。
+レンズから鉛直に下ろした点の盤面座標は`--camera-foot-mm X Y`で指定するか、設定の`camera_foot_board_mm`へ保存します。
+高さ・位置を撮影ごとに確定したコピーへ展開し、`body_geometry_used.json`と`metrics.json`に、その動画のパスと一緒に保存します。
+車軸中心のオフセットがなければ、`metrics.json`の`body_geometry.center_kind`は`marker_midpoint`です。
+指定した設定は`body_geometry_used.json`にも保存します。赤を前にした場合も、互換性のため前マーカーのCSV列名は従来の`blue_x_mm`等を保持します。
+
+画像を全フレーム分メモリに蓄積せず読み直し、動画の実PTSとCSVの実`time_ms`を使います。
+`--video-start 6.5 --video-end 9.5`等で解析範囲を限定できます。PTSとフレーム番号は元動画のままです。
+今回の独自240 fps動画は実時間記録なので、同期探索には`--slow-factor 1`を指定します。
+補間した未検出点は動画・ログの位置合わせから除外します。軌跡から推定した時刻合わせは、LED等による独立した同期検証とは区別します。
+Lstart/Lendの採用値を求める場合は、上記のゼロ設定・対応ターン・品質条件も満たす必要があります。
+
+### 補正に使っていない格子点での精度検査
+
+真下位置が不明でも固定カメラでの相対変位は`pixel_camera_relative_pose.py`で求められます。
+未知の真下位置を仮定せず、赤・黄の異なる高さで重み付けした中点の変位を使います。
+機体の絶対位置・高さ補正済みの機体角度は出力しません。`trial.json`で動画・CSV・設定と対応付け、撮影ごとの高さとその根拠を指定します。
+動作全区間を含む比較と、MCU動作区間前後の有効率を検査します。[手順](../pixel_camera_README.md)と[保存動画による確認](../logs/pixel_camera/20261109_unknown_camera_foot/README.md)を参照してください。
+
+`pixel_camera_accuracy.py`は、45 mm格子の内部交点を画像の白線中心から検出し、マーカー補正行列で求めた座標・距離・直角の誤差を調べます。
+マーカーだけの基準では、格子点をマーカー補正行列の推定に使用しません。
+格子併用の基準では、校正用に指定された格子点を検査から除外し、残りの点だけで評価します。検査点へ行列を再フィットしません。
+機体などの色のある遮蔽物や、線の検出品質を満たさない点は除外理由付きで保存します。
+
+```powershell
+& D:/venv/venv3-11/Scripts/python.exe tools/analysis/pixel_camera_accuracy.py `
+  --capture tools/logs/pixel_camera/20261109_060259_97d7ae24.capture.json `
+  --reference tools/logs/pixel_camera/20261109_marker_registration/reference.json `
+  --roi-settings tools/logs/pixel_camera/framing_settings.json `
+  --output tools/logs/pixel_camera/accuracy_NEW --pitch-mm 45 --frames 12
+```
+
+出力はaccuracy_report.json、checkpoints.csv、distances.csv、angles.csv、検出品質・使用フレームのCSV、誤差図、入力基準のコピーです。
+位置のRMS・95％点・最大観測誤差と、45 mm区間の距離誤差を分けて確認します。2枚の各組み合わせも同じ検査点で比較します。
+盤面上の点の検査であり、外周・隠れた点・機体上の色マーカーの高さによる視差は未検証です。基準寸法自体の誤差も別途考慮する必要があります。
 
 | スクリプト | 用途 |
 | --- | --- |

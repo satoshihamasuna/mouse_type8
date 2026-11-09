@@ -23,6 +23,19 @@
 pip install pyserial pandas numpy matplotlib scipy
 ```
 
+## Pixelの240 fpsでTYPE8を撮影する
+
+`tools/Start_Pixel_Tuning.cmd`は既存の単体調整GUIにPixel撮影・結果タブを開きます。
+BLEとカメラの接続を保持し、GUIの設定照合→RECORDING_READY後の単体1回→停止確認後1秒以上で録画終了（既定上限20秒）→速報表示→全フレーム詳細検証をまとめて行います。
+変更のない設定は再送せず、設置・停止・手離し確認は毎回必要です。起動だけでは接続も走行もしません。
+
+`tools/Start_Pixel_Camera.cmd`でカメラGUIを起動できます。`py -3.11 tools/pixel_camera_capture.py record --seconds 30`では、実際の録画開始を確認してからTYPE8を動かし、撮影情報と動画検査結果を取得できます。
+カメラとBLE中継の既定ポートが重なるため、同時使用時はBLE中継・BLE GUIの両方へ`--port 8766`を指定します。
+`tools/pixel_camera_turn_capture.py --execute`は、実機設定・電圧・連続CSV受信を確認し、録画中の照合後に撮影専用の一回許可で手かざしなしの単体ターンを実行します。通常のexeは手かざし待ちです。機体AのR180・500・回数1で動画と全区間CSVを取得確認済みです。
+詳しい接続と撮影の手順は[Pixelカメラ撮影](pixel_camera_README.md)を参照してください。
+`tools/Start_Pixel_Framing.cmd`では、PCから露出補正を変更し、3秒の確認画像上で四隅のArUco読み取り範囲を調整・保存できます。機体は動かしません。露出補正対応AndroidアプリとOpenCV aruco・Pillow・Tk環境が必要です。
+盤面補正は、基準画像と一致する任意の2枚以上のマーカーの全頂点を使います。特定の隅や格子線を条件にせず、使用ID・補正行列・基準データ・補正画像を保存します。
+
 ## HY0020 の BLE 通信
 
 専用シェル、既存 GUI の BLE 接続、診断の手順は [tools/ble/README.md](ble/README.md) を参照してください。
