@@ -476,10 +476,9 @@ class DebugGui(tk.Tk):
                 values[:6] + [pre_accel] + values[6:] + ff_values
                 + [jerk_value] + turn_sp_values
             )
-            return "debug turn {} set {} {} {} {}".format(
-                self.turn_type.get(), " ".join(f"{v:.7g}" for v in turn_values),
-                int(self.suction_enable.get()), self._suction_duty_value(), turn_count
-            )
+            from pixel_camera_tuning import format_turn_set_command
+            return format_turn_set_command(self.turn_type.get(), turn_values,
+                bool(self.suction_enable.get()), self._suction_duty_value(), turn_count)
         if self.motion.get() == "search_turn":
             right = self.direction.get() == "right"
             if values[0] <= 0 or values[2] < 0 or values[3] < 0:

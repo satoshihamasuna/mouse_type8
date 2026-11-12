@@ -4,15 +4,15 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
-import subprocess
 import threading
 import tkinter as tk
 from tkinter import ttk
 import uuid
 
-from pixel_camera_tuning import (LiveSession, TrialRequest, analysis_python,
-    capture_connected, hidden_process)
+from pixel_camera_tuning import (LiveSession, TrialRequest, analyze_trial,
+    capture_connected)
 from pixel_camera_turn_capture import write_json
+from pixel_camera_archive import archive_trial, archive_for_trial, write_index
 
 
 def gui_expected_settings(gui, mouse):
@@ -192,10 +192,7 @@ class PixelTuningPanel:
             self.table.delete(self.rows.pop(str(folder)))
 
     def analyze(self, folder, stride):
-        with (folder/('quick.stdout.txt' if stride==4 else 'full.stdout.txt')).open('w',encoding='utf-8') as output:
-            return subprocess.call([str(analysis_python()), str(self.project/'tools/analysis/pixel_camera_tuning_report.py'),
-                '--trial', str(folder/'trial.json'), '--stride', str(stride)], stdout=output, stderr=subprocess.STDOUT,
-                env=dict(os.environ,PYTHONUTF8='1'), creationflags=hidden_process())
+        return analyze_trial(folder, stride)
 
     def _full(self, folder):
         with self.analysis_lock:
@@ -208,6 +205,12 @@ class PixelTuningPanel:
             except Exception:
                 status = '解析失敗'
             self.gui.events.put(('pixel_full',str(folder),status))
+            try:
+                archive = archive_trial(folder/'trial.json')
+                write_index(archive.parent)
+                self.gui.events.put(('pixel_archive',str(folder),str(archive),None))
+            except Exception as error:
+                self.gui.events.put(('pixel_archive',str(folder),None,str(error)))
 
     def completed(self, result):
         folder, trial, quick = result
@@ -246,6 +249,8 @@ class PixelTuningPanel:
         summary = quick or full
         self.mouse.set(trial['mouse'])
         self.height.set(trial['camera_height_mm'])
+        self.gui.motion.set('turn')
+        self.gui.turn_type.set(trial['motion'])
         self.gui._queue_turn_params(settings['raw_response'])
         coordinates = [f'{summary[key]:.2f}' if summary.get(key) is not None else '—'
                        for key in ('endpoint_forward_mm','endpoint_right_mm')]
@@ -257,7 +262,8 @@ class PixelTuningPanel:
 
     def open_result(self):
         if self.latest_folder and self.latest_folder.exists():
-            os.startfile(str(self.latest_folder))
+            folder = archive_for_trial(self.latest_folder/'trial.json') or self.latest_folder
+            os.startfile(str(folder))
 
     def handle(self, item):
         if item[0] == 'pixel_done':
@@ -289,6 +295,12 @@ class PixelTuningPanel:
                 values[5] = state
                 self.table.item(row,values=values)
             self.detail_status.set(Path(path).name+'：240fps全フレーム '+state+'。採用値は自動更新しません')
+        elif item[0] == 'pixel_archive':
+            _, path, archive, error = item
+            if error:
+                self.detail_status.set(Path(path).name+'：一式保存に失敗しました。元資料は保持しています: '+error)
+            else:
+                self.detail_status.set(Path(path).name+'：動画・CSV・設定・解析の保存先 '+archive)
 
     def close(self):
         if self.session:

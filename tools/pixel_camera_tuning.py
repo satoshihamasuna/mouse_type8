@@ -13,7 +13,7 @@ import sys
 import threading
 import time
 
-from pixel_camera_turn_capture import (MotionOnce, Shell, read_rows, save_motion_slice,
+from pixel_camera_turn_capture import (TURNS, MotionOnce, Shell, read_rows, save_motion_slice,
     utc_now, validate_recording, validate_settings, write_json)
 
 
@@ -61,6 +61,49 @@ def setting_differences(actual, expected, *, quantized=False):
             if not equal:
                 differences.append(group+'.'+key)
     return differences
+
+
+TURN_PARAMETER_KEYS = ('velo', 'r_min', 'lstart', 'lend', 'degree', 'correction', 'pre_accel')
+TURN_PID_KEYS = ('sp_kp', 'sp_ki', 'sp_kd', 'om_kp', 'om_ki', 'om_kd')
+TURN_FF_KEYS = ('ff_sp_velo', 'ff_sp_accel', 'ff_sp_bias', 'ff_om_velo', 'ff_om_accel',
+                'ff_om_decel', 'ff_om_bias', 'ff_om_jerk', 'ff_sp_turn_accel_mag', 'ff_sp_turn_velo_sq')
+
+
+def format_turn_set_command(motion, values, suction_enabled, duty, count):
+    """GUIとCLIで共通の単位・引数順・数値表記を使う。"""
+    if motion not in TURNS or len(values) != 23:
+        raise ValueError('ターン名または設定項目数が不正です')
+    if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+        raise ValueError('設定値は有限の数値にしてください')
+    if values[0] <= 0 or values[1] == 0 or values[2] < 0 or values[3] < 0 or values[4] == 0 or values[6] <= 0:
+        raise ValueError('速度・半径・角度・入口出口長・前走加速度が不正です')
+    right = '_r' in motion or motion.startswith('r_')
+    if any((v >= 0 if right else v <= 0) for v in (values[1], values[4])):
+        raise ValueError('右は半径・角度が負、左は正です')
+    if any(v < 0 for v in values[13:]):
+        raise ValueError('FF係数は0以上にしてください')
+    if type(suction_enabled) is not bool or type(duty) is not int or not 0 <= duty <= 990 or type(count) is not int or not 1 <= count <= 100:
+        raise ValueError('吸引設定または回数が不正です')
+    return 'debug turn {} set {} {} {} {}'.format(
+        motion, ' '.join(f'{v:.7g}' for v in values), int(suction_enabled), duty, count)
+
+
+def settings_set_command(settings):
+    values = [settings[group][key] for group, keys in (
+        ('parameters', TURN_PARAMETER_KEYS), ('pid', TURN_PID_KEYS), ('feedforward', TURN_FF_KEYS)) for key in keys]
+    return format_turn_set_command(settings['motion_name'], values, settings['suction']['enabled'],
+                                   settings['suction']['duty'], settings['turn_count'])
+
+
+def analyze_trial(folder, stride):
+    """保存済み試行だけを解析し、GUI・CLIの同じ品質条件を適用する。"""
+    folder = Path(folder)
+    if stride not in (1, 4):
+        raise ValueError('frame stride must be1 or4')
+    with (folder/('quick.stdout.txt' if stride == 4 else 'full.stdout.txt')).open('x', encoding='utf-8') as output:
+        return subprocess.call([str(analysis_python()), str(Path(__file__).parent/'analysis/pixel_camera_tuning_report.py'),
+            '--trial', str(folder/'trial.json'), '--stride', str(stride)], stdout=output, stderr=subprocess.STDOUT,
+            env=dict(os.environ, PYTHONUTF8='1'), creationflags=hidden_process())
 
 
 @dataclass(frozen=True)
