@@ -10,6 +10,12 @@
 
 #include "Params/typedef_run_param.h"
 
+// 2026-11-12 機体A: ユーザー依頼で、単体調整済み14種類の形状・角度補正を試験用に有効化。
+// 下記「未採用」は保存時点の履歴。現在の適用値はコメント直後の実テーブルを参照。
+// PID/FFは既存のコンパイル済み係数を維持。RAM表示の量子化差は測定記録に残す。
+// 180度のLendは指令16.3 mm（実機読返し16.299 mm）。論理角と角度補正は別フィールド。
+// 連続走行・壁あり経路は未検証。in_L135のばらつき、out_L135の角度の余裕は追加確認が必要。
+
 // 500 mm/s turn-specific feedforward gains. Angular jerk gains are constrained
 // to non-negative values and are fitted independently for each turn shape.
 const static t_ff_gain ff_gain_long_turn_R_500 = {
@@ -60,13 +66,13 @@ const static t_pid_gain om_gain_turn90_R_500 = {0.10f,0.008f,0.0f};
 // 盤面移動後の3本を同じ基準で再解析。終点平均: 左269.620 mm、前270.576 mm、最大位置誤差2.088 mm。
 // 根拠: tools/logs/pixel_camera/analysis_L90_visible_20261111_021818_d714/L90_candidate.json
 // const static t_turn_param_table slalom_L90_500_table = {0.50f, 37.5f,42.0f,33.7f, 90.0f,Turn_L,-0.5f};
-const static t_turn_param_table slalom_L90_500_table = {0.50f, 37.5f,39.05,39.80, 90.0f,Turn_L};
+const static t_turn_param_table slalom_L90_500_table = {0.50f, 37.5f,42.0f,33.7f, 90.0f,Turn_L,-0.5f};
 // R90候補: SP PID 2/0.016/0、OM PID 0.1/0.008/0、論理角-90度、補正0度。
 // RAM FF: {0.870046,0.114741,0.094599,0.002077,0.000836,0.000930,0.085591,0.000001569}。
 // 終点平均: 右270.213 mm、前270.853 mm。各軸の最大誤差: 右0.882 mm、前1.704 mm。
 // 根拠: tools/logs/pixel_camera/tuning_gui_20261111_005806_6092e3/R90_candidate.json
 // const static t_turn_param_table slalom_R90_500_table = {0.50f,-37.5f,44.0f,35.0f,-90.0f,Turn_R,0.0f};
-const static t_turn_param_table slalom_R90_500_table = {0.50f,-37.5f,39.05,39.80,-90.0f,Turn_R};
+const static t_turn_param_table slalom_R90_500_table = {0.50f,-37.5f,44.0f,35.0f,-90.0f,Turn_R,0.0f};
 const static t_param param_L90_500 = {&slalom_L90_500_table,&sp_gain_turn90_500,&om_gain_turn90_500,&ff_gain_long_turn_L_500};
 const static t_param param_R90_500 = {&slalom_R90_500_table,&sp_gain_turn90_500,&om_gain_turn90_R_500,&ff_gain_long_turn_R_500};
 
@@ -78,7 +84,7 @@ const static t_pid_gain om_gain_turn180_500 = {0.10f,0.01f,0.0f};
 // 相対中点の終点平均: 左89.803 mm、前-0.513 mm。ばらつき幅: 左1.024 mm、前0.907 mm。
 // 根拠: tools/logs/pixel_camera/tuning_gui_20261110_215247_d6a26b/L180_candidate.json
 // const static t_turn_param_table slalom_L180_500_table = {0.50f, 44.7f,23.63f,16.3f, 180.0f,Turn_L,0.0f};
-const static t_turn_param_table slalom_L180_500_table = {0.50f, 42.5f,23.63,24.47, 180.0f,Turn_L};
+const static t_turn_param_table slalom_L180_500_table = {0.50f, 44.7f,23.63f,16.3f, 180.0f,Turn_L,0.0f};
 // 2026-11-10 Mouse A, R180 candidate (retained only; NOT adopted).
 // Three single turns, preset 500, suction OFF, pre_accel 6.5 m/s^2, correction 0 deg.
 // Requested Lend 16.3 mm; device integer readback 16.299 mm. SP PID: 2/0.016/0; OM: 0.1/0.01/0.
@@ -90,7 +96,7 @@ const static t_turn_param_table slalom_L180_500_table = {0.50f, 42.5f,23.63,24.4
 // Runs: run_083620_bdbc4a, run_083938_e41995, run_084249_bc1737 (CSV + settings + video).
 // Geometry candidate only; the tested quantized RAM gains above differ from compiled precision.
 // const static t_turn_param_table slalom_R180_500_table = {0.50f,-45.0f,23.63f,16.3f,-180.0f,Turn_R,0.0f};
-const static t_turn_param_table slalom_R180_500_table = {0.50f,-42.5f,23.63,24.47,-180.0f,Turn_R};
+const static t_turn_param_table slalom_R180_500_table = {0.50f,-45.0f,23.63f,16.3f,-180.0f,Turn_R,0.0f};
 const static t_param param_L180_500 = {&slalom_L180_500_table,&sp_gain_turn180_500,&om_gain_turn180_500,&ff_gain_long_turn_180_L_500};
 const static t_param param_R180_500 = {&slalom_R180_500_table,&sp_gain_turn180_500,&om_gain_turn180_500,&ff_gain_long_turn_180_R_500};
 
@@ -112,7 +118,7 @@ const static t_pid_gain om_gain_turnV90_500 = {0.10f,0.01f,0.0f};
 // 連続走行・壁あり経路・独立240露光/秒は未検証。
 // 根拠: tools/logs/pixel_camera/cli_l_v90_lstart9_3_repeat03_ready_20261112_043327/l_v90_candidate.json
 // const static t_turn_param_table slalom_LV90_500_table = {0.50f,41.0f,9.3f,5.1f,90.0f,Turn_L,-0.5f};
-const static t_turn_param_table slalom_LV90_500_table = {0.50f, 41.0f,6.36,12.60, 90.0f,Turn_L};
+const static t_turn_param_table slalom_LV90_500_table = {0.50f,41.0f,9.3f,5.1f,90.0f,Turn_L,-0.5f};
 // 2026-11-11 機体A R_V90（r_v90）: 単体3本の調整候補として保存（未採用）。
 // 条件: 500プリセット、0.50 m/s、pre_accel 6.5 m/s^2、1回ずつ、吸引OFF。
 // 半径-41.0 mm、Lstart 10.6 mm、Lend 3.6 mm、論理角-90度、角度補正+0.5度。
@@ -129,7 +135,7 @@ const static t_turn_param_table slalom_LV90_500_table = {0.50f, 41.0f,6.36,12.60
 // 絶対車軸位置・連続走行・壁あり経路は未検証。
 // 根拠: tools/logs/pixel_camera/cli_r_v90_10_6_3_6_c05_repeat03_ready_20261111_182538/r_v90_candidate.json
 // const static t_turn_param_table slalom_RV90_500_table = {0.50f,-41.0f,10.6f,3.6f,-90.0f,Turn_R,0.5f};
-const static t_turn_param_table slalom_RV90_500_table = {0.50f,-41.0f,6.36,12.60,-90.0f,Turn_R};
+const static t_turn_param_table slalom_RV90_500_table = {0.50f,-41.0f,10.6f,3.6f,-90.0f,Turn_R,0.5f};
 const static t_param param_LV90_500 = {&slalom_LV90_500_table,&sp_gain_turnV90_500,&om_gain_turnV90_500,&ff_gain_v90_L_500};
 const static t_param param_RV90_500 = {&slalom_RV90_500_table,&sp_gain_turnV90_500,&om_gain_turnV90_500,&ff_gain_v90_R_500};
 
@@ -147,7 +153,7 @@ const static t_pid_gain om_gain_turnIn45_500 = {0.10f,0.01f,0.0f};
 // 出口進行方向の最大誤差0.468度。絶対位置・連続走行・壁あり経路は未検証。
 // 根拠: tools/logs/pixel_camera/cli_lstart20_20261111_130431/in_l45_candidate.json
 // const static t_turn_param_table slalom_inL45_500_table = {0.50f,50.0f,20.0f,25.0f,45.0f,Turn_L,0.0f};
-const static t_turn_param_table slalom_inL45_500_table = {0.50f, 50.0f,13.31,38.00, 45.0f,Turn_L};
+const static t_turn_param_table slalom_inL45_500_table = {0.50f,50.0f,20.0f,25.0f,45.0f,Turn_L,0.0f};
 // 2026-11-11 機体A in_R45（in_r45）: 単体3本の調整候補として保存（未採用）。
 // 条件: 500プリセット、0.50 m/s、pre_accel 6.5 m/s^2、1回ずつ、吸引OFF。
 // 半径-50.0 mm、Lstart 15.3 mm、Lend 27.9 mm、論理角-45度、角度補正+0.5度。
@@ -160,7 +166,7 @@ const static t_turn_param_table slalom_inL45_500_table = {0.50f, 50.0f,13.31,38.
 // 前方平均1.291 mmの不足が残る。連続走行・壁あり経路は未検証。
 // 根拠: tools/logs/pixel_camera/tuning_gui_20261111_030907_85c2f9/in_r45_candidate.json
 // const static t_turn_param_table slalom_inR45_500_table = {0.50f,-50.0f,15.3f,27.9f,-45.0f,Turn_R,0.5f};
-const static t_turn_param_table slalom_inR45_500_table = {0.50f,-50.0f,13.31,38.00,-45.0f,Turn_R};
+const static t_turn_param_table slalom_inR45_500_table = {0.50f,-50.0f,15.3f,27.9f,-45.0f,Turn_R,0.5f};
 const static t_param param_inL45_500 = {&slalom_inL45_500_table,&sp_gain_turnIn45_500,&om_gain_turnIn45_500,&ff_gain_in_out_45_L_500};
 const static t_param param_inR45_500 = {&slalom_inR45_500_table,&sp_gain_turnIn45_500,&om_gain_turnIn45_500,&ff_gain_in_out_45_R_500};
 
@@ -181,7 +187,7 @@ const static t_pid_gain om_gain_turnOut45_500 = {0.10f,0.01f,0.0f};
 // 過去の広い開始姿勢条件の結果・不成立試写も保存。絶対車軸位置・連続走行・壁あり経路は未検証。
 // 根拠: tools/logs/pixel_camera/cli_out_l45_cminus05_pose_repeat03_retry_ready_20261111_171826/out_l45_candidate.json
 // const static t_turn_param_table slalom_outL45_500_table = {0.50f,50.0f,33.9f,11.8f,45.0f,Turn_L,-0.5f};
-const static t_turn_param_table slalom_outL45_500_table = {0.50f, 50.0f,19.33,32.01, 45.0f,Turn_L};
+const static t_turn_param_table slalom_outL45_500_table = {0.50f,50.0f,33.9f,11.8f,45.0f,Turn_L,-0.5f};
 // 2026-11-11 機体A out_R45（out_r45）: 単体3本の調整候補として保存（未採用）。
 // 条件: 500プリセット、0.50 m/s、pre_accel 6.5 m/s^2、1回ずつ、吸引OFF。
 // 半径-50.0 mm、Lstart 37.2 mm、Lend 9.2 mm、論理角-45度、角度補正+0.5度。
@@ -196,7 +202,7 @@ const static t_turn_param_table slalom_outL45_500_table = {0.50f, 50.0f,19.33,32
 // 絶対車軸位置・連続走行・壁あり経路は未検証。
 // 根拠: tools/logs/pixel_camera/cli_out_r45_c05_repeat03_ready_20261111_153140/out_r45_candidate.json
 // const static t_turn_param_table slalom_outR45_500_table = {0.50f,-50.0f,37.2f,9.2f,-45.0f,Turn_R,0.5f};
-const static t_turn_param_table slalom_outR45_500_table = {0.50f,-50.0f,19.33,32.01,-45.0f,Turn_R};
+const static t_turn_param_table slalom_outR45_500_table = {0.50f,-50.0f,37.2f,9.2f,-45.0f,Turn_R,0.5f};
 const static t_param param_outL45_500 = {&slalom_outL45_500_table,&sp_gain_turnOut45_500,&om_gain_turnOut45_500,&ff_gain_in_out_45_L_500};
 const static t_param param_outR45_500 = {&slalom_outR45_500_table,&sp_gain_turnOut45_500,&om_gain_turnOut45_500,&ff_gain_in_out_45_R_500};
 
@@ -220,7 +226,7 @@ const static t_pid_gain om_gain_turnIn135_500 = {0.10f,0.01f,0.0f};
 // 絶対車軸位置・連続走行・壁あり経路・独立240露光/秒は未検証。
 // 根拠: tools/logs/pixel_camera/cli_in_l135_cminus05_repeat03_ready_20261112_071201/in_l135_candidate.json
 // const static t_turn_param_table slalom_inL135_500_table = {0.50f,30.0f,48.2f,36.5f,135.0f,Turn_L,-0.5f};
-const static t_turn_param_table slalom_inL135_500_table = {0.50f, 30.0f,45.29+5,38.35, 135.0f,Turn_L};
+const static t_turn_param_table slalom_inL135_500_table = {0.50f,30.0f,48.2f,36.5f,135.0f,Turn_L,-0.5f};
 // 2026-11-12 機体A in_R135（in_r135）: 単体3本の調整候補として保存（未採用）。
 // 条件: 500プリセット、0.50 m/s、pre_accel 6.5 m/s^2、1回ずつ、吸引OFF。
 // 半径-30.0 mm、Lstart 47.8 mm、Lend 38.35 mm、論理角-135度、角度補正+0.5度。
@@ -237,7 +243,7 @@ const static t_turn_param_table slalom_inL135_500_table = {0.50f, 30.0f,45.29+5,
 // 絶対車軸位置・連続走行・壁あり経路・独立240露光/秒は未検証。
 // 根拠: tools/logs/pixel_camera/cli_in_r135_lstart47_8_repeat03_ready_20261112_053833/in_r135_candidate.json
 // const static t_turn_param_table slalom_inR135_500_table = {0.50f,-30.0f,47.8f,38.35f,-135.0f,Turn_R,0.5f};
-const static t_turn_param_table slalom_inR135_500_table = {0.50f,-30.0f,45.29+5,38.35,-135.0f,Turn_R};
+const static t_turn_param_table slalom_inR135_500_table = {0.50f,-30.0f,47.8f,38.35f,-135.0f,Turn_R,0.5f};
 const static t_param param_inL135_500 = {&slalom_inL135_500_table,&sp_gain_turnIn135_500,&om_gain_turnIn135_500,&ff_gain_in_out_135_L_500};
 const static t_param param_inR135_500 = {&slalom_inR135_500_table,&sp_gain_turnIn135_500,&om_gain_turnIn135_500,&ff_gain_in_out_135_R_500};
 
@@ -263,7 +269,7 @@ const static t_pid_gain om_gain_turnOut135_500 = {0.10f,0.01f,0.0f};
 // 絶対車軸位置・連続走行・壁あり経路・独立240露光/秒は未検証。
 // 根拠: tools/logs/pixel_camera/cli_out_l135_lstart42_9_repeat03_ready_20261112_092618/out_l135_candidate.json
 // const static t_turn_param_table slalom_outL135_500_table = {0.50f,30.0f,42.9f,46.07f,135.0f,Turn_L,-0.5f};
-const static t_turn_param_table slalom_outL135_500_table = {0.50f, 30.0f,37.57,46.07, 135.0f,Turn_L};
+const static t_turn_param_table slalom_outL135_500_table = {0.50f,30.0f,42.9f,46.07f,135.0f,Turn_L,-0.5f};
 // 2026-11-12 機体A out_R135（out_r135）: 単体3本の調整候補として保存（未採用）。
 // 条件: 500プリセット、0.50 m/s、pre_accel 6.5 m/s^2、1回ずつ、吸引OFF。
 // 半径-30.0 mm、Lstart 40.7 mm、Lend 46.07 mm、論理角-135度、角度補正+0.5度。
@@ -283,7 +289,7 @@ const static t_turn_param_table slalom_outL135_500_table = {0.50f, 30.0f,37.57,4
 // 絶対車軸位置・連続走行・壁あり経路・独立240露光/秒は未検証。
 // 根拠: tools/logs/pixel_camera/cli_out_r135_lstart40_7_aftercharge_ready_20261112_082139/out_r135_candidate.json
 // const static t_turn_param_table slalom_outR135_500_table = {0.50f,-30.0f,40.7f,46.07f,-135.0f,Turn_R,0.5f};
-const static t_turn_param_table slalom_outR135_500_table = {0.50f,-30.0f,37.57,46.07,-135.0f,Turn_R};
+const static t_turn_param_table slalom_outR135_500_table = {0.50f,-30.0f,40.7f,46.07f,-135.0f,Turn_R,0.5f};
 const static t_param param_outL135_500 = {&slalom_outL135_500_table,&sp_gain_turnOut135_500,&om_gain_turnOut135_500,&ff_gain_in_out_135_L_500};
 const static t_param param_outR135_500 = {&slalom_outR135_500_table,&sp_gain_turnOut135_500,&om_gain_turnOut135_500,&ff_gain_in_out_135_R_500};
 

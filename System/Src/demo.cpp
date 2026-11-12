@@ -295,7 +295,7 @@ void Demo()
 
 					Dijkstra run_path(&wall_data);
 					run_path.run_Dijkstra(		start, Dir_None, goal,MAZE_GOAL_SIZE,
-											&run_config_plain700,motion);
+											&run_config_plain500,motion);
 
 
 					if(motion->motion_exeStatus_get() == error)
