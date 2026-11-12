@@ -252,6 +252,73 @@ class CaptureStopTests(unittest.TestCase):
         self.ready.assert_called_once()
         self.client.start_recording.assert_called_once()
 
+    def test_manifest_access_denied_after_start_recovers_without_restarting_capture(self):
+        transfer=sys.modules['pixel_camera.transfer']
+        writer=transfer.atomic_json
+        denied=False
+        def locked_once(path,value):
+            nonlocal denied
+            if value.get('recording_id') and value['state']=='PREPARING' and not denied:
+                denied=True
+                error=PermissionError('manifest replace temporarily denied')
+                error.winerror=5
+                raise error
+            writer(path,value)
+        with patch.object(transfer,'atomic_json',side_effect=locked_once), patch('pixel_camera_capture.time.sleep'):
+            value=self.capture()
+        self.assertTrue(denied)
+        self.assertEqual(value['state'],'PASSED')
+        self.client.start_recording.assert_called_once()
+        self.ready.assert_called_once()
+        self.client.stop_recording.assert_called_once()
+
+    def test_persistent_manifest_lock_fails_before_motion_and_keeps_recovery_record(self):
+        transfer=sys.modules['pixel_camera.transfer']
+        writer=transfer.atomic_json
+        def locked(path,value):
+            if value.get('recording_id') and value['state']=='PREPARING':
+                error=PermissionError('manifest remains locked')
+                error.winerror=32
+                raise error
+            writer(path,value)
+        with patch.object(transfer,'atomic_json',side_effect=locked) as writes, patch('pixel_camera_capture.time.sleep') as sleep:
+            value=self.capture()
+        self.assertEqual(value['state'],'FAILED')
+        self.assertIn('PermissionError',value['error'])
+        self.assertIn('recovered_video_file',value)
+        self.assertAlmostEqual(sum(call.args[0] for call in sleep.call_args_list),.35)
+        self.assertLess(writes.call_count,10)
+        self.ready.assert_not_called()
+        self.client.start_recording.assert_called_once()
+        self.client.stop_recording.assert_called_once()
+
+    def test_unrelated_save_error_is_not_retried_and_never_starts_capture(self):
+        transfer=sys.modules['pixel_camera.transfer']
+        with patch.object(transfer,'atomic_json',side_effect=PermissionError('not a Windows sharing error')) as writes, patch('pixel_camera_capture.time.sleep') as sleep:
+            with self.assertRaises(PermissionError):
+                self.capture()
+        writes.assert_called_once()
+        sleep.assert_not_called()
+        self.ready.assert_not_called()
+        self.client.start_recording.assert_not_called()
+
+    def test_final_manifest_lock_still_disconnects_without_repeating_motion(self):
+        transfer=sys.modules['pixel_camera.transfer']
+        writer=transfer.atomic_json
+        def final_locked(path,value):
+            if 'finished_at' in value:
+                error=PermissionError('final manifest remains locked')
+                error.winerror=33
+                raise error
+            writer(path,value)
+        with patch.object(transfer,'atomic_json',side_effect=final_locked), patch('pixel_camera_capture.time.sleep'):
+            with self.assertRaises(PermissionError):
+                self.capture()
+        self.client.disconnect.assert_called_once()
+        self.client.start_recording.assert_called_once()
+        self.client.stop_recording.assert_called_once()
+        self.ready.assert_called_once()
+
     def test_lost_stop_response_can_be_confirmed_by_finalized_video_without_resend(self):
         self.client.stop_recording.side_effect=TimeoutError('lost response')
         self.assertEqual(self.capture()['state'],'PASSED')

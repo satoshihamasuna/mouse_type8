@@ -66,6 +66,18 @@ def inspect_trial_video(result, seconds, stop=None):
     return inspection
 
 
+def _write_capture_manifest(path, value, writer):
+    """Windowsの短いファイル競合時だけ保存を再試行する。機器操作は再送しない。"""
+    delays = (0.05, 0.1, 0.2)
+    for attempt in range(len(delays) + 1):
+        try:
+            return writer(path, value)
+        except PermissionError as error:
+            if getattr(error, "winerror", None) not in {5, 32, 33} or attempt == len(delays):
+                raise
+            time.sleep(delays[attempt])
+
+
 def record_trial(client, project, seconds=30, mouse="unknown", label="", on_ready=None, stop_policy=None):
     """on_readyは実録画開始後に一度だけ呼ぶ。stop_policy省略時は指定秒数で録画する。"""
     from pixel_camera.transfer import atomic_json
@@ -79,7 +91,7 @@ def record_trial(client, project, seconds=30, mouse="unknown", label="", on_read
                  mouse=mouse, mouse_identity_source="user_supplied_not_device_verified", label=label,
                  motion_control="existing_TYPE8_tool_or_explicit_on_ready_callback",
                  type8_log_csv=None, physical_240fps_verified=False)
-    atomic_json(manifest, value)
+    _write_capture_manifest(manifest, value, atomic_json)
     recording_id = None
     result = None
     try:
@@ -87,11 +99,11 @@ def record_trial(client, project, seconds=30, mouse="unknown", label="", on_read
         client.configure(width=1280, height=720, fps=240)
         recording_id = client.start_recording(duration_s=seconds)
         value["recording_id"] = recording_id
-        atomic_json(manifest, value)
+        _write_capture_manifest(manifest, value, atomic_json)
         ready = wait_recording(client, recording_id)
         value.update(state="RECORDING", ready_at=datetime.now(timezone.utc).isoformat(),
                      ready_elapsed_seconds=ready.get("elapsed_seconds"))
-        atomic_json(manifest, value)
+        _write_capture_manifest(manifest, value, atomic_json)
         print("RECORDING_READY: " + recording_id + " / TYPE8の既存操作から動作を開始できます", flush=True)
         if on_ready is not None:
             on_ready()
@@ -99,7 +111,7 @@ def record_trial(client, project, seconds=30, mouse="unknown", label="", on_read
             from pixel_camera_stop import owned_recording
             stop = dict(stop_policy(client, recording_id, seconds), stop_write_attempted=False)
             value['recording_stop'] = stop
-            atomic_json(manifest, value)
+            _write_capture_manifest(manifest, value, atomic_json)
             if stop.get('request_stop'):
                 try:
                     status = client.get_status()
@@ -108,13 +120,13 @@ def record_trial(client, project, seconds=30, mouse="unknown", label="", on_read
                         stop.update(stop_write_attempted=True, request_camera_seconds=elapsed,
                                     request_at=datetime.now(timezone.utc).isoformat())
                         # 応答喪失でも二度目の停止要求を送らない。要求前に記録する。
-                        atomic_json(manifest, value)
+                        _write_capture_manifest(manifest, value, atomic_json)
                         stop['response'] = client.stop_recording()
                     else:
                         stop['fallback_reason'] = 'recording_changed_before_stop'
                 except Exception as stop_error:
                     stop['stop_error'] = type(stop_error).__name__ + ': ' + str(stop_error)
-                atomic_json(manifest, value)
+                _write_capture_manifest(manifest, value, atomic_json)
         result = client.wait_for_transfer(timeout=seconds + 120, recording_id=recording_id)
         value.update(video_file=str(result.file_path), metadata_file=str(result.metadata_path),
                      sha256=result.sha256, size_bytes=result.size, source_deleted=result.source_deleted)
@@ -138,8 +150,10 @@ def record_trial(client, project, seconds=30, mouse="unknown", label="", on_read
                 value["recovery_error"] = str(recovery_error)
     finally:
         value["finished_at"] = datetime.now(timezone.utc).isoformat()
-        atomic_json(manifest, value)
-        client.disconnect()
+        try:
+            _write_capture_manifest(manifest, value, atomic_json)
+        finally:
+            client.disconnect()
     return manifest, value
 
 
