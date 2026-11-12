@@ -13,6 +13,7 @@
 
 void Motion::Motion_start()
 {
+	motion_disable_set();
 	search_turn_heading.clear();
 	ir_sens->ResetWallCornerDetection();
 	ir_sens->ResetStraightWallControl();
@@ -21,14 +22,19 @@ void Motion::Motion_start()
 	vehicle->ideal_initialize();
 	vehicle->suctionStop();
 	vehicle->turn_slip_k.set(75.0);
-	motion_enable_set();
 	motion_pattern_set(No_run);
+	// 前回の異常カウンタと状態を復帰させてから制御を有効にする。
+	error_counter_reset();
 	motion_exeStatus_set(complete);
 	motion_control_set(NOP_STATE);
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 	vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 	vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+	motion_enable_set();
+	// Only foreground callers start a run. Allow two fresh IR DMA scans
+	// before search code can consume the initial wall observation.
+	HAL_Delay(3);
 }
 
 void Motion::Motion_end()
@@ -40,6 +46,7 @@ void Motion::Motion_end()
 	vehicle->ideal_initialize();
 	vehicle->suctionStop();
 	vehicle->turn_slip_k.set(75.0);
+	Sensor_SetHandWaitActive(0U);
 	motion_disable_set();
 	motion_pattern_set(No_run);
 	//motion_exeStatus_set(complete);

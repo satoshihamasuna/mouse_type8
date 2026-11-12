@@ -659,7 +659,16 @@ bool IrSensTask::CorrectStraightWallCorner(Vehicle *vehicle, float left_positive
 
 int16_t IrSensTask::IrSensor_Avg()
 {
+	if (!Sensor_IrSamplesReady()) return 0;
 	return (sen_l.value + sen_r.value)/2 ;
+}
+
+bool IrSensTask::HandStartDetected(int16_t threshold)
+{
+	Sensor_SetHandWaitActive(1U);
+	if (!Sensor_IrSamplesReady() || IrSensor_Avg() <= threshold) return false;
+	Sensor_SetHandWaitActive(0U);
+	return true;
 }
 
 

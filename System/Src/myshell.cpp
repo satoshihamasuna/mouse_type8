@@ -1292,6 +1292,7 @@ static int shell_debug_camera_command(int argc, char **argv)
 
 static void shell_debug_wait_sensor(IrSensTask *irsens)
 {
+	SensorHandWait hand_wait(true);
 	// The board has six LEDs. Return_LED_Status() therefore returns 0x00-0x3f.
 	const uint8_t wait_led = 0x3f;
 	uint32_t time = Interrupt::getInstance().return_time_count();

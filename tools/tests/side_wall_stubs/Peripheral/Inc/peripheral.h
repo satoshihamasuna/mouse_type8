@@ -13,6 +13,9 @@
 #define TEST_SIDE_WALL_PERIPHERAL_H_
 
 #include <cstdint>
+#include "Peripheral/Inc/ir_sensor_activity.h"
+inline void Sensor_SetHandWaitActive(uint8_t) {}
+inline uint8_t Sensor_IrSamplesReady(void) { return 1U; }
 
 enum t_sensor_dir { sensor_fl = 3, sensor_fr = 4, sensor_sl = 1, sensor_sr = 2 };
 extern int16_t side_wall_test_adc[5];

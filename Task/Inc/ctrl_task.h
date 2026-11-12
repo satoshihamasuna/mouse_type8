@@ -9,6 +9,7 @@
 #define CPP_TASK_INC_CTRL_TASK_H_
 
 #include <stdio.h>
+#include "Peripheral/Inc/ir_sensor_activity.h"
 
 #include "Task/Inc/sensing_task.h"
 #include "Task/Inc/search_turn_heading.h"
@@ -173,8 +174,8 @@ class Motion
 		inline void			 motion_exeStatus_set(t_exeStatus _motion_exeStatus)   	{	motion_exeStatus	= _motion_exeStatus;	}
 		t_exeStatus 		 motion_execute();
 
-		inline	void 		motion_enable_set()										{ 	is_motion_enable		= True;		}
-		inline	void 		motion_disable_set()									{ 	is_motion_enable		= False;	}
+		inline	void 		motion_enable_set()										{ 	is_motion_enable = True; Sensor_SetMotionActive(1U); }
+		inline	void 		motion_disable_set()									{ 	is_motion_enable = False; Sensor_SetMotionActive(0U); }
 		inline  t_bool 		motion_is_enable_get()									{	return	is_motion_enable;			}
 
 

@@ -44,6 +44,7 @@ namespace Mode
 
 		Motion *motion = &(CtrlTask_type8::getInstance());
 		IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
+		SensorHandWait hand_wait;
 
 		uint32_t time = Interrupt::getInstance().return_time_count();
 		float fr,fl,sr,sl;
@@ -52,6 +53,7 @@ namespace Mode
 		{
 			enable = Mode::Select(enable,0x01,Encoder_GetProperty_Left());
 			param = (enable == 0x00) ? Mode::Select(param,0x0f,Encoder_GetProperty_Right()) : param;
+			if(enable == 0x00) hand_wait.set(false);
 
 			Battery_LimiterVoltage();
 			if(enable == 0x01)
@@ -107,7 +109,7 @@ namespace Mode
 						  HAL_Delay(500);
 						break;
 				case ENABLE|0x04:
-					if(irsens->IrSensor_Avg() > 1500){
+					if(irsens->HandStartDetected(1500)){
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -129,7 +131,7 @@ namespace Mode
 					}
 					break;
 				case ENABLE|0x05:
-					if(irsens->IrSensor_Avg() > 2500){
+					if(irsens->HandStartDetected(2500)){
 
 								  for(int i = 0;i < 11;i++)
 								  {
@@ -150,7 +152,7 @@ namespace Mode
 					}
 					break;
 				case ENABLE|0x06:
-					if(irsens->IrSensor_Avg() > 2500){
+					if(irsens->HandStartDetected(2500)){
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -168,7 +170,7 @@ namespace Mode
 					}
 					break;
 				case ENABLE|0x07:
-					if(irsens->IrSensor_Avg() > 2500){
+					if(irsens->HandStartDetected(2500)){
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -193,7 +195,7 @@ namespace Mode
 					}
 					break;
 				case ENABLE|0x08:
-					if(irsens->IrSensor_Avg() > 2500){
+					if(irsens->HandStartDetected(2500)){
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -211,7 +213,7 @@ namespace Mode
 					}
 					break;
 				case ENABLE|0x09:
-					if(irsens->IrSensor_Avg() > 2500){
+					if(irsens->HandStartDetected(2500)){
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -230,7 +232,7 @@ namespace Mode
 					}
 					break;
 					case ENABLE|0x0A:
-					if(irsens->IrSensor_Avg() > 1500){
+					if(irsens->HandStartDetected(1500)){
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -255,7 +257,7 @@ namespace Mode
 					}
 					break;
 				case ENABLE|0x0B:
-					if(irsens->IrSensor_Avg() > 2500){
+					if(irsens->HandStartDetected(2500)){
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -275,7 +277,7 @@ namespace Mode
 					}
 					break;
 				case ENABLE|0x0C:
-					if(irsens->IrSensor_Avg() > 2500){
+					if(irsens->HandStartDetected(2500)){
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -286,7 +288,7 @@ namespace Mode
 					}
 					break;
 				case ENABLE|0x0D:
-					if(irsens->IrSensor_Avg() > 2500){
+					if(irsens->HandStartDetected(2500)){
 						  for(int i = 0;i < 11;i++)
 						  {
 							  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -297,7 +299,7 @@ namespace Mode
 					}
 					break;
 				case ENABLE|0x0E:
-					if(irsens->IrSensor_Avg() > 2500){
+					if(irsens->HandStartDetected(2500)){
 						for(int i = 0;i < 11;i++)
 						{
 						  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -308,7 +310,7 @@ namespace Mode
 					}
 					break;
 				case ENABLE|0x0F:
-					if(irsens->IrSensor_Avg() > 2500){
+					if(irsens->HandStartDetected(2500)){
 						for(int i = 0;i < 11;i++)
 						{
 						  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);

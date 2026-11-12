@@ -14,6 +14,7 @@
 #include "Module/Inc/interrupt_timing.h"
 
 #include "Peripheral/Inc/peripheral.h"
+#include "Peripheral/Inc/ir_sensor_activity.h"
 #include "Params/mouse_config.h"
 
 #include "Task/Inc/sensing_task.h"
@@ -45,6 +46,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 	if(hadc == &hadc1){
 	const uint32_t entered = InterruptTiming::now();
+	Sensor_AdcComplete();
 	Interrupt::getInstance().preprocess();
 	Interrupt::getInstance().main();
 	Interrupt::getInstance().postprocess();
@@ -201,6 +203,7 @@ void Interrupt::main()
 	if(RemoteExplore::should_stop(HAL_GetTick()))
 	{
 		CtrlTask_type8::getInstance().motion_exeStatus_set(error);
+		Sensor_SetHandWaitActive(0U);
 		CtrlTask_type8::getInstance().motion_disable_set();
 		Vehicle *vehicle = &Vehicle_type8::getInstance();
 		vehicle->suctionStop();

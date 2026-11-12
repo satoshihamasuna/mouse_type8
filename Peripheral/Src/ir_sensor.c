@@ -15,6 +15,7 @@
 #include "Core/Inc/tim.h"
 #include "Core/Inc/gpio.h"
 #include "Peripheral/Inc/ir_sensor.h"
+#include "Peripheral/Inc/ir_sensor_activity.h"
 
 
 #define NUM_ADC				(10)
@@ -22,22 +23,28 @@
 
 #define	SENSOR_ALL_PATTERN		((IR1_Pin|IR2_Pin|IR3_Pin|IR4_Pin))
 
-static uint32_t		led_on_pattern[NUM_ADC]  	= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};				// LED点灯コマンド
+static volatile uint32_t		led_on_pattern[NUM_ADC]  	= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};				// LED点灯コマンド
 
-static uint32_t		led_off_pattern[NUM_ADC] = {0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+static volatile uint32_t		led_off_pattern[NUM_ADC] = {0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 										 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
 
 static uint16_t		adc_value[NUM_ADC];		// AD変換値
+static volatile uint8_t motion_active;
+static volatile uint8_t hand_wait_active;
+static volatile uint8_t leds_enabled;
+static volatile uint8_t fresh_adc_cycles;
 
-void Sensor_TurnOffLED()
+static void Sensor_TurnOffLED()
 {
 	for( int8_t i = 0; i < NUM_ADC; i++ ) {
 		led_on_pattern[i] = 0x00000000;
 		led_off_pattern[i] = (uint32_t)SENSOR_ALL_PATTERN << 16;
 	}
+	__DMB();
+	HAL_GPIO_WritePin(GPIOA, SENSOR_ALL_PATTERN, GPIO_PIN_RESET);
 }
 
-void Sensor_TurnOnLED()
+static void Sensor_TurnOnLED()
 {
 	Sensor_TurnOffLED();
 	led_on_pattern[LED_FR_ON] = IR1_Pin;
@@ -46,10 +53,59 @@ void Sensor_TurnOnLED()
 	led_on_pattern[LED_FL_ON] = IR4_Pin;
 }
 
+static void Sensor_UpdateLEDActivity(void)
+{
+	const uint8_t enabled = (motion_active || hand_wait_active) ? 1U : 0U;
+	if (enabled == leds_enabled) return;
+	if (enabled) {
+		// The first completion can contain a partly unlit DMA scan.
+		fresh_adc_cycles = 2U;
+		Sensor_TurnOnLED();
+	} else {
+		Sensor_TurnOffLED();
+		fresh_adc_cycles = 0U;
+	}
+	__DMB();
+	leds_enabled = enabled;
+}
+
+void Sensor_SetMotionActive(uint8_t active)
+{
+	const uint32_t irq_mask = __get_PRIMASK();
+	__disable_irq();
+	const uint8_t was_active = motion_active;
+	motion_active = active ? 1U : 0U;
+	// 実走行への移行・停止時は待機を消費する。error IRQが停止状態を
+	// 繰り返し通知しても、その後に選び直した手かざし待機は解除しない。
+	if (motion_active || was_active) hand_wait_active = 0U;
+	Sensor_UpdateLEDActivity();
+	__set_PRIMASK(irq_mask);
+}
+
+void Sensor_SetHandWaitActive(uint8_t active)
+{
+	const uint32_t irq_mask = __get_PRIMASK();
+	__disable_irq();
+	hand_wait_active = active ? 1U : 0U;
+	Sensor_UpdateLEDActivity();
+	__set_PRIMASK(irq_mask);
+}
+
+void Sensor_AdcComplete(void)
+{
+	if (leds_enabled && fresh_adc_cycles > 0U) --fresh_adc_cycles;
+}
+
+uint8_t Sensor_IrSamplesReady(void)
+{
+	return leds_enabled && fresh_adc_cycles == 0U;
+}
+
 void Sensor_Initialize()
 {
 
-	  Sensor_TurnOnLED();
+	  motion_active = hand_wait_active = leds_enabled = fresh_adc_cycles = 0U;
+	  Sensor_TurnOffLED();
 	  DMA_NodeConfTypeDef nodeConf1,nodeConf2;
 	  HAL_DMAEx_List_GetNodeConfig(&nodeConf1, &Node_GPDMA1_Channel0);
 	  HAL_DMAEx_List_GetNodeConfig(&nodeConf2, &Node_GPDMA1_Channel1);
@@ -105,6 +161,8 @@ void Sensor_Initialize()
 
 void Sensor_StopADC()
 {
+	Sensor_SetHandWaitActive(0U);
+	Sensor_SetMotionActive(0U);
 	HAL_LPTIM_IC_Stop(&hlptim1, LPTIM_CHANNEL_1);
 	HAL_LPTIM_IC_Stop(&hlptim1, LPTIM_CHANNEL_2);
 	HAL_GPIO_WritePin(GPIOA, SENSOR_ALL_PATTERN, GPIO_PIN_RESET);
@@ -119,6 +177,7 @@ int16_t ADC_get_value(int num)
 
 int16_t Sensor_GetValue(t_sensor_dir dir)
 {
+	if (!Sensor_IrSamplesReady()) return 0;
 	switch(dir)
 	{
 		case sensor_fl:

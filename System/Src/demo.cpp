@@ -63,6 +63,7 @@ void Demo()
 
 	Motion *motion = &(CtrlTask_type8::getInstance());
 	IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
+	SensorHandWait hand_wait;
 
 	Search solve_maze;
 	solve_maze.set_search_limit_time((6*60*1000));
@@ -87,6 +88,7 @@ void Demo()
 	{
 		enable = Mode::Select(enable,0x01,Encoder_GetProperty_Left());
 		param = (enable == 0x00) ? Mode::Select(param,0x0f,Encoder_GetProperty_Right()) : param;
+		if(enable == 0x00) hand_wait.set(false);
 		Battery_LimiterVoltage();
 		if(enable == 0x01)
 		{
@@ -103,7 +105,7 @@ void Demo()
 		switch((enable<<4)|param)
 		{
 			case ENABLE|0x00:
-				if(irsens->IrSensor_Avg() > 2000){
+				if(irsens->HandStartDetected(2000)){
 					for(int i = 0;i < 11;i++)
 					{
 						(i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -141,7 +143,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x01:
-				if(irsens->IrSensor_Avg() > 2000){
+				if(irsens->HandStartDetected(2000)){
 					for(int i = 0;i < 11;i++)
 					{
 						(i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -176,7 +178,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x02:
-				if(irsens->IrSensor_Avg() > 2000){
+				if(irsens->HandStartDetected(2000)){
 					for(int i = 0;i < 11;i++)
 					{
 						(i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -213,7 +215,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x03:
-				if(irsens->IrSensor_Avg() > 2000){
+				if(irsens->HandStartDetected(2000)){
 					for(int i = 0;i < 11;i++)
 					{
 						(i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);
@@ -249,7 +251,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x04:
-			   if(irsens->IrSensor_Avg() > 2000)
+			   if(irsens->HandStartDetected(2000))
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -283,7 +285,7 @@ void Demo()
 			   }
 				break;
 			case ENABLE|0x05:
-			   if(irsens->IrSensor_Avg() > 2000)
+			   if(irsens->HandStartDetected(2000))
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -306,7 +308,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x06:
-			   if(irsens->IrSensor_Avg() > 2000)
+			   if(irsens->HandStartDetected(2000))
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -319,7 +321,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x07:
-				if(irsens->IrSensor_Avg() > 2000)
+				if(irsens->HandStartDetected(2000))
 				{
 					for(int i = 0;i < 11;i++)
 					{
@@ -332,7 +334,7 @@ void Demo()
 				break;
 				
 			case ENABLE|0x08:
-			   if(irsens->IrSensor_Avg() > 2000)
+			   if(irsens->HandStartDetected(2000))
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -355,7 +357,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x09:
-			   if(irsens->IrSensor_Avg() > 2000)
+			   if(irsens->HandStartDetected(2000))
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -377,7 +379,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x0A:
-			   if(irsens->IrSensor_Avg() > 2000)
+			   if(irsens->HandStartDetected(2000))
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -399,7 +401,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x0B:
-			   if(irsens->IrSensor_Avg() > 2000)
+			   if(irsens->HandStartDetected(2000))
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -422,7 +424,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x0C:
-			   if(irsens->IrSensor_Avg() > 2000)
+			   if(irsens->HandStartDetected(2000))
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -445,7 +447,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x0D:
-			   if(irsens->IrSensor_Avg() > 2000)
+			   if(irsens->HandStartDetected(2000))
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -467,7 +469,7 @@ void Demo()
 				}
 				break;
 			case ENABLE|0x0E:
-			   if(irsens->IrSensor_Avg() > 2000)
+			   if(irsens->HandStartDetected(2000))
 			   {
 					for(int i = 0;i < 11;i++)
 					{
@@ -490,7 +492,7 @@ void Demo()
 
 				break;
 			case ENABLE|0x0F:
-				if(irsens->IrSensor_Avg() > 2000){
+				if(irsens->HandStartDetected(2000)){
 					for(int i = 0;i < 11;i++)
 					{
 					  (i%2 == 0) ? Indicate_LED(mode|param):Indicate_LED(0x00|0x00);

@@ -6,6 +6,7 @@
 #include "Module/Inc/remote_explore.h"
 #include "Peripheral/Inc/battery.h"
 #include "Peripheral/Inc/peripheral.h"
+#include "Peripheral/Inc/ir_sensor_activity.h"
 #include "core/ntlibc.h"
 #include <stdio.h>
 
@@ -111,7 +112,10 @@ int shell_shortest(int argc, char **argv)
 		else if(!stopped())
 		{
 			printf("SHORTEST_WAIT_SENSOR goal:%d,%d,%d profile:%s maze:%s\r\n", gx, gy, size, config->key, argv[6]);
-			while(motion->return_irObj()->IrSensor_Avg() < 2000 && !stopped()) HAL_Delay(1);
+			{
+				SensorHandWait hand_wait(true);
+				while(motion->return_irObj()->IrSensor_Avg() < 2000 && !stopped()) HAL_Delay(1);
+			}
 			for(int i = 0; i < 11 && !stopped(); ++i)
 			{
 				Indicate_LED(i % 2 ? 0x00 : 0x3f);

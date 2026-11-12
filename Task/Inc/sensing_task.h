@@ -20,6 +20,7 @@
 #include "Task/Inc/straight_wall_ekf.h"
 #include "Task/Inc/search_turn_guard.h"
 #include "Task/Inc/diagonal_wall_control.h"
+#include "Peripheral/Inc/ir_sensor_activity.h"
 
 #define STRAIGHT_REF		(45.0)
 #define DIAGONAL_REF		(diagonal_wall_param.reference_m * 1000.0f)
@@ -296,6 +297,7 @@ class IrSensTask
 		void EnableIrSensDiagonal()		{	EnableIrSens();		IrSensMotion_Set(DIAGONAL_IRSENS);	IrSensorReferenceSet(DIAGONAL_REF);	}
 		float IrSensorMaxValueFromLog(t_sensor_dir dir);
 		int16_t IrSensor_Avg();
+		bool HandStartDetected(int16_t threshold);
 		t_bool Division_Wall_Correction()
 		{
 			t_bool flag = False;
