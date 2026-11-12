@@ -51,6 +51,32 @@ class AccuracyTests(unittest.TestCase):
         checks = accuracy.find_grid_checkpoints(np.zeros_like(frame), true_transform)
         self.assertFalse(any(point['accepted'] for point in checks))
 
+    def test_colour_speckles_do_not_hide_visible_grid_intersection(self):
+        for shape in ((1, 1), (2, 4)):
+            with self.subTest(shape=shape):
+                frame, transform = self.grid_scene()
+                x, y = np.rint(accuracy.transform([[180, 180]], np.linalg.inv(transform))[0]).astype(int)
+                baseline = next(p for p in accuracy.find_grid_checkpoints(frame, transform)
+                                if (p['col'], p['row']) == (4, 4))
+                self.assertTrue(baseline['accepted'])
+                height, width = shape
+                frame[y+4:y+4+height, x+4:x+4+width] = (255, 0, 0)
+                point = next(p for p in accuracy.find_grid_checkpoints(frame, transform)
+                             if (p['col'], p['row']) == (4, 4))
+                self.assertTrue(point['accepted'], point)
+
+    def test_contiguous_coloured_object_and_thin_wire_still_occlude_grid(self):
+        for shape in ((3, 3), (1, 9), (13, 13)):
+            with self.subTest(shape=shape):
+                frame, transform = self.grid_scene()
+                x, y = np.rint(accuracy.transform([[180, 180]], np.linalg.inv(transform))[0]).astype(int)
+                height, width = shape
+                frame[y+2:y+2+height, x+2:x+2+width] = (255, 0, 0)
+                point = next(p for p in accuracy.find_grid_checkpoints(frame, transform)
+                             if (p['col'], p['row']) == (4, 4))
+                self.assertFalse(point['accepted'])
+                self.assertEqual(point['reason'], 'colored_object_occlusion')
+
     def test_per_frame_training_locations_are_excluded_for_each_transform(self):
         checks = [dict(col=col, row=1, accepted=True) for col in range(1, 5)]
         first = accuracy.heldout_checkpoints(checks, dict(grid_quality=dict(training_grid_indices=[[2,1]])), [(1,1)])

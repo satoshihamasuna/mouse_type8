@@ -40,6 +40,16 @@ def summarize(folder):
     if np.ptp(points @ forward) < 30:
         raise ValueError('初期直進の観測範囲が30mm未満です')
     basis = np.column_stack([[-forward[1], forward[0]], forward])
+    entry_residual = points-points.mean(axis=0)
+    entry_residual -= np.outer(entry_residual @ forward, forward)
+    reference_frame = dict(method='relative_origin_and_measured_entry_direction',
+        origin='stationary pre-motion marker midpoint from relative_marker_midpoint.csv',
+        forward_axis_in_camera_plane=forward.tolist(),
+        camera_plane_to_right_forward_matrix=basis.tolist(),
+        entry_heading_camera_plane_deg=float(np.degrees(np.arctan2(forward[1], forward[0]))),
+        entry_observations=len(points), entry_span_mm=float(np.ptp(points @ forward)),
+        entry_line_rms_mm=float(np.sqrt(np.mean(np.sum(entry_residual**2, axis=1)))),
+        scale_fitted=False, endpoint_or_exit_used_for_frame=False)
     pose = pd.read_csv(folder/'relative_marker_midpoint.csv')
     xy = pose[['center_dx_mm','center_dy_mm']].to_numpy() @ basis
     phase = pose.time_video_s.to_numpy()-report['log_time_zero_at_video_s']
@@ -62,6 +72,7 @@ def summarize(folder):
         motion_observation_rate=report['required_motion_window_quality']['observation_rate'],
         trajectory_fit_rmse_mm=report['trajectory_fit_rmse_mm'], frame_stride=report['frame_stride'],
         observation_scope=report['observation_scope'], parameter_adoption_allowed=False,
+        trajectory_reference_frame=reference_frame,
         trial_json=report['trial_json'], report_json=str(folder/'report.json'),
         report_sha256=hashlib.sha256((folder/'report.json').read_bytes()).hexdigest(),
         note='相対目印中点。絶対位置・高さ補正済み機体yaw・独立ハードウェア同期は未検証')

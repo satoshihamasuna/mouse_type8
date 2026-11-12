@@ -74,6 +74,12 @@ def find_grid_checkpoints(frame, image_to_board, pitch_mm=45.0, intervals=8):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     colored = ((hsv[:, :, 1] > 90) & (hsv[:, :, 2] > 35)).astype('uint8')
+    # 圧縮・色ノイズの孤立画素を25 pxへ拡大して、見える格子を遮蔽扱いしない。
+    # 小さくても連続9画素以上ある色領域は残し、細長い遮蔽物も除外する。
+    _, labels, stats, _ = cv2.connectedComponentsWithStats(colored, connectivity=8)
+    keep = stats[:, cv2.CC_STAT_AREA] >= 9
+    keep[0] = False
+    colored = keep[labels].astype('uint8')
     occlusion = cv2.dilate(colored, np.ones((25, 25), 'uint8'))
     inverse = np.linalg.inv(np.asarray(image_to_board))
     results = []
