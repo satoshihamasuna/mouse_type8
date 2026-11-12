@@ -7,6 +7,7 @@ from pathlib import Path
 import struct
 import sys
 import time
+import traceback
 
 dependency_root = Path(__file__).resolve().parents[2] / '.tools'
 for directory in ('ble_python', 'ble_python{}{}'.format(*sys.version_info[:2])):
@@ -327,8 +328,9 @@ def main():
     except Exception as error:
         if (getattr(error, 'winerror', 0) or 0) & 0xFFFFFFFF == 0x80070422:
             print('Bluetooth Support Service (bthserv) is disabled.', file=sys.stderr)
-        else:
-            print('{}: {}'.format(type(error).__name__, error), file=sys.stderr)
+        # Keep the failing GATT operation and chained cleanup errors for diagnosis.
+        # Reporting a failure must never reconnect or replay UART commands.
+        traceback.print_exc()
         return 1
     return 0
 

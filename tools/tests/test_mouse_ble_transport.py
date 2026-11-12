@@ -36,6 +36,41 @@ import mouse_ble_shell as shell
 import mouse_ble_log as log
 
 
+class GatewayFailureReportTests(unittest.TestCase):
+    def test_windows_failure_keeps_call_site_without_restarting_link(self):
+        calls = []
+
+        async def failed_gatt_read(args):
+            calls.append(args.name)
+            error = OSError('Windows BLE operation cancelled')
+            error.winerror = -2147023673
+            raise error
+
+        output = io.StringIO()
+        with patch.object(gateway, 'run', failed_gatt_read), \
+             patch.object(sys, 'argv', ['mouse_ble_gateway.py']), \
+             contextlib.redirect_stderr(output):
+            self.assertEqual(gateway.main(), 1)
+        self.assertEqual(calls, ['HY0020-MOUSE'])
+        self.assertIn('Traceback (most recent call last)', output.getvalue())
+        self.assertIn('failed_gatt_read', output.getvalue())
+        self.assertIn('OSError: Windows BLE operation cancelled', output.getvalue())
+
+    def test_disabled_service_keeps_actionable_message_and_traceback(self):
+        async def disabled_service(args):
+            error = OSError('service disabled')
+            error.winerror = -2147023838  # 0x80070422.
+            raise error
+
+        output = io.StringIO()
+        with patch.object(gateway, 'run', disabled_service), \
+             patch.object(sys, 'argv', ['mouse_ble_gateway.py']), \
+             contextlib.redirect_stderr(output):
+            self.assertEqual(gateway.main(), 1)
+        self.assertIn('Bluetooth Support Service (bthserv) is disabled.', output.getvalue())
+        self.assertIn('disabled_service', output.getvalue())
+
+
 class GuiCaptureTests(unittest.TestCase):
     def test_live_frames_are_saved_and_other_binary_bytes_are_unchanged(self):
         payload = struct.pack('<4sIIH55e', log.MAGIC, 7, 100, 5, *range(55))
