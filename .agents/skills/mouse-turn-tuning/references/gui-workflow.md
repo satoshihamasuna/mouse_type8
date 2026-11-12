@@ -65,8 +65,9 @@ GUIの`Turn count`を増やすことは、任意の異なるターン列を組�
 - 単体はCSVと同名`.settings.json`を取得する。turnpatternのパターンJSONとCSVを、単体の実機パラメータ付きJSONと同一視しない。
 - `debug/turnpattern`に探索GUIと同じ`wall_ekf`選択・自動適用・状態保存があるとは限らない。モードと壁切れ方式は実機応答で記録する。
 - 保存ログの周期はロギング実装と設定から確認する。BLE探索CSVの`period_ms=5`をデバッグ保存ログへ流用しない。
-- 動画からLstart/Lendを測る場合は、[mouse-log-analysisの測定条件](../../mouse-log-analysis/references/turn-lengths.md)を使う。
+- ゼロ設定を前提に専用解析ツールでLstart/Lendを逆算する場合は、[mouse-log-analysisの測定条件](../../mouse-log-analysis/references/turn-lengths.md)を使う。
   特にLstart=Lend=0、動画・ログ対応、対応motion、スロー倍率、品質条件を確認し、未対応の左斜め系を単純に名前置換しない。
+  現在の非ゼロ設定での比較調整と、この逆算の入力条件は区別する。全体の進め方は[turn_500の調整方針](turn500-workflow.md)を参照する。
 - 最短への反映は機体別`Params/Param_A/turn_500.h`または`Param_B/turn_500.h`、選択は`run_config_plain500`と`mode_500`を確認する。
 
 GUI・送受信を修正した場合は変更に応じて`test_myshell_debug_session.py`、`test_myshell_gui.py`（pytest）、

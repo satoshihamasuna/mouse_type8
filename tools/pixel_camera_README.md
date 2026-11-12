@@ -78,6 +78,128 @@ set後の照合だけは実機の整数表示1単位までの切捨てを許容�
 UIを閉じるとBLE接続を閉じます。依頼済みの保存データの詳細解析は終了まで続きます。
 解析PythonはこのPCでは`D:/venv/venv3-11/Scripts/python.exe`を使います。別環境では`TYPE8_ANALYSIS_PYTHON`にNumPy/OpenCV aruco/Pandas/SciPy/Matplotlib環境を指定します。カメラ用PyAV環境は従来のDebug_camera/.venvを使います。
 
+### 画面操作なしのCLI調整
+
+`pixel_camera_tuning_cli.py`はTkの画面を開かず、GUIと同じ設定照合・録画待ち・単体1回・停止後余白・速報／全フレーム解析・一式保存を使います。
+接続を保持する常駐処理へコマンドを送り、他のアプリのフォーカスやマウス・キーボードを操作しません。
+PixelカメラのPCサーバーは従来どおり必要です。カメラGUIは接続後に最小化できます。BLEを使う既存調整GUIはDisconnectしてから切り替えてください。
+
+リポジトリのルートからカメラ用Pythonで実行します。設定JSONには**今回の機体・カメラ高さ・盤面参照・機体プロファイル**を記入します。
+次は形式例です。BLEアドレスとJSONパスを今回の値へ置き換えてください。
+
+```json
+{
+  "mouse": "A",
+  "address": "HY0020のBLEアドレス",
+  "height_mm": 800,
+  "reference": "tools/logs/pixel_camera/marker_reference.json",
+  "geometry": "tools/logs/pixel_camera/body_geometry_A.json",
+  "char_delay": 0.08,
+  "seconds": 20,
+  "exposure_compensation_steps": -15
+}
+```
+
+露出は端末の整数ステップです。今回のPixelは1/6 EV刻みなので、−15は−2.5 EVです。省略時はカメラ側の設定を維持します。
+
+走行中に盤面全体がぼける場合は、撮影JSONとsensor.csvのAF状態を確認してください。AF固定対応のカメラAPKでは、PC接続後に以下を実行すると合焦後の固定を有効にできます。機体の指令は送りません。アプリのPC接続サービスを再起動するとOFFへ戻るため、再度設定します。CLIの録画開始時のconfigureは、この指定を省略して現在値を維持します。
+
+```powershell
+@'
+from pixel_camera import PixelCameraClient
+camera = PixelCameraClient(connection="usb")
+camera.connect()
+try:
+    print(camera.configure(focus_lock=True))
+finally:
+    camera.disconnect()
+'@ | & '..\..\Debug_camera\.venv\Scripts\python.exe' -
+```
+
+設定応答のTrueは要求受付です。AF固定を有効にした録画では、CaptureResultの固定確認までPREPARINGを維持し、未固定・固定失敗・固定解除は録画エラーになります。まず静止試写で撮影JSONのfocus_lock.stateがLOCKEDになることと認識を確認します。AF固定後も全フレームの品質条件は変更しません。高速撮影のセンサー通知はバッチ単位で、独立した240露光/秒を保証しません。
+
+`serve`はカメラ待機とBLE接続を確認し、5 ms連続CSVを開始します。起動・状態照会だけでは走行しません。
+
+```powershell
+$cameraPython = '..\..\Debug_camera\.venv\Scripts\python.exe'
+$session = 'tools/logs/pixel_camera/cli_session_001'
+$config = 'tools/logs/pixel_camera/cli_config.json'
+
+# 接続を保持する処理。別端末でクライアントを使います。
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session serve --config $config
+```
+
+非表示で起動する場合は、上の`serve`の代わりに次を使えます。起動ログはセッション内へ保存されます。
+
+```powershell
+New-Item -ItemType Directory -Path $session -Force | Out-Null
+Start-Process -FilePath $cameraPython -ArgumentList @('tools/pixel_camera_tuning_cli.py','--session',$session,'serve','--config',$config) -WorkingDirectory (Get-Location).Path -WindowStyle Hidden -RedirectStandardOutput "$session/service.stdout.log" -RedirectStandardError "$session/service.stderr.log"
+```
+
+別端末で操作します。`preset`は指定ターンのRAM値を初期化するため、保持したい候補は先に保存してください。
+機体再起動後に候補へ戻す場合は、対象の500プリセットを選択してから保存候補をApplyします。
+
+```powershell
+# 状態照会だけ。実機へコマンドを送りません。
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session status
+
+# 読取りだけならread。初回や再起動後は明示的にpresetを選択します。
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session preset --motion in_l45 --preset 500 --output current.settings.json
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session read --motion in_l45 --output current.settings.json
+
+# 指定項目を変更し、setを1回送った後にshowで照合します。
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session apply --settings current.settings.json --set lstart=19.5 --set lend=25 --output candidate.settings.json
+
+# 今回の設置・停止・手離しを確認した後に、1回だけ撮影・走行します。
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session capture --settings candidate.settings.json --operator-ready --request-id in_l45_001
+
+# 応答が途切れてもcaptureを再送せず、このIDで確認します。
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session status --request-id in_l45_001
+
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session close
+```
+
+`--settings`は実機設定JSONか、`actual_settings`を持つ照合記録JSONを受け取ります。`--set pid.om_kp=...`や`--set feedforward.ff_om_velo=...`も使えます。
+`capture`の`--operator-ready`はその1回分だけです。同じ`request-id`は失敗・途中送信・応答消失後も再使用できません。
+`--no-wait`は受付後に戻り、処理は継続します。通常は速報・全フレーム解析・一式保存まで待ちます。
+待ち時間を超えたり接続が途切れたりしても、自動再送・自動再接続はしません。
+撮影記録JSONまたはCLI要求状態JSONの保存中にWindowsのアクセス拒否・共有違反（5/32/33）が起きた場合だけ、保存を最大3回、待ち時間合計0.35秒で再試行します。状態照会中の一時的なファイル競合にも同じ制限を適用します。録画開始・停止や走行指令は再送しません。解消しなければ保存エラーとして失敗し、最終記録の保存に失敗してもカメラクライアントを切断します。
+終了コードは通常成功0、要求・通信・撮影失敗1、撮影後の品質確認または一式保存に問題がある場合2です。状態照会のJSONも確認してください。
+
+`service.json`は常駐処理の接続情報、`jobs/`は要求IDごとの受付・実行・結果です。
+`run_<request-id>/`に従来と同じ動画索引・CSV・実機設定・quick/full・今回の確認記録を残します。
+設定変更・撮影・終了は直列化され、処理中の別コマンドは拒否します。自動のパラメータ採用・連続走行は行いません。
+
+長時間の解析・編集や返答待ちは、機体とHY0020の電源をOFFにして行います。走行・手かざし待機の終了と設定・CSV・動画の保存を確認した時点でOFFを案内し、接続も閉じられる時点で閉じます。`--no-wait`やBLE切断だけでは本体の電源は切れません。保存済みデータの解析が続いていても、そのために通電を維持する必要はありません。電源を再投入するとRAM設定は失われるため、次の測定準備を終えてからONにし、保存済み設定の復元・実機値照合・設置確認を行ってください。
+
+### 動画・CSV・設定をDドライブにまとめる
+
+撮影タブは全フレーム解析の終了後、動画・走行CSV・実機設定・撮影記録・速報/詳細解析を録画IDごとのフォルダーへ自動保存します。
+現在の配置では`D:\TYPE8_Camera\trials\録画ID\`です。「結果フォルダーを開く」は保存済みならこのフォルダーを開きます。
+解析が不成立でも元資料をまとめ、検査の成否はそのまま残します。一式保存が失敗した場合は画面へ表示し、元資料を保持します。走行指令は追加しません。
+
+- `video.mp4`：動画。既存MP4と同じ実体を参照するハードリンクで、動画容量を二重に消費しません。
+- `motion.csv` / `motion.settings.json`：走行全区間の切出しCSVと、その実機設定。
+- `trial.json`：D側の動画・CSV・設定を参照する索引。保存済み結果の表示にも使えます。
+- `source_trial.json` / `capture.json` / `camera/`：元の試行記録・撮影記録・カメラのメタデータ。
+- `quick/` / `full/`：元の解析結果。内容・入力ハッシュ・元の絶対パスを書き換えず保持します。
+- `manifest.json`：各ファイルの元パス・サイズ・SHA-256・保存方法。
+
+元の`tools/logs/`と動画保存先は保持します。元試行の`archive.json`がD側を参照します。
+`D:\TYPE8_Camera\trials\index.csv`で、機体・動作・設定・結果と動画/CSVの対応を一覧できます。
+ハードリンクには元動画と同じボリュームの保存先が必要です。別ボリューム等で作成できなければ自動の動画コピーには切り替えず、元資料を残して失敗を表示します。
+保存先の既定値は動画の`recordings/remote`の隣の`trials`で、その他の配置では動画フォルダー内の`type8_trials`です。`TYPE8_TRIALS_DIR`環境変数で変更できます。
+
+保存済みの試行を、カメラ・機体へ接続せず一式保存する例：
+
+```powershell
+python tools/pixel_camera_archive.py --trial tools/logs/pixel_camera/SESSION/run_ID/trial.json --root D:/TYPE8_Camera/trials
+```
+
+`--trial`を複数指定できます。同じ入力の再実行はハッシュを照合して既存保存を使い、入力や保存済みファイルが違う場合は上書きせず停止します。
+試行の資料を後から変更・追加した場合は別の`--root`へ保存して履歴を保ってください。
+実行中のGUIには次回起動から適用されます。新しい自動保存処理は解析終了後にだけ動作し、録画・一回実行の手順を変えません。
+
 保存済み結果を接続せずに表示する例:
 
 ```powershell
@@ -176,10 +298,30 @@ python tools/pixel_camera_tuning.py --review-trial tools/logs/pixel_camera/SESSI
 ログの動作全区間を含む時刻合わせを要求し、動作開始前200 ms～停止後100 msの観測率95％以上と前後の観測数を検査します。時刻は軌跡に合わせた推定で、独立したハードウェア同期ではありません。
 `--pose-cache apparent_floor_marker_pose.csv`を指定すると、動画のSHA-256・較正基準・色検出条件・対象時間範囲が対応するキャッシュだけを再利用できます。
 `REVIEW_REQUIRED`は比較の目視確認が必要という状態で、走行パラメータの自動採用を許可するものではありません。
+
+単体ターンの`pixel_camera_tuning_report.py`は、停止中の開始点を原点にした相対変位を使い、旋回前の直進軌跡を直線近似して前方軸を決めます。
+その軸に合わせて軌跡全体を回転するため、小さな設置位置・開始向きの差は相対的な終点・軌道の比較から除けます。
+`summary.json`の`trajectory_reference_frame`へ使用した軸・変換行列・入口直線の観測数・長さ・残差を保存します。
+終点や出口方向を目標へ合わせる回転・拡大縮小は行わず、実際の曲がり過ぎ、曲がり不足、距離誤差は残します。
+姿勢補正は穴や盤面外へ出る実際の経路、床面差、較正誤差をなくすものではありません。走行前の静止認識と実経路の余裕は別に確認します。
+開始姿勢を厳密にそろえた試験と、入口方向で補正した相対比較は記録上も区別し、過去の姿勢条件不成立を後から成立へ書き換えません。
+
+厳密な開始姿勢の一致を要求しない相対比較では、試験経路に対応した盤面の縦横・斜め軸を、配置確認の角度基準として計画に保存します。
+運用上の角度範囲を盤面軸と保存したOFF姿勢の両方へ重ねて適用すると、OFF時の傾きによって許される範囲が偏るため、保存OFF姿勢との差は診断値として残します。
+配置の運用範囲とは別に、確認済み静止姿勢から走行直前までの位置・向きの変化を制限し、実配置からの予測経路、機体幅、穴、盤面端、停止余裕を確認してください。
+この基準を変更する場合は元の姿勢参照・不成立記録を保持し、新しい条件で静止試写を取得してから走行します。絶対車軸位置・高さ補正済みyawの精度を保証する判定ではありません。
+
 格子の一部が機体に隠れる場合は、参照JSONの`grid_refinement.training_policy`に`visible_spread`を明示できます。
 各フレームの見えている格子から、公称位置の広がりだけで補正点を8〜10点選び、別の12点以上を検査用に残します。
 選択に画像上の補正残差は使わず、検査点の誤差上限や必要点数は変えません。点数・広がり・検査誤差が不足するフレームは引き続き無効です。
 指定がなければ従来の固定位置分割を使います。参照JSONをコピーして明示し、変更前の解析を保持してください。
+
+固定カメラの静止映像でも、`visible_spread`の補正点がフレームごとに切り替わると、画像上で安定した目印のmm座標が揺れる場合があります。
+この場合は参照JSONのコピーで`grid_refinement.training_policy`を`fixed_indices`にし、既存の`training_grid_indices`を使う方式も比較できます。
+可視の補正点8点以上・別の検査点12点以上と精度条件を保てることを、静止区間と走行全体の全フレームで確認してください。
+固定の補正点群と検査点群は別のフレーム間でも混ぜません。元の不成立結果と参照JSONは残し、方式を変えた比較では基準走行も同じ参照JSONで別フォルダーへ再解析します。
+静止映像の再解析だけを根拠に走行を始めず、新しい撮影でも認識・静止品質・実経路を確認します。
+
 実例と限界は[真下不明での解析記録](logs/pixel_camera/20261109_unknown_camera_foot/README.md)を参照してください。
 
 「撮影用ライト」はPixel内蔵ライトを撮影中だけ点灯させます。チェック状態は次の設定・確認撮影に反映されます。
