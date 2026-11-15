@@ -1,5 +1,75 @@
 # Pythonテスト
 
+探索ターンの機体/速度別パラメータと前後直進のPID選択は、次で確認します（実機操作なし）。
+
+```powershell
+python -m unittest discover -s tools/tests -p test_search_turn_params.py -v
+```
+
+実際の`Init_Motion_search_turn`関数本体、宣言の既定引数、`exe_Motion_search_turn`ラッパー、機体別`Params/run_param.h`をA/B向けにホストでコンパイルします。
+Aの左右370のLstart/Lend・論理角・補正・PID・FF参照、探索によるテーブルコピー後の前後PID、単体GUI相当の明示指定の優先を確認します。
+他速度/機体Bの前後ゲインの既定値と、省略した任意フィールドの互換性も検証します。
+実ターンの時間進行や壁あり連続走行を模擬したテストではありません。ホストC++コンパイラがなければスキップされるため、成功とは扱いません。
+
+ADCを含む周期ログは、次のテストで検証します。
+
+```powershell
+python -m unittest discover -s tools/tests -p test_log_protocol.py -v
+python -m unittest discover -s tools/tests -p test_mouse_ble_log.py -v
+python -m unittest discover -s tools/tests -p test_mouse_ble_transport.py -v
+python -m unittest discover -s tools/tests -p test_mouse_ble_benchmark.py -v
+python -m pytest tools/tests/test_myshell_gui.py -q
+```
+
+`L8S4` / 保存magic `0xA55C`は49個のbinary16、ADC差分のint16×4、範囲状態と走行パターンのuint16×2です。
+実C++のパック処理・リング・UART配信からPythonのCSVまで、負値、2049、32767、範囲状態2209の整数精度を確認します。
+新旧とも55項目ですが列順・型が違うため、旧`L8S1` / `L8S2` / `L8S3`の列対応、同じCSVでの形式変更拒否、HEADER選択と実GUI受信経路も検証します。
+周期ログのPIDゲイン6列は廃止し、設定値の測定条件は別途記録します。制御ゲインそのものを変更する処理ではありません。
+
+壁診断schema 1と距離補正の変更は、次のテストを使います（実機へ接続しません）。
+
+```powershell
+python -m unittest discover -s tools/tests -p test_side_wall_stability.py -v
+python -m unittest discover -s tools/tests -p test_wall_diagnostics.py -v
+python -m unittest discover -s tools/tests -p test_ble_explore.py -v
+python -m unittest discover -s tools/tests -p test_maze_video_pose.py -v
+python -m unittest discover -s tools/tests -p test_mouse_ble_log.py -v
+```
+
+側壁テストはA/Bの実IR処理・制御器と、実ターン処理の補正式を使用します。
+範囲端点・負ADC、近距離限界での離反応答と観測不採用、入口/出口の補正量制限、窓外棄却、遅延補償、前壁チェックを確認します。
+探索テストはA/Bの実コマンドが出力する壁診断をPCパーサへ渡し、スキーマ・件数・設定値も検証します。
+欠落・重複・不正値、受信中の次走行禁止、停止通知後の波形停止、旧形式の未記録項目、時計比率による動画時刻対応も確認します。
+ホストで成功しても実機の壁距離精度・検出位置精度・走行中のIRQ時間を確認したことにはなりません。
+共通ファームウェアの変更なので、`Debug-MouseA` / `Debug-MouseB`のConfigureとBuildも実行します。
+
+録画付き探索・最短は `python -m unittest discover -s tools/tests -p test_explore_camera.py -v` で確認します。
+録画中・所有者・ID・新しいBLEログ・手かざし待ちが揃った場合だけのOK表示、旧アプリの拒否、
+開始応答消失時の再送禁止と所有者照合による回収、開始拒否時に以前の走行を混ぜないこと、
+GUI条件の引継ぎ、PC時刻による同期初期値と手動調整、確認済み転送通知の再保存抑制を検証します。
+Tkの画面テストを含み、機体・カメラは操作しません。
+最短では速度プロファイル・RAM/Flash迷路・ゴール・EKF選択の引継ぎを確認します。
+撮影EVの端末刻みによる変換、「維持」での設定非送信、範囲外・受付不一致の拒否、GUIからのEV・ライト選択の引継ぎも模擬します。
+動画位置解析は`python -m unittest discover -s tools/tests -p test_maze_video_pose.py -v`で確認します。
+OpenCV aruco・NumPyが必要です。既知のカメラ移動、ArUco不足時の変換非流用、赤壁だけでの機体非検出、
+候補の曖昧性・過大移動の拒否、角度の折返し・欠測、実MCU時刻による符号付き同期と励起不足の拒否を検証します。
+同じ合成画像で機体Aは前赤・後黄、機体Bは前黄・後赤となり、中点を保って向きだけが180度反転することも確認します。
+保存済み走行設定からの機体選択、解析JSON・比較画面への色の記録、機体不明時の拒否を含みます。
+長時間の既知の時計比率差を、空間位置を使わずに回収する回帰テストも含みます。
+`test_ble_explore.py` には録画ガードの失敗・ガード中の中止で許可とCRを送らない回帰を追加しています。
+
+動画・ジャイロによる滑り再評価は
+`python -m unittest discover -s tools/tests -p test_turn_slip_observation.py -v`で検証します。
+不等間隔時刻での微分、長い欠測をまたがないこと、剛体マーカーの未知投影ずれの推定、
+短い円弧の識別性低下、既知の時刻ずれの回収、車軸からずれた観測点が見かけの滑りを作る場合を確認します。
+NumPy・pandas・SciPy・Matplotlibを使用します。
+
+turn500から別速度へ転用する候補モデルは
+`python -m unittest discover -s tools/tests -p test_turn_speed_prediction.py -v`で検証します。
+角速度の符号・角度積分と時間の単位、左右対称性、90度の終点保持、
+180度の終点と前方頂点の同時保持、速度依存仮説による差と停止後の減衰を確認します。
+NumPy・pandas・SciPy・Matplotlibを使用する数値検証で、実機の予測精度を保証するテストではありません。
+
 IR発光の状態管理は`python -m unittest discover -s tools/tests -p test_ir_sensor_activity.py -v`で確認します。
 実際の`ir_sensor.c`をCとしてホストでコンパイルし、DMA発光パターン、起動時消灯、手かざし待機→走行→停止、
 待機取消・スコープ終了、IRQマスク保持、再点灯後2 ADC周期の古い値の拒否、消灯中の電池ADC継続を検証します。
@@ -15,21 +85,31 @@ PixelカメラとBLE単体ターンの連動は、`python -m unittest discover -
 
 撮影専用の一回許可は`python -m unittest discover -s tools/tests -p test_camera_run_permit.py -v`で実際のC++ヘッダーをコンパイルし、
 期限切れ・トークン不一致・二重消費・ミリ秒カウンターの折返しを検証します。ホストC++コンパイラがない場合のスキップは成功と扱いません。
+探索ターンの撮影用一回実行も、上記3種類のPythonテストと`test_camera_run_permit.py`で検証します。
+左右のコマンド・探索速度・負の並進FF係数の保持、旧ファームウェアでの録画前拒否、GUIの探索設定の取得を確認します。
+実際の`myshell.cpp`の共通実行入口もC++でコンパイルし、回数2・低電圧・期限切れ・再利用・引数不足を拒否することを検証します。
+同じテストで探索ターンの実行部分をコンパイルし、後続直進が400 ms制動を含む条件を再現します。撮影専用実行は旋回サンプルを保持し、通常実行のログ保存と走行呼出し順を維持することも確認します。
 
 Pixelの撮影調整は`python -m unittest discover -s tools/tests -p test_pixel_camera_framing.py -v`で確認します。
 OpenCV aruco・NumPyを使用し、実機を使わずEVの端末刻みへの変換、範囲外拒否、ROIの向き・境界、
 検出頂点を元画像座標へ戻す処理、未読IDの非補完、バックエンド完了応答の区別を確認します。
 登録マーカー補正は`python -m unittest discover -s tools/tests -p test_pixel_camera_reference.py -v`で確認します。
+明示した登録ID別ROIでは、同じIDの別位置に置いたマーカーを採用せず、指定範囲内の欠測を補完しないことも確認します。
+格子基準の生成では、未精密化の頂点へ精密化済みのラベルを付けないことも確認します。
 全位置の任意の2枚・8頂点での射影変換、3枚・12頂点、対応不一致の除外、重複ID・退化・過大残差・2枚未満の拒否、
 未登録IDの非補完、保存行列による補正画像を検証します。格子や特定の隅を必要としません。
 
 動画の盤面較正は`python -m unittest discover -s tools/tests -p test_video_marker_pose.py -v`で確認します。
+機体Bの前黄・後赤と、9×9・810 mm盤面でも距離尺度が保たれることを合成動画で確認します。
+淡い9画素の目印を明示設定で検出できること、前後間隔の下限で短い基板上の組を拒否することも確認します。
+丸形openingでは5画素の丸を保持して細い色の連結を分離し、既定の四角形の動作を変えない回帰も確認します。
 OpenCVのArUco機能・NumPy・pandas・Matplotlibを使用し、印刷マーカーの回転によらない内側頂点の選択と、
 動画解析・プロファイル点の注記での較正の一致を検証します。
 登録基準を指定した場合に、実際に生成・検出したArUcoの全2枚ペアで較正できることも確認します。
 格子による精度検査は`python -m unittest discover -s tools/tests -p test_pixel_camera_accuracy.py -v`で確認します。
 既知の射影画像からの交点検出、意図的な校正の位置ずれが検査で隠されないこと、空画像の拒否、位置偏りと距離誤差の区別を検証します。
 孤立した1～8画素の色ノイズで可視格子を失わず、連続9画素の色領域・細い配線・大きな物体は遮蔽として除外する回帰も確認します。
+遮蔽余白を13画素へ変更した場合も、色領域の実際の遮蔽は除外し、不正なカーネル値を拒否します。
 切出しログの時刻原点、5/6 msの不等間隔、32 bit tick折返し、不正時刻の拒否、
 実時刻での距離積分と旋回区間の動画時刻変換も確認します。実機カメラには接続しません。
 
@@ -326,5 +406,5 @@ python -m unittest discover -s tools/tests -p test_video_marker_pose.py -v
 サイクルからµsへの変換（50/100 MHzで同じ実時間を再現）、32 bitカウンタの折り返し、
 前回完了値、最大値、リセット、カウンタ非対応時のNaNを確認します。
 保存ログのHEADERによる旧51項目・新55項目のフレーム長選択も検証します。
-BLEログテストは `L8S2` の55項目・60列CSVと旧 `L8S1` の51項目・56列CSVの列対応、形式変更時の終了も確認します。
+BLEログテストは`L8S4`と旧`L8S2`/`L8S3`の55項目・60列CSV、旧`L8S1`の51項目・56列CSVの列対応、形式変更時の終了も確認します。
 DWTレジスタの実動作や、実機の割り込み時間はホストテストでは確認できません。

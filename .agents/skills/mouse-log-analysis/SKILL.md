@@ -22,6 +22,12 @@ description: "mouse_type8 の保存済み走行 CSV・設定 JSON・動画から
 - `turn_ff_report.py` と `turn_sp_voltage_report.py` は 1 ms 固定、`video_marker_pose.py` は `cnt * 0.001`。異なる周期の入力を扱う場合は、時間軸を合わせる対応を先に行う。
 - 出力は機体・取得日・解析条件を区別できる保存先に置き、入力ログを保持する。
 
+## 座標基準と判定の範囲を確認する
+
+- 入力と出力が盤面固定か、実測入口方向へ合わせた相対基準かを確認し、同じ基準の目標だけと比較する。[座標基準と判定の範囲](../mouse-turn-tuning/references/turn500-workflow.md#座標基準と判定の範囲)を参照する。
+- `pixel_camera_tuning_report.py`の`trajectory_reference_frame.method=relative_origin_and_measured_entry_direction`は入口方向に合わせた相対評価。ターン形状の評価には使えるが、入口の傾き・盤面上の出口線/停止点まで合格した根拠にはならない。`scale_fitted=False`でも座標の回転は行われ得る。
+- `auto_stop_confirmed`や動画/静止検査の通過は、撮影・停止・観測品質の条件であり、幾何目標の達成ではない。相対候補、盤面への接続、機軸/マーカー高さの検証状態を分けて報告する。
+
 ## ツールを選ぶ
 
 | 解析したい内容 | 起点 |
