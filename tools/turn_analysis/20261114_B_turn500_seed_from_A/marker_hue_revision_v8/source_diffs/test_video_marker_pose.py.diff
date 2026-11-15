@@ -1,0 +1,37 @@
+--- before/tools/tests/test_video_marker_pose.py
++++ tools/tests/test_video_marker_pose.py
+@@ -181,6 +181,34 @@
+         with self.assertRaisesRegex(ValueError,'shape'):
+             pose.colour_components(image,'red',dict(red=dict(limits,opening_kernel_shape='unknown')))
+ 
++    def test_explicit_hue_range_recovers_pale_greenish_yellow_and_keeps_default(self):
++        hsv=np.zeros((200,300,3),np.uint8)
++        hsv[80:87,150:157]=(45,35,218)
++        hsv[80:87,190:197]=(95,80,218)
++        hsv[80:87,230:237]=(45,0,218)
++        image=cv2.cvtColor(hsv,cv2.COLOR_HSV2BGR)
++        limits=dict(minimum_saturation=15,minimum_value=65,minimum_area_px=3,opening_kernel_size=0)
++        self.assertEqual(pose.colour_components(image,'yellow',dict(yellow=limits)),[])
++        found=pose.colour_components(image,'yellow',dict(yellow=dict(limits,hue_ranges=[[25,65]])))
++        self.assertEqual(len(found),1)
++        np.testing.assert_allclose(found[0][0],[153,83])
++        self.assertEqual(pose.colour_components(image,'yellow',dict(yellow=limits)),[])
++
++    def test_explicit_red_hue_ranges_include_both_sides_of_hue_boundary(self):
++        hsv=np.zeros((200,300,3),np.uint8)
++        hsv[80:87,100:107]=(0,180,218)
++        hsv[80:87,150:157]=(179,180,218)
++        hsv[80:87,200:207]=(40,180,218)
++        image=cv2.cvtColor(hsv,cv2.COLOR_HSV2BGR)
++        found=pose.colour_components(image,'red',dict(red=dict(hue_ranges=[[0,10],[170,179]])))
++        self.assertEqual(len(found),2)
++
++    def test_invalid_hue_ranges_fail_without_silently_widening_detection(self):
++        image=np.zeros((200,300,3),np.uint8)
++        for ranges in (None,[],[25,65],[[65,25]],[[-1,20]],[[0,180]],[[0,25.0]],[[False,25]],[[0]],[[0,1]]*5):
++            with self.subTest(ranges=ranges), self.assertRaisesRegex(ValueError,'hue_ranges'):
++                pose.colour_components(image,'yellow',dict(yellow=dict(hue_ranges=ranges)))
++
+     def test_ellipse_opening_still_separates_a_thin_colour_bridge(self):
+         hsv=np.zeros((200,200,3),np.uint8)
+         hsv[100:103,80:83]=(0,80,180)

@@ -1,0 +1,17 @@
+--- before
++++ after
+@@ -60,6 +60,14 @@
+ const static t_pid_gain sp_gain_turnOut45_500 = {1.50,0.02,0.0};
+ const static t_pid_gain om_gain_turnOut45_500 = {0.30f,0.002f,0.0f};
+ const static t_turn_param_table slalom_outL45_500_table = {0.50f, 50.0f,19.33,32.01, 45.0f,Turn_L};
++// 2026-11-15 機体B out_R45: 同じ2倍撮影の単体3本を確認した候補。実テーブル・共有ゲインは既存値を維持。
++// 半径-50 mm、Lstart32.8/Lend18.0 mm、論理-45度/補正+0.5度。SP PID1.50/0.02/0、OM PID0.10/0.002/0。
++// 平均終点は右95.71/前285.64 mm（目標95.46/286.38 mm）、出口方向差最大0.24度。
++// BのP0.30から0.10で角速度振動が減少。左45出口・絶対車軸位置・連続接続は未検証。BのFFは実機設定JSONを参照。
++// 根拠: tools/turn_analysis/20261114_B_turn500_seed_from_A/outR45_lengths_three_review/review.json
++// const static t_pid_gain om_gain_outR45_500_candidate = {0.10f,0.002f,0.0f};
++// const static t_turn_param_table slalom_outR45_500_candidate_table = {0.50f,-50.0f,32.80f,18.00f,-45.0f,Turn_R,0.5f};
++// const static t_param param_outR45_500_candidate = {&slalom_outR45_500_candidate_table,&sp_gain_turnOut45_500,&om_gain_outR45_500_candidate};
+ const static t_turn_param_table slalom_outR45_500_table = {0.50f,-50.0f,19.33,32.01,-45.0f,Turn_R};
+ const static t_param param_outL45_500 = {&slalom_outL45_500_table,&sp_gain_turnOut45_500,&om_gain_turnOut45_500};
+ const static t_param param_outR45_500 = {&slalom_outR45_500_table,&sp_gain_turnOut45_500,&om_gain_turnOut45_500};

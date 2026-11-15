@@ -1,0 +1,8 @@
+# Pixelのズーム対応（2026-11-15）
+
+元のDebug_camera作業ツリーを保持し、tmp/camera_zoom_review_20261115へ未コミットのAF固定を含む96ファイルを複製して改修。ユーザーの明示許可後、作成APKをPixelへadb install -rで適用済み。元APKは同コピーのinstalled_camera_before_zoom.apkへ保存。データ削除はしていない。
+
+Camera2 CONTROL_ZOOM_RATIOをconfigureのzoom_ratioで指定し、端末が対応する範囲だけ許可。撮影結果が連続3サンプル一致するまで録画準備を維持し、反映なし・反映後の喪失をエラーにする。既定は1倍、省略は現在値を維持。240 fpsの物理的な独立性・画質向上をズーム値の反映だけで保証しない。
+単体テスト32件成功・失敗/スキップ0、lintエラー0/警告19、APKビルド成功。静止1倍/2倍とも端末結果のズーム値とAF固定を確認済み。物理的なカメラ高さ・マーカーは変更していない。
+
+zoom_ratio.patchは元の作業ツリーとの差分。原本への適用は未実施。APKと復元用APKのSHA256はzoom_build_validation.json。参照: https://developer.android.com/reference/android/hardware/camera2/CaptureRequest#CONTROL_ZOOM_RATIO

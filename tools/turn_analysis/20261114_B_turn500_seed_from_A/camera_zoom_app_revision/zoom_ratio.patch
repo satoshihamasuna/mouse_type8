@@ -1,0 +1,249 @@
+--- a/app/src/main/java/com/example/myapplication/probe/CameraController.kt
++++ b/app/src/main/java/com/example/myapplication/probe/CameraController.kt
+@@ -28,7 +28,8 @@
+ data class CaptureSample(
+     val frame: Long, val timestampNs: Long?, val exposureNs: Long?, val frameDurationNs: Long?,
+     val iso: Int?, val ae: Int?, val af: Int?, val awb: Int?, val evSteps: Int? = null, val flashMode: Int? = null,
+-    val afMode: Int? = null, val afTrigger: Int? = null, val focusDistance: Float? = null
++    val afMode: Int? = null, val afTrigger: Int? = null, val focusDistance: Float? = null,
++    val zoomRatio: Float? = null
+ )
+ data class ProbeOutcome(val summary: String, val metadata: File)
+ 
+@@ -48,7 +49,7 @@
+     fun record(
+         report: CapabilityReport, camera: CameraOption, encoderOption: EncoderOption, seconds: Int,
+         recordingId: String? = null, controllerId: String? = null, autoTransfer: Boolean = false,
+-        exposureCompensationSteps: Int = 0, torch: Boolean = false, focusLock: Boolean = false,
++        exposureCompensationSteps: Int = 0, torch: Boolean = false, focusLock: Boolean = false, zoomRatio: Float = 1f,
+         onProgress: (String, Double) -> Unit
+     ): ProbeOutcome {
+         require(seconds in 1..300)
+@@ -67,7 +68,7 @@
+             .put("capabilities_snapshot", report.json).put("configured_fps", TARGET_FPS)
+             .put("width", TARGET_WIDTH).put("height", TARGET_HEIGHT).put("bitrate", encoderOption.bitrate)
+             .put("requested_duration_seconds", seconds).put("audio", false).put("ev_steps_requested", exposureCompensationSteps)
+-            .put("torch_requested", torch)
++            .put("torch_requested", torch).put("zoom_ratio_requested", zoomRatio)
+             .put("physical_240fps_verified", false).put("transfer_status", "NOT_IMPLEMENTED_RETAINED_ON_DEVICE")
+             .put("verification_note", "High-speed Camera2 callbacks may be batched/interpolated by Android. Matching timestamps do not prove independent physical frames.")
+         if (autoTransfer) {
+@@ -83,6 +84,10 @@
+             .put("available_bytes_before", storage.availableBytes())
+         val characteristics = manager.getCameraCharacteristics(camera.id)
+         check(!torch || characteristics[CameraCharacteristics.FLASH_INFO_AVAILABLE] == true) { "TORCH_UNAVAILABLE" }
++        val zoomRange = characteristics[CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE]
++        val zoomSupported = characteristics.availableCaptureRequestKeys.contains(CaptureRequest.CONTROL_ZOOM_RATIO)
++        DigitalZoom.validate(zoomRatio.toDouble(), zoomRange?.lower ?: 1f, zoomRange?.upper ?: 1f, zoomSupported)
++        val zoom = DigitalZoom(zoomRatio)
+         val evRange = characteristics[CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE]
+         ExposureCompensation.validate(exposureCompensationSteps.toDouble(),
+             (evRange?.lower ?: 0)..(evRange?.upper ?: 0))
+@@ -163,6 +168,7 @@
+                 set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO)
+                 set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_ON)
+                 set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, exposureCompensationSteps)
++                if (zoomSupported) set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio)
+                 set(CaptureRequest.FLASH_MODE, if (torch) CameraMetadata.FLASH_MODE_TORCH else CameraMetadata.FLASH_MODE_OFF)
+                 set(CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_AUTO)
+                 set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+@@ -181,7 +187,9 @@
+                         result[CaptureResult.CONTROL_AF_STATE], result[CaptureResult.CONTROL_AWB_STATE],
+                         result[CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION], result[CaptureResult.FLASH_MODE],
+                         result[CaptureResult.CONTROL_AF_MODE], r[CaptureRequest.CONTROL_AF_TRIGGER],
+-                        result[CaptureResult.LENS_FOCUS_DISTANCE]))
++                        result[CaptureResult.LENS_FOCUS_DISTANCE], result[CaptureResult.CONTROL_ZOOM_RATIO]))
++                    zoom.observe(result[CaptureResult.CONTROL_ZOOM_RATIO])
++                    zoom.error?.let { cameraError.compareAndSet(null, it) }
+                     when (focus.observe(result[CaptureResult.CONTROL_AF_STATE], SystemClock.elapsedRealtimeNanos())) {
+                         ContinuousFocusLock.Action.TRIGGER -> {
+                             try {
+@@ -222,6 +230,7 @@
+                 if (progress.limitReached) break
+                 cameraError.get()?.let { error(it) }
+                 check(!encoder.completed.isDone) { "録画中にエンコーダが終了しました" }
++                check(zoom.confirmed || elapsed < 5.0) { "ZOOM_RATIO_NOT_CONFIRMED" }
+                 check(elapsed < seconds + 15.0) { "録画時間の上限に到達する前にタイムアウトしました" }
+                 check(progress.firstFrameAtNs != null || elapsed < 10.0) { "最初の映像フレームが届きません" }
+                 progress.lastOutputAtNs?.let {
+@@ -230,6 +239,7 @@
+                 if (now - lastUpdate >= 250_000_000) {
+                     check(storage.availableBytes() > 64L * 1024 * 1024) { "ストレージ残量が64 MiBを下回りました" }
+                     onProgress(if (progress.firstFrameAtNs == null) "最初の映像フレームを待機中"
++                        else if (!zoom.confirmed) "ズームを確認中"
+                         else if (focusLock && !focus.locked) "ピントを固定中" else "録画中",
+                         progress.elapsedSeconds)
+                     lastUpdate = now
+@@ -268,6 +278,7 @@
+                 runCatching { encoder.surface.release() }
+             }
+             cameraError.get()?.let { if (it !in issues) issues.add(it) }
++            if (!zoom.confirmed && "ZOOM_RATIO_NOT_CONFIRMED" !in issues) issues.add("ZOOM_RATIO_NOT_CONFIRMED")
+             cameraThread.quitSafely()
+             cameraThread.join(2000)
+             if (cameraThread.isAlive) issues.add("CAMERA_CALLBACK_THREAD_DRAIN_TIMEOUT")
+@@ -316,12 +327,15 @@
+         } else {
+             issues.add("MP4_NOT_CLEANLY_FINALIZED")
+         }
++        metadata.put("zoom_verification", JSONObject().put("confirmed", zoom.confirmed).put("error", zoom.error ?: JSONObject.NULL)
++            .put("result_values", org.json.JSONArray(sampleCopy.mapNotNull { it.zoomRatio }.distinct()))
++            .put("individual_sensor_frames_verified", false))
+         metadata.put("ev_steps_result_values", org.json.JSONArray(sampleCopy.mapNotNull { it.evSteps }.distinct()))
+             .put("flash_mode_result_values", org.json.JSONArray(sampleCopy.mapNotNull { it.flashMode }.distinct()))
+         val sensorCsv = File(storage.directory, "$base.sensor.csv")
+         sensorCsv.bufferedWriter().use { writer ->
+-            writer.appendLine("frame_number,sensor_timestamp_ns,exposure_ns,frame_duration_ns,iso,ae_state,af_state,awb_state,ev_steps_result,flash_mode_result,af_mode_result,af_trigger_requested,focus_distance_diopters")
+-            sampleCopy.forEach { s -> writer.appendLine(listOf(s.frame, s.timestampNs, s.exposureNs, s.frameDurationNs, s.iso, s.ae, s.af, s.awb, s.evSteps, s.flashMode, s.afMode, s.afTrigger, s.focusDistance).joinToString(",") { it?.toString() ?: "" }) }
++            writer.appendLine("frame_number,sensor_timestamp_ns,exposure_ns,frame_duration_ns,iso,ae_state,af_state,awb_state,ev_steps_result,flash_mode_result,af_mode_result,af_trigger_requested,focus_distance_diopters,zoom_ratio_result")
++            sampleCopy.forEach { s -> writer.appendLine(listOf(s.frame, s.timestampNs, s.exposureNs, s.frameDurationNs, s.iso, s.ae, s.af, s.awb, s.evSteps, s.flashMode, s.afMode, s.afTrigger, s.focusDistance, s.zoomRatio).joinToString(",") { it?.toString() ?: "" }) }
+         }
+         File(storage.directory, "$base.started.csv").bufferedWriter().use { writer ->
+             writer.appendLine("frame_number,started_timestamp_ns")
+--- a/app/src/main/java/com/example/myapplication/remote/RecordingService.kt
++++ b/app/src/main/java/com/example/myapplication/remote/RecordingService.kt
+@@ -37,6 +37,7 @@
+     @Volatile private var exposureSteps = 0
+     @Volatile private var torchEnabled = false
+     @Volatile private var focusLockEnabled = false
++    @Volatile private var zoomRatio = 1f
+     private var lastTransferAttempt = 0L
+ 
+     override fun onBind(intent: Intent?): IBinder? = null
+@@ -128,7 +129,7 @@
+             .put("recording_id", value.recordingId).put("owner", value.owner)
+             .put("message", value.message).put("last_error", value.lastError.takeIf { it.isNotEmpty() })
+             .put("transfer_percent", value.transferPercent).put("exposure_compensation_steps", exposureSteps).put("torch", torchEnabled)
+-            .put("focus_lock", focusLockEnabled).put("max_recording_seconds", 300)
++            .put("focus_lock", focusLockEnabled).put("zoom_ratio", zoomRatio).put("max_recording_seconds", 300)
+     }
+ 
+     private fun command(request: JSONObject) {
+@@ -151,8 +152,17 @@
+                 "get_pending" -> JSONObject().put("files", files.summary())
+                 "configure" -> {
+                     check(snapshot.phase in setOf("IDLE", "ERROR")) { "BUSY" }
+-                    require(payload.keys().asSequence().all { it in setOf("width", "height", "fps", "exposure_compensation_steps", "torch", "focus_lock") }) { "UNSUPPORTED_SETTING" }
++                    require(payload.keys().asSequence().all { it in setOf("width", "height", "fps", "exposure_compensation_steps", "torch", "focus_lock", "zoom_ratio") }) { "UNSUPPORTED_SETTING" }
+                     require(payload.optInt("width", 1280) == 1280 && payload.optInt("height", 720) == 720 && payload.optInt("fps", 240) == 240) { "UNSUPPORTED_MODE" }
++                    val requestedZoom = if (payload.has("zoom_ratio")) {
++                        val value = payload.get("zoom_ratio")
++                        require(value is Number) { "ZOOM_RATIO_MUST_BE_NUMBER" }
++                        val camera = checkNotNull(report).cameras.firstOrNull { it.targetSupported } ?: error("NO_720P240_CAMERA")
++                        val characteristics = getSystemService(CameraManager::class.java).getCameraCharacteristics(camera.id)
++                        val range = characteristics[CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE]
++                        DigitalZoom.validate(value.toDouble(), range?.lower ?: 1f, range?.upper ?: 1f,
++                            characteristics.availableCaptureRequestKeys.contains(android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO))
++                    } else zoomRatio
+                     val requestedFocusLock = if (payload.has("focus_lock")) {
+                         val value = payload.get("focus_lock")
+                         require(value is Boolean) { "FOCUS_LOCK_MUST_BE_BOOLEAN" }
+@@ -179,8 +189,9 @@
+                     }
+                     torchEnabled = requestedTorch
+                     focusLockEnabled = requestedFocusLock
++                    zoomRatio = requestedZoom
+                     JSONObject().put("width", 1280).put("height", 720).put("fps", 240).put("torch", torchEnabled)
+-                        .put("exposure_compensation_steps", exposureSteps).put("focus_lock", focusLockEnabled)
++                        .put("exposure_compensation_steps", exposureSteps).put("focus_lock", focusLockEnabled).put("zoom_ratio", zoomRatio)
+                 }
+                 "start_recording" -> {
+                     check(snapshot.phase in setOf("IDLE", "ERROR")) { "BUSY" }
+@@ -221,11 +232,12 @@
+         val selectedExposureSteps = exposureSteps
+         val selectedTorch = torchEnabled
+         val selectedFocusLock = focusLockEnabled
++        val selectedZoom = zoomRatio
+         change { it.copy(phase = "PREPARING", owner = owner, recordingId = id, elapsed = 0.0, lastError = "", message = "録画を準備しています") }
+         recorderWorker.execute {
+             val outcome = runCatching {
+                 controller.record(capabilities, camera, encoder, seconds, recordingId = id, controllerId = owner, autoTransfer = true,
+-                    exposureCompensationSteps = selectedExposureSteps, torch = selectedTorch, focusLock = selectedFocusLock) { message, elapsed ->
++                    exposureCompensationSteps = selectedExposureSteps, torch = selectedTorch, focusLock = selectedFocusLock, zoomRatio = selectedZoom) { message, elapsed ->
+                     change {
+                         val phase = if (message.startsWith("停止")) "FINALIZING" else if (message == "録画中" && it.phase != "STOPPING") "RECORDING" else it.phase
+                         it.copy(phase = phase, elapsed = elapsed, message = message)
+--- a/app/src/main/java/com/example/myapplication/probe/DigitalZoom.kt
++++ b/app/src/main/java/com/example/myapplication/probe/DigitalZoom.kt
+@@ -0,0 +1,36 @@
++package com.example.myapplication.probe
++
++import kotlin.math.abs
++
++/** Verify Camera2's returned zoom; an accepted request alone is not evidence of zoom. */
++class DigitalZoom(private val requested: Float) {
++    companion object {
++        fun validate(value: Double, minimum: Float, maximum: Float, supported: Boolean): Float {
++            require(value.isFinite() && value >= 1.0) { "INVALID_ZOOM_RATIO" }
++            require(value == 1.0 || (supported && value >= minimum && value <= maximum)) {
++                "ZOOM_RATIO_UNSUPPORTED"
++            }
++            return value.toFloat()
++        }
++    }
++
++    @Volatile var confirmed = requested == 1f
++        private set
++    @Volatile var error: String? = null
++        private set
++    private var matching = 0
++
++    @Synchronized fun observe(actual: Float?) {
++        if (requested == 1f || error != null) return
++        if (actual != null && actual.isFinite() && abs(actual-requested) <= .01f) {
++            matching++
++            if (matching >= 3) confirmed = true
++        } else {
++            matching = 0
++            if (confirmed) {
++                confirmed = false
++                error = "ZOOM_RATIO_LOST"
++            }
++        }
++    }
++}
+--- a/app/src/test/java/com/example/myapplication/probe/DigitalZoomTest.kt
++++ b/app/src/test/java/com/example/myapplication/probe/DigitalZoomTest.kt
+@@ -0,0 +1,42 @@
++package com.example.myapplication.probe
++
++import org.junit.Assert.*
++import org.junit.Test
++
++class DigitalZoomTest {
++    @Test fun unsupportedDefaultRemainsCompatible() {
++        assertEquals(1f, DigitalZoom.validate(1.0, 1f, 1f, false), 0f)
++        assertTrue(DigitalZoom(1f).confirmed)
++    }
++    @Test fun rejectsInvalidOrUnsupportedZoom() {
++        for (value in listOf(Double.NaN, Double.POSITIVE_INFINITY, .5, 8.0)) {
++            assertThrows(IllegalArgumentException::class.java) { DigitalZoom.validate(value, 1f, 7f, true) }
++        }
++        assertThrows(IllegalArgumentException::class.java) { DigitalZoom.validate(2.0, 1f, 7f, false) }
++    }
++    @Test fun ignoredRequestNeverConfirms() {
++        val zoom = DigitalZoom(2f)
++        repeat(20) { zoom.observe(1f) }
++        zoom.observe(null)
++        assertFalse(zoom.confirmed)
++    }
++    @Test fun needsThreeConsecutiveMatchingResults() {
++        val zoom = DigitalZoom(2f)
++        zoom.observe(2f); zoom.observe(2f)
++        assertFalse(zoom.confirmed)
++        zoom.observe(null)
++        zoom.observe(2f); zoom.observe(2f)
++        assertFalse(zoom.confirmed)
++        zoom.observe(2f)
++        assertTrue(zoom.confirmed)
++    }
++    @Test fun zoomLossCannotRecoverSilently() {
++        val zoom = DigitalZoom(2f)
++        repeat(3) { zoom.observe(2f) }
++        zoom.observe(1f)
++        assertFalse(zoom.confirmed)
++        assertEquals("ZOOM_RATIO_LOST", zoom.error)
++        repeat(5) { zoom.observe(2f) }
++        assertFalse(zoom.confirmed)
++    }
++}

@@ -1,0 +1,22 @@
+--- before/tools/analysis/video_marker_pose.py
++++ tools/analysis/video_marker_pose.py
+@@ -50,8 +50,18 @@
+     area_min, opening_kernel_size, opening_kernel_shape = 15, 3, 'rect'
+     if detection:
+         limits = detection.get(colour, {})
+-        if set(limits)-{'minimum_saturation', 'minimum_value', 'minimum_area_px', 'opening_kernel_size', 'opening_kernel_shape'}:
++        if set(limits)-{'minimum_saturation', 'minimum_value', 'minimum_area_px', 'opening_kernel_size', 'opening_kernel_shape', 'hue_ranges'}:
+             raise ValueError('unknown colour detection setting')
++        if 'hue_ranges' in limits:
++            ranges = limits['hue_ranges']
++            if (not isinstance(ranges, (list, tuple)) or not 1 <= len(ranges) <= 4
++                    or any(not isinstance(bounds, (list, tuple)) or len(bounds) != 2
++                           or any(isinstance(value, bool) or not isinstance(value, (int, np.integer)) for value in bounds)
++                           or not 0 <= bounds[0] <= bounds[1] <= 179 for bounds in ranges)):
++                raise ValueError('hue_ranges must contain one to four inclusive integer ranges within zero to179')
++            mask = np.zeros(hue.shape, dtype=bool)
++            for low, high in ranges:
++                mask |= (hue >= low) & (hue <= high)
+         saturation_min = limits.get('minimum_saturation', saturation_min)
+         value_min = limits.get('minimum_value', value_min)
+         if not all(np.isfinite(v) and 0 <= v <= 255 for v in (saturation_min, value_min)):
