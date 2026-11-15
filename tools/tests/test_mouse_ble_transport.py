@@ -73,7 +73,7 @@ class GatewayFailureReportTests(unittest.TestCase):
 
 class GuiCaptureTests(unittest.TestCase):
     def test_live_frames_are_saved_and_other_binary_bytes_are_unchanged(self):
-        payload = struct.pack('<4sIIH55e', log.MAGIC, 7, 100, 5, *range(55))
+        payload = struct.pack('<4sIIH49e4h2H', log.MAGIC, 7, 100, 5, *range(55))
         live_frame = payload + struct.pack('<H', binascii.crc_hqx(payload, 0xffff))
         saved_frame = struct.pack('<HH51H', 0xA55A, 7, *range(51))
         other = b'DEBUG_WAIT_SENSOR\r\nBINARY\r\n' + saved_frame + b'\r\n> '

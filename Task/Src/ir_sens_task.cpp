@@ -20,6 +20,7 @@
 #include "Component/Inc/maze_typedef.h"
 #include "Peripheral/Inc/peripheral.h"
 #include <math.h>
+#include "Task/Inc/wall_diagnostics.h"
 /*
 #ifdef MOUSE_A
   #include "Params/sens_table_A.h"
@@ -61,7 +62,7 @@ float IrSensTask::IrSensor_adc2voltage(int16_t value)
 }
 
 
-float IrSensTask::Sensor_CalcDistance(t_sensor_dir dir, int16_t value)
+float IrSensTask::Sensor_CalcDistance(t_sensor_dir dir, int16_t value, IrRangeState *state)
 {
     const int16_t *sens_table = nullptr;
     int array_length = 0;
@@ -105,9 +106,11 @@ float IrSensTask::Sensor_CalcDistance(t_sensor_dir dir, int16_t value)
             break;
 
         default:
+            if (state) *state = IrRangeState::Invalid;
             return 0.0f;
     }
 
+    if (state) *state = ir_range_state(value, sens_table, array_length);
     float distance = tableToDistanceStep(
         sens_table,
         array_length,
@@ -132,8 +135,8 @@ void IrSensTask::IrSensorDistanceSet(Vehicle *vehicle)
 	// Keep straight-control ADC averages separate from diagnostic range history.
 	straight_left_average.update(sen_l.value);
 	straight_right_average.update(sen_r.value);
-	straight_left_distance_mm = Sensor_CalcDistance(sensor_sl, straight_left_average.value());
-	straight_right_distance_mm = Sensor_CalcDistance(sensor_sr, straight_right_average.value());
+	straight_left_distance_mm = Sensor_CalcDistance(sensor_sl, straight_left_average.value(), &straight_left_range);
+	straight_right_distance_mm = Sensor_CalcDistance(sensor_sr, straight_right_average.value(), &straight_right_range);
 	wall_sample_updated = true;
 	static int i = 0;
 	i = i + 1;
@@ -144,10 +147,12 @@ void IrSensTask::IrSensorDistanceSet(Vehicle *vehicle)
 	sen_r.distance_sum = sen_r.distance_sum - sen_r.distance_log[i%20];
 	sen_l.distance_sum = sen_l.distance_sum - sen_l.distance_log[i%20];
 
-	sen_fl.distance = Sensor_CalcDistance(sensor_fl,sen_fl.value);
-	sen_fr.distance = Sensor_CalcDistance(sensor_fr,sen_fr.value);
-	sen_l.distance = Sensor_CalcDistance(sensor_sl,sen_l.value);
-	sen_r.distance = Sensor_CalcDistance(sensor_sr,sen_r.value);
+	sen_fl.distance = Sensor_CalcDistance(sensor_fl,sen_fl.value, &sen_fl.range_state);
+	sen_fr.distance = Sensor_CalcDistance(sensor_fr,sen_fr.value, &sen_fr.range_state);
+	sen_l.distance = Sensor_CalcDistance(sensor_sl,sen_l.value, &sen_l.range_state);
+	sen_r.distance = Sensor_CalcDistance(sensor_sr,sen_r.value, &sen_r.range_state);
+	WallDiagnostics::instance().sample(sen_l.range_state, sen_r.range_state, sen_fl.range_state, sen_fr.range_state,
+		vehicle->ideal.velo.get() > 0.20f);
 
 	sen_fl.distance_log[i%20] = sen_fl.distance;
 	sen_fr.distance_log[i%20] = sen_fr.distance;
@@ -198,8 +203,8 @@ void IrSensTask::IrSensorWallSet(float forward_step_mm)
 	if (irsens_motion == STRAIGHT_IRSENS)
 	{
 		right_diagonal_edge.reset(); left_diagonal_edge.reset();
-		const auto right = right_wall_edge.update(sen_r.distance, forward_step_mm, straight_edge_rotation_valid);
-		const auto left = left_wall_edge.update(sen_l.distance, forward_step_mm, straight_edge_rotation_valid);
+		const auto right = right_wall_edge.update(sen_r.distance, forward_step_mm, straight_edge_rotation_valid && sen_r.range_state != IrRangeState::Invalid);
+		const auto left = left_wall_edge.update(sen_l.distance, forward_step_mm, straight_edge_rotation_valid && sen_l.range_state != IrRangeState::Invalid);
 		if (right.detected) {
 			r_wall_corner = True; r_corner_time = right.age_ticks; r_corner_delay_mm = right.delay_mm;
 		}
@@ -211,8 +216,8 @@ void IrSensTask::IrSensorWallSet(float forward_step_mm)
 	{
 		right_wall_edge.reset(); left_wall_edge.reset();
 		if (irsens_motion == DIAGONAL_IRSENS) {
-			const auto right = right_diagonal_edge.update(sen_r.distance, forward_step_mm, diagonal_edge_motion_valid);
-			const auto left = left_diagonal_edge.update(sen_l.distance, forward_step_mm, diagonal_edge_motion_valid);
+			const auto right = right_diagonal_edge.update(sen_r.distance, forward_step_mm, diagonal_edge_motion_valid && sen_r.range_state != IrRangeState::Invalid);
+			const auto left = left_diagonal_edge.update(sen_l.distance, forward_step_mm, diagonal_edge_motion_valid && sen_l.range_state != IrRangeState::Invalid);
 			if (right.detected) {
 				r_wall_corner = True; r_corner_time = right.age_ticks; r_corner_delay_mm = right.delay_mm;
 				++diagonal_wall_stats.edges_right;
@@ -392,6 +397,10 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 		}
 		input.left_m = straight_left_distance_mm / 1000.0f;
 		input.right_m = straight_right_distance_mm / 1000.0f;
+		// A raw near-limit sample must retain repulsion while the ADC average
+		// catches up. Neither that bound nor a raw invalid sample is a metric observation.
+		if (sen_l.range_state == IrRangeState::NearLimit) input.left_m = sen_l.distance / 1000.0f;
+		if (sen_r.range_state == IrRangeState::NearLimit) input.right_m = sen_r.distance / 1000.0f;
 		input.left_signal = straight_left_average.value();
 		input.right_signal = straight_right_average.value();
 		input.travel_m = wall_sample_updated ? wall_forward_step_mm / 1000.0f : 0.0f;
@@ -401,6 +410,10 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 		input.estimated_error_m = -vehicle->ego.x_point.get() / 1000.0f;
 		input.dt_s = delta_tms / 1000.0f;
 		input.sample_updated = wall_sample_updated;
+		input.range_valid_mask = (ir_range_is_metric(straight_left_range) && ir_range_is_metric(sen_l.range_state) ? 1U : 0U)
+			| (ir_range_is_metric(straight_right_range) && ir_range_is_metric(sen_r.range_state) ? 2U : 0U);
+		if (!ir_range_can_see_wall(straight_left_range) || !ir_range_can_see_wall(sen_l.range_state)) input.permitted_mask &= ~1U;
+		if (!ir_range_can_see_wall(straight_right_range) || !ir_range_can_see_wall(sen_r.range_state)) input.permitted_mask &= ~2U;
 		straight_wall_output = straight_wall_control.update(input);
 		straight_wall_ekf_used = false;
 		if (input.enabled && wall_ekf_mode != WallEkfMode::Legacy)
@@ -508,8 +521,8 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 			input.right_m = sen_r.distance / 1000.0f;
 			input.front_left_m = sen_fl.distance / 1000.0f;
 			input.front_right_m = sen_fr.distance / 1000.0f;
-			input.eligible_mask = (sen_l.is_wall == True && l_wall_corner == False ? 1U : 0U)
-				| (sen_r.is_wall == True && r_wall_corner == False ? 2U : 0U);
+			input.eligible_mask = (sen_l.is_wall == True && l_wall_corner == False && ir_range_is_metric(sen_l.range_state) ? 1U : 0U)
+				| (sen_r.is_wall == True && r_wall_corner == False && ir_range_is_metric(sen_r.range_state) ? 2U : 0U);
 			diagonal_wall_output = diagonal_wall_control.update(input);
 			if (diagonal_wall_output.updated) ++diagonal_wall_stats.updates;
 			if (diagonal_wall_output.front_blocked) ++diagonal_wall_stats.front_blocked;
@@ -621,6 +634,8 @@ SearchTurnGuard::Decision IrSensTask::SearchTurnDecision(bool right_turn, bool f
 		input.right_turn = right_turn; input.front_wall = front_wall;
 		input.left_mm = sen_l.distance; input.right_mm = sen_r.distance;
 		input.front_left_mm = sen_fl.distance; input.front_right_mm = sen_fr.distance;
+		const t_sensor *sensors[] = {&sen_l, &sen_r, &sen_fl, &sen_fr};
+		for (unsigned i = 0; i < 4; ++i) { input.adc[i] = sensors[i]->value; input.range[i] = sensors[i]->range_state; }
 		input.left_wall = sen_l.is_wall == True; input.right_wall = sen_r.is_wall == True;
 		input.ekf_control = wall_ekf_mode == WallEkfMode::Control;
 		input.ekf_pose_used = straight_wall_ekf_used;

@@ -1,18 +1,14 @@
 import serial
 import csv
-import struct
-import numpy as np
 from datetime import datetime
 from pathlib import Path
-from log_protocol import saved_log_frame
+from log_protocol import saved_log_frame, saved_log_magic, decode_saved_values
 
 # ===== 設定 =====
 PORT = "COM6"
 BAUD = 460800          # マウスの USART1 設定に合わせる
 MOUSE = "type8a_MPQ"
 
-LOG_DATA_NUM = 55     # HEADER受信後に項目数から更新
-MAGIC = 0xA55A
 MAGIC_END = 0xFFFF
 
 # =================
@@ -32,16 +28,13 @@ print(f" Baud : {BAUD}")
 print(f" File : {fpath}")
 print("="*60)
 
-FRAME_FMT  = "<HH" + "H"*LOG_DATA_NUM
-FRAME_SIZE = struct.calcsize(FRAME_FMT)
+frame = None  # HEADERで新旧の列数と型を識別する。
+header = None
 
 count = 0
 drop  = 0
 header_written = False
 binary_mode = False
-
-def half_to_float(h):
-    return np.frombuffer(np.uint16(h).tobytes(), dtype=np.float16)[0].astype(np.float32)
 
 with open(fpath, "w", newline="") as f:
     writer = csv.writer(f)
@@ -61,13 +54,14 @@ with open(fpath, "w", newline="") as f:
                 if line.startswith("HEADER,"):
                     header = line.split(",")[1:]
                     frame = saved_log_frame(header)
-                    FRAME_FMT, FRAME_SIZE = frame.format, frame.size
                     writer.writerow(header)
                     header_written = True
                     print("HEADER written",header)
                     continue
 
                 if line == "BINARY":
+                    if frame is None:
+                        raise ValueError('HEADERが必要です。log mode0で再取得してください。')
                     print("=== Binary mode start ===")
                     binary_mode = True
                     continue
@@ -79,11 +73,11 @@ with open(fpath, "w", newline="") as f:
                 continue
 
             # ===== BINARYモード =====
-            raw = ser.read(FRAME_SIZE)
-            if len(raw) != FRAME_SIZE:
+            raw = ser.read(frame.size)
+            if len(raw) != frame.size:
                 continue
 
-            magic, idx, *half_data = struct.unpack(FRAME_FMT, raw)
+            magic, idx, *half_data = frame.unpack(raw)
 
             # --- Binary END ---
             if magic == MAGIC_END:
@@ -92,11 +86,11 @@ with open(fpath, "w", newline="") as f:
                 continue
 
             # --- 不正フレーム ---
-            if magic != MAGIC:
+            if magic != saved_log_magic(header):
                 drop += 1
                 continue
 
-            row = [idx] + [half_to_float(x) for x in half_data]
+            row = [idx] + decode_saved_values(header, half_data)
             writer.writerow(row)
 
             count += 1

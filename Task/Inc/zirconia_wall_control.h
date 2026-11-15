@@ -31,7 +31,7 @@ public:
         bool enabled = false, sample_updated = false;
         // Optional externally estimated pose. Defaults preserve legacy callers.
         bool use_estimated_pose = false, prediction_trusted = false;
-        uint8_t permitted_mask = 3, measurement_mask = 3;
+        uint8_t permitted_mask = 3, measurement_mask = 3, range_valid_mask = 3;
     };
     struct Output {
         float error_m = 0.0f, raw_error_m = 0.0f;

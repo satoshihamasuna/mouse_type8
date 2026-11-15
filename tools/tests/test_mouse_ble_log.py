@@ -17,10 +17,17 @@ import mouse_ble_log as log
 from test_side_wall_stability import compiler_command
 
 
-def frame(sequence=0, time_ms=100, period_ms=20, *, legacy=False):
-    count = 51 if legacy else len(log.LOG_LABELS)
-    payload = struct.pack('<4sIIH{}e'.format(count), b'L8S1' if legacy else log.MAGIC,
-                          sequence, time_ms, period_ms, *[i / 4 for i in range(count)])
+def values_v4():
+    return tuple(i / 4 for i in range(49)) + (-32768, -7, 2049, 32767, 2209, 7)
+
+
+def frame(sequence=0, time_ms=100, period_ms=20, *, legacy=False, v2=False):
+    if legacy or v2:
+        count = 51 if legacy else 55
+        payload = struct.pack('<4sIIH{}e'.format(count), b'L8S1' if legacy else b'L8S2',
+                              sequence, time_ms, period_ms, *[i / 4 for i in range(count)])
+    else:
+        payload = struct.pack('<4sIIH49e4h2H', b'L8S4', sequence, time_ms, period_ms, *values_v4())
     return payload + struct.pack('<H', binascii.crc_hqx(payload, 0xffff))
 
 
@@ -41,7 +48,7 @@ class DecoderTests(unittest.TestCase):
             decoder = log.StreamDecoder()
             samples = decoder.feed(wire[:split]) + decoder.feed(wire[split:])
             self.assertEqual([sample.sequence for sample in samples], [0, 1])
-            self.assertEqual(samples[0].values, tuple(i / 4 for i in range(len(log.LOG_LABELS))))
+            self.assertEqual(samples[0].values, values_v4())
 
     def test_crc_resync_and_bounded_noise_buffer(self):
         decoder = log.StreamDecoder()
@@ -70,7 +77,7 @@ class DecoderTests(unittest.TestCase):
         self.assertEqual(rows[0]['lost_frames'], '0')
         self.assertEqual(rows[1]['lost_frames'], '2')
         self.assertEqual(rows[1]['cnt'], '60')
-        self.assertEqual(rows[1]['Battery'], '8.0')
+        self.assertEqual(rows[1]['Battery'], '8.5')
         self.assertEqual(len(rows[1]), 60)
 
     def test_legacy_frames_keep_the_original_csv_column_alignment(self):
@@ -84,6 +91,41 @@ class DecoderTests(unittest.TestCase):
         self.assertEqual(rows[0]['Battery'], '8.0')
         self.assertEqual(rows[0]['sequence'], '2')
         self.assertNotIn('irq.total_us', rows[0])
+
+    def test_v2_stays_aligned_and_v4_counts_are_exact_signed_integers(self):
+        old_output, new_output = io.StringIO(), io.StringIO()
+        log.CsvCapture(old_output).feed(frame(v2=True))
+        log.CsvCapture(new_output).feed(frame())
+        old = next(csv.DictReader(io.StringIO(old_output.getvalue())))
+        new = next(csv.DictReader(io.StringIO(new_output.getvalue())))
+        self.assertEqual(old['speed_ctrl.Kp'], '11.25')
+        self.assertEqual(old['irq.total_us'], '12.75')
+        self.assertNotIn('sen_l.value', old)
+        self.assertNotIn('speed_ctrl.Kp', new)
+        self.assertEqual([new[k] for k in ('sen_l.value','sen_r.value','sen_fl.value','sen_fr.value')],
+                         ['-32768','-7','2049','32767'])
+        self.assertEqual(new['ir.range_states'], '2209')
+        self.assertEqual(new['irq.total_us'], '8.75')
+        self.assertEqual(log.StreamDecoder().feed(frame())[0].protocol, b'L8S4')
+        capture = log.CsvCapture(io.StringIO()); capture.feed(frame(v2=True))
+        with self.assertRaisesRegex(RuntimeError, 'format changed'): capture.feed(frame(1,120))
+
+    def test_v3_keeps_its_previous_order_and_v4_groups_wall_fields(self):
+        previous = bytearray(frame())
+        previous[:4] = b'L8S3'
+        previous[-2:] = struct.pack('<H',binascii.crc_hqx(previous[:-2],0xffff))
+        old_output,new_output=io.StringIO(),io.StringIO()
+        log.CsvCapture(old_output).feed(previous)
+        log.CsvCapture(new_output).feed(frame())
+        old=next(csv.DictReader(io.StringIO(old_output.getvalue())))
+        new=next(csv.DictReader(io.StringIO(new_output.getvalue())))
+        self.assertEqual(old['ideal.accel'],'8.25')
+        self.assertEqual(new['ideal.accel'],'0.5')
+        self.assertEqual(old['irq.total_us'],'11.25')
+        self.assertEqual(new['irq.total_us'],'8.75')
+        self.assertEqual(list(new).index('sen_l.distance')+14,list(new).index('ir.range_states'))
+        capture=log.CsvCapture(io.StringIO());capture.feed(previous)
+        with self.assertRaisesRegex(RuntimeError,'format changed'):capture.feed(frame(1,120))
 
     def test_csv_rejects_a_format_change_in_the_same_recording(self):
         capture = log.CsvCapture(io.StringIO())
@@ -132,7 +174,7 @@ class DecoderTests(unittest.TestCase):
         self.assertEqual([row['cnt'] for row in rows], ['0', '3', '9'])
         self.assertEqual([row['lost_frames'] for row in rows], ['0', '0', '1'])
         self.assertEqual(capture.lost, 1)
-        self.assertEqual(rows[0]['Battery'], '8.0')
+        self.assertEqual(rows[0]['Battery'], '8.5')
         self.assertTrue(all(len(row) == 60 for row in rows))
 
     def test_decoder_rejects_below_minimum_and_above_maximum_period(self):
@@ -217,9 +259,7 @@ class FirmwareTests(unittest.TestCase):
                 with self.subTest(case=case, period=period):
                     samples = log.StreamDecoder().feed(self.run_case(case, period=period))
                     self.assertEqual([sample.sequence for sample in samples], list(range(13)) + [14, 15])
-                    count = len(log.LOG_LABELS)
-                    expected = struct.unpack('<{}e'.format(count),
-                                             struct.pack('<{}H'.format(count), *range(0x3c00, 0x3c00 + count)))
+                    expected = struct.unpack('<49e', struct.pack('<49H', *range(0x3c00, 0x3c00 + 49))) + values_v4()[49:]
                     self.assertEqual(samples[0].values, expected)
                     self.assertTrue(all(sample.period_ms == period for sample in samples))
                     self.assertEqual((samples[1].time_ms - samples[0].time_ms) & 0xffffffff, period)

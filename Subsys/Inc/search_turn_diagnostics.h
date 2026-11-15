@@ -16,6 +16,10 @@ public:
         float left_mm, right_mm, front_left_mm, front_right_mm;
         float lateral_mm, heading_rad, lateral_variance_mm2, heading_variance_rad2;
         uint8_t x, y, heading, right_turn, reason, flags;
+        uint16_t checks;
+        float gyro_radps, candidate_mm;
+        int16_t adc[4];
+        IrRangeState range[4];
     };
     static SearchTurnDiagnostics &instance() { static SearchTurnDiagnostics value; return value; }
     void begin() {
@@ -31,7 +35,10 @@ public:
         const auto &in = decision.input;
         events_[size_++] = {ms, in.left_mm, in.right_mm, in.front_left_mm, in.front_right_mm,
             in.lateral_mm, in.heading_rad, in.lateral_variance_mm2, in.heading_variance_rad2,
-            x, y, heading, static_cast<uint8_t>(in.right_turn), static_cast<uint8_t>(decision.reason), decision.flags};
+            x, y, heading, static_cast<uint8_t>(in.right_turn), static_cast<uint8_t>(decision.reason), decision.flags,
+            decision.checks, in.gyro_radps, decision.candidate_mm, {}, {}};
+        auto &event = events_[size_ - 1];
+        for (unsigned i = 0; i < 4; ++i) { event.adc[i] = in.adc[i]; event.range[i] = in.range[i]; }
     }
     uint32_t total() const { return total_; }
     unsigned size() const { return size_; }
@@ -47,13 +54,16 @@ public:
         const char *names[] = {"normal", "side", "front_diff", "front_near"};
         for (unsigned i = 0; i < size_; ++i) {
             const auto &e = events_[i];
-            printf("EXPLORE_TURN index:%u ms:%lu x:%u y:%u heading:%u turn:%s reason:%s flags:%u sl_mm:%.3f sr_mm:%.3f fl_mm:%.3f fr_mm:%.3f e_mm:%.3f psi_rad:%.6f sigma_e_mm:%.3f sigma_psi_rad:%.6f\r\n",
+            printf("EXPLORE_TURN index:%u ms:%lu x:%u y:%u heading:%u turn:%s reason:%s flags:%u sl_mm:%.3f sr_mm:%.3f fl_mm:%.3f fr_mm:%.3f e_mm:%.3f psi_rad:%.6f sigma_e_mm:%.3f sigma_psi_rad:%.6f checks:%u gyro_radps:%.6f candidate_mm:%.3f adc_l:%d adc_r:%d adc_fl:%d adc_fr:%d range_l:%u range_r:%u range_fl:%u range_fr:%u\r\n",
                 i, static_cast<unsigned long>(e.time_ms), e.x, e.y, e.heading, e.right_turn ? "R" : "L", names[e.reason], e.flags,
                 static_cast<double>(e.left_mm), static_cast<double>(e.right_mm),
                 static_cast<double>(e.front_left_mm), static_cast<double>(e.front_right_mm),
                 static_cast<double>(e.lateral_mm), static_cast<double>(e.heading_rad),
                 static_cast<double>(sqrtf(fmaxf(0.0f, e.lateral_variance_mm2))),
-                static_cast<double>(sqrtf(fmaxf(0.0f, e.heading_variance_rad2))));
+                static_cast<double>(sqrtf(fmaxf(0.0f, e.heading_variance_rad2))), e.checks,
+                static_cast<double>(e.gyro_radps), static_cast<double>(e.candidate_mm),
+                e.adc[0], e.adc[1], e.adc[2], e.adc[3], static_cast<unsigned>(e.range[0]),
+                static_cast<unsigned>(e.range[1]), static_cast<unsigned>(e.range[2]), static_cast<unsigned>(e.range[3]));
         }
     }
 private:

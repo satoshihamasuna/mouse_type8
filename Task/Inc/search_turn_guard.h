@@ -4,24 +4,30 @@
 #include <math.h>
 #include <stdint.h>
 #include "Params/wall_param.h"
+#include "Task/Inc/ir_range_state.h"
 
 class SearchTurnGuard {
 public:
     enum Reason : uint8_t { Normal, Side, FrontDifference, FrontNear };
     enum Flag : uint8_t { SameSurface = 1, Confirmed = 2, ReliablePose = 4,
                          Suppressed = 8, HardDifference = 16, Legacy = 32, EkfNotUsed = 64 };
-    struct History { bool same_surface = false, confirmed = false; };
+    // Passed checks, independent of the existing flags/reason ABI.
+    enum Check : uint16_t { MetricPair=1, PairWindow=2, Centered=4, LateralCertain=8,
+        Aligned=16, HeadingCertain=32, QuietYaw=64, PoseTrusted=128, EkfControl=256, PoseUsed=512 };
+    struct History { bool same_surface = false, confirmed = false; float candidate_mm = 0.0f; };
     struct Input {
         float left_mm = 80.0f, right_mm = 80.0f, front_left_mm = 125.0f, front_right_mm = 125.0f;
         float lateral_mm = 0.0f, heading_rad = 0.0f, lateral_variance_mm2 = 0.0f, heading_variance_rad2 = 0.0f;
         float gyro_radps = 0.0f;
         bool right_turn = false, front_wall = false, left_wall = false, right_wall = false;
         bool ekf_control = false, pose_trusted = false, ekf_pose_used = false;
+        int16_t adc[4]{};
+        IrRangeState range[4] = {IrRangeState::Unknown, IrRangeState::Unknown, IrRangeState::Unknown, IrRangeState::Unknown};
     };
-    struct Decision { Input input; Reason reason = Normal; uint8_t flags = 0; };
+    struct Decision { Input input; Reason reason = Normal; uint8_t flags = 0; uint16_t checks = 0; float candidate_mm = 0.0f; };
 
     void clear() { *this = SearchTurnGuard{}; }
-    History history() const { return {qualified_, candidate_ && candidate_travel_mm_ >= search_turn_guard_param.confirmation_mm}; }
+    History history() const { return {qualified_, candidate_ && candidate_travel_mm_ >= search_turn_guard_param.confirmation_mm, candidate_travel_mm_}; }
     void update(float left_mm, float right_mm, float ds_mm, bool enabled) {
         if (!enabled || !isfinite(left_mm) || !isfinite(right_mm) || !isfinite(ds_mm)
             || ds_mm < 0.0f || ds_mm > 6.0f || left_mm < search_turn_guard_param.front_valid_min_mm || right_mm < search_turn_guard_param.front_valid_min_mm
@@ -54,6 +60,19 @@ public:
     static Decision decide(const Input &in, const History &history) {
         Decision result;
         result.input = in;
+        result.candidate_mm = history.candidate_mm;
+        if (ir_range_is_metric(in.range[2]) && ir_range_is_metric(in.range[3])) result.checks |= MetricPair;
+        if (isfinite(in.front_left_mm) && isfinite(in.front_right_mm)
+            && in.front_left_mm >= search_turn_guard_param.front_valid_min_mm && in.front_right_mm >= search_turn_guard_param.front_valid_min_mm
+            && in.front_left_mm <= search_turn_guard_param.front_valid_max_mm && in.front_right_mm <= search_turn_guard_param.front_valid_max_mm) result.checks |= PairWindow;
+        if (isfinite(in.lateral_mm) && fabsf(in.lateral_mm) <= search_turn_guard_param.centered_mm) result.checks |= Centered;
+        if (isfinite(in.lateral_variance_mm2) && in.lateral_variance_mm2 >= 0 && in.lateral_variance_mm2 <= search_turn_guard_param.lateral_variance_limit_mm2) result.checks |= LateralCertain;
+        if (isfinite(in.heading_rad) && fabsf(in.heading_rad) <= search_turn_guard_param.aligned_rad) result.checks |= Aligned;
+        if (isfinite(in.heading_variance_rad2) && in.heading_variance_rad2 >= 0 && in.heading_variance_rad2 <= search_turn_guard_param.aligned_rad * search_turn_guard_param.aligned_rad) result.checks |= HeadingCertain;
+        if (isfinite(in.gyro_radps) && fabsf(in.gyro_radps) <= search_turn_guard_param.quiet_yaw_radps) result.checks |= QuietYaw;
+        if (in.pose_trusted) result.checks |= PoseTrusted;
+        if (in.ekf_control) result.checks |= EkfControl;
+        if (in.ekf_pose_used) result.checks |= PoseUsed;
         if (history.same_surface) result.flags |= SameSurface;
         if (history.confirmed) result.flags |= Confirmed;
         if (!in.ekf_control) result.flags |= Legacy;
@@ -84,7 +103,8 @@ public:
         const bool pair_in_range = isfinite(in.front_left_mm) && isfinite(in.front_right_mm)
             && in.front_left_mm >= search_turn_guard_param.front_valid_min_mm && in.front_right_mm >= search_turn_guard_param.front_valid_min_mm
             && in.front_left_mm <= search_turn_guard_param.front_valid_max_mm && in.front_right_mm <= search_turn_guard_param.front_valid_max_mm;
-        if (difference < search_turn_guard_param.hard_front_difference_mm && pair_in_range && pose_reliable && history.same_surface && !history.confirmed)
+        if (difference < search_turn_guard_param.hard_front_difference_mm && pair_in_range
+            && (result.checks & MetricPair) && pose_reliable && history.same_surface && !history.confirmed)
             result.flags |= Suppressed;
         else result.reason = FrontDifference;
         return result;

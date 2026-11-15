@@ -132,11 +132,11 @@ void LogStream::enqueue_sample(const half_float *sample, uint32_t now_ms)
 	if(pending_count == QUEUE_SIZE) return;
 	PendingFrame &slot = pending[pending_write];
 	uint8_t *frame = slot.bytes;
-	memcpy(frame, "L8S2", 4);
+	memcpy(frame, "L8S4", 4);
 	put32(frame + 4, index); // Count attempts, including whole-frame drops.
 	put32(frame + 8, now_ms);
 	put16(frame + 12, period_ms);
-	// STM32 is little endian. Copy the already-converted half values once.
+	// STM32 is little endian. Copy binary16 + exact integer trailer once.
 	memcpy(frame + 14, sample, sizeof(half_float) * FIELD_COUNT);
 	slot.generation = generation;
 	pending_write = (pending_write + 1) % QUEUE_SIZE;

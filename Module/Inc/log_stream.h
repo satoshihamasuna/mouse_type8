@@ -2,6 +2,7 @@
 #define MODULE_INC_LOG_STREAM_H_
 
 #include "Component/Inc/half_float.h"
+#include "Module/Inc/log_data.h"
 
 namespace LogStream
 {
@@ -9,7 +10,7 @@ namespace LogStream
 constexpr uint16_t MIN_PERIOD_MS = 3;
 constexpr uint16_t MAX_PERIOD_MS = 1000;
 constexpr uint32_t LEASE_MS = 3000;
-constexpr uint16_t FIELD_COUNT = 55;
+constexpr uint16_t FIELD_COUNT = LOG_DATA_NUM;
 constexpr uint16_t FRAME_SIZE = 16 + FIELD_COUNT * 2;
 constexpr uint8_t QUEUE_SIZE = 8;
 

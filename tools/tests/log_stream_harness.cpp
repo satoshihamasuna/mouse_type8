@@ -219,6 +219,8 @@ int main(int argc, char **argv)
 	assert(LogStream::sample_due(tick));
 	half_float sample[LogStream::FIELD_COUNT];
 	for(uint16_t i = 0; i < LogStream::FIELD_COUNT; ++i) sample[i].bitPattern = 0x3c00 + i;
+	const int16_t adc[] = {-32768, -7, 2049, 32767};
+	LogLayout::set_ir_fields(sample, adc, LogLayout::pack_ranges(1, 4, 2, 4), 7);
 	LogStream::enqueue_sample(sample, tick);
 	assert(transfers.empty()); // ADC enqueue never starts DMA or computes a CRC.
 	Communicate_Service();

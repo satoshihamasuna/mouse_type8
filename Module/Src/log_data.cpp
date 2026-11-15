@@ -123,56 +123,73 @@ void LogData::indicate_data()
 
     static const char *labels[(LOG_DATA_NUM+1)] = {
         "cnt",
-        "ideal.velo", "ego.velo",
-        "ideal.rad_velo", "ego.rad_velo",
-        "ideal.length", "ego.length",
-        "ideal.radian", "ego.radian",
 
-        "V_r", "V_l",
-        "sp_feedback", "sp_feedforward",
-        "om_feedback", "om_feedforward",
-
-        "sen_l.avg_distance", "sen_r.avg_distance",
-        "sen_l.distance", "sen_r.distance",
-
-        "ego.x_point", "ideal.x_point",
-        "ego.turn_x", "ideal.turn_x",
-        "ego.turn_y", "ideal.turn_y",
-        "ego.turn_slip_theta", "ideal.turn_slip_theta",
-        "ego.horizon_accel.get", "ideal.horizon_accel.get",
-        "ego.horizon_velo.get", "ideal.horizon_velo.get",
-
-        "Encoder_GetProperty_Right().sp_pulse",
-        "Encoder_GetProperty_Left().sp_pulse",
-
-        "Battery",
-
+        // 速度・姿勢
+        "ideal.velo",
+        "ego.velo",
         "ideal.accel",
         "ego.accel",
+        "ideal.rad_velo",
+        "ego.rad_velo",
+        "ideal.radian",
+        "ego.radian",
 
+        // 位置・滑り
+        "ideal.length",
+        "ego.length",
+        "ideal.x_point",
+        "ego.x_point",
+        "ideal.turn_x",
+        "ego.turn_x",
+        "ideal.turn_y",
+        "ego.turn_y",
+        "ideal.turn_slip_theta",
+        "ego.turn_slip_theta",
+        "ideal.horizon_accel.get",
+        "ego.horizon_accel.get",
+        "ideal.horizon_velo.get",
+        "ego.horizon_velo.get",
+
+        // モーター・制御出力
+        "Encoder_GetProperty_Right().sp_pulse",
+        "Encoder_GetProperty_Left().sp_pulse",
+        "V_r",
+        "V_l",
+        "sp_feedback",
+        "sp_feedforward",
+        "om_feedback",
+        "om_feedforward",
         "speed_ctrl.get_I_peration",
-        "omega_ctrl.get_I_peration",
-
-		"control_ir",
-		"control_ir_dot",
-
-        "sen_l.error", "sen_r.error",
-        "sen_fl.distance", "sen_fr.distance",
-
         "speed_ctrl.get_D_peration",
+        "omega_ctrl.get_I_peration",
         "omega_ctrl.get_D_peration",
+        "Battery",
 
-        "speed_ctrl.Kp",
-        "speed_ctrl.Ki",
-        "speed_ctrl.Kd",
-        "omega_ctrl.Kp",
-        "omega_ctrl.Ki",
-        "omega_ctrl.Kd",
-		"irq.total_us",
-		"irq.logging_us",
-		"irq.max_us",
-		"irq.period_us",
+        // 割り込み時間
+        "irq.total_us",
+        "irq.logging_us",
+        "irq.max_us",
+        "irq.period_us",
 
+        // 壁距離・壁制御
+        "sen_l.distance",
+        "sen_r.distance",
+        "sen_fl.distance",
+        "sen_fr.distance",
+        "sen_l.avg_distance",
+        "sen_r.avg_distance",
+        "sen_l.error",
+        "sen_r.error",
+        "control_ir",
+        "control_ir_dot",
+
+        // ADC差分・範囲状態・走行パターン（整数）
+        "sen_l.value",
+        "sen_r.value",
+        "sen_fl.value",
+        "sen_fr.value",
+        "ir.range_states",
+        "motion.pattern",
     };
 
 void LogData::reset_log()
@@ -217,7 +234,9 @@ void LogData::indicate_data()
         printf("LOG,%u,", static_cast<unsigned>(i * LOG_DATA_PRIOD));
 
         for(int j = 0; j < LOG_DATA_NUM; j++) {
-            printf("%4.5lf", half_to_float(sample[j]));
+            if(j < LogLayout::HALF_FIELDS) printf("%4.5lf", half_to_float(sample[j]));
+            else if(j < LogLayout::RANGE_INDEX) printf("%d", static_cast<int16_t>(sample[j].bitPattern));
+            else printf("%u", static_cast<unsigned>(sample[j].bitPattern));
             if(j < LOG_DATA_NUM-1) printf(",");
         }
 
@@ -260,9 +279,8 @@ void LogData::indicate_data_binary()
     	frame.magic = LOG_MAGIC;
         frame.index = i * LOG_DATA_PRIOD;
 
-        for(int j = 0; j < LOG_DATA_NUM; j++) {
-            frame.data[j] = sample[j];   // ★ half のまま
-        }
+        // Same 16-bit words as the ring buffer; ADC counts keep every bit.
+        memcpy(reinterpret_cast<uint8_t *>(&frame) + 4, sample, sizeof(sample));
 
 
 
@@ -293,72 +311,73 @@ void LogData::logging()
 	if(log_enable == True || stream_due)
 	{
 		half_float sample[LOG_DATA_NUM];
-		sample[0]  =  float_to_half(Vehicle_type8::getInstance().ideal.velo.get());
-		sample[1]  =  float_to_half(Vehicle_type8::getInstance().ego.velo.get());
-		sample[2]  =  float_to_half(Vehicle_type8::getInstance().ideal.rad_velo.get());
-		sample[3]  =  float_to_half(Vehicle_type8::getInstance().ego.rad_velo.get());
-		sample[4]  =  float_to_half(Vehicle_type8::getInstance().ideal.length.get());
-		sample[5]  =  float_to_half(Vehicle_type8::getInstance().ego.length.get());
-		sample[6]  =  float_to_half(Vehicle_type8::getInstance().ideal.radian.get());
-		sample[7]  =  float_to_half(Vehicle_type8::getInstance().ego.radian.get());
-
-		sample[8]  =  float_to_half(Vehicle_type8::getInstance().V_r);
-		sample[9]  =  float_to_half(Vehicle_type8::getInstance().V_l);
-		sample[10] =  float_to_half(Vehicle_type8::getInstance().sp_feedback.get());
-		sample[11] =  float_to_half(Vehicle_type8::getInstance().sp_feedforward.get());
-		sample[12] =  float_to_half(Vehicle_type8::getInstance().om_feedback.get());
-		sample[13] =  float_to_half(Vehicle_type8::getInstance().om_feedforward.get());
-
-		sample[14] =  float_to_half(IrSensTask_type8::getInstance().sen_l.avg_distance);
-		sample[15] =  float_to_half(IrSensTask_type8::getInstance().sen_r.avg_distance);
-		sample[16] =  float_to_half(IrSensTask_type8::getInstance().sen_l.distance);
-		sample[17] =  float_to_half(IrSensTask_type8::getInstance().sen_r.distance);
-
-		sample[18] =  float_to_half(Vehicle_type8::getInstance().ego.x_point.get());
-		sample[19] =  float_to_half(Vehicle_type8::getInstance().ideal.x_point.get());
-		sample[20] =  float_to_half(Vehicle_type8::getInstance().ego.turn_x.get());
-		sample[21] =  float_to_half(Vehicle_type8::getInstance().ideal.turn_x.get());
-		sample[22] =  float_to_half(Vehicle_type8::getInstance().ego.turn_y.get());
-		sample[23] =  float_to_half(Vehicle_type8::getInstance().ideal.turn_y.get());
-		sample[24] =  float_to_half(Vehicle_type8::getInstance().ego.turn_slip_theta.get());
-		sample[25] =  float_to_half(Vehicle_type8::getInstance().ideal.turn_slip_theta.get());
-		sample[26] =  float_to_half(Vehicle_type8::getInstance().ego.horizon_accel.get());
-		sample[27] =  float_to_half(Vehicle_type8::getInstance().ideal.horizon_accel.get());
-		sample[28] =  float_to_half(Vehicle_type8::getInstance().ego.horizon_velo.get());
-		sample[29] =  float_to_half(Vehicle_type8::getInstance().ideal.horizon_velo.get());
-
-		sample[30] =  float_to_half(Encoder_GetProperty_Right().sp_pulse);
-		sample[31] =  float_to_half(Encoder_GetProperty_Left().sp_pulse);
-		sample[32] =  float_to_half(Vehicle_type8::getInstance().battery.get());
-		sample[33] =  float_to_half(Vehicle_type8::getInstance().ideal.accel.get());
-		sample[34] =  float_to_half(Vehicle_type8::getInstance().ego.accel.get());
-
-
-		sample[35] =  float_to_half(Vehicle_type8::getInstance().Vehicle_controller.speed_ctrl.get_I_peration());
-		sample[36] =  float_to_half(Vehicle_type8::getInstance().Vehicle_controller.omega_ctrl.get_I_peration());
-
-		sample[37] =  float_to_half(IrSensTask_type8::getInstance().control_ir.get());
-		sample[38] =  float_to_half(IrSensTask_type8::getInstance().control_ir_dot.get());
-
-		sample[39] =  float_to_half(IrSensTask_type8::getInstance().sen_l.error);
-		sample[40] =  float_to_half(IrSensTask_type8::getInstance().sen_r.error);
-		sample[41] =  float_to_half(IrSensTask_type8::getInstance().sen_fl.distance);
-		sample[42] =  float_to_half(IrSensTask_type8::getInstance().sen_fr.distance);
-
-		sample[43] =  float_to_half(Vehicle_type8::getInstance().Vehicle_controller.speed_ctrl.get_D_peration());
-		sample[44] =  float_to_half(Vehicle_type8::getInstance().Vehicle_controller.omega_ctrl.get_D_peration());
-
-		sample[45] =  float_to_half(Vehicle_type8::getInstance().Vehicle_controller.speed_ctrl.Kp);
-		sample[46] =  float_to_half(Vehicle_type8::getInstance().Vehicle_controller.speed_ctrl.Ki);
-		sample[47] =  float_to_half(Vehicle_type8::getInstance().Vehicle_controller.speed_ctrl.Kd);
-		sample[48] =  float_to_half(Vehicle_type8::getInstance().Vehicle_controller.omega_ctrl.Kp);
-		sample[49] =  float_to_half(Vehicle_type8::getInstance().Vehicle_controller.omega_ctrl.Ki);
-		sample[50] =  float_to_half(Vehicle_type8::getInstance().Vehicle_controller.omega_ctrl.Kd);
 		const InterruptTiming::Sample timing = InterruptTiming::sample();
-		sample[51] = float_to_half(timing.total_us);
-		sample[52] = float_to_half(timing.logging_us);
-		sample[53] = float_to_half(timing.max_us);
-		sample[54] = float_to_half(timing.period_us);
+
+		// 速度・姿勢
+		sample[0] = float_to_half(Vehicle_type8::getInstance().ideal.velo.get());
+		sample[1] = float_to_half(Vehicle_type8::getInstance().ego.velo.get());
+		sample[2] = float_to_half(Vehicle_type8::getInstance().ideal.accel.get());
+		sample[3] = float_to_half(Vehicle_type8::getInstance().ego.accel.get());
+		sample[4] = float_to_half(Vehicle_type8::getInstance().ideal.rad_velo.get());
+		sample[5] = float_to_half(Vehicle_type8::getInstance().ego.rad_velo.get());
+		sample[6] = float_to_half(Vehicle_type8::getInstance().ideal.radian.get());
+		sample[7] = float_to_half(Vehicle_type8::getInstance().ego.radian.get());
+
+		// 位置・滑り
+		sample[8] = float_to_half(Vehicle_type8::getInstance().ideal.length.get());
+		sample[9] = float_to_half(Vehicle_type8::getInstance().ego.length.get());
+		sample[10] = float_to_half(Vehicle_type8::getInstance().ideal.x_point.get());
+		sample[11] = float_to_half(Vehicle_type8::getInstance().ego.x_point.get());
+		sample[12] = float_to_half(Vehicle_type8::getInstance().ideal.turn_x.get());
+		sample[13] = float_to_half(Vehicle_type8::getInstance().ego.turn_x.get());
+		sample[14] = float_to_half(Vehicle_type8::getInstance().ideal.turn_y.get());
+		sample[15] = float_to_half(Vehicle_type8::getInstance().ego.turn_y.get());
+		sample[16] = float_to_half(Vehicle_type8::getInstance().ideal.turn_slip_theta.get());
+		sample[17] = float_to_half(Vehicle_type8::getInstance().ego.turn_slip_theta.get());
+		sample[18] = float_to_half(Vehicle_type8::getInstance().ideal.horizon_accel.get());
+		sample[19] = float_to_half(Vehicle_type8::getInstance().ego.horizon_accel.get());
+		sample[20] = float_to_half(Vehicle_type8::getInstance().ideal.horizon_velo.get());
+		sample[21] = float_to_half(Vehicle_type8::getInstance().ego.horizon_velo.get());
+
+		// モーター・制御出力
+		sample[22] = float_to_half(Encoder_GetProperty_Right().sp_pulse);
+		sample[23] = float_to_half(Encoder_GetProperty_Left().sp_pulse);
+		sample[24] = float_to_half(Vehicle_type8::getInstance().V_r);
+		sample[25] = float_to_half(Vehicle_type8::getInstance().V_l);
+		sample[26] = float_to_half(Vehicle_type8::getInstance().sp_feedback.get());
+		sample[27] = float_to_half(Vehicle_type8::getInstance().sp_feedforward.get());
+		sample[28] = float_to_half(Vehicle_type8::getInstance().om_feedback.get());
+		sample[29] = float_to_half(Vehicle_type8::getInstance().om_feedforward.get());
+		sample[30] = float_to_half(Vehicle_type8::getInstance().Vehicle_controller.speed_ctrl.get_I_peration());
+		sample[31] = float_to_half(Vehicle_type8::getInstance().Vehicle_controller.speed_ctrl.get_D_peration());
+		sample[32] = float_to_half(Vehicle_type8::getInstance().Vehicle_controller.omega_ctrl.get_I_peration());
+		sample[33] = float_to_half(Vehicle_type8::getInstance().Vehicle_controller.omega_ctrl.get_D_peration());
+		sample[34] = float_to_half(Vehicle_type8::getInstance().battery.get());
+
+		// 割り込み時間
+		sample[35] = float_to_half(timing.total_us);
+		sample[36] = float_to_half(timing.logging_us);
+		sample[37] = float_to_half(timing.max_us);
+		sample[38] = float_to_half(timing.period_us);
+
+		// 壁距離・壁制御
+		sample[39] = float_to_half(IrSensTask_type8::getInstance().sen_l.distance);
+		sample[40] = float_to_half(IrSensTask_type8::getInstance().sen_r.distance);
+		sample[41] = float_to_half(IrSensTask_type8::getInstance().sen_fl.distance);
+		sample[42] = float_to_half(IrSensTask_type8::getInstance().sen_fr.distance);
+		sample[43] = float_to_half(IrSensTask_type8::getInstance().sen_l.avg_distance);
+		sample[44] = float_to_half(IrSensTask_type8::getInstance().sen_r.avg_distance);
+		sample[45] = float_to_half(IrSensTask_type8::getInstance().sen_l.error);
+		sample[46] = float_to_half(IrSensTask_type8::getInstance().sen_r.error);
+		sample[47] = float_to_half(IrSensTask_type8::getInstance().control_ir.get());
+		sample[48] = float_to_half(IrSensTask_type8::getInstance().control_ir_dot.get());
+
+		const auto &ir = IrSensTask_type8::getInstance();
+		const int16_t adc[] = {ir.sen_l.value, ir.sen_r.value, ir.sen_fl.value, ir.sen_fr.value};
+		LogLayout::set_ir_fields(sample, adc, LogLayout::pack_ranges(
+			static_cast<uint8_t>(ir.sen_l.range_state), static_cast<uint8_t>(ir.sen_r.range_state),
+			static_cast<uint8_t>(ir.sen_fl.range_state), static_cast<uint8_t>(ir.sen_fr.range_state)),
+			static_cast<uint16_t>(CtrlTask_type8::getInstance().motion_pattern_get()));
 
 		if(log_enable == True)
 		{

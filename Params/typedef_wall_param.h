@@ -108,6 +108,12 @@ typedef struct{
 }t_diagonal_edge_param;
 
 typedef struct{
+	float window_mm;
+	float maximum_step_mm;
+	float blend;
+}t_wall_position_param;
+
+typedef struct{
 	float side_error_mm;
 	float front_difference_mm;
 	float front_release_mm;

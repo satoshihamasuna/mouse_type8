@@ -18,11 +18,7 @@ except ImportError:
     list_ports = None
 
 
-LOG_DATA_NUM = 55
-LOG_MAGIC = 0xA55A
 LOG_MAGIC_END = 0xFFFF
-LOG_FRAME_FORMAT = "<HH" + "H" * LOG_DATA_NUM
-LOG_FRAME_SIZE = struct.calcsize(LOG_FRAME_FORMAT)
 LOG_DIR = Path(__file__).resolve().parent / "logs"
 TURN_PRESET_SPEEDS = (300, 500, 700, 1000, 1200, 1400, 1500, 1600, 1800, 2000)
 SEARCH_TURN_PRESET_SPEEDS = (280, 300, 320, 350, 370, 400)
@@ -818,7 +814,7 @@ class DebugGui(tk.Tk):
         }
 
     def _log_binary_worker(self, connection_generation=None):
-        from log_protocol import saved_log_frame
+        from log_protocol import saved_log_frame, saved_log_magic, decode_saved_values
         try:
             LOG_DIR.mkdir(exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -867,11 +863,11 @@ class DebugGui(tk.Tk):
                         magic, index, *half_values = frame.unpack(raw)
                         if magic == LOG_MAGIC_END:
                             break
-                        if magic != LOG_MAGIC:
+                        if magic != saved_log_magic(labels):
                             drop_count += 1
                             self._append(f"Drop frame: magic=0x{magic:04x}\n")
                             continue
-                        writer.writerow([index] + [self._half_to_float(value) for value in half_values])
+                        writer.writerow([index] + decode_saved_values(labels, half_values))
                         frame_count += 1
                         if frame_count % 50 == 0:
                             self._append(f"受信済みログ: {frame_count} frames\n")

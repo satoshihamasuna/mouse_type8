@@ -14,7 +14,7 @@ import mouse_ble_gateway as transport
 
 MIN_PERIOD_MS = 3
 
-LOG_LABELS = (
+LEGACY_LOG_LABELS = (
     'ideal.velo', 'ego.velo', 'ideal.rad_velo', 'ego.rad_velo',
     'ideal.length', 'ego.length', 'ideal.radian', 'ego.radian',
     'V_r', 'V_l', 'sp_feedback', 'sp_feedforward', 'om_feedback', 'om_feedforward',
@@ -30,9 +30,70 @@ LOG_LABELS = (
     'omega_ctrl.Kp', 'omega_ctrl.Ki', 'omega_ctrl.Kd',
     'irq.total_us', 'irq.logging_us', 'irq.max_us', 'irq.period_us',
 )
-MAGIC = b'L8S2'
-FRAME = struct.Struct('<4sIIH55eH')
-FRAMES = {b'L8S1': struct.Struct('<4sIIH51eH'), MAGIC: FRAME}
+V3_LOG_LABELS = (*LEGACY_LOG_LABELS[:45], *LEGACY_LOG_LABELS[51:],
+                 'sen_l.value', 'sen_r.value', 'sen_fl.value', 'sen_fr.value',
+                 'ir.range_states', 'motion.pattern')
+LOG_LABELS = (
+    'ideal.velo',
+    'ego.velo',
+    'ideal.accel',
+    'ego.accel',
+    'ideal.rad_velo',
+    'ego.rad_velo',
+    'ideal.radian',
+    'ego.radian',
+    'ideal.length',
+    'ego.length',
+    'ideal.x_point',
+    'ego.x_point',
+    'ideal.turn_x',
+    'ego.turn_x',
+    'ideal.turn_y',
+    'ego.turn_y',
+    'ideal.turn_slip_theta',
+    'ego.turn_slip_theta',
+    'ideal.horizon_accel.get',
+    'ego.horizon_accel.get',
+    'ideal.horizon_velo.get',
+    'ego.horizon_velo.get',
+    'Encoder_GetProperty_Right().sp_pulse',
+    'Encoder_GetProperty_Left().sp_pulse',
+    'V_r',
+    'V_l',
+    'sp_feedback',
+    'sp_feedforward',
+    'om_feedback',
+    'om_feedforward',
+    'speed_ctrl.get_I_peration',
+    'speed_ctrl.get_D_peration',
+    'omega_ctrl.get_I_peration',
+    'omega_ctrl.get_D_peration',
+    'Battery',
+    'irq.total_us',
+    'irq.logging_us',
+    'irq.max_us',
+    'irq.period_us',
+    'sen_l.distance',
+    'sen_r.distance',
+    'sen_fl.distance',
+    'sen_fr.distance',
+    'sen_l.avg_distance',
+    'sen_r.avg_distance',
+    'sen_l.error',
+    'sen_r.error',
+    'control_ir',
+    'control_ir_dot',
+    'sen_l.value',
+    'sen_r.value',
+    'sen_fl.value',
+    'sen_fr.value',
+    'ir.range_states',
+    'motion.pattern',
+)
+MAGIC = b'L8S4'
+FRAME = struct.Struct('<4sIIH49e4h3H')
+FRAMES = {b'L8S1': struct.Struct('<4sIIH51eH'), b'L8S2': struct.Struct('<4sIIH55eH'), b'L8S3': FRAME, MAGIC: FRAME}
+FRAME_LABELS = {b'L8S1': LEGACY_LOG_LABELS[:51], b'L8S2': LEGACY_LOG_LABELS, b'L8S3': V3_LOG_LABELS, MAGIC: LOG_LABELS}
 CSV_HEADER = ('cnt', *LOG_LABELS, 'sequence', 'time_ms', 'period_ms', 'lost_frames')
 
 
@@ -52,6 +113,17 @@ class Sample:
     time_ms: int
     period_ms: int
     values: tuple
+    protocol: bytes = MAGIC
+
+    @property
+    def labels(self):
+        return FRAME_LABELS[self.protocol]
+
+
+def encode_sample(sample):
+    frame = FRAMES[sample.protocol].pack(sample.protocol, sample.sequence, sample.time_ms,
+                                         sample.period_ms, *sample.values, 0)
+    return frame[:-2] + struct.pack('<H', binascii.crc_hqx(frame[:-2], 0xffff))
 
 
 class StreamDecoder:
@@ -76,7 +148,8 @@ class StreamDecoder:
             if text_sink and start:
                 text_sink(bytes(self.buffer[:start]))
             del self.buffer[:start]
-            frame = FRAMES[bytes(self.buffer[:4])]
+            protocol = bytes(self.buffer[:4])
+            frame = FRAMES[protocol]
             if len(self.buffer) < frame.size:
                 break
             checksum = struct.unpack_from('<H', self.buffer, frame.size - 2)[0]
@@ -92,7 +165,7 @@ class StreamDecoder:
                     text_sink(bytes(self.buffer[:1]))
                 del self.buffer[0]
                 continue
-            samples.append(Sample(sequence, time_ms, period_ms, tuple(values[:-1])))
+            samples.append(Sample(sequence, time_ms, period_ms, tuple(values[:-1]), protocol))
             del self.buffer[:frame.size]
         return samples
 
@@ -102,6 +175,7 @@ class CsvCapture:
         self.file = file
         self.writer = csv.writer(file)
         self.field_count = None
+        self.protocol = None
         self.decoder = StreamDecoder()
         self.rows = 0
         self.lost = 0
@@ -115,10 +189,11 @@ class CsvCapture:
         for sample in samples:
             if self.field_count is None:
                 self.field_count = len(sample.values)
-                self.writer.writerow(('cnt', *LOG_LABELS[:self.field_count],
+                self.protocol = sample.protocol
+                self.writer.writerow(('cnt', *sample.labels,
                                       'sequence', 'time_ms', 'period_ms', 'lost_frames'))
-            elif len(sample.values) != self.field_count:
-                raise RuntimeError('Log field count changed; reconnect to start a new CSV')
+            elif len(sample.values) != self.field_count or sample.protocol != self.protocol:
+                raise RuntimeError('Log field count changed or format changed; reconnect to start a new CSV')
             if self.previous_sequence is None:
                 lost = 0  # Earlier attempts may belong to a previous BLE session.
             else:

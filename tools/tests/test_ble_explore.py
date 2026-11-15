@@ -80,11 +80,67 @@ class OptionsTests(unittest.TestCase):
 
 
 class TurnDiagnosticsParserTests(unittest.TestCase):
+    def test_snapshot_selects_adc_and_irq_labels_from_the_received_protocol(self):
+        from mouse_ble_log import CsvCapture
+        session = self.make_session()
+        session.capture = CsvCapture(io.StringIO())
+        values = [0.]*35+[100.,20.,150.,1000.]+[0.]*10+[-32768,-7,2049,32767,2209,7]
+        payload = struct.pack('<4sIIH49e4h2H',b'L8S4',0,100,5,*values)
+        session.capture.feed(payload+struct.pack('<H',binascii.crc_hqx(payload,0xffff)))
+        fields = session.snapshot()['values']
+        self.assertEqual(fields['sen_fl.value'],2049)
+        self.assertEqual(fields['irq.total_us'],100.)
+        self.assertNotIn('speed_ctrl.Kp',fields)
+        session.capture = CsvCapture(io.StringIO());session.capture.feed(sample(1))
+        fields = session.snapshot()['values']
+        self.assertEqual(fields['speed_ctrl.Kp'],45.)
+        self.assertEqual(fields['irq.total_us'],51.)
+        self.assertNotIn('sen_fl.value',fields)
+
     def make_session(self, run_type='explore'):
         session = explore.ExploreSession()
         session._text_file = io.StringIO()
         session._run_settings = {'run_type': run_type}
+        session.state = 'running'
         return session
+
+    def test_wall_diagnostics_are_scoped_to_active_run_and_exported_on_finish(self):
+        import wall_diagnostics
+        for run_type in ('explore', 'shortest'):
+            session = self.make_session(run_type)
+            session.state = 'idle'
+            session._text(b'WALL_CORR_STATS schema:1 total:0 stored:0 dropped:0\r\n')
+            self.assertNotIn('wall_diagnostics', session._run_settings)
+            session.state = 'running'
+            session._text(b'WALL_RANGE_STATS schema:1 all_samples:0 moving_samples:0 l_ok:0 l_near:0 l_far:0 l_invalid:0 r_ok:0 r_near:0 r_far:0 r_invalid:0 fl_ok:0 fl_near:0 fl_far:0 fl_invalid:0 fr_ok:0 fr_near:0 fr_far:0 fr_invalid:0\r\n')
+            session._text(b'WALL_CORR_STATS schema:1 total:0 stored:0 dropped:0 accepted:0 limited:0 rejected:0 invalid:0 wrong_side:0\r\n')
+            session._finish_run({'result': 'complete'})
+            self.assertTrue(session._run_settings['wall_diagnostics']['complete'])
+            session.state = 'idle'
+            before = json.dumps(session._run_settings)
+            session._text(b'WALL_CORR index:0 ms:123 reason:invalid\r\n')
+            self.assertEqual(json.dumps(session._run_settings), before)
+
+    def test_new_firmware_missing_wall_summary_is_incomplete(self):
+        import wall_diagnostics
+        session = self.make_session()
+        session._run_settings['wall_diagnostics'] = wall_diagnostics.empty_diagnostics()
+        session._finish_run({'result': 'stopped'})
+        self.assertFalse(session._run_settings['wall_diagnostics']['complete'])
+
+    def test_only_explicit_motor_stop_hands_bandwidth_to_diagnostics(self):
+        session = self.make_session()
+        session.state = 'running'; session._streaming = True
+        session._text(b'WALL_DIAG_BEGIN schema:1 motors_stopped:0\r\n')
+        self.assertTrue(session._streaming)
+        session._stop_requested_at = 1
+        session._text(b'WALL_DIAG_BEGIN schema:1 motors_stopped:1\r\n')
+        self.assertFalse(session._streaming)
+        self.assertIsNone(session._stop_requested_at)
+        self.assertEqual(session.state,'stopping')
+        self.assertIsNotNone(session._diagnostic_started_at)
+        session._finish_run({'result':'complete'})
+        self.assertIsNone(session._diagnostic_started_at)
 
     def test_missing_or_duplicate_records_are_not_marked_complete(self):
         for indices in ([0], [0, 0], [1, 0]):
@@ -187,6 +243,29 @@ class FirmwareCommandTests(unittest.TestCase):
     def test_capability_reports_target_without_starting(self):
         self.check_case('show', 'EXPLORE_CAP protocol:1')
         self.check_case('show', 'turn_cov:1')
+
+    def test_capability_is_forwarded_without_waiting_for_another_log_packet(self):
+        from mouse_ble_log import CsvCapture
+        for executable in self.executables.values():
+            wire=subprocess.run([str(executable),'show'],capture_output=True,check=True,timeout=10).stdout
+            output=[];capture=CsvCapture(io.StringIO())
+            capture.feed(wire,output.append)
+            self.assertEqual(b''.join(output),wire)
+            self.assertFalse(capture.decoder.buffer)
+            self.assertIn(b'log_schema:4',wire)
+
+    def test_actual_firmware_wall_dump_roundtrips_through_python_for_both_targets(self):
+        import wall_diagnostics
+        for executable in self.executables.values():
+            result = subprocess.run([str(executable), 'complete'], capture_output=True, text=True, timeout=10, check=True)
+            data = wall_diagnostics.empty_diagnostics()
+            for line in result.stdout.splitlines():
+                tag = line.split()[0] if line.split() else ''
+                if tag in ('WALL_CORR_STATS', 'WALL_RANGE_STATS', 'WALL_CORR'):
+                    wall_diagnostics.receive(data, tag, explore.fields(line))
+            self.assertTrue(wall_diagnostics.validate(data), data)
+            self.assertEqual(len(data['events']),2)
+            self.assertEqual(data['summary']['p4_blend'],'0.500')
 
     def test_complete_roundtrip_keeps_log_enabled_until_end(self):
         self.check_case('complete', 'EXPLORE_END result:complete')
@@ -455,6 +534,13 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             session = explore.ExploreSession(output_root=directory, emit=emit)
+            if scenario in ('camera_guard_fail', 'camera_guard_cancel'):
+                async def camera_guard():
+                    if scenario == 'camera_guard_cancel':
+                        session.action('stop')
+                    else:
+                        raise RuntimeError('recording lost')
+                session.start_guard = camera_guard
             with patch('bleak.BleakClient', Client), patch('bleak.BleakScanner', Scanner), \
                  patch.object(explore, 'SHELL_CHAR_INTERVAL_S', .001), patch.object(explore, 'WALL_EKF_TIMEOUT_S', .1):
                 driver = asyncio.create_task(drive())
@@ -483,12 +569,12 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(clients[0].command, b'')
             self.assertEqual(controls[-2:], [2, 0])
             self.assertTrue(any(record['event'] == 'summary' for record in records))
-            if scenario in ('old_firmware', 'idle', 'no_log', 'wall_probe_timeout', 'cancel_log_prepare') or rejected_wall:
+            if scenario in ('old_firmware', 'idle', 'no_log', 'wall_probe_timeout', 'cancel_log_prepare', 'camera_guard_fail', 'camera_guard_cancel') or rejected_wall:
                 self.assertFalse(any(command.startswith('explore start') for command in commands))
                 self.assertNotIn(3, controls)
-                if scenario not in ('no_log', 'cancel_log_prepare'):
+                if scenario not in ('no_log', 'cancel_log_prepare', 'camera_guard_fail', 'camera_guard_cancel'):
                     self.assertFalse(list(session.directory.glob('run_*.json')))
-                if scenario == 'cancel_log_prepare':
+                if scenario in ('cancel_log_prepare', 'camera_guard_fail', 'camera_guard_cancel'):
                     setting = json.loads(next(session.directory.glob('run_*.json')).read_text(encoding='utf-8'))
                     self.assertEqual(setting['result']['result'], 'cancelled_before_start')
             else:
@@ -506,6 +592,8 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
                 settings = [json.loads(p.read_text(encoding='utf-8')) for p in sorted(session.directory.glob('run_*.json'))]
                 for setting in settings:
                     self.assertIn('wall_ekf', setting)
+                    if setting.get('telemetry_start'):
+                        self.assertEqual(setting['logging_schema']['telemetry'], 'L8S2')
                     if setting['run_type'] == 'shortest' and scenario != 'start_error':
                         self.assertEqual(setting['wall_control_stats']['diagonal_ekf_cycles'], '60')
                         self.assertEqual(setting['wall_control_stats']['diagonal_segments'], '2')
@@ -598,6 +686,12 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
     async def test_stop_after_logs_start_cancels_the_typed_motion_command(self):
         await self.exercise('cancel_log_prepare')
 
+    async def test_camera_guard_failure_cancels_without_arm_or_execution(self):
+        await self.exercise('camera_guard_fail')
+
+    async def test_stop_during_camera_guard_cancels_without_arm_or_execution(self):
+        await self.exercise('camera_guard_cancel')
+
     async def test_silent_probe_is_not_treated_as_unsupported_firmware(self):
         await self.exercise('wall_probe_timeout')
 
@@ -606,6 +700,18 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
 
 
 class GuiTests(unittest.TestCase):
+    def test_adc_fields_are_visible_and_old_gain_columns_do_not_break_the_gui(self):
+        root=gui.tk.Tk();root.withdraw()
+        try:
+            app=gui.ExploreApp(root)
+            data=dict(rows=1,lost=0,crc_errors=0,ready=True,state='idle',time_ms=100,
+                      values={'sen_fl.value':2049,'irq.total_us':100.})
+            app.handle_event('telemetry',data)
+            self.assertEqual(app.values.item('sen_fl.value','values')[1],'2049')
+            app.handle_event('telemetry',dict(data,values={'speed_ctrl.Kp':45.,'irq.total_us':123.}))
+            self.assertEqual(app.values.item('irq.total_us','values')[1],'123')
+        finally:root.destroy()
+
     def test_turn_500_maps_to_plain500_and_diagonal_stats_are_visible(self):
         root = gui.tk.Tk()
         root.withdraw()

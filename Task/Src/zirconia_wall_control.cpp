@@ -76,10 +76,10 @@ ZirconiaWallControl::Output ZirconiaWallControl::update(const Input &in)
     const float ds = fabsf(in.travel_m);
     const float predicted = in.travel_m * sinf(in.heading_rad)
         * (in.use_estimated_pose ? 1.0f : wall_control_param.tracking_motion_scale);
-    left_.update(left_detected_, in.left_m, in.left_signal, in.travel_m, -predicted, in.sample_updated);
-    right_.update(right_detected_, in.right_m, in.right_signal, in.travel_m, predicted, in.sample_updated);
+    left_.update(left_detected_ && (in.range_valid_mask & 1), in.left_m, in.left_signal, in.travel_m, -predicted, in.sample_updated);
+    right_.update(right_detected_ && (in.range_valid_mask & 2), in.right_m, in.right_signal, in.travel_m, predicted, in.sample_updated);
     const uint8_t mask = (left_detected_ ? 1U : 0U) | (right_detected_ ? 2U : 0U);
-    const uint8_t trusted = ((left_.stable ? 1U : 0U) | (right_.stable ? 2U : 0U)) & in.measurement_mask;
+    const uint8_t trusted = ((left_.stable ? 1U : 0U) | (right_.stable ? 2U : 0U)) & in.measurement_mask & in.range_valid_mask;
     const uint8_t previous_mask = observed_mask_;
     if (phase_ == Tracking && (mask & previous_mask & trusted) != 0) {
         observed_mask_ = mask;
@@ -113,9 +113,10 @@ ZirconiaWallControl::Output ZirconiaWallControl::update(const Input &in)
     const uint8_t error_mask = trusted ? trusted : mask;
     float raw_error = error_mask == 3 ? 0.5f * (left_error + right_error)
         : error_mask == 1 ? left_error : error_mask == 2 ? right_error : 0.0f;
-    const bool measurement_trusted = phase_ == Tracking && fabsf(raw_error) <= wall_control_param.trusted_error_m
+    const bool range_limited = (mask & static_cast<uint8_t>(~in.range_valid_mask)) != 0;
+    const bool measurement_trusted = !range_limited && phase_ == Tracking && fabsf(raw_error) <= wall_control_param.trusted_error_m
         && (!in.use_estimated_pose || trusted);
-    const bool pose_control = phase_ == Tracking && mask
+    const bool pose_control = !range_limited && phase_ == Tracking && mask
         && (in.use_estimated_pose ? trusted != 0 : (trusted || tracking_valid_ || mask == 3));
     float error = raw_error;
     if (phase_ == Estimated) error = in.estimated_error_m;

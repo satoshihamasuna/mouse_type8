@@ -90,6 +90,14 @@ const static t_wall_edge_param wall_edge_param = {
 	2.0f,	// maximum_yaw_rate_radps
 };
 
+// エッジ位置補正のソフト上限。未実機評価の初期値で、Aの測定採用値ではない。
+// 順序: 直進入口、斜め入口、直進出口、斜め出口。[許容残差mm, 最大補正mm, 融合率]
+const static t_wall_position_param wall_position_param[5] = {
+	{8.0f, 4.0f, 1.0f}, {12.0f, 3.0f, 0.5f},
+	{16.0f, 8.0f, 1.0f}, {16.0f, 4.0f, 0.5f},
+	{8.0f, 4.0f, 0.5f}, // 探索直進: 従来の8 mm窓・半量補正
+};
+
 // 斜めの柱通過。11点×1mm間隔の10mm履歴。位置精度は実機未評価。
 const static t_diagonal_edge_param diagonal_edge_param = {
 	1.0f,	// sample_step_mm

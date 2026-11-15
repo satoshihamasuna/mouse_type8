@@ -10,7 +10,8 @@ import time
 import traceback
 
 import mouse_ble_gateway as transport
-from mouse_ble_log import CsvCapture, LOG_LABELS, control_packet
+from mouse_ble_log import CsvCapture, control_packet
+import wall_diagnostics
 
 
 WALL_EKF_MODES = ('keep', 'legacy', 'shadow', 'control')
@@ -104,6 +105,8 @@ class ExploreSession:
         self._wall_ekf_waiting = False
         self._run_settings = self._run_settings_path = None
         self._post_run_pending = False
+        self._diagnostic_started_at = None
+        self.start_guard = None  # Optional asynchronous camera/readiness check before arm/CR.
 
     def _save_run_settings(self):
         if self._run_settings_path is not None:
@@ -111,15 +114,20 @@ class ExploreSession:
                                                encoding='utf-8')
 
     def _finish_run(self, result):
+        self._diagnostic_started_at = None
         if self._run_settings is not None:
             self._run_settings['result'] = result
+            wall = self._run_settings.get('wall_diagnostics')
+            if wall is not None:
+                wall_diagnostics.validate(wall)
             diagnostics = self._run_settings.get('turn_diagnostics')
             if diagnostics is not None:
                 summary = diagnostics.get('summary') or {}
                 try:
                     stored = int(summary['stored'])
                     diagnostics['complete'] = (0 <= stored <= 64 and len(diagnostics['events']) == stored and
-                                               [int(e['index']) for e in diagnostics['events']] == list(range(stored)))
+                                               [int(e['index']) for e in diagnostics['events']] == list(range(stored))
+                                               and not diagnostics.get('receive_error', False))
                 except (KeyError, TypeError, ValueError):
                     diagnostics['complete'] = False
             sample = self.capture.latest if self.capture else None
@@ -127,6 +135,8 @@ class ExploreSession:
                                                    if sample else None)
             self._post_run_pending = self.wall_ekf_status is not None
             self._save_run_settings()
+            if self._run_settings_path is not None:
+                wall_diagnostics.export_tables(self._run_settings_path, self._run_settings)
 
     def action(self, name, payload=None):
         self.actions.put_nowait((name, payload))
@@ -179,15 +189,35 @@ class ExploreSession:
                     self._run_settings['wall_control_stats'] = status
                     self._save_run_settings()
                     self._event('wall_stats', status)
+            elif text.startswith('WALL_DIAG_BEGIN '):
+                status = fields(text)
+                if (self.state in ('starting', 'waiting_sensor', 'running', 'stopping') and self._run_settings is not None
+                        and status.get('schema') == '1' and status.get('motors_stopped') == '1'):
+                    self._diagnostic_started_at = time.monotonic()
+                    self._run_requested_at = self._stop_requested_at = None
+                    self._finish_stream()  # 停止済みの診断転送へ帯域を渡す。
+                    self._set_state('stopping')
+                    self._event('phase', '診断ログ保存中（機体停止済み）')
+            elif text.startswith(('WALL_RANGE_STATS ', 'WALL_CORR_STATS ', 'WALL_CORR ')):
+                if (self.state in ('starting', 'waiting_sensor', 'running', 'stopping') and self._run_settings is not None):
+                    diagnostics = self._run_settings.setdefault('wall_diagnostics', wall_diagnostics.empty_diagnostics())
+                    wall_diagnostics.receive(diagnostics, text.split()[0], fields(text))
+                    self._save_run_settings()
+                    self._event('wall_diagnostics', fields(text))
             elif text.startswith('EXPLORE_TURN_STATS ') or text.startswith('EXPLORE_TURN '):
                 status = fields(text)
                 kind = 'turn_stats' if text.startswith('EXPLORE_TURN_STATS ') else 'turn_decision'
-                if self._run_settings is not None and self._run_settings.get('run_type') == 'explore':
+                if (self.state in ('starting', 'waiting_sensor', 'running', 'stopping') and
+                        self._run_settings is not None and self._run_settings.get('run_type') == 'explore'):
                     diagnostics = self._run_settings.setdefault('turn_diagnostics', {'summary': None, 'events': []})
                     if kind == 'turn_stats':
+                        if diagnostics.get('summary') is not None:
+                            diagnostics['receive_error'] = True
                         diagnostics['summary'] = status
                     elif len(diagnostics['events']) < 64:
                         diagnostics['events'].append(status)
+                    else:
+                        diagnostics['receive_error'] = True
                     self._save_run_settings()
                 self._event(kind, status)
             elif text.startswith('EXPLORE_CAP '):
@@ -460,6 +490,8 @@ class ExploreSession:
                                 self._set_state('stopping')
                                 self._stop_requested_at = now
                                 self._event('run_error', '走行開始の応答がありません。停止を要求しました')
+                            if self._diagnostic_started_at and now - self._diagnostic_started_at > 30:
+                                raise TimeoutError('機体停止後の診断ログが30秒以内に完了しませんでした。取得データは不完全です')
                             if self._stop_requested_at and now - self._stop_requested_at > 4:
                                 raise TimeoutError('走行停止の応答がありません。接続を閉じます')
                             try:
@@ -493,6 +525,9 @@ class ExploreSession:
                                                          'confirmed_mode': wall_before['mode'] if wall_before else None}}
                                 if not isinstance(payload, ShortestOptions) and capability.get('turn_diag') == '1':
                                     settings['turn_diagnostics'] = {'summary': None, 'events': [], 'complete': False}
+                                if capability.get('wall_diag') == '1':
+                                    settings['wall_diagnostics'] = wall_diagnostics.empty_diagnostics()
+                                settings['logging_schema'] = {'telemetry': None, 'wall_diagnostics': 1 if capability.get('wall_diag') == '1' else None}
                                 if isinstance(payload, ShortestOptions) and capability.get('diagonal_ekf') == '1':
                                     settings['wall_control_stats'] = None
                                 self._run_settings_path = self.directory / ('run_' + datetime.now().strftime('%H%M%S_%f') + '.json')
@@ -521,8 +556,28 @@ class ExploreSession:
                                     self._event('run_error', '走行開始前に中断しました')
                                     self._set_state('idle')
                                     continue
+                                if self.start_guard is not None:
+                                    try:
+                                        await self.start_guard()
+                                    except Exception as error:
+                                        await transport.write_bytes(client, b'\x03', lock)
+                                        uncommitted_command = False
+                                        self._finish_stream()
+                                        self._finish_run({'result': 'cancelled_before_start', 'camera_error': str(error)})
+                                        self._event('run_error', '録画の準備を確認できないため開始しません: ' + str(error))
+                                        self._set_state('idle')
+                                        continue
+                                    if self._cancel_queued_start():
+                                        await transport.write_bytes(client, b'\x03', lock)
+                                        uncommitted_command = False
+                                        self._finish_stream()
+                                        self._finish_run({'result': 'cancelled_before_start'})
+                                        self._event('run_error', '走行開始前に中断しました')
+                                        self._set_state('idle')
+                                        continue
                                 settings['telemetry_start'] = {'sequence': self.capture.latest.sequence,
                                                                'time_ms': self.capture.latest.time_ms}
+                                settings['logging_schema']['telemetry'] = self.capture.latest.protocol.decode('ascii')
                                 self._save_run_settings()
                                 await transport.write_bytes(client, control_packet(self.period_ms, action=3), lock)
                                 # Once CR is attempted, its delivery may be uncertain: never replay it.
@@ -589,4 +644,6 @@ class ExploreSession:
                                    and not self._wall_ekf_probe_failed),
                 'ram_maze': (self.shortest_capability or {}).get('ram_maze') == '1',
                 'time_ms': sample.time_ms if sample else None,
-                'values': dict(zip(LOG_LABELS, sample.values)) if sample else {}}
+                'sequence': sample.sequence if sample else None,
+                'sample_age_seconds': time.monotonic() - self.last_sample_at if self.last_sample_at else None,
+                'values': dict(zip(sample.labels, sample.values)) if sample else {}}

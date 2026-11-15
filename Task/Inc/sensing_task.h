@@ -20,6 +20,7 @@
 #include "Task/Inc/straight_wall_ekf.h"
 #include "Task/Inc/search_turn_guard.h"
 #include "Task/Inc/diagonal_wall_control.h"
+#include "Task/Inc/ir_range_state.h"
 #include "Peripheral/Inc/ir_sensor_activity.h"
 
 #define STRAIGHT_REF		(45.0)
@@ -54,6 +55,7 @@
 
 typedef struct{
 	int16_t value;
+	IrRangeState range_state = IrRangeState::Unknown;
 	t_bool prev_is_wall;
 	t_bool is_wall;
 	t_bool is_control;
@@ -94,7 +96,7 @@ class IrSensTask
 			~StateLock() {}
 #endif
 		};
-		float Sensor_CalcDistance(t_sensor_dir dir,int16_t value);
+		float Sensor_CalcDistance(t_sensor_dir dir,int16_t value, IrRangeState *state = nullptr);
 		float IrSensor_adc2voltage(int16_t value);
 		float	 wall_ref = STRAIGHT_REF;
 		t_bool	 isEnableIrSens = False;
@@ -117,6 +119,7 @@ class IrSensTask
 		bool corner_pending = false;
 		ZirconiaWallAverage straight_left_average, straight_right_average;
 		float straight_left_distance_mm = 80.0f, straight_right_distance_mm = 80.0f;
+		IrRangeState straight_left_range = IrRangeState::Unknown, straight_right_range = IrRangeState::Unknown;
 		float wall_forward_step_mm = 0.0f;
 		float straight_heading_rad = 0.0f;
 		float straight_heading_variance_rad2 = wall_ekf_param.initial_heading_std_rad * wall_ekf_param.initial_heading_std_rad;

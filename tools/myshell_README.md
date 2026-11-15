@@ -498,16 +498,21 @@ END
 通常フレームは以下です。
 
 ```c
-uint16_t magic;       // 0xA55A
+uint16_t magic;       // 0xA55C
 uint16_t index;
-half_float data[55];
+half_float data[49];  // 動作/制御出力0～34、IRQ35～38、壁距離/壁制御39～48
+int16_t adc[4];       // 左/右/前左/前右のLED点灯ADC−消灯ADC
+uint16_t ir_range_states;
+uint16_t motion_pattern;
 ```
 
 終了フレームは `magic = 0xFFFF` です。
 
-末尾4列は `irq.total_us,irq.logging_us,irq.max_us,irq.period_us`（いずれもµs）です。
-従来の51列の並びは維持し、新しい通常フレームは114 byteです。
-更新後のメイン・debug・turnpattern GUIは `log mode0` を指定し、HEADERの列数から新55項目・旧51項目のフレーム長を選びます。
+周期ログのPIDゲイン6列をADC4列・範囲状態・走行パターンへ置き換えました。
+速度・姿勢、位置・滑り、モーター・制御出力、IRQ時間、壁距離・壁制御、ADC整数、範囲状態・走行パターンの順にまとめました。
+ADCをhalfへ変換しないため、2049や負値もそのまま保存できます。通常フレーム長は114 byteのままです。
+更新後のメイン・debug・turnpattern GUIは`log mode0`を指定し、HEADERの列数・列名・並びから新形式と旧55/51項目を区別します。
+新形式のmagicは`0xA55C`、旧形式は`0xA55A`/`0xA55B`です。機体とPC受信ツールを両方更新してください。
 `Serial_binary.py` もHEADERから選択するため、取得前に `log mode0` にしてください。
 計測範囲と前回値の扱いは [割り込み時間のログ](ble/README.md#割り込み時間をログで確認する) を参照してください。
 

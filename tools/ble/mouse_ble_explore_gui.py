@@ -385,7 +385,8 @@ class ExploreApp:
             else:
                 self.readiness.set('走行コマンド応答と電圧を確認してください。最短走行には対応STM32ファームウェアが必要です。')
             for field, value in data['values'].items():
-                self.values.item(field, values=(field, '{:.6g}'.format(value)))
+                if self.values.exists(field):
+                    self.values.item(field, values=(field, '{:.6g}'.format(value)))
             if 'Battery' in data['values']:
                 suffix = '（下限 {:.2f} V）'.format(self.battery_limit) if self.battery_limit is not None else ''
                 self.battery_text.set('電池 {:.2f} V {}'.format(data['values']['Battery'], suffix))

@@ -183,7 +183,7 @@ static void run(uint32_t phase_us, uint32_t adc_busy_us, uint32_t period, uint32
     for(size_t offset = 0; offset < wire.size(); offset += LogStream::FRAME_SIZE)
     {
         const uint8_t *frame = wire.data() + offset;
-        assert(memcmp(frame, "L8S2", 4) == 0);
+        assert(memcmp(frame, "L8S4", 4) == 0);
         const uint32_t index = u32(frame + 4);
         assert(index >= next_sequence);
         gaps += index - next_sequence;

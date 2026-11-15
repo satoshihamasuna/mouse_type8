@@ -25,11 +25,7 @@ DEFAULT_WIDTH = 32
 DEFAULT_HEIGHT = 32
 DEFAULT_GOAL = (7, 7, 2)
 MAZE_DATA_DIR = Path(__file__).resolve().parent / "maze_data"
-LOG_DATA_NUM = 55
-LOG_MAGIC = 0xA55A
 LOG_MAGIC_END = 0xFFFF
-FRAME_FORMAT = "<HH" + "H" * LOG_DATA_NUM
-FRAME_SIZE = struct.calcsize(FRAME_FORMAT)
 DIJKSTRA_LINE_RE = re.compile(
     r"x:\s*(-?\d+),y:\s*(-?\d+),d:\s*(-?\d+)"
     r"(?:,mdir:\s*(-?\d+))?,time:\s*\d+->"
@@ -808,7 +804,7 @@ class MyshellGui(tk.Tk):
             self._wait_for_line_prefix("GOAL_SET_DONE")
 
     def _log_binary_worker(self):
-        from log_protocol import saved_log_frame
+        from log_protocol import saved_log_frame, saved_log_magic, decode_saved_values
         out_dir = Path(__file__).resolve().parent / "logs"
         out_dir.mkdir(exist_ok=True)
         out_path = out_dir / datetime.now().strftime("%Y%m%d_%H%M%S_myshell_log.csv")
@@ -840,10 +836,10 @@ class MyshellGui(tk.Tk):
                 if magic == LOG_MAGIC_END:
                     self._append("Binary END frame detected\n")
                     break
-                if magic != LOG_MAGIC:
+                if magic != saved_log_magic(labels):
                     self._append(f"Drop frame: magic=0x{magic:04x}\n")
                     continue
-                rows.append([index] + [half_to_float(value) for value in half_values])
+                rows.append([index] + decode_saved_values(labels, half_values))
                 if len(rows) % 50 == 0:
                     self._append(f"Received log frames: {len(rows)}\n")
 

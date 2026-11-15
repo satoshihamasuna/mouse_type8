@@ -1,5 +1,10 @@
 # 解析ツール
 
+周期ログの`L8S4`には`sen_l.value` / `sen_r.value` / `sen_fl.value` / `sen_fr.value`が追加されています。
+距離変換前の点灯/消灯ADC差分を整数のまま保存するため、距離値が25/80 mmなどへ制限される区間でも波形を確認できます。
+`ir.range_states`と`motion.pattern`も同時刻で保存します。定義は [ADC周期ログ](../ble/README.md#adcを含む周期ログl8s4) を参照してください。
+旧ログにこれらの列がない場合は復元しません。PIDゲイン6列は新しい周期ログには含まれません。
+
 Pixel撮影タブの解析は`pixel_camera_tuning_report.py --trial PATH --stride 4`（速報）／`--stride 1`（全フレーム詳細）です。
 録画・走行はせず、保存済みの動画・CSV・実機設定・プロファイルだけを使います。出力は試行内のquick/とfull/で区別し、既存出力を上書きしません。
 速報は元のPTS・フレーム番号を保った約60fpsで、PROVISIONALとして扱います。全フレーム用キャッシュと混用しません。

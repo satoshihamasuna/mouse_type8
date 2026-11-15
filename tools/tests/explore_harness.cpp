@@ -4,6 +4,7 @@
 #include "Module/Inc/log_stream.h"
 #include "Module/Inc/log_data.h"
 #include "Subsys/Inc/search_turn_diagnostics.h"
+#include "Task/Inc/wall_diagnostics.h"
 #include <cassert>
 #include <cstring>
 
@@ -29,6 +30,11 @@ t_position DemoUtil::run_search(Search *, search_type_t, t_position, t_position 
 	SearchTurnGuard::Decision decision;
 	decision.reason = test_motion_calls == 1 ? SearchTurnGuard::Normal : SearchTurnGuard::FrontDifference;
 	SearchTurnDiagnostics::instance().record(tick, 1, 2, 0, decision);
+	const int16_t adc[4] = {100, 100, 100, 100};
+	const IrRangeState ranges[4]{};
+	WallDiagnostics::instance().sample(ranges[0], ranges[1], ranges[2], ranges[3], true);
+	WallDiagnostics::instance().record(tick, 19, WallPositionCorrection::Phase::SearchStraight, 1,
+		WallPositionCorrection::evaluate(10, 11, 0, WallPositionCorrection::Phase::SearchStraight), adc, ranges);
 	if(test_stop_during_motion) RemoteExplore::request_stop();
 	return goal;
 }

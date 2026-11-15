@@ -143,22 +143,22 @@ class SegmentCapture:
                 raise BenchmarkError('Expected 55 fields including IRQ timing')
             # CsvCapture accepts wire bytes. Rebuild a validated sample for its shared
             # column ordering, wrap checks and loss accounting; original bytes stay in raw.
-            payload = struct.pack('<4sIIH55e', log.MAGIC, sample.sequence, sample.time_ms,
-                                  sample.period_ms, *sample.values)
-            self.csv.feed(payload + struct.pack('<H', binascii.crc_hqx(payload, 0xffff)))
+            self.csv.feed(log.encode_sample(sample))
+            values = dict(zip(sample.labels, sample.values))
+            irq_max = values['irq.max_us']
             if self.first_rx is None:
                 self.first_rx, self.first_device = received_at, sample.time_ms
-                self.irq_max_start = sample.values[53] if math.isfinite(sample.values[53]) else None
+                self.irq_max_start = irq_max if math.isfinite(irq_max) else None
             if self.previous_device is not None:
                 self.intervals.append((sample.time_ms - self.previous_device) & 0xffffffff)
             elapsed = (sample.time_ms - self.first_device) & 0xffffffff
             self.device_elapsed.append(elapsed / 1000)
             self.relative_lag.append((received_at - self.first_rx) * 1000 - elapsed)
             self.previous_device, self.last_rx = sample.time_ms, received_at
-            for name, index in (('total_us', 51), ('logging_us', 52), ('period_us', 54)):
-                self.irq[name].append(sample.values[index])
-            if math.isfinite(sample.values[53]):
-                self.irq_max_end = sample.values[53]
+            for name in ('total_us', 'logging_us', 'period_us'):
+                self.irq[name].append(values['irq.'+name])
+            if math.isfinite(irq_max):
+                self.irq_max_end = irq_max
             accepted += 1
             if self.csv.lost:
                 raise BenchmarkError('Missing {} log frame(s)'.format(self.csv.lost))

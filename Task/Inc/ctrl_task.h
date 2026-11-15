@@ -13,6 +13,7 @@
 
 #include "Task/Inc/sensing_task.h"
 #include "Task/Inc/search_turn_heading.h"
+#include "Task/Inc/wall_position_correction.h"
 
 #include "Params/run_param.h"
 
@@ -105,6 +106,8 @@ class Motion
 		void handleTurnPost_Straight();
 		void handleTurnPrev_Diagonal();
 		void handleTurnPost_Diagonal();
+		void ApplyWallPositionCorrection(float reference_mm, float delay_mm,
+			WallPositionCorrection::Phase phase, uint8_t side, bool side_matches = true);
 		void handleTurnMain();
 		void updateTurnKinematics();
 

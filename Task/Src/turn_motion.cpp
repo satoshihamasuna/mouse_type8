@@ -10,6 +10,25 @@
 #include "Params/turn_table.h"
 #include <math.h>
 #include "Peripheral/Inc/peripheral.h"
+#include "Task/Inc/wall_diagnostics.h"
+
+void Motion::ApplyWallPositionCorrection(float reference_mm, float delay_mm,
+	WallPositionCorrection::Phase phase, uint8_t side, bool side_matches)
+{
+	auto result = WallPositionCorrection::evaluate(vehicle->ego.length.get(), reference_mm, delay_mm, phase);
+	if (!side_matches) {
+		result.reason = WallPositionCorrection::Reason::WrongSide;
+		result.after_mm = result.before_mm; result.delta_mm = 0.0f;
+	}
+	if (result.accepted()) vehicle->ego.length.set(result.after_mm);
+	auto &diagnostics = WallDiagnostics::instance();
+	if (diagnostics.enabled()) {
+		const int16_t adc[] = {ir_sens->sen_l.value, ir_sens->sen_r.value, ir_sens->sen_fl.value, ir_sens->sen_fr.value};
+		const IrRangeState states[] = {ir_sens->sen_l.range_state, ir_sens->sen_r.range_state,
+			ir_sens->sen_fl.range_state, ir_sens->sen_fr.range_state};
+		diagnostics.record(HAL_GetTick(), static_cast<uint8_t>(motion_pattern_get()), phase, side, result, adc, states);
+	}
+}
 
 void Motion::handleTurnPrev_Straight()
 {
@@ -26,11 +45,12 @@ void Motion::handleTurnPrev_Straight()
 				{
 					if(turn_motion_param.param->turn_dir == Turn_R)
 					{
-						vehicle->ego.length.set(detect_wall_edge_st + ir_sens->r_corner_delay_mm);
+						ApplyWallPositionCorrection(detect_wall_edge_st, ir_sens->r_corner_delay_mm, WallPositionCorrection::Phase::StraightEntry, 2);
 					}
 					else
 					{
 						ir_sens->wall_correction = False;
+						ApplyWallPositionCorrection(detect_wall_edge_st, ir_sens->r_corner_delay_mm, WallPositionCorrection::Phase::StraightEntry, 2, false);
 					}
 
 				}
@@ -38,11 +58,12 @@ void Motion::handleTurnPrev_Straight()
 				{
 					if(turn_motion_param.param->turn_dir == Turn_L)
 					{
-						vehicle->ego.length.set(detect_wall_edge_st + ir_sens->l_corner_delay_mm);
+						ApplyWallPositionCorrection(detect_wall_edge_st, ir_sens->l_corner_delay_mm, WallPositionCorrection::Phase::StraightEntry, 1);
 					}
 					else
 					{
 						ir_sens->wall_correction = False;
+						ApplyWallPositionCorrection(detect_wall_edge_st, ir_sens->l_corner_delay_mm, WallPositionCorrection::Phase::StraightEntry, 1, false);
 					}
 				}
 
@@ -91,11 +112,12 @@ void Motion::handleTurnPrev_Diagonal()
 				{
 					if(turn_motion_param.param->turn_dir == Turn_R)
 					{
-						vehicle->ego.length.set((vehicle->ego.length.get() + detect_wall_edge_di + ir_sens->r_corner_delay_mm)/2.0f);
+						ApplyWallPositionCorrection(detect_wall_edge_di, ir_sens->r_corner_delay_mm, WallPositionCorrection::Phase::DiagonalEntry, 2);
 					}
 					else
 					{
 						ir_sens->wall_correction = False;
+						ApplyWallPositionCorrection(detect_wall_edge_di, ir_sens->r_corner_delay_mm, WallPositionCorrection::Phase::DiagonalEntry, 2, false);
 					}
 
 				}
@@ -104,11 +126,12 @@ void Motion::handleTurnPrev_Diagonal()
 				{
 					if(turn_motion_param.param->turn_dir == Turn_L)
 					{
-						vehicle->ego.length.set((vehicle->ego.length.get() + detect_wall_edge_di + ir_sens->l_corner_delay_mm)/2.0f);
+						ApplyWallPositionCorrection(detect_wall_edge_di, ir_sens->l_corner_delay_mm, WallPositionCorrection::Phase::DiagonalEntry, 1);
 					}
 					else
 					{
 						ir_sens->wall_correction = False;
+						ApplyWallPositionCorrection(detect_wall_edge_di, ir_sens->l_corner_delay_mm, WallPositionCorrection::Phase::DiagonalEntry, 1, false);
 					}
 				}
 			}
@@ -153,8 +176,9 @@ void Motion::handleTurnPost_Straight()
 			if(ir_sens->Division_Wall_Correction() == True)
 			{
 				//vehicle->ego.length.set((vehicle->ego.length.get() + (turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_st))/2.0f);
-				vehicle->ego.length.set(turn_motion_param.param->Lend + motion_plan.fix_post_run.get()
-					+ detect_wall_edge_st + ir_sens->StraightCornerDelay());
+				ApplyWallPositionCorrection(turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_st,
+					ir_sens->StraightCornerDelay(), WallPositionCorrection::Phase::StraightExit,
+					(ir_sens->l_wall_corner == True ? 1U : 0U) | (ir_sens->r_wall_corner == True ? 2U : 0U));
 			}
 
 
@@ -219,11 +243,12 @@ void Motion::handleTurnPost_Diagonal()
 				{
 					if(turn_motion_param.param->turn_dir == Turn_L)
 					{
-						vehicle->ego.length.set((vehicle->ego.length.get() + turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_di + ir_sens->r_corner_delay_mm)/2.0f);
+						ApplyWallPositionCorrection(turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_di, ir_sens->r_corner_delay_mm, WallPositionCorrection::Phase::DiagonalExit, 2);
 					}
 					else
 					{
 						ir_sens->wall_correction = False;
+						ApplyWallPositionCorrection(turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_di, ir_sens->r_corner_delay_mm, WallPositionCorrection::Phase::DiagonalExit, 2, false);
 					}
 
 				}
@@ -231,11 +256,12 @@ void Motion::handleTurnPost_Diagonal()
 				{
 					if(turn_motion_param.param->turn_dir == Turn_R)
 					{
-						vehicle->ego.length.set((vehicle->ego.length.get() + turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_di + ir_sens->l_corner_delay_mm)/2.0f);
+						ApplyWallPositionCorrection(turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_di, ir_sens->l_corner_delay_mm, WallPositionCorrection::Phase::DiagonalExit, 1);
 					}
 					else
 					{
 						ir_sens->wall_correction = False;
+						ApplyWallPositionCorrection(turn_motion_param.param->Lend + motion_plan.fix_post_run.get() + detect_wall_edge_di, ir_sens->l_corner_delay_mm, WallPositionCorrection::Phase::DiagonalExit, 1, false);
 					}
 				}
 			}

@@ -220,11 +220,9 @@ void  Motion::SetIdeal_search_straight(){
 		{
 			if(motion_plan.end_length.get()== 90.0f)
 			{
-				const float corrected_progress = SEARCH_CORRECTION + ir_sens->StraightCornerDelay();
-				if(ABS(vehicle->ego.length.get() - corrected_progress) < 8.0f)
-				{
-					vehicle->ego.length.set((vehicle->ego.length.get() + corrected_progress)/2.0f);
-				}
+				ApplyWallPositionCorrection(SEARCH_CORRECTION, ir_sens->StraightCornerDelay(),
+					WallPositionCorrection::Phase::SearchStraight,
+					(ir_sens->l_wall_corner == True ? 1U : 0U) | (ir_sens->r_wall_corner == True ? 2U : 0U));
 			}
 		}
 

@@ -45,6 +45,16 @@ def link_diagnostics(**overrides):
 
 
 class MeasurementTests(unittest.TestCase):
+    def test_v4_irq_columns_and_raw_adc_are_decoded_by_their_own_schema(self):
+        output=io.StringIO(); capture=benchmark.SegmentCapture(output,5)
+        values=[0.]*35+[100.,20.,150.,1000.]+[0.]*10+[-32768,-7,2049,32767,2209,7]
+        payload=struct.pack('<4sIIH49e4h2H',b'L8S4',0,100,5,*values)
+        capture.feed(payload+struct.pack('<H',binascii.crc_hqx(payload,0xffff)),1.)
+        row=next(csv.DictReader(io.StringIO(output.getvalue())))
+        self.assertEqual(row['sen_fl.value'],'2049')
+        self.assertEqual(capture.irq['total_us'],[100.])
+        self.assertEqual(capture.irq_max_start,150.)
+
     def test_filter_previous_period_and_measure_clock_or_backlog_slope(self):
         output = io.StringIO()
         capture = benchmark.SegmentCapture(output, 5)

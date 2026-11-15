@@ -82,7 +82,7 @@ class SideWallStabilityTest(unittest.TestCase):
         (Path(cls.work.name) / "search_turn_post_correction.inc").write_text(motion[start:stop], encoding="utf-8")
         turn = (ROOT / "Task/Src/turn_motion.cpp").read_text(encoding="utf-8")
         setters = [line.strip() for line in turn.splitlines()
-                   if 'vehicle->ego.length.set(' in line and 'detect_wall_edge_di' in line]
+                   if 'ApplyWallPositionCorrection(' in line and 'detect_wall_edge_di' in line and ', false)' not in line]
         assert len(setters) == 4
         code = 'switch (which) {\n' + ''.join('case {}: {}; break;\n'.format(i, line.rstrip(';'))
                                               for i, line in enumerate(setters)) + '}\n'
@@ -113,6 +113,9 @@ class SideWallStabilityTest(unittest.TestCase):
 
     def test_turn_exit_range_yaw_disagreement_uses_parallel_legacy_control(self):
         self.run_case("ekf-exit-disagreement")
+
+    def test_wall_position_limits_range_states_and_diagnostic_bounds(self):
+        self.run_case("wall-observation-diagnostics")
 
     def test_diagonal_edge_uses_a_spatial_reference_and_compensates_confirmation_delay(self):
         self.run_case("diagonal-edge-position")

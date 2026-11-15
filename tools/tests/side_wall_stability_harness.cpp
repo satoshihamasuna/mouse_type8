@@ -21,6 +21,7 @@
 #include "Params/sens_table.h"
 #include "Task/Inc/search_turn_heading.h"
 #include "Subsys/Inc/search_turn_diagnostics.h"
+#include "Task/Inc/wall_diagnostics.h"
 
 int16_t side_wall_test_adc[5] = {};
 
@@ -181,6 +182,7 @@ static void search_turn_covariance_real_ir_handoff()
 static SearchTurnGuard::Input reliable_turn_input()
 {
     SearchTurnGuard::Input input;
+    for (auto &state : input.range) state = IrRangeState::InRange;
     input.left_mm = input.right_mm = 45.0f;
     input.left_wall = input.right_wall = input.front_wall = true;
     input.front_left_mm = 95.0f; input.front_right_mm = 106.0f;
@@ -777,8 +779,12 @@ static void diagonal_turn_delay_compensation()
         motion_plan.fix_post_run.set(3.0f);
         const float detect_wall_edge_di = 0.0f;
         vehicle->ego.length.set(10.0f + delay);
+        auto ApplyWallPositionCorrection = [&](float reference, float lag, WallPositionCorrection::Phase phase, uint8_t) {
+            auto result = WallPositionCorrection::evaluate(vehicle->ego.length.get(), reference, lag, phase);
+            if (result.accepted()) vehicle->ego.length.set(result.after_mm);
+        };
         #include "diagonal_turn_delay.inc"
-        CHECK(near(vehicle->ego.length.get() - delay, which < 2 ? 5.0f : 16.5f));
+        CHECK(near(vehicle->ego.length.get() - delay, which < 2 ? 7.0f : 14.0f));
     }
 }
 
@@ -1780,10 +1786,72 @@ static void ekf_shell()
     CHECK(usrcmd_wall_ekf(2, args) == 0 && ir.WallEkfMode_Get() == IrSensTask::WallEkfMode::Shadow);
 }
 
+static void wall_observation_diagnostics()
+{
+    using namespace WallPositionCorrection;
+    CHECK(ir_range_state(sens_sl_table[0], sens_sl_table, 12) == IrRangeState::InRange);
+    CHECK(ir_range_state(sens_sl_table[0]+1, sens_sl_table, 12) == IrRangeState::NearLimit);
+    CHECK(ir_range_state(sens_sl_table[11]-1, sens_sl_table, 12) == IrRangeState::FarLimit);
+    CHECK(ir_range_state(-1, sens_sl_table, 12) == IrRangeState::Invalid);
+    for (auto phase : {Phase::StraightEntry, Phase::DiagonalEntry, Phase::StraightExit, Phase::DiagonalExit, Phase::SearchStraight}) {
+        auto small = evaluate(10.0f, 11.0f, .5f, phase);
+        CHECK(small.accepted() && near(small.innovation_mm, 1.5f));
+        auto reverse = evaluate(11.5f, 10.0f, 0.0f, phase);
+        CHECK(reverse.accepted() && near(reverse.delta_mm, -small.delta_mm));
+        const auto &policy = wall_position_param[static_cast<unsigned>(phase)];
+        auto limited = evaluate(0.0f, policy.window_mm, 0.0f, phase);
+        CHECK(limited.reason == (policy.window_mm * policy.blend > policy.maximum_step_mm ? Reason::Limited : Reason::Accepted));
+        CHECK(near(limited.delta_mm, policy.maximum_step_mm));
+        auto outlier = evaluate(0.0f, policy.window_mm+.1f, 0.0f, phase);
+        CHECK(outlier.reason == Reason::OutsideWindow && outlier.after_mm == 0.0f);
+        CHECK(evaluate(1, 1, -1, phase).reason == Reason::Invalid);
+        CHECK(evaluate(1, 1, 1000, phase).reason == Reason::Invalid);
+        CHECK(evaluate(1, std::numeric_limits<float>::quiet_NaN(), 0, phase).reason == Reason::Invalid);
+    }
+    auto input = reliable_turn_input();
+    auto decision = SearchTurnGuard::decide(input, {true, false, 1.2f});
+    CHECK(decision.checks == 1023 && near(decision.candidate_mm, 1.2f));
+    input.range[2] = IrRangeState::FarLimit;
+    decision = SearchTurnGuard::decide(input, {true, false});
+    CHECK(!(decision.checks & SearchTurnGuard::MetricPair) && !(decision.flags & SearchTurnGuard::Suppressed));
+    ZirconiaWallControl control;
+    ZirconiaWallControl::Input in;
+    in.left_m = .025f; in.right_m = .045f; in.range_valid_mask = 2;
+    in.travel_m = .0005f; in.dt_s = .001f; in.sample_updated = true; in.enabled = true; in.velocity_mps = .37f;
+    auto output = control.update(in);
+    CHECK(!output.pose_control && !(output.trusted_mask & 1));
+    for (int i=0; i<400; ++i) output = control.update(in);
+    CHECK(!output.pose_control && !output.sync_estimator && output.omega_radps < 0);
+    CHECK(!(output.trusted_mask & 1)); // 片側が近距離限界でも反対壁は観測可能
+    IrSensTask_type8 task{}; Vehicle vehicle{};
+    side_wall_test_adc[sensor_sl] = sens_sl_table[0]+1;
+    side_wall_test_adc[sensor_sr] = sens_sr_table[11]-1;
+    side_wall_test_adc[sensor_fl] = -1;
+    side_wall_test_adc[sensor_fr] = sens_fr_table[0];
+    task.IrSensorSet(&vehicle, .37f);
+    CHECK(task.sen_l.range_state == IrRangeState::NearLimit && near(task.sen_l.distance,25));
+    CHECK(task.sen_r.range_state == IrRangeState::FarLimit && near(task.sen_r.distance,80));
+    CHECK(task.sen_fl.range_state == IrRangeState::Invalid);
+    CHECK(task.sen_fr.range_state == IrRangeState::InRange);
+    auto &diag = WallDiagnostics::instance(); diag.begin();
+    diag.sample(IrRangeState::InRange, IrRangeState::NearLimit, IrRangeState::FarLimit, IrRangeState::Invalid, true);
+    diag.sample(IrRangeState::Unknown, IrRangeState::Unknown, IrRangeState::Unknown, IrRangeState::Unknown, false);
+    int16_t adc[4]{}; IrRangeState states[4]{};
+    for (unsigned i=0; i<70; ++i) diag.record(i,1,Phase::StraightEntry,1,evaluate(10,11,0,Phase::StraightEntry),adc,states);
+    CHECK(diag.total()==70 && diag.size()==64 && diag.event(63).time_ms==63);
+    diag.stop();
+    diag.record(70,1,Phase::StraightEntry,1,{},adc,states);
+    CHECK(diag.total()==70);
+    diag.finish_and_print();
+    diag.record(71,1,Phase::StraightEntry,1,{},adc,states);
+    CHECK(diag.total()==70); diag.begin(); CHECK(diag.total()==0 && diag.size()==0);
+}
+
 int main(int argc, char **argv)
 {
     struct Case { const char *name; void (*run)(); };
     const Case cases[] = {
+        {"wall-observation-diagnostics", wall_observation_diagnostics},
         {"window", window}, {"partial-window", partial_window},
         {"helper-speed", helper_speed}, {"linear-wall", linear_wall},
         {"decimal-boundaries", decimal_boundaries}, {"linear-activation", linear_activation},
