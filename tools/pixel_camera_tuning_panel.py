@@ -16,7 +16,10 @@ from pixel_camera_archive import archive_trial, archive_for_trial, write_index
 
 
 def gui_expected_settings(gui, mouse):
-    return dict(mouse=mouse, motion_name=gui.turn_type.get(), preset_speed_mm_s=gui.turn_preset_speed.get(),
+    search = gui.motion.get() == 'search_turn'
+    motion = 'search_turn_'+gui.direction.get() if search else gui.turn_type.get()
+    preset = gui.search_turn_preset_speed.get() if search else gui.turn_preset_speed.get()
+    return dict(mouse=mouse, motion_name=motion, preset_speed_mm_s=preset,
         turn_count=gui.turn_count.get(), parameters=dict(velo=gui.values['distance'].get(),
         r_min=gui.values['acc'].get(), lstart=gui.values['max_velo'].get(), lend=gui.values['end_velo'].get(),
         degree=gui.values['degree'].get(), correction=gui.values['degree_correction'].get(), pre_accel=gui.pre_accel.get()),
@@ -156,8 +159,8 @@ class PixelTuningPanel:
             self.status.set('通信・撮影処理の完了を待ってください')
             return
         try:
-            if self.gui.motion.get() != 'turn':
-                raise ValueError('撮影連動はMotion=turnの単体1回に対応します')
+            if self.gui.motion.get() not in ('turn', 'search_turn'):
+                raise ValueError('撮影連動はMotion=turn / search_turnの単体1回に対応します')
             if not self.session or self.gui.ser is not self.session.connection:
                 raise ValueError('先に「撮影用接続を準備」を押してください')
             request = TrialRequest(gui_expected_settings(self.gui, self.mouse.get()), self.gui._set_command(),
@@ -249,8 +252,14 @@ class PixelTuningPanel:
         summary = quick or full
         self.mouse.set(trial['mouse'])
         self.height.set(trial['camera_height_mm'])
-        self.gui.motion.set('turn')
-        self.gui.turn_type.set(trial['motion'])
+        if trial['motion'] in ('search_turn_right', 'search_turn_left'):
+            self.gui.motion.set('search_turn')
+            self.gui.direction.set(trial['motion'].removeprefix('search_turn_'))
+            self.gui.search_turn_preset_speed.set(settings['preset_speed_mm_s'])
+        else:
+            self.gui.motion.set('turn')
+            self.gui.turn_type.set(trial['motion'])
+        self.gui._update_motion_fields()
         self.gui._queue_turn_params(settings['raw_response'])
         coordinates = [f'{summary[key]:.2f}' if summary.get(key) is not None else '—'
                        for key in ('endpoint_forward_mm','endpoint_right_mm')]

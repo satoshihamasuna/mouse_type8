@@ -23,6 +23,43 @@ TURNS = (
     "out_r45", "out_l45", "in_r135", "in_l135", "out_r135", "out_l135",
     "r_v90", "l_v90",
 )
+SEARCH_TURNS = ("search_turn_right", "search_turn_left")
+CAMERA_MOTIONS = TURNS + SEARCH_TURNS
+
+
+def debug_motion_prefix(motion):
+    if motion in SEARCH_TURNS:
+        return "debug search_turn " + motion.removeprefix("search_turn_")
+    if motion in TURNS:
+        return "debug turn " + motion
+    raise ValueError("撮影に対応しないターン名です")
+
+
+def device_motion_name(motion):
+    return motion.removeprefix("search_turn_") if motion in SEARCH_TURNS else motion
+
+
+def settings_done_marker(motion):
+    return "DEBUG_SEARCH_SET_DONE" if motion in SEARCH_TURNS else "DEBUG_TURN_SET_DONE"
+
+
+def camera_preset_speeds(motion):
+    if motion in SEARCH_TURNS:
+        return (280, 300, 320, 350, 370, 400)
+    from myshell_debug import TURN_PRESET_SPEEDS
+    debug_motion_prefix(motion)
+    return TURN_PRESET_SPEEDS
+
+
+def camera_capability_supported(line, motion):
+    try:
+        prefix, *parts = line.split()
+        fields = dict(part.split(":", 1) for part in parts)
+    except ValueError:
+        return False
+    return (prefix == "DEBUG_CAMERA_CAP" and fields.get("protocol") == "1"
+            and fields.get("ttl_ms") == "15000"
+            and (motion not in SEARCH_TURNS or fields.get("search_turn") == "1"))
 
 
 def utc_now():
@@ -35,6 +72,8 @@ def write_json(path, value):
 
 def validate_settings(settings, motion, preset):
     """GUI値ではなく実機応答を検証する。初回は回数1・吸引OFFのみ。"""
+    if motion not in CAMERA_MOTIONS or preset not in camera_preset_speeds(motion):
+        raise RuntimeError("対応するターン名とプリセット速度を指定してください")
     if settings.get("error") or settings.get("motion_name") != motion:
         raise RuntimeError("ターンの実機設定を取得できません")
     if settings.get("preset_speed_mm_s") != preset:
@@ -61,8 +100,8 @@ def verify_expected_settings(actual, expected):
 
 def read_device_settings(shell, motion, preset, parse, mouse, expected=None):
     # RAM値を使う場合はpreset/set/resetを送らない。GUI切断や再接続での変更も検出する。
-    command = f"debug turn {motion} show" if expected is not None else f"debug turn {motion} preset {preset}"
-    line = shell.query(command, lambda line: line.startswith("DEBUG_TURN_PARAM_X1000 " + motion + " "))
+    command = debug_motion_prefix(motion) + (" show" if expected is not None else f" preset {preset}")
+    line = shell.query(command, lambda line: line.startswith("DEBUG_TURN_PARAM_X1000 " + device_motion_name(motion) + " "))
     settings = parse(line, motion, command)
     validate_settings(settings or {}, motion, preset)
     settings.update(mouse=mouse, mouse_identity_source="user_supplied")
@@ -84,6 +123,7 @@ def validate_recording(status, recording_id, owner, seconds):
 class MotionOnce:
     """record_trialのon_ready専用。途中送信・応答消失でも再送しない。"""
     def __init__(self, shell, motion, event, recording_check, token=None):
+        self.command_prefix = debug_motion_prefix(motion)
         self.shell, self.motion, self.event = shell, motion, event
         self.recording_check = recording_check
         self.token = token if token is not None else secrets.randbelow(99999999) + 1
@@ -103,7 +143,7 @@ class MotionOnce:
         self.event("camera_permit_confirmed", token=self.token)
         self.recording_check()
         self.execution_write_attempted = True
-        command = f"debug turn {self.motion} exe_camera {self.token}"
+        command = f"{self.command_prefix} exe_camera {self.token}"
         self.event("execution_write_attempt", command=command)
         self.shell.send(command)
         self.event("execution_write_returned")
@@ -250,7 +290,7 @@ def capture(args, project, workspace):
             time.sleep(0.5)
             shell.check_battery()
             capability = shell.query("debug camera show", lambda line: line.startswith("DEBUG_CAMERA_CAP "))
-            if re.fullmatch(r"DEBUG_CAMERA_CAP protocol:1 ttl_ms:15000", capability) is None:
+            if not camera_capability_supported(capability, args.motion):
                 raise RuntimeError("撮影専用の一回実行に対応するファームウェアが必要です")
             settings = read_device_settings(shell, args.motion, args.preset,
                                             DebugGui._parse_device_settings, args.mouse, expected)
@@ -333,8 +373,8 @@ def capture(args, project, workspace):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mouse", choices=("A", "B"), required=True)
-    parser.add_argument("--motion", choices=TURNS, default="long_r180")
-    parser.add_argument("--preset", type=int, choices=(300, 500, 700, 1000, 1200, 1400, 1500, 1600, 1800, 2000), default=500)
+    parser.add_argument("--motion", choices=CAMERA_MOTIONS, default="long_r180")
+    parser.add_argument("--preset", type=int, default=500)
     parser.add_argument("--address", required=True)
     parser.add_argument("--seconds", type=int, default=30)
     parser.add_argument("--output", type=Path)
@@ -344,6 +384,8 @@ def main():
     parser.add_argument("--camera-existing-connection", action="store_true", help="接続済み・IDLEのカメラを再利用し、ADB設定を省く")
     parser.add_argument("--execute", action="store_true", help="明示したときだけ実機へ実行要求を1回送る")
     args = parser.parse_args()
+    if args.preset not in camera_preset_speeds(args.motion):
+        parser.error("対象のターンに対応するプリセット速度を指定してください")
     if not args.execute:
         parser.error("実機撮影には --execute の明示が必要です")
     if not 20 <= args.seconds <= 30:

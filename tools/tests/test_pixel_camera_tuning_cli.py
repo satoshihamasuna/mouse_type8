@@ -230,6 +230,31 @@ class CliTests(unittest.TestCase):
         self.assertEqual(read.call_args_list[1].args[2], 500)
         shell.send.assert_not_called()
 
+    def test_search_read_preset_and_cli_arguments_use_search_speeds(self):
+        self.service.validate('preset',dict(motion='search_turn_right',preset=370))
+        with self.assertRaises(ValueError):
+            self.service.validate('preset',dict(motion='search_turn_right',preset=500))
+        expected=deepcopy(self.settings)
+        expected.update(motion_name='search_turn_left',preset_speed_mm_s=320)
+        expected['parameters'].update(velo=.32,r_min=26,degree=90)
+        shell=Mock()
+        with patch.object(cli.DebugGui,'_parse_device_settings',return_value=expected):
+            actual=self.service.read_settings(shell,'search_turn_left',320)
+        self.assertEqual(shell.query.call_args.args[0],'debug search_turn left preset 320')
+        self.assertTrue(shell.query.call_args.args[1]('DEBUG_TURN_PARAM_X1000 left velo:320'))
+        self.assertEqual(actual['motion_name'],'search_turn_left')
+        args=self.args('preset','--motion','search_turn_right','--preset','370')
+        self.assertEqual((args.motion,args.preset),('search_turn_right',370))
+        before=deepcopy(expected)
+        before['pid']['sp_kp']=1.0
+        @contextmanager
+        def connection(folder):
+            yield shell
+        with patch.object(self.service,'shell',connection), patch.object(self.service,'read_settings',side_effect=[before,expected]):
+            self.service.perform('apply',dict(settings=expected),'search_apply',Mock())
+        self.assertTrue(shell.wait_line.call_args.args[0]('DEBUG_SEARCH_SET_DONE'))
+        self.assertFalse(shell.wait_line.call_args.args[0]('DEBUG_TURN_SET_DONE'))
+
     def test_wrong_preset_blocks_apply_before_parameter_write(self):
         wrong = deepcopy(self.settings)
         wrong['preset_speed_mm_s'] = 700

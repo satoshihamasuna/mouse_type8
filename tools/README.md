@@ -58,6 +58,7 @@ BLEとカメラの接続を保持し、GUIの設定照合→RECORDING_READY後�
 `tools/Start_Pixel_Camera.cmd`でカメラGUIを起動できます。`py -3.11 tools/pixel_camera_capture.py record --seconds 30`では、実際の録画開始を確認してからTYPE8を動かし、撮影情報と動画検査結果を取得できます。
 カメラとBLE中継の既定ポートが重なるため、同時使用時はBLE中継・BLE GUIの両方へ`--port 8766`を指定します。
 `tools/pixel_camera_turn_capture.py --execute`は、実機設定・電圧・連続CSV受信を確認し、録画中の照合後に撮影専用の一回許可で手かざしなしの単体ターンを実行します。通常のexeは手かざし待ちです。機体AのR180・500・回数1で動画と全区間CSVを取得確認済みです。
+探索ターンも、撮影タブのMotion=`search_turn`またはCLIの`search_turn_right` / `search_turn_left`で同じ一回実行を使えます。STM32の`search_turn:1`対応、回数1・吸引OFFが必要です。2026-11-15に機体A・探索右370 mm/s・Kp=3.0で手かざしなしの1回走行、停止後の録画終了、CRC異常・CSV欠落0件を実機確認しました。記録は`tools/logs/pixel_camera/A_search370_nohand_kp3_20261115_prepared/run001/trial.json`です。Kpは比較候補で、機体別設定への採用とは区別しています。
 詳しい接続と撮影の手順は[Pixelカメラ撮影](pixel_camera_README.md)を参照してください。
 撮影タブは解析後に動画・CSV・設定をD側の試行フォルダーへまとめます。保存済み資料だけなら`pixel_camera_archive.py --trial PATH`でも作成できます。動画はハードリンクで共有し、元資料とハッシュを保持します。
 `tools/Start_Pixel_Framing.cmd`では、PCから露出補正を変更し、3秒の確認画像上で四隅のArUco読み取り範囲を調整・保存できます。機体は動かしません。露出補正対応AndroidアプリとOpenCV aruco・Pillow・Tk環境が必要です。

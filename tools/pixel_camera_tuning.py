@@ -13,8 +13,9 @@ import sys
 import threading
 import time
 
-from pixel_camera_turn_capture import (TURNS, MotionOnce, Shell, read_rows, save_motion_slice,
-    utc_now, validate_recording, validate_settings, write_json)
+from pixel_camera_turn_capture import (CAMERA_MOTIONS, SEARCH_TURNS, MotionOnce, Shell, read_rows, save_motion_slice,
+    utc_now, validate_recording, validate_settings, write_json, debug_motion_prefix,
+    device_motion_name, camera_capability_supported, settings_done_marker)
 
 
 def hidden_process():
@@ -71,7 +72,7 @@ TURN_FF_KEYS = ('ff_sp_velo', 'ff_sp_accel', 'ff_sp_bias', 'ff_om_velo', 'ff_om_
 
 def format_turn_set_command(motion, values, suction_enabled, duty, count):
     """GUIとCLIで共通の単位・引数順・数値表記を使う。"""
-    if motion not in TURNS or len(values) != 23:
+    if motion not in CAMERA_MOTIONS or len(values) != 23:
         raise ValueError('ターン名または設定項目数が不正です')
     if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
         raise ValueError('設定値は有限の数値にしてください')
@@ -80,12 +81,13 @@ def format_turn_set_command(motion, values, suction_enabled, duty, count):
     right = '_r' in motion or motion.startswith('r_')
     if any((v >= 0 if right else v <= 0) for v in (values[1], values[4])):
         raise ValueError('右は半径・角度が負、左は正です')
-    if any(v < 0 for v in values[13:]):
+    if any(v < 0 for index, v in enumerate(values[13:], 13)
+           if not (motion in SEARCH_TURNS and index == 21)):
         raise ValueError('FF係数は0以上にしてください')
     if type(suction_enabled) is not bool or type(duty) is not int or not 0 <= duty <= 990 or type(count) is not int or not 1 <= count <= 100:
         raise ValueError('吸引設定または回数が不正です')
-    return 'debug turn {} set {} {} {} {}'.format(
-        motion, ' '.join(f'{v:.7g}' for v in values), int(suction_enabled), duty, count)
+    return '{} set {} {} {} {}'.format(
+        debug_motion_prefix(motion), ' '.join(f'{v:.7g}' for v in values), int(suction_enabled), duty, count)
 
 
 def settings_set_command(settings):
@@ -127,7 +129,7 @@ class TrialRequest:
             raise ValueError('今回のカメラ高さをmmで指定してください')
         if not math.isfinite(self.char_delay) or self.char_delay < 0:
             raise ValueError('文字送信間隔が不正です')
-        if not self.set_command.startswith(f"debug turn {self.expected['motion_name']} set "):
+        if not self.set_command.startswith(debug_motion_prefix(self.expected['motion_name'])+' set '):
             raise ValueError('GUIの設定コマンドがターン名と一致しません')
         if any(c in self.set_command for c in '\r\n'):
             raise ValueError('複数コマンドは指定できません')
@@ -358,11 +360,11 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
             time.sleep(.5)
             shell.check_battery()
             capability = shell.query('debug camera show', lambda line: line.startswith('DEBUG_CAMERA_CAP '))
-            if capability != 'DEBUG_CAMERA_CAP protocol:1 ttl_ms:15000':
+            if not camera_capability_supported(capability, turn):
                 raise RuntimeError('撮影専用の一回許可に対応するファームウェアが必要です')
             def show():
-                command = f'debug turn {turn} show'
-                line = shell.query(command, lambda line: line.startswith('DEBUG_TURN_PARAM_X1000 '+turn+' '))
+                command = debug_motion_prefix(turn)+' show'
+                line = shell.query(command, lambda line: line.startswith('DEBUG_TURN_PARAM_X1000 '+device_motion_name(turn)+' '))
                 result = parse(line, turn, command) or {}
                 validate_settings(result, turn, preset)
                 result.update(mouse=mouse, mouse_identity_source='user_supplied')
@@ -373,7 +375,7 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
                 settings = None  # 途中送信の結果が不明なら、変更前値を実行時設定としない。
                 event('settings_write_attempt', command=request.set_command)
                 shell.send(request.set_command)
-                shell.wait_line(lambda line: line == 'DEBUG_TURN_SET_DONE', timeout=8)
+                shell.wait_line(lambda line: line == settings_done_marker(turn), timeout=8)
                 settings = show()
                 write_json(folder/'telemetry.settings.json', settings)
                 differences = setting_differences(settings, expected, quantized=True)

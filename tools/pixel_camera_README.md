@@ -73,6 +73,10 @@ py -3.11 tools/pixel_camera_capture.py status
 停止要求の応答が失われても停止要求は再送せず、転送された動画で結果を確認します。この自動停止は撮影タブに適用し、カメラ単体CLIや従来の`pixel_camera_turn_capture.py`の指定秒数録画は維持します。
 
 実行はタイムアウト・途中送信・開始応答消失でも再送しません。二重クリックや通信待ち中の通常GUIコマンドも追加走行へつなげません。
+探索ターンの撮影は、`debug camera show`が`search_turn:1`を返す更新済みSTM32ファームウェアが必要です。未対応なら録画・一回許可・実行へ進みません。通常の手かざし実行は`Apply and execute`から使用できます。
+
+`search_turn_log_hold:1`も返す版では、撮影用search_turnの直後に本体の1 ms保存ログを確定します。後続45 mm直進とその400 ms制動で、400件のリングが旋回後の値だけに上書きされることを防ぎます。`disp log_bin`で読む本体保存ログは前走・探索ターン側の最新400件で、後続の停止処理は含みません。5 ms連続CSVと動画は従来どおり後続直進・停止まで保存します。保存ログの行番号はMCU実時刻ではないため、細かな区間境界の測定では連続CSVの同一サンプルと対応付けてください。
+撮影用の探索ターンも回数1・吸引OFFです。前45 mmの加速と後45 mmの減速を含むので、その全範囲を確認してください。
 撮影・設定照合中は操作をロックし、確認チェックは開始時に必ず消費します。自動の連続走行やパラメータ採用は行いません。
 機体のログで動作後200 ms以上の実測停止を確認し、速報映像でも停止後の中点位置が安定し、必要動作区間の観測率・ログとの比較条件を満たした場合だけ「速報で確認」と表示します。
 確認できない場合は機体の停止・位置を操作者が確認し、実行要求を盲目的に繰り返さないでください。次の試行には新しい設置確認が必要です。
@@ -171,6 +175,16 @@ Start-Process -FilePath $cameraPython -ArgumentList @('tools/pixel_camera_tuning
 
 & $cameraPython tools/pixel_camera_tuning_cli.py --session $session close
 ```
+
+探索ターンでは`--motion search_turn_right`または`search_turn_left`と、280 / 300 / 320 / 350 / 370 / 400の対応プリセットを使います。機体Bの対応速度はファームウェアの応答で確認してください。
+
+```powershell
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session preset --motion search_turn_right --preset 370 --output search370.settings.json
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session apply --settings search370.settings.json --set pid.sp_kp=3 --output search370_candidate.settings.json
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session capture --settings search370_candidate.settings.json --operator-ready --request-id search_right370_001
+```
+
+この撮影は録画中の確認後に自動で1回だけ走行し、手かざしを待ちません。探索ターンの符号付き並進FF係数`ff_sp_turn_accel_mag`も保存値のまま照合・設定します。撮影後の停止確認、1秒以上の余白、転送・全復号・品質検証はturnと共通です。
 
 `--settings`は実機設定JSONか、`actual_settings`を持つ照合記録JSONを受け取ります。`--set pid.om_kp=...`や`--set feedforward.ff_om_velo=...`も使えます。
 `capture`の`--operator-ready`はその1回分だけです。同じ`request-id`は失敗・途中送信・応答消失後も再使用できません。

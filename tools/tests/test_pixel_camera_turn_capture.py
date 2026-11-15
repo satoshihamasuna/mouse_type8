@@ -63,6 +63,44 @@ class SettingsHandoffTests(unittest.TestCase):
 
 
 class OneShotTests(unittest.TestCase):
+    def test_search_turn_uses_directional_camera_command_and_never_hand_trigger(self):
+        for direction in ('right', 'left'):
+            with self.subTest(direction=direction):
+                shell = Mock()
+                motion = capture.MotionOnce(shell, 'search_turn_'+direction, Mock(), Mock(), token=123)
+                motion()
+                self.assertEqual([call.args[0] for call in shell.send.call_args_list],
+                    ['debug camera arm 123', 'debug search_turn '+direction+' exe_camera 123'])
+                with self.assertRaises(RuntimeError):
+                    motion()
+                self.assertEqual(shell.send.call_count, 2)
+
+    def test_search_turn_requires_explicit_firmware_capability(self):
+        old = 'DEBUG_CAMERA_CAP protocol:1 ttl_ms:15000'
+        new = old+' search_turn:1'
+        self.assertTrue(capture.camera_capability_supported(old, 'long_r180'))
+        self.assertTrue(capture.camera_capability_supported(new, 'long_r180'))
+        for motion in capture.SEARCH_TURNS:
+            self.assertFalse(capture.camera_capability_supported(old, motion))
+            self.assertTrue(capture.camera_capability_supported(new, motion))
+            self.assertTrue(capture.camera_capability_supported(new+' search_turn_log_hold:1', motion))
+            self.assertFalse(capture.camera_capability_supported(new.replace('search_turn:1','search_turn:0'), motion))
+        for invalid in ('', 'DEBUG_CAMERA_CAP broken', new.replace('protocol:1','protocol:2')):
+            self.assertFalse(capture.camera_capability_supported(invalid, 'search_turn_right'))
+
+    def test_search_preset_query_and_directional_response_preserve_canonical_name(self):
+        shell = Mock()
+        expected = dict(settings(), motion_name='search_turn_left', preset_speed_mm_s=370,
+                        parameters=dict(velo=.37))
+        result = capture.read_device_settings(shell, 'search_turn_left', 370, Mock(return_value=expected), 'A')
+        self.assertEqual(result['motion_name'], 'search_turn_left')
+        command, predicate = shell.query.call_args.args
+        self.assertEqual(command, 'debug search_turn left preset 370')
+        self.assertTrue(predicate('DEBUG_TURN_PARAM_X1000 left velo:370'))
+        self.assertFalse(predicate('DEBUG_TURN_PARAM_X1000 right velo:370'))
+        with self.assertRaises(RuntimeError):
+            capture.validate_settings(expected, 'search_turn_left', 500)
+
     def test_camera_owner_id_phase_connection_and_remaining_time_must_match(self):
         device = dict(recording_id="recording", owner="operator", phase="RECORDING", elapsed_seconds=0.2)
         capture.validate_recording(dict(connected=True, device=device), "recording", "operator", 30)

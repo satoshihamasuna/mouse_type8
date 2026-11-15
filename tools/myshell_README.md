@@ -16,8 +16,11 @@ Pixel撮影と連動する`tools/pixel_camera_turn_capture.py --execute`と、�
 | `debug camera show` | 撮影専用プロトコルと許可の有効時間を照会する |
 | `debug camera arm token` | 撮影中のPCが送る1〜99999999のトークンを、15秒間だけ一回分保存する。単独では動かない |
 | `debug turn type exe_camera token` | 一致する有効な許可を消費し、電圧と回数1を確認して前センサ待ちなしで実行する |
+| `debug search_turn right\|left exe_camera token` | 探索ターンを同じ一回許可・電圧・回数1の条件で実行する。前後45 mmの加減速を含む |
 
 許可の不一致・期限切れ・再利用は拒否します。通常の`exe`に入る場合も撮影用許可を消去します。
+探索ターンの撮影対応は`DEBUG_CAMERA_CAP protocol:1 ttl_ms:15000 search_turn:1`で識別します。GUI・CLIは未対応の機体で探索ターンの撮影を開始しません。
+`search_turn_log_hold:1`も返す版では、`search_turn ... exe_camera`の本体1 ms保存リングを探索ターン直後に確定します。後続45 mm直進に含まれる400 ms制動で旋回区間が上書きされることを防ぎ、`disp log_bin`で前走・ターン側の最新400件を取り出せます。連続配信CSVは停止まで継続します。通常の`exe`の保存タイミングは従来どおりです。
 この撮影専用経路はカメラ側の録画状態を確認するPC入口と一緒に使い、動画を撮らない通常操作には使いません。
 失敗や応答なしで実行コマンドを自動再送しません。
 撮影タブは`tools/Start_Pixel_Tuning.cmd`から開けます。接続を保持してGUI値の反映・照合を行い、「撮影して1回走行」で記録と結果をまとめて保存します。

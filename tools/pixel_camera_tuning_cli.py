@@ -21,10 +21,11 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / '.tools' / f'ble_python{sys.version_info.major}{sys.version_info.minor}'))
 
-from myshell_debug import DebugGui, TURN_PRESET_SPEEDS
+from myshell_debug import DebugGui
 from pixel_camera_tuning import (LiveSession, TrialRequest, analyze_trial, capture_connected,
     setting_differences, settings_set_command)
-from pixel_camera_turn_capture import TURNS, Shell, utc_now, validate_settings
+from pixel_camera_turn_capture import (CAMERA_MOTIONS, Shell, utc_now, validate_settings,
+    debug_motion_prefix, device_motion_name, camera_preset_speeds, settings_done_marker)
 
 
 def save_json(path, value):
@@ -74,9 +75,9 @@ class TuningService:
 
     def validate(self, action, payload):
         if action in ('read', 'preset'):
-            if payload.get('motion') not in TURNS:
+            if payload.get('motion') not in CAMERA_MOTIONS:
                 raise ValueError('対応するターン名を指定してください')
-            if action == 'preset' and (type(payload.get('preset')) is not int or payload['preset'] not in TURN_PRESET_SPEEDS):
+            if action == 'preset' and (type(payload.get('preset')) is not int or payload['preset'] not in camera_preset_speeds(payload['motion'])):
                 raise ValueError('対応するプリセット速度を指定してください')
         elif action in ('apply', 'capture'):
             # readyは要求ごとに必要。前回やサーバー起動時の確認を保持しない。
@@ -147,8 +148,8 @@ class TuningService:
             yield shell
 
     def read_settings(self, shell, motion, preset=None):
-        command = f'debug turn {motion} show' if preset is None else f'debug turn {motion} preset {preset}'
-        line = shell.query(command, lambda value: value.startswith('DEBUG_TURN_PARAM_X1000 ' + motion + ' '))
+        command = debug_motion_prefix(motion) + (' show' if preset is None else f' preset {preset}')
+        line = shell.query(command, lambda value: value.startswith('DEBUG_TURN_PARAM_X1000 ' + device_motion_name(motion) + ' '))
         result = DebugGui._parse_device_settings(line, motion, command)
         if not result or result.get('error'):
             raise RuntimeError('実機設定を取得できません')
@@ -199,7 +200,7 @@ class TuningService:
                     raise RuntimeError('実機presetが一致しません。先にpresetコマンドで速度テーブルを選択してください')
                 if setting_differences(settings, expected):
                     shell.send(settings_set_command(expected))
-                    shell.wait_line(lambda line: line == 'DEBUG_TURN_SET_DONE', timeout=8)
+                    shell.wait_line(lambda line: line == settings_done_marker(expected['motion_name']), timeout=8)
                     settings = self.read_settings(shell, expected['motion_name'])
                     differences = setting_differences(settings, expected, quantized=True)
                     if differences:
@@ -383,9 +384,9 @@ def parser():
         command.add_argument('--wait-seconds', type=float, default=600)
         command.add_argument('--output', type=Path)
         if action in ('read', 'preset'):
-            command.add_argument('--motion', choices=TURNS, required=True)
+            command.add_argument('--motion', choices=CAMERA_MOTIONS, required=True)
         if action == 'preset':
-            command.add_argument('--preset', type=int, choices=TURN_PRESET_SPEEDS, required=True)
+            command.add_argument('--preset', type=int, required=True)
         if action in ('apply', 'capture'):
             command.add_argument('--settings', type=Path, required=True)
             command.add_argument('--set', dest='set_value', action='append', default=[], help='lend=25、pid.om_kp=0.1など')

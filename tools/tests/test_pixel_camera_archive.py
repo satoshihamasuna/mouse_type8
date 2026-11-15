@@ -209,12 +209,13 @@ class GuiArchiveTests(unittest.TestCase):
             settings.write_text(json.dumps(dict(raw_response='saved left parameters',parameters=dict(lend=17.1))))
             trial=folder/'trial.json'
             trial.write_text(json.dumps(dict(mouse='A',motion='long_l180',camera_height_mm=800,type8_settings_json=str(settings))))
-            gui=SimpleNamespace(motion=Mock(),turn_type=Mock(),_queue_turn_params=Mock(),_load_defaults=Mock())
+            gui=SimpleNamespace(motion=Mock(),turn_type=Mock(),_update_motion_fields=Mock(),_queue_turn_params=Mock(),_load_defaults=Mock())
             table=Mock();table.insert.return_value='row'
             panel=SimpleNamespace(gui=gui,mouse=Mock(),height=Mock(),rows={},table=table,select_result=Mock(),status=Mock())
             PixelTuningPanel.show_saved(panel,trial)
             gui.motion.set.assert_called_once_with('turn')
             gui.turn_type.set.assert_called_once_with('long_l180')
+            gui._update_motion_fields.assert_called_once_with()
             gui._load_defaults.assert_not_called()
             gui._queue_turn_params.assert_called_once_with('saved left parameters')
 

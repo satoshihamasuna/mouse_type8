@@ -69,6 +69,7 @@ class ConnectedTrialTests(unittest.TestCase):
         self.current = settings()
         self.after = settings()
         self.sent, self.record_count = [], 0
+        self.capability = 'DEBUG_CAMERA_CAP protocol:1 ttl_ms:15000'
         outer = self
         class FakeShell:
             def __init__(self,*args,**kwargs):
@@ -81,9 +82,9 @@ class ConnectedTrialTests(unittest.TestCase):
                 if outer.low_battery:raise RuntimeError('low battery')
             def query(self,command,predicate):
                 outer.sent.append(command)
-                return 'DEBUG_CAMERA_CAP protocol:1 ttl_ms:15000' if command=='debug camera show' else ('after' if self.applied else 'before')
+                return outer.capability if command=='debug camera show' else ('after' if self.applied else 'before')
             def wait_line(self,predicate,timeout=5):
-                if ' set ' in outer.sent[-1]:line='DEBUG_TURN_SET_DONE'
+                if ' set ' in outer.sent[-1]:line='DEBUG_SEARCH_SET_DONE' if outer.sent[-1].startswith('debug search_turn ') else 'DEBUG_TURN_SET_DONE'
                 elif outer.sent[-1].startswith('debug camera arm '):line='DEBUG_CAMERA_ARMED token:'+outer.sent[-1].split()[-1]
                 else:line='DEBUG_CAMERA_RUN_START token:'+outer.sent[-1].split()[-1]
                 assert predicate(line)
@@ -108,6 +109,49 @@ class ConnectedTrialTests(unittest.TestCase):
         return tuning.capture_connected(self.session,self.request,self.root/name,
             lambda line,*args:deepcopy(self.after if line=='after' else self.current),
             record=self.record,shell_type=self.shell_type,tail_type=FakeTail)
+
+    def test_search_camera_preserves_signed_feedforward_and_runs_without_hand_wait(self):
+        expected = settings()
+        expected.update(motion_name='search_turn_right', preset_speed_mm_s=370)
+        expected['parameters'].update(velo=.37, r_min=-26, degree=-90, lstart=9.46, lend=11.16)
+        expected['feedforward']['ff_sp_turn_accel_mag'] = -.00053817
+        self.current = deepcopy(expected)
+        self.current['parameters']['lend'] = 12.0
+        self.after = expected
+        command = tuning.settings_set_command(expected)
+        self.assertTrue(command.startswith('debug search_turn right set '))
+        self.request = replace(self.request, expected=expected, set_command=command)
+        blocked = self.capture('old_firmware')
+        self.assertEqual(blocked['state'], 'FAILED')
+        self.assertEqual(self.record_count, 0)
+        self.assertFalse(any(' arm ' in c or ' exe' in c for c in self.sent))
+        self.capability += ' search_turn:1'
+        self.sent = []
+        result = self.capture('search_supported')
+        self.assertEqual(result['state'], 'CAPTURED_REVIEW_REQUIRED')
+        self.assertEqual(result['settings_write_count'], 1)
+        self.assertTrue(result['camera_run_start_confirmed'])
+        self.assertIn('debug search_turn right show', self.sent)
+        self.assertEqual(sum(c.startswith('debug search_turn right exe_camera ') for c in self.sent), 1)
+        self.assertNotIn('debug search_turn right exe', self.sent)
+        self.assertEqual(json.loads((self.root/'search_supported/telemetry.settings.json').read_text())['feedforward'], expected['feedforward'])
+
+    def test_gui_search_settings_select_direction_and_search_preset(self):
+        from pixel_camera_tuning_panel import gui_expected_settings
+        from types import SimpleNamespace
+        def var(value):
+            return SimpleNamespace(get=lambda:value)
+        expected = settings()
+        values = dict(distance=.37,acc=26.,max_velo=9.46,end_velo=11.16,degree=90,degree_correction=0,
+                      **expected['pid'], **expected['feedforward'])
+        gui = SimpleNamespace(motion=var('search_turn'), direction=var('left'),
+            search_turn_preset_speed=var(370), turn_type=var('long_r180'),turn_preset_speed=var(500),
+            turn_count=var(1), pre_accel=var(6.5), suction_enable=var(False),suction_duty=var(650),
+            values={key:var(value) for key,value in values.items()})
+        actual = gui_expected_settings(gui,'A')
+        self.assertEqual(actual['motion_name'],'search_turn_left')
+        self.assertEqual(actual['preset_speed_mm_s'],370)
+        self.assertEqual(actual['parameters']['r_min'],26.)
 
     def test_two_trials_reuse_connection_and_skip_unchanged_parameter_writes(self):
         for name in ('one','two'):
