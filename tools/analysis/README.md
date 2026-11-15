@@ -83,6 +83,38 @@ UIの操作と保存先は[Pixel撮影・調整](../pixel_camera_README.md#調�
 壁制御への接続と`legacy/shadow/control`の切替は[直進壁EKF](../myshell_README.md#直進壁ekf)を参照してください。
 以下のPython解析結果と実機の走行性能は区別して評価します。
 
+## turn500から300／400／600の候補を予測する
+
+既存測定から滑りを観測し直す場合は`turn_slip_observation.py`を使用します。
+前回の予測モデルの入力ハッシュを照合し、動画接線とジャイロの比較、
+同一動画内の剛体マーカー姿勢による再評価、横加速度との整合、
+目印中点の車軸からのずれとの識別可能性を保存します。
+
+```powershell
+python tools/analysis/turn_slip_observation.py --output tools/turn_analysis/A_slip_review_NEW
+python -m unittest discover -s tools/tests -p test_turn_slip_observation.py -v
+```
+
+元の前後マーカー追跡CSVと全フレーム解析が必要です。動画の画素からの追跡は再実行しません。
+機体やカメラへは接続しません。元の予測モデルを再生成する前に、
+[2026-11-12の滑り再評価](../turn_analysis/20261112_A_slip_analysis/README.md)の識別上の制約を確認してください。
+
+`turn_speed_prediction.py`は、機体Aの`Params/Param_A/turn_500.h`に記載された
+14種類×3本の保存測定から有効な速度・旋回応答と横滑りを同定し、
+300／400／600 mm/sの候補ヘッダー、設定JSON、軌道CSV、比較図を作成します。
+Python 3.10以上、NumPy、pandas、SciPy、Matplotlibを使用します。
+
+```powershell
+python tools/analysis/turn_speed_prediction.py --output tools/turn_analysis/A_speed_prediction_NEW
+python -m unittest discover -s tools/tests -p test_turn_speed_prediction.py -v
+```
+
+保存先は未作成のディレクトリを指定します。元動画・ログ・設定JSONと、
+各試行の全フレーム解析が必要です。既存の絶対パスを含むため、別PCへ移す場合は入力の対応を確認してください。
+別速度での実測精度は未検証です。500の試行除外交差検証と速度依存性の感度を区別し、
+既存の採用Paramsへは自動反映しません。PID/FFは測定時のRAM係数を継承します。
+モデル・候補値・検証結果・適用範囲は[2026-11-12の解析記録](../turn_analysis/20261112_A_speed_prediction_v2/README.md)を参照してください。
+
 ## 速度も状態に含めて経路を比較する逐次センサEKF
 
 `sensor_path_ekf.py` は、位置・姿勢・前進速度・角速度・ジャイロバイアス・
