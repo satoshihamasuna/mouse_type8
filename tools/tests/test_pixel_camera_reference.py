@@ -9,7 +9,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pixel_camera_reference import (create_marker_reference, detect_board_reference, register_marker_reference,
-    rectify_board, fit_grid_reference, refine_marker_vertices)
+    rectify_board, fit_grid_reference, refine_marker_vertices, detect_registered_vertices, marker_corners_by_id)
 
 
 class ReferenceTests(unittest.TestCase):
@@ -109,6 +109,29 @@ class ReferenceTests(unittest.TestCase):
         profile = create_marker_reference(inspection)
         self.assertEqual(set(profile['markers_px']), {'11', '23', '31'})
 
+    def test_explicit_rois_disambiguate_repeated_ids_without_reusing_an_outside_copy(self):
+        image=np.full((600,600,3),255,np.uint8)
+        dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        for marker_id,x,y in ((11,100,100),(11,400,100),(23,400,400)):
+            marker=cv2.aruco.generateImageMarker(dictionary,marker_id,50)
+            image[y:y+50,x:x+50]=cv2.cvtColor(marker,cv2.COLOR_GRAY2BGR)
+        profile=dict(markers_px={'11':[[400,100],[449,100],[449,149],[400,149]],
+                                 '23':[[400,400],[449,400],[449,449],[400,449]]},
+            marker_search_rois_px={'11':[380,80,470,170],'23':[380,380,470,470]})
+        found=marker_corners_by_id(detect_registered_vertices(image,profile))
+        self.assertEqual(set(found),{11,23})
+        np.testing.assert_allclose(found[11].mean(axis=0),[424.5,124.5],atol=1)
+        image[400:450,400:450]=255
+        found=marker_corners_by_id(detect_registered_vertices(image,profile))
+        self.assertEqual(set(found),{11})
+        image[100:150,400:450]=255
+        self.assertEqual(marker_corners_by_id(detect_registered_vertices(image,profile)),{})
+
+    def test_explicit_roi_ids_must_match_the_registered_ids(self):
+        profile=dict(self.profile,marker_search_rois_px={'11':[0,0,100,100]})
+        with self.assertRaisesRegex(ValueError,'ROIs'):
+            detect_registered_vertices(np.zeros((800,800,3),np.uint8),profile)
+
     def test_rectified_image_uses_the_recorded_projective_transform(self):
         reference = np.zeros((800, 800, 3), dtype=np.uint8)
         cv2.circle(reference, (350, 350), 10, (0, 0, 255), -1)
@@ -133,6 +156,11 @@ class ReferenceTests(unittest.TestCase):
         self.assertEqual(set(profile['markers_px']), {'11', '23', '31'})
         self.assertFalse(profile['grid_calibration']['training_fit_is_accuracy_validation'])
         self.assertFalse(profile['metric_accuracy_verified'])
+        self.assertNotIn('corner_refinement', profile)
+        refined = self.pack({key: self.quads[key] for key in (11, 23, 31)})
+        refined['arbitrary_roi_names']['corner_refinement'] = 'subpix_original_win3'
+        refined_profile = fit_grid_reference(checks, refined)
+        self.assertEqual(refined_profile['corner_refinement'], 'subpix_original_win3')
 
     def test_sparse_collinear_or_duplicate_grid_points_are_not_calibration(self):
         for points in ([dict(image_x_px=x, image_y_px=x, expected_x_mm=x, expected_y_mm=x) for x in range(0, 360, 20)],

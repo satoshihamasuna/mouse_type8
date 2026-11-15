@@ -51,6 +51,18 @@ class AccuracyTests(unittest.TestCase):
         checks = accuracy.find_grid_checkpoints(np.zeros_like(frame), true_transform)
         self.assertFalse(any(point['accepted'] for point in checks))
 
+    def test_distance_scaled_mask_still_rejects_occluded_intersections(self):
+        frame,transform=self.grid_scene()
+        x,y=np.rint(accuracy.transform([[180,180]],np.linalg.inv(transform))[0]).astype(int)
+        frame[y-2:y+3,x-2:x+3]=(255,0,0)
+        checks=accuracy.find_grid_checkpoints(frame,transform,occlusion_kernel_px=13)
+        point=next(p for p in checks if (p['col'],p['row'])==(4,4))
+        self.assertFalse(point['accepted'])
+        self.assertEqual(point['reason'],'colored_object_occlusion')
+        for invalid in (0,2,12,102,13.0):
+            with self.subTest(kernel=invalid),self.assertRaises(ValueError):
+                accuracy.find_grid_checkpoints(frame,transform,occlusion_kernel_px=invalid)
+
     def test_colour_speckles_do_not_hide_visible_grid_intersection(self):
         for shape in ((1, 1), (2, 4)):
             with self.subTest(shape=shape):
@@ -84,6 +96,37 @@ class AccuracyTests(unittest.TestCase):
         self.assertEqual([p['col'] for p in first if p['accepted']], [3,4])
         self.assertEqual([p['col'] for p in second if p['accepted']], [2,4])
         self.assertTrue(all(p['accepted'] for p in checks))
+
+    def test_zoom_scaled_colour_area_filters_speckles_but_retains_occluders(self):
+        for shape, expected in [((4, 8), True), ((6, 6), False), ((1, 36), False)]:
+            with self.subTest(shape=shape):
+                frame, transform = self.grid_scene()
+                x, y = np.rint(accuracy.transform([[180, 180]], np.linalg.inv(transform))[0]).astype(int)
+                height, width = shape
+                frame[y+2:y+2+height, x+2:x+2+width] = (255, 0, 0)
+                point = next(p for p in accuracy.find_grid_checkpoints(frame, transform,
+                    occlusion_kernel_px=27, minimum_colored_component_area_px=36)
+                    if (p['col'], p['row']) == (4, 4))
+                self.assertEqual(point['accepted'], expected, point)
+                if not expected:
+                    self.assertEqual(point['reason'], 'colored_object_occlusion')
+        for invalid in (0, True, 9.0, 10001):
+            with self.subTest(area=invalid), self.assertRaises(ValueError):
+                accuracy.find_grid_checkpoints(frame, transform, minimum_colored_component_area_px=invalid)
+
+    def test_low_light_colour_noise_threshold_retains_bright_occluders(self):
+        for value, expected in ((50, True), (100, False)):
+            with self.subTest(value=value):
+                frame, transform = self.grid_scene()
+                x, y = np.rint(accuracy.transform([[180, 180]], np.linalg.inv(transform))[0]).astype(int)
+                frame[y+2:y+8, x+2:x+8] = (value, 0, 0)
+                point = next(p for p in accuracy.find_grid_checkpoints(frame, transform,
+                    occlusion_kernel_px=27, minimum_colored_component_area_px=36,
+                    minimum_colored_value=65) if (p['col'], p['row']) == (4, 4))
+                self.assertEqual(point['accepted'], expected, point)
+        for invalid in (-1, True, 65.0, 256):
+            with self.subTest(value=invalid), self.assertRaises(ValueError):
+                accuracy.find_grid_checkpoints(frame, transform, minimum_colored_value=invalid)
 
     def test_position_bias_and_distance_error_are_separate(self):
         checks = [dict(col=col, row=1, accepted=True, image_x_px=col*45, image_y_px=45,

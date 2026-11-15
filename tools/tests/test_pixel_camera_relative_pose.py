@@ -58,6 +58,11 @@ class RelativePoseTests(unittest.TestCase):
                 load_pose_cache(cache, trial, reference, geometry, (0, .2), frame_stride=4)
             for ref, geo, window in ((dict(reference_id='other'), geometry, (0, .2)),
                                      (reference, dict(front_colour='blue', marker_detection={}), (0, .2)),
+                                     (reference, dict(front_colour='red', rear_colour='red', marker_detection={}), (0, .2)),
+                                     (reference, dict(front_colour='red', nominal_marker_span_mm=30, marker_detection={}), (0, .2)),
+                                     (reference, dict(front_colour='red', marker_span_limits_mm=[40, 65], marker_detection={}), (0, .2)),
+                                     (reference, dict(front_colour='red', marker_detection={'red':{'opening_kernel_shape':'ellipse'}}), (0, .2)),
+                                     (reference, dict(front_colour='red', marker_detection={'red':{'hue_ranges':[[0,10],[170,179]]}}), (0, .2)),
                                      (reference, geometry, (0, .3))):
                 with self.assertRaises(ValueError):
                     load_pose_cache(cache, trial, ref, geo, window)

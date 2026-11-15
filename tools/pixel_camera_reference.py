@@ -43,10 +43,23 @@ def refine_marker_vertices(frame, markers):
 
 
 def detect_registered_vertices(frame, profile):
-    """全画面で復号し、未読の登録IDだけ基準近傍でも探索する。"""
+    """指定ROI、または全画面と基準近傍で実際に復号した頂点を使う。"""
     import cv2
     import numpy as np
     from pixel_camera_framing import inspect_rois
+    rois = profile.get('marker_search_rois_px')
+    if rois is not None:
+        if set(rois) != set(profile['markers_px']):
+            raise ValueError('explicit marker ROIs must match the registered marker IDs')
+        found = {}
+        for key, box in rois.items():
+            candidates = marker_corners_by_id(inspect_rois(frame, {key: box}))
+            if int(key) in candidates:
+                found[int(key)] = candidates[int(key)].tolist()
+        markers = {'registered_roi_search': dict(ids=list(found), corners_px=list(found.values()))}
+        if profile.get('corner_refinement') == 'subpix_original_win3':
+            markers = refine_marker_vertices(frame, markers)
+        return markers
     corners, ids, _ = cv2.aruco.ArucoDetector(
         cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)).detectMarkers(frame)
     found = {} if ids is None else {int(key): quad.reshape(4, 2).tolist()
@@ -96,7 +109,9 @@ def fit_grid_reference(checkpoints, markers, image_size=(1280, 720), board_side_
     profile = create_marker_reference(inspection, image_size=image_size, board_side_mm=board_side_mm)
     # create_marker_referenceのfloat32四隅再計算を避け、全格子点による行列を保持する。
     profile["image_to_board_mm"] = (matrix/matrix[2, 2]).tolist()
-    profile["corner_refinement"] = "subpix_original_win3"
+    # 基準頂点と再検出頂点へ同じ処理を使う。未精密化の入力へラベルだけ付けない。
+    if markers and all(item.get("corner_refinement") == "subpix_original_win3" for item in markers.values()):
+        profile["corner_refinement"] = "subpix_original_win3"
     profile["source"] = source or {}
     residual = cv2.perspectiveTransform(image.reshape(-1, 1, 2), matrix).reshape(-1, 2)-world
     profile["grid_calibration"] = dict(training_unique_points=len(points),
@@ -182,7 +197,10 @@ def refine_board_grid(frame, marker_result, profile):
         return marker_result
     from analysis.pixel_camera_accuracy import find_grid_checkpoints
     checks = find_grid_checkpoints(frame, marker_result["homography_image_to_board_mm"],
-                                  profile["grid_refinement"]["pitch_mm"])
+                                  profile["grid_refinement"]["pitch_mm"],
+                                  occlusion_kernel_px=profile['grid_refinement'].get('occlusion_kernel_px', 25),
+                                  minimum_colored_component_area_px=profile['grid_refinement'].get('minimum_colored_component_area_px', 9),
+                                  minimum_colored_value=profile['grid_refinement'].get('minimum_colored_value', 35))
     return refine_board_from_checkpoints(marker_result, checks, profile)
 
 

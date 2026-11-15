@@ -34,6 +34,9 @@ def load_pose_cache(path, trial, reference, geometry, window, frame_stride=1):
             or provenance['cached_pose_sha256'] != file_hash(path)
             or provenance['reference_digest'] != reference_digest(reference)
             or provenance['front_colour'] != geometry['front_colour']
+            or provenance.get('rear_colour', 'yellow') != geometry.get('rear_colour', 'yellow')
+            or provenance.get('nominal_marker_span_mm') != geometry.get('nominal_marker_span_mm')
+            or provenance.get('marker_span_limits_mm') != geometry.get('marker_span_limits_mm')
             or provenance.get('marker_detection') != geometry.get('marker_detection')
             or window[0] < provenance['video_window'][0] or window[1] > provenance['video_window'][1]):
         raise ValueError('pose cache does not match video, calibration, detector, or analysis window')
@@ -108,12 +111,18 @@ def main():
         pose, _, _, _ = read_video_pose(Path(trial['video_file']), geometry['front_colour'],
             marker_reference=reference, video_window=(args.video_start, args.video_end),
             marker_detection=geometry.get('marker_detection'),
+            rear_colour=geometry.get('rear_colour', 'yellow'),
+            nominal_marker_span_mm=geometry.get('nominal_marker_span_mm'),
+            marker_span_limits_mm=geometry.get('marker_span_limits_mm'),
             frame_stride=args.frame_stride,
             progress=lambda stage, count, pts: print(f'{stage}: {count} frames, PTS {pts:.3f} s', flush=True))
     pose.to_csv(args.output/'apparent_floor_marker_pose.csv', index=False)
     provenance = dict(schema_version=1, video_file=trial['video_file'], video_sha256=file_hash(trial['video_file']),
         cached_pose_sha256=file_hash(args.output/'apparent_floor_marker_pose.csv'),
         reference_digest=reference_digest(reference), front_colour=geometry['front_colour'],
+        rear_colour=geometry.get('rear_colour', 'yellow'),
+        nominal_marker_span_mm=geometry.get('nominal_marker_span_mm'),
+        marker_span_limits_mm=geometry.get('marker_span_limits_mm'),
         marker_detection=geometry.get('marker_detection'), video_window=[args.video_start, args.video_end], frame_stride=args.frame_stride,
         marker_calibration=pose.attrs['marker_calibration'])
     (args.output/'apparent_floor_marker_pose.provenance.json').write_text(json.dumps(provenance, ensure_ascii=False, indent=2), encoding='utf-8')

@@ -69,18 +69,25 @@ def line_near_grid_point(gray, inverse, world_point, axis):
                 samples=int(keep.sum()), contrast_median=float(np.median(np.asarray(contrasts)[keep])))
 
 
-def find_grid_checkpoints(frame, image_to_board, pitch_mm=45.0, intervals=8):
+def find_grid_checkpoints(frame, image_to_board, pitch_mm=45.0, intervals=8, occlusion_kernel_px=25,
+                          minimum_colored_component_area_px=9, minimum_colored_value=35):
     """内部交点49個を探索。中心の黒丸や機体の色は線の当てはめに使わない。"""
+    if type(occlusion_kernel_px) is not int or not 3 <= occlusion_kernel_px <= 101 or occlusion_kernel_px % 2 != 1:
+        raise ValueError('occlusion kernel must be an odd pixel count from 3 to 101')
+    if type(minimum_colored_component_area_px) is not int or not 1 <= minimum_colored_component_area_px <= 10000:
+        raise ValueError("minimum coloured component area must be an integer from 1 to 10000 pixels")
+    if type(minimum_colored_value) is not int or not 0 <= minimum_colored_value <= 255:
+        raise ValueError("minimum coloured value must be an integer from 0 to 255")
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    colored = ((hsv[:, :, 1] > 90) & (hsv[:, :, 2] > 35)).astype('uint8')
+    colored = ((hsv[:, :, 1] > 90) & (hsv[:, :, 2] > minimum_colored_value)).astype('uint8')
     # 圧縮・色ノイズの孤立画素を25 pxへ拡大して、見える格子を遮蔽扱いしない。
     # 小さくても連続9画素以上ある色領域は残し、細長い遮蔽物も除外する。
     _, labels, stats, _ = cv2.connectedComponentsWithStats(colored, connectivity=8)
-    keep = stats[:, cv2.CC_STAT_AREA] >= 9
+    keep = stats[:, cv2.CC_STAT_AREA] >= minimum_colored_component_area_px
     keep[0] = False
     colored = keep[labels].astype('uint8')
-    occlusion = cv2.dilate(colored, np.ones((25, 25), 'uint8'))
+    occlusion = cv2.dilate(colored, np.ones((occlusion_kernel_px, occlusion_kernel_px), 'uint8'))
     inverse = np.linalg.inv(np.asarray(image_to_board))
     results = []
     for row in range(1, intervals):

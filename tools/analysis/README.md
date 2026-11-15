@@ -448,6 +448,8 @@ long180だけは始終方向が平行で連立方程式からLstart/Lendを一�
 3枚読めた場合は12頂点を使用します。基礎方式は特定の隅の検出を必要としません。
 調整用基準の`grid_refinement.enabled`がONの場合は、45 mm格子も使ってフレームごとに再校正し、未使用の格子点で検査します。詳細は[Pixel撮影手順](../pixel_camera_README.md)を参照してください。
 
+色マーカーの候補点は一括で盤面へ射影し、高さ補正を使わない相対解析では間隔・盤内条件を配列で検査します。候補の色条件・間隔範囲・得点・同点時の順序は維持し、色ノイズが多い画像での重複計算を減らしています。
+
 ```powershell
 & D:/venv/venv3-11/Scripts/python.exe tools/analysis/video_marker_pose.py `
   --video C:/path/to/video.mp4 --log C:/path/to/motion.csv --output tools/logs/video_analysis/new_run `
@@ -468,7 +470,18 @@ long180だけは始終方向が平行で連立方程式からLstart/Lendを一�
 レンズから鉛直に下ろした点の盤面座標は`--camera-foot-mm X Y`で指定するか、設定の`camera_foot_board_mm`へ保存します。
 高さ・位置を撮影ごとに確定したコピーへ展開し、`body_geometry_used.json`と`metrics.json`に、その動画のパスと一緒に保存します。
 車軸中心のオフセットがなければ、`metrics.json`の`body_geometry.center_kind`は`marker_midpoint`です。
-指定した設定は`body_geometry_used.json`にも保存します。赤を前にした場合も、互換性のため前マーカーのCSV列名は従来の`blue_x_mm`等を保持します。
+指定した設定は`body_geometry_used.json`にも保存します。互換性のためCSV列名は前マーカーが`blue_x_mm`等、後マーカーが`yellow_x_mm`等のままです。列名を実際の色と読み替えないでください。
+機体Bの前黄・後赤は`--front-color yellow --rear-color red`で指定できます。
+`pixel_camera_relative_pose.py`は機体JSONの`front_colour`・`rear_colour`を使い、追跡キャッシュも前後両方の色を照合します。
+`nominal_marker_span_mm`と`marker_span_limits_mm`は前後の組の選択に使います。尺度の補正には使いません。
+小さい目印では色別`marker_detection`に`minimum_area_px`と`opening_kernel_size`（0または3）を指定できます。
+未指定時は従来の面積15画素・3×3 openingを使い、キャッシュは色・検出設定・間隔条件が変われば拒否します。
+`opening_kernel_shape`は`rect`（既定）または`ellipse`です。後者は小さい丸を残しながら細い連結を除くための設定で、
+同じ動画を変更前後で検査し、実際の目印の検出・誤認・必要区間の観測率を確認します。
+照明で黄色が黄緑に映る場合などは、色別`hue_ranges: [[25,65]]`で色相の範囲も明示できます。
+OpenCV HSVの0〜179の整数・両端を含む範囲を1〜4組指定します。赤の境界は`[[0,10],[170,179]]`のように分けます。
+未指定時の色相範囲は従来どおりです。検出設定を変えたら別の保存映像でも誤認・静止安定性を確認し、旧解析を保持して新しい出力先へ再解析します。品質基準を緩めて有効本数を増やしません。
+盤面参照の`board_side_mm`を使うため、810 mmの盤面を旧360 mmへ縮尺変更しません。
 
 画像を全フレーム分メモリに蓄積せず読み直し、動画の実PTSとCSVの実`time_ms`を使います。
 `--video-start 6.5 --video-end 9.5`等で解析範囲を限定できます。PTSとフレーム番号は元動画のままです。

@@ -47,25 +47,45 @@ def colour_components(frame: np.ndarray, colour: str, detection: dict | None = N
         mask, saturation_min, value_min = (hue >= 140) & (hue <= 169), 90, 90
     else:
         mask, saturation_min, value_min = (hue >= 25) & (hue <= 36), 130, 145
+    area_min, opening_kernel_size, opening_kernel_shape = 15, 3, 'rect'
     if detection:
         limits = detection.get(colour, {})
-        if set(limits)-{'minimum_saturation', 'minimum_value'}:
+        if set(limits)-{'minimum_saturation', 'minimum_value', 'minimum_area_px', 'opening_kernel_size', 'opening_kernel_shape', 'hue_ranges'}:
             raise ValueError('unknown colour detection setting')
+        if 'hue_ranges' in limits:
+            ranges = limits['hue_ranges']
+            if (not isinstance(ranges, (list, tuple)) or not 1 <= len(ranges) <= 4
+                    or any(not isinstance(bounds, (list, tuple)) or len(bounds) != 2
+                           or any(isinstance(value, bool) or not isinstance(value, (int, np.integer)) for value in bounds)
+                           or not 0 <= bounds[0] <= bounds[1] <= 179 for bounds in ranges)):
+                raise ValueError('hue_ranges must contain one to four inclusive integer ranges within zero to179')
+            mask = np.zeros(hue.shape, dtype=bool)
+            for low, high in ranges:
+                mask |= (hue >= low) & (hue <= high)
         saturation_min = limits.get('minimum_saturation', saturation_min)
         value_min = limits.get('minimum_value', value_min)
         if not all(np.isfinite(v) and 0 <= v <= 255 for v in (saturation_min, value_min)):
             raise ValueError('colour thresholds must be finite values between zero and 255')
+        area_min = limits.get('minimum_area_px', area_min)
+        opening_kernel_size = limits.get('opening_kernel_size', opening_kernel_size)
+        opening_kernel_shape = limits.get('opening_kernel_shape', opening_kernel_shape)
+        if not np.isfinite(area_min) or not 1 <= area_min <= 3000 or opening_kernel_size not in (0, 3):
+            raise ValueError('invalid colour component area or opening kernel size')
+        if opening_kernel_shape not in ('rect', 'ellipse'):
+            raise ValueError('invalid opening kernel shape')
     mask &= (sat >= saturation_min) & (val >= value_min)
-    mask = cv2.morphologyEx(
-        mask.astype(np.uint8) * 255, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)
-    )
+    mask = mask.astype(np.uint8) * 255
+    if opening_kernel_size:
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT if opening_kernel_shape == 'rect' else cv2.MORPH_ELLIPSE,
+                                          (opening_kernel_size, opening_kernel_size))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     n, _, stats, centres = cv2.connectedComponentsWithStats(mask)
     h, w = frame.shape[:2]
     result = []
     for label in range(1, n):
         area = int(stats[label, cv2.CC_STAT_AREA])
         x, y = centres[label]
-        if 15 <= area <= 3000 and .04 * w < x < .96 * w and .02 * h < y < .99 * h:
+        if area_min <= area <= 3000 and .04 * w < x < .96 * w and .02 * h < y < .99 * h:
             result.append((centres[label].astype(float), area))
     return result
 
@@ -91,10 +111,7 @@ def marker_registration(frame: np.ndarray, marker_reference: dict) -> dict:
 def registration_quad(result: dict) -> np.ndarray | None:
     if not result.get("available"):
         return None
-    names = {int(marker_id): name for name, marker_id in result["board_corner_ids"].items()}
-    if not all(marker_id in names for marker_id in ARUCO_CORNER_IDS):
-        return None
-    return np.float32([result["points_px"][names[marker_id]] for marker_id in ARUCO_CORNER_IDS])
+    return np.float32([result["points_px"][name] for name in pose_corner_names(result)])
 
 
 def detect_aruco_quad(frame: np.ndarray, marker_reference: dict | None = None) -> np.ndarray | None:
@@ -115,18 +132,32 @@ def transform_points(points: np.ndarray, homography: np.ndarray) -> np.ndarray:
     return cv2.perspectiveTransform(np.float32(points).reshape(-1, 1, 2), homography).reshape(-1, 2)
 
 
-def board_to_pose_transform(profile):
-    corners = dict(TL=[0, 0], TR=[GRID_MM, 0], BR=[GRID_MM, GRID_MM], BL=[0, GRID_MM])
+def pose_corner_names(profile):
+    """従来IDの座標軸を保ち、別IDの登録盤面は明示した隅の対応を使う。"""
     names = {int(key): name for name, key in profile['board_corner_ids'].items()}
-    source = np.float32([corners[names[key]] for key in ARUCO_CORNER_IDS])
-    return cv2.getPerspectiveTransform(source, WORLD_CORNERS)
+    if all(key in names for key in ARUCO_CORNER_IDS):
+        return tuple(names[key] for key in ARUCO_CORNER_IDS)
+    return ('TL', 'TR', 'BL', 'BR')
+
+
+def pose_world_corners(board_side_mm=GRID_MM):
+    if not np.isfinite(board_side_mm) or board_side_mm <= 0:
+        raise ValueError('board side must be finite and positive')
+    return np.float32(WORLD_CORNERS*(board_side_mm/GRID_MM))
+
+
+def board_to_pose_transform(profile):
+    side = profile.get('board_side_mm', GRID_MM)
+    corners = dict(TL=[0, 0], TR=[side, 0], BR=[side, side], BL=[0, side])
+    source = np.float32([corners[name] for name in pose_corner_names(profile)])
+    return cv2.getPerspectiveTransform(source, pose_world_corners(side))
 
 
 def detect_led_interval(
-    frames: list[np.ndarray], pose: pd.DataFrame, calibration_quad: np.ndarray
+    frames: list[np.ndarray], pose: pd.DataFrame, calibration_quad: np.ndarray, board_side_mm=GRID_MM
 ) -> tuple[np.ndarray, np.ndarray, float]:
     """Detect blue turn LEDs while excluding the permanent blue circle."""
-    inverse = cv2.getPerspectiveTransform(WORLD_CORNERS, calibration_quad)
+    inverse = cv2.getPerspectiveTransform(pose_world_corners(board_side_mm), calibration_quad)
     if 'front_floor_x_mm' in pose:
         centre_points = pose[['midpoint_floor_x_mm', 'midpoint_floor_y_mm']].to_numpy()
         front_points = pose[['front_floor_x_mm', 'front_floor_y_mm']].to_numpy()
@@ -183,28 +214,59 @@ def select_marker_pair(
     previous: np.ndarray | None,
     body_geometry: dict | None = None,
     board_to_pose: np.ndarray | None = None,
+    board_side_mm: float = GRID_MM,
+    nominal_marker_span_mm: float | None = None,
+    marker_span_limits_mm: tuple[float, float] | None = None,
 ) -> tuple[np.ndarray, np.ndarray] | None:
+    nominal_span = nominal_marker_span_mm
+    if nominal_span is None and body_geometry is not None:
+        nominal_span = body_geometry.get('nominal_marker_span_mm')
+    if nominal_span is not None and (not np.isfinite(nominal_span) or nominal_span <= 0):
+        raise ValueError('nominal marker span must be finite and positive')
+    low, high = (32., 72.) if nominal_span is None else (.65*nominal_span, 1.4*nominal_span)
+    if marker_span_limits_mm is not None:
+        limits = np.asarray(marker_span_limits_mm, dtype=float)
+        if limits.shape != (2,) or not np.isfinite(limits).all() or not 0 < limits[0] < limits[1]:
+            raise ValueError('marker span limits must be finite positive [minimum, maximum] mm')
+        low, high = limits
+    if not blues or not yellows:
+        return None
+    # 各候補の射影は相手によらない。色ノイズの全組合せで同じ点を変換しない。
+    blues_mm = transform_points([point for point, _ in blues], homography)
+    yellows_mm = transform_points([point for point, _ in yellows], homography)
     candidates = []
-    for blue, blue_area in blues:
-        for yellow, yellow_area in yellows:
-            blue_mm, yellow_mm = transform_points(np.vstack([blue, yellow]), homography)
+    for blue_index, (_, blue_area) in enumerate(blues):
+        if body_geometry is None:
+            separations = np.linalg.norm(blues_mm[blue_index] - yellows_mm, axis=1)
+            centres = (blues_mm[blue_index] + yellows_mm) / 2.0
+            eligible = ((separations >= low) & (separations <= high)
+                        & (centres[:, 0] >= -20.0) & (centres[:, 0] <= board_side_mm + 20.0)
+                        & (centres[:, 1] >= -20.0) & (centres[:, 1] <= board_side_mm + 20.0))
+            yellow_indices = np.flatnonzero(eligible)
+        else:
+            yellow_indices = range(len(yellows))
+        for yellow_index in yellow_indices:
+            _, yellow_area = yellows[yellow_index]
+            blue_mm, yellow_mm = blues_mm[blue_index], yellows_mm[yellow_index]
             if body_geometry is not None:
                 board = transform_points([blue_mm, yellow_mm], np.linalg.inv(board_to_pose))
                 corrected = correct_body_markers(board[0], board[1], body_geometry)
                 blue_mm, yellow_mm = transform_points(
                     [corrected['front_xy_mm'], corrected['rear_xy_mm']], board_to_pose)
-            separation_mm = float(np.linalg.norm(blue_mm - yellow_mm))
-            if not 32.0 <= separation_mm <= 72.0:
-                continue
-            centre = (blue_mm + yellow_mm) / 2.0
-            if not (-20.0 <= centre[0] <= GRID_MM + 20.0
-                    and -20.0 <= centre[1] <= GRID_MM + 20.0):
-                continue
+                separation_mm = float(np.linalg.norm(blue_mm - yellow_mm))
+                if not low <= separation_mm <= high:
+                    continue
+                centre = (blue_mm + yellow_mm) / 2.0
+                if not (-20.0 <= centre[0] <= board_side_mm + 20.0
+                        and -20.0 <= centre[1] <= board_side_mm + 20.0):
+                    continue
+            else:
+                separation_mm = float(separations[yellow_index])
+                centre = centres[yellow_index]
             # The true circles are the largest similarly sized colour regions.
             balance = min(blue_area, yellow_area) / max(blue_area, yellow_area)
             score = math.log1p(blue_area + yellow_area) + 1.5 * balance
-            nominal_span = body_geometry.get('nominal_marker_span_mm', 55.0) if body_geometry is not None else 55.0
-            score -= .020 * (separation_mm - nominal_span) ** 2
+            score -= .020 * (separation_mm - (nominal_span if nominal_span is not None else 55.)) ** 2
             if previous is not None:
                 step = float(np.linalg.norm(centre - previous))
                 score -= .08 * max(0.0, step - 35.0)
@@ -275,16 +337,24 @@ def read_video_pose(
     marker_detection: dict | None = None,
     progress=None,
     frame_stride=1,
+    rear_colour: str = 'yellow',
+    nominal_marker_span_mm: float | None = None,
+    marker_span_limits_mm: tuple[float, float] | None = None,
 ) -> tuple[pd.DataFrame, np.ndarray, float, float]:
     if not isinstance(frame_stride, int) or not 1 <= frame_stride <= 4:
         raise ValueError('frame_stride must be an integer from1 to4')
+    colours = ('blue', 'red', 'magenta', 'yellow')
+    if front_colour not in colours or rear_colour not in colours or front_colour == rear_colour:
+        raise ValueError('front and rear marker colours must be distinct supported colours')
+    board_side_mm = marker_reference.get('board_side_mm', GRID_MM) if marker_reference is not None else GRID_MM
+    world_corners = pose_world_corners(board_side_mm)
     geometry_transform = None
     if body_geometry is not None:
         validate_geometry(body_geometry)
         if body_geometry.get('front_colour', front_colour) != front_colour:
             raise ValueError('front marker colour does not match the body geometry configuration')
-        if body_geometry.get('rear_colour', 'yellow') != 'yellow':
-            raise ValueError('rear marker colour must be yellow')
+        if body_geometry.get('rear_colour', 'yellow') != rear_colour:
+            raise ValueError('rear marker colour does not match the body geometry configuration')
         if marker_reference is None:
             raise ValueError('body geometry requires a marker reference with explicit board axes')
         expected_id = body_geometry.get('reference_id')
@@ -335,7 +405,8 @@ def read_video_pose(
     if marker_reference is None:
         complete_rate = sum(quad is not None for quad in quads)/frame_count
     else:
-        complete_rate = sum(set(ARUCO_CORNER_IDS) <= set(result["detected_marker_ids"]) for result in registrations)/frame_count
+        required_ids = set(map(int, marker_reference['board_corner_ids'].values()))
+        complete_rate = sum(required_ids <= set(result["detected_marker_ids"]) for result in registrations)/frame_count
     valid_quads = np.asarray([quad for quad in quads if quad is not None])
     if len(valid_quads):
         fixed_quad = np.median(valid_quads, axis=0).astype(np.float32)
@@ -345,7 +416,7 @@ def read_video_pose(
             raise RuntimeError("no valid marker calibration; reference mode requires at least two registered markers")
     else:
         raise RuntimeError("no valid marker calibration; four ArUcos or a reference with two matched markers are required")
-    homography = cv2.getPerspectiveTransform(fixed_quad, WORLD_CORNERS)
+    homography = cv2.getPerspectiveTransform(fixed_quad, world_corners)
 
     records = []
     previous = None
@@ -355,13 +426,13 @@ def read_video_pose(
             if quads[offset] is None:
                 records.append(dict(frame=index, time_video_s=pts, marker_detected_raw=False, calibration_valid=False))
                 continue
-            local_homography = cv2.getPerspectiveTransform(quads[offset], WORLD_CORNERS)
+            local_homography = cv2.getPerspectiveTransform(quads[offset], world_corners)
         pair = select_marker_pair(
             colour_components(frame, front_colour, marker_detection),
-            colour_components(frame, "yellow", marker_detection),
+            colour_components(frame, rear_colour, marker_detection),
             local_homography,
             previous,
-            body_geometry, geometry_transform,
+            body_geometry, geometry_transform, board_side_mm, nominal_marker_span_mm, marker_span_limits_mm,
         )
         if pair is None:
             records.append(
@@ -432,10 +503,11 @@ def read_video_pose(
         pd.Series(np.hypot(dx, dy)).rolling(max(1, 9//frame_stride), center=True, min_periods=1).median()
     )
     led_counts, led_active, led_threshold = detect_led_interval(
-        (frame for _, frame, _ in iter_video_frames(path, marker_reference is not None, video_window, frame_stride)), pose, fixed_quad)
+        (frame for _, frame, _ in iter_video_frames(path, marker_reference is not None, video_window, frame_stride)), pose, fixed_quad, board_side_mm)
     pose["turn_led_blue_pixels"] = led_counts
     pose["turn_led_active"] = led_active
     pose.attrs["turn_led_threshold"] = led_threshold
+    pose.attrs['board_side_mm'] = board_side_mm
     pose.attrs["marker_calibration"] = dict(
         method="registered_markers_plus_distributed_grid" if dynamic_grid else
                ("registered_marker_vertices" if marker_reference is not None else "four_decoded_arucos"),
@@ -760,7 +832,7 @@ def draw_outputs(
     cap.release()
     if not ok:
         raise RuntimeError("cannot read representative video frame")
-    homography_inv = cv2.getPerspectiveTransform(WORLD_CORNERS, quad)
+    homography_inv = cv2.getPerspectiveTransform(pose_world_corners(pose.attrs.get('board_side_mm', GRID_MM)), quad)
     video_px = transform_points(
         comparison[["center_x_mm", "center_y_mm"]].to_numpy(), homography_inv
     ).round().astype(int)
@@ -854,8 +926,9 @@ def main():
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
-        "--front-color", choices=("blue", "red", "magenta"), default="blue"
+        "--front-color", choices=("blue", "red", "magenta", "yellow"), default="blue"
     )
+    parser.add_argument('--rear-color', choices=('blue', 'red', 'magenta', 'yellow'), default='yellow')
     parser.add_argument(
         "--calibration-video",
         type=Path,
@@ -893,7 +966,8 @@ def main():
     pose, quad, fps, aruco_rate = read_video_pose(
         args.video, args.front_color, args.calibration_video, marker_reference, body_geometry,
         (args.video_start, args.video_end),
-        marker_detection=body_geometry.get('marker_detection') if body_geometry else None
+        marker_detection=body_geometry.get('marker_detection') if body_geometry else None,
+        rear_colour=args.rear_color,
     )
     log = integrate_log(args.log)
     log_lengths = measure_log_length_phases(args.log)
@@ -952,6 +1026,7 @@ def main():
         "log": args.log.name,
         "motion_name": motion_name,
         "front_marker_color": args.front_color,
+        "rear_marker_color": args.rear_color,
         "video_fps": fps,
         "video_frames": len(pose),
         "marker_detection_rate": float(pose.marker_detected_raw.mean()),
@@ -997,11 +1072,12 @@ def main():
     (args.output / "metrics.json").write_text(
         json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    front_label = {"blue": "青", "red": "赤", "magenta": "マゼンタ"}[args.front_color]
-    report = f"""# {front_label}・黄マーカー動画と走行ログの比較
+    colour_labels = {"blue": "青", "red": "赤", "magenta": "マゼンタ", "yellow": "黄"}
+    front_label, rear_label = colour_labels[args.front_color], colour_labels[args.rear_color]
+    report = f"""# {front_label}・{rear_label}マーカー動画と走行ログの比較
 
 - 対象: `{args.video.name}` / `{args.log.name}`
-- {front_label}・黄マーカー検出率: {metrics['marker_detection_rate'] * 100:.1f} %
+- 前＝{front_label}・後＝{rear_label}マーカー検出率: {metrics['marker_detection_rate'] * 100:.1f} %
 - 4個のArUco同時検出率: {metrics['aruco_complete_frame_rate'] * 100:.1f} %
 - 較正方式: {metrics['marker_calibration']['method']} / 較正成立フレーム率 {metrics['marker_calibration']['calibration_frame_rate'] * 100:.1f} %
 - マーカー間隔: {metrics['marker_separation_mean_mm']:.2f} ± {metrics['marker_separation_std_mm']:.2f} mm
@@ -1018,7 +1094,7 @@ def main():
 - 動画マーカー方位変化: {metrics['video_heading_change_deg']:.2f} deg
 - ログ積分方位変化: {metrics['log_heading_change_deg']:.2f} deg
 
-緑線は動画から得た{front_label}・黄マーカーの中点、赤線はログの `ego.velo` と
+緑線は動画から得た{front_label}・{rear_label}マーカーの中点、赤線はログの `ego.velo` と
 `ego.rad_velo` を積分し、時間・剛体位置合わせした軌跡です。位置合わせで
 距離尺度は変更していません。
 
