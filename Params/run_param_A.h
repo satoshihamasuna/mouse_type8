@@ -83,10 +83,20 @@ const static t_turn_param_table slalom_R90_table_400 = {0.40f,-26.00f,9.46,11.16
 const static t_param param_L90_search_400 = {&slalom_L90_table_400 ,&sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_L_400};
 const static t_param param_R90_search_400 = {&slalom_R90_table_400, &sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_R_400};
 
-const static t_turn_param_table slalom_L90_table_370 = {0.37f, 26.00f,9.46,11.16, 90.0f,Turn_L};
-const static t_turn_param_table slalom_R90_table_370 = {0.37f,-26.00f,9.46,11.16,-90.0f,Turn_R};
-const static t_param param_L90_search_370 = {&slalom_L90_table_370 ,&sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_L_370};
-const static t_param param_R90_search_370 = {&slalom_R90_table_370, &sp_gain_search_turn,&om_gain_search_turn,&ff_gain_search_turn_R_370};
+// 2026-11-16 機体A・370 mm/sの単体候補をユーザー依頼で試験用に反映。
+// 速度PIDは左右とも5.0/0.04/0、角速度PIDと左右別FFは既存値を維持。
+// 吸引OFF・前走加速度6.5 m/s^2、右3本/左5本の相対マーカー中点評価。
+// Lstartは9.46 mm、Lendは右8.50/左9.00 mm。出口角度差は右-0.79~-0.11度、
+// 左-0.45~+0.60度。左+0.7度の比較は不採用とし、論理角/補正は±90/0度。
+// 根拠: tools/logs/pixel_camera/A_search370_candidate_three_20261115/README.md
+//       tools/logs/pixel_camera/A_search370_left_candidate_three_20261116/README.md
+// 絶対車軸精度・連続接続・壁あり探索・反映後の実機再現性は未検証。
+// ターン内の前後直進にも試験時と同じPIDを指定。他速度の共有ゲインは変えない。
+const static t_pid_gain sp_gain_search_turn_370 = {5.0f,0.04f,0.0f};
+const static t_turn_param_table slalom_L90_table_370 = {0.37f, 26.00f,9.46,9.00, 90.0f,Turn_L,0.0f};
+const static t_turn_param_table slalom_R90_table_370 = {0.37f,-26.00f,9.46,8.50,-90.0f,Turn_R,0.0f};
+const static t_param param_L90_search_370 = {&slalom_L90_table_370 ,&sp_gain_search_turn_370,&om_gain_search_turn,&ff_gain_search_turn_L_370,&sp_gain_search_turn_370,&om_gain_search_turn};
+const static t_param param_R90_search_370 = {&slalom_R90_table_370, &sp_gain_search_turn_370,&om_gain_search_turn,&ff_gain_search_turn_R_370,&sp_gain_search_turn_370,&om_gain_search_turn};
 
 const static t_turn_param_table slalom_L90_table_350 = {0.35f, 26.00f,9.46,11.16, 90.0f,Turn_L};
 const static t_turn_param_table slalom_R90_table_350 = {0.35f,-26.00f,9.46,11.16,-90.0f,Turn_R};

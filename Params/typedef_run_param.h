@@ -61,6 +61,9 @@ typedef struct{
 	t_pid_gain const* sp_gain;
 	t_pid_gain const* om_gain;
 	t_ff_gain const* ff_gain = &ff_gain_default;
+	// 探索ターン内の前後直進用。未指定なら呼出し元の既定ゲインを使う。
+	t_pid_gain const* search_straight_sp_gain = nullptr;
+	t_pid_gain const* search_straight_om_gain = nullptr;
 }t_param;
 
 typedef struct{

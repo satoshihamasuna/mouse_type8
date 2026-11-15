@@ -239,6 +239,11 @@ void Motion::Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain
 	motion_plan.turn_time_ms.set		( ABS(DEG2RAD(motion_degree)/(accel_Integral*motion_plan.rad_max_velo.get()))*1000.0f);
 
 	//Set control gain & turn_param
+	// 明示引数（単体調整）を優先し、未指定時だけ機体/速度別の前後PIDを使う。
+	if(sp_gain == nullptr)
+		sp_gain = turn_param->search_straight_sp_gain != nullptr ? turn_param->search_straight_sp_gain : &basic_sp_gain;
+	if(om_gain == nullptr)
+		om_gain = turn_param->search_straight_om_gain != nullptr ? turn_param->search_straight_om_gain : &basic_om_gain;
 	straight_motion_param.sp_gain = sp_gain;
 	straight_motion_param.om_gain = om_gain;
 	turn_motion_param = *turn_param;
