@@ -1,0 +1,113 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><title>走行動画・位置・制御応答</title>
+<style>
+body{font:15px system-ui,sans-serif;background:#edf2f7;color:#172331;margin:18px}h1{font-size:24px}h2{font-size:19px}button,input{font:inherit;padding:5px}.layout{display:grid;grid-template-columns:minmax(600px,2fr) minmax(320px,1fr);gap:16px}.panel{background:white;padding:14px;border-radius:8px}.video{position:relative;line-height:0}video{width:100%;max-height:70vh;background:black}#overlay{position:absolute;pointer-events:none;inset:0;width:100%;height:100%}#board{width:100%;height:auto;cursor:pointer}canvas.trace{width:100%;height:160px;background:white}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #ccd6df;padding:6px;text-align:right}tr{cursor:pointer}tr:hover{background:#e5f2ff}.warning{background:#fff0c2;padding:10px;line-height:1.7}#readout{white-space:pre-line;font-variant-numeric:tabular-nums}@media(max-width:1050px){.layout{grid-template-columns:1fr}}
+</style><h1>探索・最短：動画の位置・向きと制御応答</h1>
+<p id="summary"></p><p class="warning" id="quality"></p>
+<div class="layout"><div class="panel"><div class="video"><video id="video" controls preload="metadata" src="VIDEO_URI"></video><canvas id="overlay"></canvas></div>
+<p>MCU動作開始の動画時刻 [秒] <input id="offset" type="number" step="0.005" style="width:100px"> <label> video/MCU <input id="clockscale" type="number" step="0.0001" min="0.98" max="1.02" style="width:100px"></label> <button id="align">現在時刻を動作開始にする</button> <button id="save">手動同期JSONを保存</button></p>
+<p id="readout"></p><p>波形の表示範囲 <select id="zoom"><option value="0">全体</option><option value="1">現在位置の前後1秒</option><option value="0.25">現在位置の前後0.25秒</option></select>　左＝青、右＝赤、前左＝緑、前右＝紫。壁波形の縦線：緑＝補正採用、赤＝棄却、紫＝探索時の補正動作判断。</p>
+<canvas id="speed" class="trace" width="1000" height="160"></canvas><canvas id="omega" class="trace" width="1000" height="160"></canvas><canvas id="led" class="trace" width="1000" height="160"></canvas>
+<canvas id="wallDistance" class="trace" width="1000" height="160"></canvas><canvas id="adc" class="trace" width="1000" height="160"></canvas><canvas id="range" class="trace" width="1000" height="160"></canvas><canvas id="motion" class="trace" width="1000" height="160"></canvas>
+<p>壁距離・ADC・範囲状態・走行パターンは保存済みの全サンプルを使用します。範囲状態は0＝校正範囲内、1＝近限界、2＝遠限界、3＝無効、4＝未観測。旧ログの未記録項目は空欄です。縦線はMCUが補正を判断した時刻で、壁端の真の通過時刻ではありません。</p>
+<p>灰＝指令、青＝機体ログ、橙＝動画（高さ補正前）。グラフをクリックすると動画を移動できます。青LEDは機体周囲の青画素数です。同期変更後のCSV・旋回集計は、保存したJSONを指定して再解析してください。</p></div>
+<div class="panel"><h2>盤面上の見かけの位置</h2><canvas id="board" width="600" height="600"></canvas><p>左上原点、右がx、下がy。盤面の行列と機体の迷路座標は別です。軌跡をクリックすると該当時刻へ移動します。灰色の壁は基準画像からの候補です。</p><p id="poseStats"></p><p><a href="pose.csv">位置CSV</a> / <a href="matched.csv">動画・ログ対応CSV</a> / <a href="turns.csv">旋回別CSV</a> / <a href="analysis.json">解析条件・品質</a> / <a href="README.md">評価手順</a></p></div></div>
+<div class="panel" style="margin-top:16px"><h2>旋回ごとの確認（クリックして再生）</h2><p>角速度指令の区間順です。映像の旋回角は同期・観測率の条件を満たした区間のみ表示します。角速度追従RMSだけで接触や滑りの原因は確定できません。</p><table><thead><tr><th>番号</th><th>方向</th><th>動画 [s]</th><th>指令角 [°]</th><th>ジャイロ角 [°]</th><th>映像の見かけ角 [°]</th><th>追従RMS [rad/s]</th><th>映像観測率</th><th>BLE最大間隔 [ms]</th></tr></thead><tbody id="turns"></tbody></table></div>
+<div class="panel" style="margin-top:16px"><h2>壁の補正判断（クリックして再生）</h2><p>MCUが記録した判断時刻です。灰色の旋回指令区間とは別の番号です。旧ログにないADC・範囲状態は「未記録」と表示します。補正の正否は映像で照合してください。<a href="wall_events.csv">判断CSV</a></p><div style="overflow:auto"><table><thead><tr><th>種類 / 番号</th><th>MCU [ms]</th><th>動画 [s]</th><th>理由 / flags</th><th>左 / 右 [mm]</th><th>前左 / 前右 [mm]</th><th>ADC 左/右/前左/前右</th><th>範囲 左/右/前左/前右</th><th>通過した検査 / 確認距離 [mm]</th><th>補正前 / 目標 / 補正後 [mm]</th><th>受信完備</th></tr></thead><tbody id="wallEvents"></tbody></table></div></div>
+<script>
+const D=PAYLOAD,R=D.report,P=D.pose,B=D.ble,V=document.getElementById('video'),O=document.getElementById('offset'),C=document.getElementById('clockscale'),S=R.sync;
+const markerLabels={red:'赤',yellow:'黄'},markerColours={red:'#ff5050',yellow:'#fff000'};
+O.value=S.video_time_at_mcu_origin_s.toFixed(3);C.value=(S.clock_scale||1).toFixed(6);
+document.getElementById('summary').textContent=`機体 ${R.mouse} / ${R.run_type} / 前＝${markerLabels[R.front_colour]||'未記録'}・後＝${markerLabels[R.rear_colour]||'未記録'} / ${R.cell_mm?R.cell_mm+' mm/マス':'セル単位'} / stride ${R.stride} / 高さ補正なし・マーカー中点`;
+document.getElementById('quality').textContent=`同期 ${S.accepted?'候補を採用（映像で照合してください）':'未確定・手動照合が必要'} / 追跡率 ${(100*R.pose_coverage).toFixed(1)}% / 盤面登録 ${(100*R.calibration_coverage).toFixed(1)}% / BLE最大間隔 ${R.ble_max_gap_ms.toFixed(0)} ms。カメラ高さ・真下位置・レンズ歪みは未校正。車軸位置・真の横滑り角は未確定です。`;
+document.getElementById('poseStats').textContent=`追跡 ${R.valid_frames}/${R.sampled_frames} フレーム。赤い矢印＝マーカーの前向き。欠測の区間は線でつなぎません。`;
+const fmt=(v,n=2)=>Number.isFinite(v)?v.toFixed(n):'欠測';
+for(const q of D.wall_events||[]){const tr=document.createElement('tr'),get=k=>q[k]??'未記録';for(const val of [q.kind+' / '+q.index,get('ms'),fmt(q.video_s),get('reason')+' / '+get('flags'),get('sl_mm')+' / '+get('sr_mm'),get('fl_mm')+' / '+get('fr_mm'),['l','r','fl','fr'].map(s=>get('adc_'+s)).join(' / '),['l','r','fl','fr'].map(s=>get('range_'+s+'_name')||'未記録').join(' / '),get('passed_checks')+' / '+get('candidate_mm'),get('before_mm')+' / '+get('target_mm')+' / '+get('after_mm'),q.diagnostics_complete?'はい':'未確認・欠落あり']){const td=document.createElement('td');td.textContent=val;tr.appendChild(td);}if(Number.isFinite(q.video_s))tr.onclick=()=>{V.currentTime=Math.max(0,(q.video_s-S.video_time_at_mcu_origin_s)/(S.clock_scale||1)*Number(C.value)+Number(O.value)-.3);};document.getElementById('wallEvents').appendChild(tr);}
+function nearest(rows,time,key){let lo=0,hi=rows.length-1;while(lo<hi){let m=(lo+hi)>>1;if(rows[m][key]<time)lo=m+1;else hi=m;}if(lo&&Math.abs(rows[lo-1][key]-time)<Math.abs(rows[lo][key]-time))lo--;return rows[lo];}
+for(const q of R.turns){const tr=document.createElement('tr');for(const val of [q.turn,q.direction,fmt(q.start_video_s),fmt(q.command_angle_deg,1),fmt(q.gyro_angle_deg,1),fmt(q.video_apparent_angle_deg,1),fmt(q.gyro_tracking_rms_rad_s),fmt(q.video_coverage*100,0)+'%',fmt(q.ble_max_gap_ms,0)]){let td=document.createElement('td');td.textContent=val;tr.appendChild(td);}tr.onclick=()=>{V.currentTime=Math.max(0,(q.start_video_s-S.video_time_at_mcu_origin_s)/(S.clock_scale||1)*Number(C.value)+Number(O.value)-.2);};document.getElementById('turns').appendChild(tr);}
+const board=document.getElementById('board'),ctx=board.getContext('2d'),scale=60,pad=30;
+function drawBoard(p){ctx.clearRect(0,0,600,600);ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1;for(let i=0;i<=9;i++){ctx.beginPath();ctx.moveTo(pad+i*scale,pad);ctx.lineTo(pad+i*scale,pad+9*scale);ctx.moveTo(pad,pad+i*scale);ctx.lineTo(pad+9*scale,pad+i*scale);ctx.stroke();}ctx.strokeStyle='#aaa';ctx.lineWidth=3;for(const w of D.walls){if(w.state!=='wall')continue;let k=w.grid_line,c=w.cell_segment;ctx.beginPath();if(w.axis==='H'){ctx.moveTo(pad+c*scale,pad+k*scale);ctx.lineTo(pad+(c+1)*scale,pad+k*scale);}else{ctx.moveTo(pad+k*scale,pad+c*scale);ctx.lineTo(pad+k*scale,pad+(c+1)*scale);}ctx.stroke();}ctx.strokeStyle='#2375b5';ctx.lineWidth=1.5;ctx.beginPath();let prev=null;for(const r of P){if(!r.pose_valid){prev=null;continue;}let x=pad+r.x_cell*scale,y=pad+r.y_cell*scale;if(prev&&r.time_video_s-prev.time_video_s<.08)ctx.lineTo(x,y);else ctx.moveTo(x,y);prev=r;}ctx.stroke();if(p&&p.pose_valid){let x=pad+p.x_cell*scale,y=pad+p.y_cell*scale;ctx.fillStyle='#cc3030';ctx.beginPath();ctx.arc(x,y,5,0,2*Math.PI);ctx.fill();ctx.strokeStyle='#cc3030';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+20*Math.cos(p.heading_cw_rad),y+20*Math.sin(p.heading_cw_rad));ctx.stroke();}}
+board.onclick=e=>{const q=board.getBoundingClientRect(),x=((e.clientX-q.left)/q.width*600-pad)/scale,y=((e.clientY-q.top)/q.height*600-pad)/scale;let nearestP=null,dist=Infinity;for(const p of P){if(!p.pose_valid)continue;let d=(p.x_cell-x)**2+(p.y_cell-y)**2;if(d<dist){dist=d;nearestP=p;}}if(nearestP)V.currentTime=nearestP.time_video_s;};
+function overlay(p){const c=document.getElementById('overlay'),g=c.getContext('2d');c.width=V.videoWidth||1280;c.height=V.videoHeight||720;g.clearRect(0,0,c.width,c.height);if(!p||!p.pose_valid)return;g.lineWidth=2;g.strokeStyle='#33ff88';g.beginPath();g.moveTo(p.rear_image_x,p.rear_image_y);g.lineTo(p.front_image_x,p.front_image_y);g.stroke();for(const [x,y,col] of [[p.front_image_x,p.front_image_y,markerColours[R.front_colour]||'#ff5050'],[p.rear_image_x,p.rear_image_y,markerColours[R.rear_colour]||'#fff000']]){g.strokeStyle=col;g.beginPath();g.arc(x,y,7,0,Math.PI*2);g.stroke();}}
+const fullStart=B[0].time_ms/1000,fullEnd=B[B.length-1].time_ms/1000;
+const W=D.wall_signals||[],Z=document.getElementById('zoom');
+const colours=['#2375b5','#d44747','#269453','#8b55ae'];
+const wallSeries=i=>({colour:colours[i],maxGap:.025,data:W.map(w=>[w[0]/1000,w[1+i]])});
+const distanceSeries=[0,1,2,3].map(wallSeries);
+const adcSeries=[0,1,2,3].map(i=>({colour:colours[i],maxGap:.025,data:W.map(w=>[w[0]/1000,w[5+i]])}));
+const rangeSeries=[0,1,2,3].map(i=>({colour:colours[i],step:true,maxGap:.025,data:W.map(w=>[w[0]/1000,Number.isFinite(w[9])?(w[9]>>(3*i))&7:null])}));
+const motionSeries=[{colour:'#46627d',step:true,maxGap:.025,data:W.map(w=>[w[0]/1000,w[10]])}];
+const graphCache=new Map();
+let viewStart=fullStart,viewEnd=fullEnd,plotAnchor=fullStart,lastDraw=-1,lastOffset=null;
+const currentMcu=()=>S.mcu_origin_ms/1000+(V.currentTime-Number(O.value))/Number(C.value);
+function updateWindow(){const half=Number(Z.value);viewStart=half?Math.max(fullStart,plotAnchor-half):fullStart;viewEnd=half?Math.min(fullEnd,plotAnchor+half):fullEnd;if(viewEnd<=viewStart){viewStart=fullStart;viewEnd=fullEnd;}graphCache.clear();lastDraw=-1;}
+Z.onchange=()=>{plotAnchor=currentMcu();updateWindow();};
+V.addEventListener('seeked',()=>{if(Number(Z.value)){plotAnchor=currentMcu();updateWindow();}});
+function graph(id,series,label,mcu){
+  const c=document.getElementById(id),g=c.getContext('2d');
+  const cacheKey=[O.value,C.value,viewStart,viewEnd].join('/');
+  let cached=graphCache.get(id);
+  const xx=t=>45+(t-viewStart)/(viewEnd-viewStart)*930;
+  if(!cached||cached.key!==cacheKey){
+    const surface=document.createElement('canvas');surface.width=1000;surface.height=160;
+    const x=surface.getContext('2d');
+    const visible=series.map(s=>({...s,data:s.data.filter(r=>r[0]>=viewStart-.1&&r[0]<=viewEnd+.1)}));
+    let min=0,max=0;for(const s of visible)for(const r of s.data)if(Number.isFinite(r[1])){min=Math.min(min,r[1]);max=Math.max(max,r[1]);}
+    const span=Math.max(max-min,.1);min-=span*.1;max+=span*.1;
+    const yy=v=>140-(v-min)/(max-min)*110;
+    x.save();x.beginPath();x.rect(45,20,930,125);x.clip();
+    for(const s of visible){x.strokeStyle=s.colour;x.beginPath();let prev=null;
+      for(const r of s.data){if(!Number.isFinite(r[1])){prev=null;continue;}
+        if(prev&&r[0]-prev[0]<(s.maxGap||.1)){if(s.step)x.lineTo(xx(r[0]),yy(prev[1]));x.lineTo(xx(r[0]),yy(r[1]));}
+        else x.moveTo(xx(r[0]),yy(r[1]));prev=r;
+      }x.stroke();
+    }
+    if(['wallDistance','adc','range','motion'].includes(id)){
+      x.globalAlpha=.45;
+      for(const e of D.wall_events||[]){if(e.kind==='turn_decision'&&e.reason==='normal')continue;
+        const t=Number(e.ms)/1000;if(!Number.isFinite(t)||t<viewStart||t>viewEnd)continue;
+        x.strokeStyle=e.kind==='turn_decision'?'#8b55ae':['accepted','limited'].includes(e.reason)?'#269453':'#d44747';
+        x.beginPath();x.moveTo(xx(t),20);x.lineTo(xx(t),145);x.stroke();
+      }
+    }x.restore();
+    x.fillStyle='#172331';x.fillText(label,10,14);x.fillText(max.toFixed(1),3,35);x.fillText(min.toFixed(1),3,140);
+    x.fillText((viewStart-S.mcu_origin_ms/1000).toFixed(2)+' s',45,157);
+    x.fillText((viewEnd-S.mcu_origin_ms/1000).toFixed(2)+' s',920,157);
+    cached={key:cacheKey,surface};graphCache.set(id,cached);
+  }
+  g.clearRect(0,0,1000,160);g.drawImage(cached.surface,0,0);
+  g.strokeStyle='#c44';g.beginPath();g.moveTo(xx(mcu),20);g.lineTo(xx(mcu),145);g.stroke();
+  c.onclick=e=>{const a=c.getBoundingClientRect(),t=viewStart+((e.clientX-a.left)/a.width*1000-45)/930*(viewEnd-viewStart);V.currentTime=Math.max(0,(t-S.mcu_origin_ms/1000)*Number(C.value)+Number(O.value));};
+}
+function tick(){
+  if(Math.abs(V.currentTime-lastDraw)>.007||O.value+'/'+C.value!==lastOffset){
+    lastDraw=V.currentTime;lastOffset=O.value+'/'+C.value;
+    const mcu=currentMcu(),half=Number(Z.value);
+    if(half&&(mcu<viewStart||mcu>viewEnd)&&mcu>=fullStart&&mcu<=fullEnd){plotAnchor=mcu;updateWindow();}
+    const raw=nearest(P,V.currentTime,'time_video_s'),p=raw&&Math.abs(raw.time_video_s-V.currentTime)<.04?raw:null;
+    const b=nearest(B,mcu*1000,'time_ms');
+    const w=W.length?nearest(W,mcu*1000,0):null;
+    const sampled=w&&Math.abs(w[0]-mcu*1000)<=12?w:null;
+    const names=['範囲内','近限界','遠限界','無効','未観測'];
+    const states=sampled&&Number.isFinite(sampled[9])?[0,1,2,3].map(i=>names[(sampled[9]>>(3*i))&7]||'不明').join(' / '):'未記録・範囲外';
+    overlay(p);drawBoard(p);
+    document.getElementById('readout').textContent=`動画 ${fmt(V.currentTime,3)} s / MCU推定 ${fmt(mcu*1000,0)} ms
+位置 ${p&&p.pose_valid?`(${fmt(p.x_cell)}, ${fmt(p.y_cell)}) セル / (${fmt(p.x_apparent_mm,1)}, ${fmt(p.y_apparent_mm,1)}) mm / 向き ${fmt(p.heading_cw_rad*180/Math.PI,1)}°（時計回り）`:'欠測'}
+ログ速度 ${fmt(b['ego.velo'],3)} m/s / 角速度 ${fmt(b['ego.rad_velo'])} rad/s
+ADC 左/右/前左/前右 ${sampled?[5,6,7,8].map(i=>fmt(sampled[i],0)).join(' / '):'未記録・範囲外'}
+範囲状態 ${states} / 走行パターン ${sampled?fmt(sampled[10],0):'未記録'}`;
+    const base=(key,col)=>({colour:col,data:B.map(b=>[b.time_ms/1000,b[key]])});
+    const vid=key=>({colour:'#ed8b22',data:P.map(p=>[S.mcu_origin_ms/1000+(p.time_video_s-Number(O.value))/Number(C.value),p[key]])});
+    graph('speed',[base('ideal.velo','#8996a4'),base('ego.velo','#2375b5'),vid('speed_video_apparent_m_s')],'速度 [m/s]・動画は高さ未補正',mcu);
+    graph('omega',[base('ideal.rad_velo','#8996a4'),base('ego.rad_velo','#2375b5'),vid('omega_video_ccw_rad_s')],'角速度 [rad/s]・反時計回り正',mcu);
+    graph('led',[vid('blue_led_pixels')],'機体周囲の青画素数（欠測区間は未検出）',mcu);
+    graph('wallDistance',distanceSeries,'壁距離 [mm] 左/右/前左/前右',mcu);
+    graph('adc',adcSeries,'距離変換前のADC差分 [count] 左/右/前左/前右',mcu);
+    graph('range',rangeSeries,'範囲状態 [0〜4] 左/右/前左/前右',mcu);
+    graph('motion',motionSeries,'走行パターン [t_run_pattern]',mcu);
+  }
+  requestAnimationFrame(tick);
+}
+
+document.getElementById('align').onclick=()=>O.value=V.currentTime.toFixed(3);
+document.getElementById('save').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({video_time_at_mcu_origin_s:Number(O.value),mcu_origin_ms:S.mcu_origin_ms,clock_scale:Number(C.value),source:'manual video review alignment'},null,2)],{type:'application/json'}));a.download='sync_manual.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};tick();
+</script></html>
