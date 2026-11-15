@@ -2,3 +2,25 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+.pytest_cache/
+
+# Local analysis outputs. Keep source code in analysis/ and tests/.
+# Existing tracked measurement records are unaffected by these rules.
+/turn_analysis/**/*.csv
+/turn_analysis/**/*.json
+/turn_analysis/**/*.png
+/turn_analysis/**/*.jpg
+/turn_analysis/**/*.jpeg
+/turn_analysis/**/*.mp4
+/turn_analysis/**/*.mov
+/turn_analysis/**/*.avi
+/turn_analysis/**/*.mkv
+/turn_analysis/**/*.webm
+/turn_analysis/**/*.log
+/turn_analysis/**/analysis_source.py
+/turn_analysis/**/candidate_syntax.cpp
+
+# Preserve reproducible input lists and adopted parameter summaries.
+!/turn_analysis/**/manifest.csv
+!/turn_analysis/**/adopted_summary.csv
+!/turn_analysis/**/adopted_summary.json

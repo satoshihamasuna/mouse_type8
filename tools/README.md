@@ -13,7 +13,22 @@
 - `tools/tests/` — Pythonツールのユニットテスト
 - `tools/logs/` — 取得ログと解析結果（Git管理対象外）
 - `tools/maze_data/` — 迷路データ
-- `tools/turn_analysis/` — ターン解析レポート
+- `tools/turn_analysis/` — ターン解析の根拠文書・候補ヘッダーとローカル生成結果
+
+## Git管理の範囲
+
+解析ツール本体、テスト、README、機体別の候補ヘッダーはGit管理対象です。
+`tools/turn_analysis/`に生成されるCSV・JSON・画像・動画・検証ログ、
+解析ソースの保存コピー`analysis_source.py`と構文確認用`candidate_syntax.cpp`は除外します。
+入力一覧の`manifest.csv`と採用値集計の`adopted_summary.csv`／`.json`は例外として残します。
+レポート内の図や詳細データへのリンクはローカルの生成結果を参照する場合があります。
+採用根拠として図や詳細結果も共有する場合は、必要なファイルだけを確認して個別に追加してください。
+
+`tools/logs/`の取得データは従来どおり除外します。
+迷路データ`tools/maze_data/`、走行パターン`tools/turnpatterns/`、テスト用データには、
+拡張子だけによる一律の除外を適用しません。
+既にGitで追跡されている過去の解析資料は今回のignore追加では追跡解除しません。
+ignoreはファイルを削除する機能ではなく、ローカルの測定・解析結果はそのまま保持します。
 
 ## セットアップ
 
