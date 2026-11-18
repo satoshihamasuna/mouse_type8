@@ -65,6 +65,27 @@ typedef struct{
 	float heading_disagreement_limit_rad;
 }t_wall_ekf_param;
 
+// 特徴点による進行方向誤差の観測。分散はm²、基準位置はmm。
+struct WallFeatureEkfParam {
+	bool enabled;
+	float initial_std_m, walk_m_sqrt_m;
+	float wall_std_m, pillar_std_m, pillar_reference_mm;
+	float maximum_gain, nis_limit;
+};
+
+// 斜めの特徴点基準。入口/直線/出口 × 壁端/柱極小 × 左/右。未校正は数値0でも採用しない。
+struct DiagonalFeatureReference {
+	bool calibrated;
+	float reference_mm, period_mm;
+	float lateral_sensitivity, heading_sensitivity_mm;
+};
+struct DiagonalFeatureShadowParam {
+	float initial_std_mm, walk_mm_sqrt_mm, wall_std_mm, pillar_std_mm;
+	float window_mm, maximum_step_mm, maximum_gain, nis_limit;
+	float maximum_lateral_mm, maximum_heading_rad, maximum_yaw_radps, same_pillar_mm;
+	DiagonalFeatureReference reference[3][2][2];
+};
+
 // 斜めは断続的な柱への接近を観測する。距離[m]、姿勢[rad]。
 typedef struct{
 	float reference_m;
@@ -130,5 +151,19 @@ typedef struct{
 	float quiet_yaw_radps;
 	float exit_residual_limit_rad;
 }t_search_turn_guard_param;
+
+// 直進の壁／独立柱を分ける空間履歴。距離[mm]。
+struct StraightFeatureHistoryParam {
+    float open_mm, open_travel_mm, maximum_excursion_mm;
+};
+
+// 柱の極値検出（ADCまたは距離）の試験条件。値は機体別設定へ配置。
+struct PillarPeakParam {
+    bool adc_peak, require_open;
+    float open_mm, open_travel_mm, near_mm;
+    float approach_signal, approach_travel_mm, top_tolerance, signal_epsilon;
+    float confirm_signal, confirm_travel_mm, return_fraction;
+    float maximum_after_peak_mm, separation_mm, release_signal;
+};
 
 #endif /* PARAMS_TYPEDEF_WALL_PARAM_H_ */

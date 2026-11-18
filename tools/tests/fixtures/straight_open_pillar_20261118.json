@@ -1,0 +1,13 @@
+{
+  "mouse": "A",
+  "source_run": "run_000227_736724",
+  "profile": "plain500",
+  "wall_ekf_mode": "shadow",
+  "source_sha256": "b3b0596fba67c38fa3c8b5dd4c0814c503dae509fee9ef95ef9bf1c4bb9b0619",
+  "from_ms": 137077,
+  "through_ms": 137349,
+  "source_period_ms": 5,
+  "fixture_rows": 55,
+  "physical_features": "Right Open->Open pillars at board (3,8), (2,8); raw ADC near calibration floor.",
+  "replay_limit": "1ms interpolation is a sensitivity replay on the recorded path, not original ADC IRQ samples or a new closed-loop run."
+}

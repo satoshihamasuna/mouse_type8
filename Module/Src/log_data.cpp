@@ -324,14 +324,16 @@ void LogData::logging()
 		sample[7] = float_to_half(Vehicle_type8::getInstance().ego.radian.get());
 
 		// 位置・滑り
+		const auto turn_position = Vehicle_type8::getInstance().pose.log_position();
 		sample[8] = float_to_half(Vehicle_type8::getInstance().ideal.length.get());
 		sample[9] = float_to_half(Vehicle_type8::getInstance().ego.length.get());
 		sample[10] = float_to_half(Vehicle_type8::getInstance().ideal.x_point.get());
 		sample[11] = float_to_half(Vehicle_type8::getInstance().ego.x_point.get());
-		sample[12] = float_to_half(Vehicle_type8::getInstance().ideal.turn_x.get());
-		sample[13] = float_to_half(Vehicle_type8::getInstance().ego.turn_x.get());
-		sample[14] = float_to_half(Vehicle_type8::getInstance().ideal.turn_y.get());
-		sample[15] = float_to_half(Vehicle_type8::getInstance().ego.turn_y.get());
+		// 旧列順・左/前の符号を維持。未実装だったideal位置列は予約値0。
+		sample[12] = float_to_half(0.0f);
+		sample[13] = float_to_half(turn_position.y_mm);
+		sample[14] = float_to_half(0.0f);
+		sample[15] = float_to_half(turn_position.x_mm);
 		sample[16] = float_to_half(Vehicle_type8::getInstance().ideal.turn_slip_theta.get());
 		sample[17] = float_to_half(Vehicle_type8::getInstance().ego.turn_slip_theta.get());
 		sample[18] = float_to_half(Vehicle_type8::getInstance().ideal.horizon_accel.get());
@@ -376,7 +378,7 @@ void LogData::logging()
 		const int16_t adc[] = {ir.sen_l.value, ir.sen_r.value, ir.sen_fl.value, ir.sen_fr.value};
 		LogLayout::set_ir_fields(sample, adc, LogLayout::pack_ranges(
 			static_cast<uint8_t>(ir.sen_l.range_state), static_cast<uint8_t>(ir.sen_r.range_state),
-			static_cast<uint8_t>(ir.sen_fl.range_state), static_cast<uint8_t>(ir.sen_fr.range_state)),
+			static_cast<uint8_t>(ir.sen_fl.range_state), static_cast<uint8_t>(ir.sen_fr.range_state),ir.straight_pillar_guard_mask),
 			static_cast<uint16_t>(CtrlTask_type8::getInstance().motion_pattern_get()));
 
 		if(log_enable == True)

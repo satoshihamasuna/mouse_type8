@@ -15,6 +15,7 @@ public:
 	bool HandStartDetected(int16_t threshold);
 	void ResetWallCornerDetection() {}
 	void ResetStraightWallControl() {}
+	void ClearDiagonalPoseRoute() {}
 };
 #include "hand_start_detected.inc"
 
@@ -27,8 +28,8 @@ struct Controller { void I_param_reset() {} };
 struct Vehicle {
 	float V_r = 0, V_l = 0;
 	int motor_out_r = 0, motor_out_l = 0;
-	Field turn_slip_k;
 	struct { Controller speed_ctrl, omega_ctrl; } Vehicle_controller;
+	struct { void start() {} void stop() {} } pose;
 	void ego_initialize() {}
 	void ideal_initialize() {}
 	void suctionStop() {}
@@ -42,7 +43,7 @@ class Motion {
 public:
 	Vehicle *vehicle = &::vehicle;
 	IrSensTask *ir_sens = &ir;
-	struct { void clear() {} } search_turn_heading;
+	struct { void clear() {} } search_turn_heading, shortest_turn_heading;
 	struct {
 		Field velo, max_velo, end_velo, accel, deccel, end_length, length_accel, length_deccel;
 		Field rad_accel, rad_deccel, rad_max_velo, end_radian, radian_accel, radian_deccel;

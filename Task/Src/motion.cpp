@@ -53,6 +53,38 @@ float get_turn2_table_value(float time_period_ms,float time_ms)
 	return turn_table_value;
 }
 */
+void Motion::RecordPillarCandidates()
+{
+	WallPositionCorrection::FeatureContext context;
+	const auto pattern=motion_pattern_get();
+	const bool straight_entry = pattern==Long_turnR90 || pattern==Long_turnL90 || pattern==Long_turnR180 || pattern==Long_turnL180
+		|| pattern==Turn_in_R45 || pattern==Turn_in_L45 || pattern==Turn_in_R135 || pattern==Turn_in_L135;
+	if (straight_entry && motion_plan.turn_state.get()==Prev_Turn && turn_motion_param.param) {
+		context.valid=true; context.phase=WallPositionCorrection::Phase::StraightEntry;
+		context.wall_reference_mm=ir_sens->StraightNodeFeatureReference(detect_wall_edge_st);
+		context.expected_side=turn_motion_param.param->turn_dir==Turn_R ? 2U:1U;
+	}
+	else if (motion_control_get()==STRAIGHT_STATE && (pattern==Straight || pattern==Run_Pause
+		|| motion_plan.turn_state.get()==Post_Turn)) context=ir_sens->StraightRunFeatureContext();
+	if (motion_control_get()==DIAGONAL_STATE) {
+		context.valid=true; context.expected_side=0;
+		context.phase=WallPositionCorrection::Phase::DiagonalRun;
+		if (pattern!=Diagonal && pattern!=Run_Pause && turn_motion_param.param) {
+			if (motion_plan.turn_state.get()==Prev_Turn) {
+				context.phase=WallPositionCorrection::Phase::DiagonalEntry;
+				context.expected_side=turn_motion_param.param->turn_dir==Turn_R?2U:1U;
+			} else if (motion_plan.turn_state.get()==Post_Turn) {
+				context.phase=WallPositionCorrection::Phase::DiagonalExit;
+				context.expected_side=turn_motion_param.param->turn_dir==Turn_L?2U:1U;
+			} else context.valid=false;
+		}
+		if (context.valid) ir_sens->RecordDiagonalWallFeatures(vehicle,static_cast<uint8_t>(pattern),context.phase,context.expected_side);
+	}
+	ir_sens->RecordPillarCandidates(vehicle,static_cast<uint8_t>(motion_pattern_get()),
+		static_cast<uint8_t>(motion_control_get()),static_cast<uint8_t>(motion_plan.turn_state.get()),
+		motion_pattern_get() == Search_st_section && motion_plan.end_length.get() == 90.0f,context);
+}
+
 void Motion::SetIdeal_wall_control()
 {
 	//ir_sens->set_sidewall_control_cnt(vehicle->ideal.velo.get());
@@ -90,11 +122,9 @@ void Motion::Adjust_wall_corner()
 			float straight_diff = 0.0f;
 
 			if(ir_sens->r_wall_corner == True)	{
-				Indicate_LED((0x01 << 4)|Return_LED_Status());
 				ir_sens->RecordStraightCorner(true, vehicle->ego.length.get());
 			}
 			if(ir_sens->l_wall_corner == True)	{
-				Indicate_LED((0x01 << 5)|Return_LED_Status());
 				ir_sens->RecordStraightCorner(false, vehicle->ego.length.get());
 			}
 
@@ -151,16 +181,17 @@ void Motion::Adjust_wall_corner()
 		if ((ir_sens->r_wall_corner == True || ir_sens->l_wall_corner == True) && vehicle->ideal.velo.get() > 0.2f)
 		{
 			if (ir_sens->r_wall_corner == True) {
-				Indicate_LED((0x01 << 4)|Return_LED_Status());
 				ir_sens->RecordDiagonalCorner(true, vehicle->ego.length.get());
 			}
 			if (ir_sens->l_wall_corner == True) {
-				Indicate_LED((0x01 << 5)|Return_LED_Status());
 				ir_sens->RecordDiagonalCorner(false, vehicle->ego.length.get());
 			}
 			float lateral_mm = 0.0f;
-			if (motion_plan.end_length.get() > DIAG_SECTION && ir_sens->DiagonalCornerLateralCorrection(lateral_mm) && lateral_mm != 0.0f) {
+			if (!ir_sens->DiagonalPoseControlsCorner() && motion_plan.end_length.get() > DIAG_SECTION
+				&& ir_sens->DiagonalCornerLateralCorrection(lateral_mm) && lateral_mm != 0.0f) {
+				ir_sens->RebaseDiagonalFeatureCandidates(0.0f,vehicle->ego.radian.get());
 				vehicle->ego.radian.set(0.0f);
+				vehicle->pose.correct_passage(0.0f,lateral_mm-vehicle->ego.x_point.get());
 				vehicle->ego.x_point.set(lateral_mm);
 				Indicate_LED((0x0f)|Return_LED_Status());
 			}
@@ -216,14 +247,9 @@ void  Motion::SetIdeal_search_straight(){
 			vehicle->ideal.accel.set(0.0f);
 		}
 
-		if(ir_sens->Division_Wall_Correction() == True)
-		{
-			if(motion_plan.end_length.get()== 90.0f)
-			{
-				ApplyWallPositionCorrection(SEARCH_CORRECTION, ir_sens->StraightCornerDelay(),
-					WallPositionCorrection::Phase::SearchStraight,
-					(ir_sens->l_wall_corner == True ? 1U : 0U) | (ir_sens->r_wall_corner == True ? 2U : 0U));
-			}
+		if(motion_plan.end_length.get() == 90.0f) {
+			ApplyWallPositionCorrection(WallPositionCorrection::search_reference(ir_sens->WallEdgeMode_Get()),
+				WallPositionCorrection::Phase::SearchStraight);
 		}
 
 		if(ir_sens->r_wall_corner == True || ir_sens->l_wall_corner == True )
@@ -231,11 +257,9 @@ void  Motion::SetIdeal_search_straight(){
 			float straight_diff = 0.0f;
 
 			if(ir_sens->r_wall_corner == True)	{
-				Indicate_LED((0x01 << 4)|Return_LED_Status());
 				ir_sens->RecordStraightCorner(true, vehicle->ego.length.get());
 			}
 			if(ir_sens->l_wall_corner == True)	{
-				Indicate_LED((0x01 << 5)|Return_LED_Status());
 				ir_sens->RecordStraightCorner(false, vehicle->ego.length.get());
 			}
 
@@ -308,10 +332,7 @@ void  Motion::SetIdeal_search_straight(){
 			vehicle->ego.length.set(0.0f);
 			vehicle->ego.radian.set(0.0f);
 
-			vehicle->ego.turn_x.set(0.0f);
-			vehicle->ego.turn_y.set(0.0f);
-			vehicle->ideal.turn_x.set(0.0f);
-			vehicle->ideal.turn_y.set(0.0f);
+			vehicle->reset_turn_position_for_log();
 
 			motion_pattern_set(Run_Pause);
 			motion_control_set(STRAIGHT_STATE);
@@ -332,6 +353,7 @@ void  Motion::SetIdeal_search_turn()
 	vehicle->ideal.accel.set(0.0f);
 	if(motion_plan.turn_state.get() == Prev_Turn)
 	{
+		ir_sens->EnableIrSensStraight();
 		motion_control_set(STRAIGHT_STATE);
 		if(vehicle->ego.length.get() <= (turn_motion_param.param->Lstart + motion_plan.fix_prev_run.get()))
 		{
@@ -358,6 +380,9 @@ void  Motion::SetIdeal_search_turn()
 
 	if(motion_plan.turn_state.get() == turn_motion_param.param->turn_dir)
 	{
+		// Search slaloms use a separate path from the shortest-turn handlers.
+		// Discard straight edge/peak candidates before the first rotating sample.
+		ir_sens->IrSensMotion_Set(TURN_IRSENS);
 		motion_control_set(SLATURN_STATE);
 		if((run_time_ms_get() - turn_start_time_ms) < motion_plan.turn_time_ms.get())
 		{
@@ -391,19 +416,16 @@ void  Motion::SetIdeal_search_turn()
 			vehicle->ego.radian.set(0.0f);
 			vehicle->ego.turn_slip_theta.set(0.0f);
 
-			vehicle->ideal.turn_x_dash.set(0.0f);
-			vehicle->ideal.turn_y_dash.set(0.0f);
-			vehicle->ideal.turn_x.set(0.0f);
-			vehicle->ideal.turn_y.set(0.0f);
 			vehicle->ideal.x_point.set(0.0f);
 
-			vehicle->ego.turn_x_dash.set(0.0f);
-			vehicle->ego.turn_y_dash.set(0.0f);
-			vehicle->ego.turn_x.set(0.0f);
-			vehicle->ego.turn_y.set(0.0f);
+			vehicle->reset_turn_position_for_log();
 			vehicle->ego.x_point.set(0.0f);
 
 			motion_plan.turn_state.set(Post_Turn);
+			// Switch first: a mode change clears wall pose, so prime the measured
+			// exit heading only after entering the new straight sensor frame.
+			vehicle->pose.complete_turn(DEG2RAD(turn_motion_param.param->degree));
+			ir_sens->EnableIrSensStraight();
 			ir_sens->PrimeSearchTurnExit(search_turn_heading.residual_rad(), search_turn_heading.valid(),
 				search_turn_heading.variance_rad2());
 			turn_start_time_ms = 0.0f;
@@ -437,10 +459,7 @@ void  Motion::SetIdeal_search_turn()
 			vehicle->ego.length.set(-((turn_motion_param.param->Lend + motion_plan.fix_post_run.get()) - vehicle->ego.length.get()));
 			vehicle->ego.radian.set(0.0f);
 
-			vehicle->ego.turn_x.set(0.0f);
-			vehicle->ego.turn_y.set(0.0f);
-			vehicle->ideal.turn_x.set(0.0f);
-			vehicle->ideal.turn_y.set(0.0f);
+			vehicle->reset_turn_position_for_log();
 
 			motion_pattern_set(Run_Pause);
 			motion_control_set(STRAIGHT_STATE);
@@ -456,6 +475,9 @@ void  Motion::SetIdeal_search_turn()
 
 void Motion::SetIdeal_straight()
 {
+	const auto feature_frame=ir_sens->StraightRunFeatureContext();
+	if (feature_frame.valid && ir_sens->FeatureEkfEnabled())
+		ApplyWallPositionCorrection(feature_frame.wall_reference_mm,WallPositionCorrection::Phase::StraightRun);
 	motion_control_set(STRAIGHT_STATE);
 	float offset = 0.0f;
 	if(motion_plan.max_velo.get() > motion_plan.end_velo.get())
@@ -537,13 +559,11 @@ void Motion::SetIdeal_straight()
 			//vehicle->ideal.rad_velo.set(0.0f);
 			vehicle->ideal.radian.set(0.0f);
 
+			ir_sens->RebaseStraightFeatureCandidates(-motion_plan.end_length.get());
 			vehicle->ego.length.set(-(motion_plan.end_length.get() - vehicle->ego.length.get()));
 			vehicle->ego.radian.set(0.0f);
 
-			vehicle->ego.turn_x.set(0.0f);
-			vehicle->ego.turn_y.set(0.0f);
-			vehicle->ideal.turn_x.set(0.0f);
-			vehicle->ideal.turn_y.set(0.0f);
+			vehicle->reset_turn_position_for_log();
 
 			//vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 			//vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
@@ -628,6 +648,7 @@ void Motion::SetIdeal_backward()
 void Motion::SetIdeal_diagonal		( )
 {
 	motion_control_set(DIAGONAL_STATE);
+	ir_sens->BeginDiagonalPoseRoute(vehicle,vehicle->ego.length.get(),vehicle->ego.radian.get());
 
 	float offset = 0.0f;
 	if(motion_plan.max_velo.get() > motion_plan.end_velo.get())
@@ -691,6 +712,7 @@ void Motion::SetIdeal_diagonal		( )
 		else
 		{
 			vehicle->ideal.accel.set(0.0f);
+			ir_sens->RebaseDiagonalFeatureCandidates(-vehicle->ego.length.get(),vehicle->ego.radian.get(),vehicle->ego.x_point.get());
 			vehicle->ego_integral_init();
 			vehicle->ideal_integral_init();
 
@@ -748,19 +770,13 @@ void Motion::SetIdeal_pivot_turn()
 		vehicle->ego.radian.set(0.0f);
 		vehicle->ego.turn_slip_theta.set(0.0f);
 
-		vehicle->ideal.turn_x_dash.set(0.0f);
-		vehicle->ideal.turn_y_dash.set(0.0f);
-		vehicle->ideal.turn_x.set(0.0f);
-		vehicle->ideal.turn_y.set(0.0f);
 		vehicle->ideal.x_point.set(0.0f);
 
-		vehicle->ego.turn_x_dash.set(0.0f);
-		vehicle->ego.turn_y_dash.set(0.0f);
-		vehicle->ego.turn_x.set(0.0f);
-		vehicle->ego.turn_y.set(0.0f);
+		vehicle->reset_turn_position_for_log();
 		vehicle->ego.x_point.set(0.0f);
 		motion_pattern_set(Run_Pause);
 		motion_control_set(PIVTURN_STATE);
+		vehicle->pose.complete_turn(motion_plan.end_radian.get());
 		Init_Motion_stop_brake(400);
 		return;
 	}
@@ -840,16 +856,9 @@ void Motion::SetIdeal_fix_wall		( )
 		vehicle->ego.radian.set(0.0f);
 		vehicle->ego.turn_slip_theta.set(0.0f);
 
-		vehicle->ideal.turn_x_dash.set(0.0f);
-		vehicle->ideal.turn_y_dash.set(0.0f);
-		vehicle->ideal.turn_x.set(0.0f);
-		vehicle->ideal.turn_y.set(0.0f);
 		vehicle->ideal.x_point.set(0.0f);
 
-		vehicle->ego.turn_x_dash.set(0.0f);
-		vehicle->ego.turn_y_dash.set(0.0f);
-		vehicle->ego.turn_x.set(0.0f);
-		vehicle->ego.turn_y.set(0.0f);
+		vehicle->reset_turn_position_for_log();
 		vehicle->ego.x_point.set(0.0f);
 		motion_pattern_set(Run_Pause);
 		Init_Motion_stop_brake(100);
@@ -865,10 +874,16 @@ void Motion::SetIdeal_fix_wall		( )
 
 void Motion::SetIdeal_suction_start		( )
 {
+	// Hold a stationary target throughout fan spin-up. Moving wall steering
+	// must not supply a yaw/acceleration target during this stop.
+	vehicle->ideal.velo.set(0.0f);
+	vehicle->ideal.accel.set(0.0f);
+	vehicle->ideal.rad_velo.set(0.0f);
+	vehicle->ideal.rad_accel.set(0.0f);
+	vehicle->ideal.rad_jerk.set(0.0f);
 	if(run_time_ms_get() <= run_time_limit_ms_get())
 	{
 		ir_sens->EnableIrSens();
-		ir_sens->SetWallControl_RadVelo(vehicle, deltaT_ms);
 		vehicle->V_suction.set(vehicle->V_suction.get() + SUCTION_ACC);
 		if(vehicle->V_suction.get() >= motion_plan.suction_value.get())
 		{
@@ -890,16 +905,9 @@ void Motion::SetIdeal_suction_start		( )
 		vehicle->ego.radian.set(0.0f);
 		vehicle->ego.turn_slip_theta.set(0.0f);
 
-		vehicle->ideal.turn_x_dash.set(0.0f);
-		vehicle->ideal.turn_y_dash.set(0.0f);
-		vehicle->ideal.turn_x.set(0.0f);
-		vehicle->ideal.turn_y.set(0.0f);
 		vehicle->ideal.x_point.set(0.0f);
 
-		vehicle->ego.turn_x_dash.set(0.0f);
-		vehicle->ego.turn_y_dash.set(0.0f);
-		vehicle->ego.turn_x.set(0.0f);
-		vehicle->ego.turn_y.set(0.0f);
+		vehicle->reset_turn_position_for_log();
 		vehicle->ego.x_point.set(0.0f);
 		vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 		vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
@@ -945,16 +953,9 @@ void Motion::SetIdeal_stop_brake	( )
 		vehicle->ego.radian.set(0.0f);
 		vehicle->ego.turn_slip_theta.set(0.0f);
 
-		vehicle->ideal.turn_x_dash.set(0.0f);
-		vehicle->ideal.turn_y_dash.set(0.0f);
-		vehicle->ideal.turn_x.set(0.0f);
-		vehicle->ideal.turn_y.set(0.0f);
 		vehicle->ideal.x_point.set(0.0f);
 
-		vehicle->ego.turn_x_dash.set(0.0f);
-		vehicle->ego.turn_y_dash.set(0.0f);
-		vehicle->ego.turn_x.set(0.0f);
-		vehicle->ego.turn_y.set(0.0f);
+		vehicle->reset_turn_position_for_log();
 		vehicle->ego.x_point.set(0.0f);
 
 		vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
@@ -997,10 +998,8 @@ void Motion::SetIdeal_free_rotation_set	()
 		vehicle->ego.radian.set(0.0f);
 		vehicle->ego.turn_slip_theta.set(0.0f);
 
-		vehicle->ego.turn_x.set(0.0f);
-		vehicle->ego.turn_y.set(0.0f);
-		vehicle->ideal.turn_x.set(0.0f);
-		vehicle->ideal.turn_y.set(0.0f);
+		vehicle->reset_turn_position_for_log();
+
 		vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
 		vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
 		motion_exeStatus_set(complete);
@@ -1037,16 +1036,9 @@ void Motion::SetIdeal_enkaigei	( )
 		vehicle->ego.radian.set(0.0f);
 		vehicle->ego.turn_slip_theta.set(0.0f);
 
-		vehicle->ideal.turn_x_dash.set(0.0f);
-		vehicle->ideal.turn_y_dash.set(0.0f);
-		vehicle->ideal.turn_x.set(0.0f);
-		vehicle->ideal.turn_y.set(0.0f);
 		vehicle->ideal.x_point.set(0.0f);
 
-		vehicle->ego.turn_x_dash.set(0.0f);
-		vehicle->ego.turn_y_dash.set(0.0f);
-		vehicle->ego.turn_x.set(0.0f);
-		vehicle->ego.turn_y.set(0.0f);
+		vehicle->reset_turn_position_for_log();
 		vehicle->ego.x_point.set(0.0f);
 
 		vehicle->Vehicle_controller.speed_ctrl.I_param_reset();

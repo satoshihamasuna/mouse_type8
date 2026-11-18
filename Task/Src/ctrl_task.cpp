@@ -99,7 +99,16 @@ void CtrlTask::motion_ideal_param_set()
 			SetIdeal_enkaigei();
 			break;
 		case No_run:
+			break;
 		case Run_Pause:
+			// 前景で次のモーションを設定する間も、同一通路の予測と観測を一度だけ進める。
+			if (motion_control_get()==STRAIGHT_STATE && ir_sens->FeatureEkfEnabled()) {
+				const auto frame=ir_sens->StraightRunFeatureContext();
+				if (frame.valid) {
+					ApplyWallPositionCorrection(frame.wall_reference_mm,WallPositionCorrection::Phase::StraightRun);
+					SetIdeal_wall_control();
+				}
+			}
 			break;
 	}
 }
@@ -108,6 +117,8 @@ void CtrlTask::motion_prev_control()
 {
 	if(is_control_enable() == True)
 	{
+		// Record the preprocessed sample before any length correction/reset.
+		RecordPillarCandidates();
 		motion_ideal_param_set();
 	}
 }
@@ -194,7 +205,17 @@ void CtrlTask::motion_control()
 
 
 			//feedback controll
-			vehicle->sp_feedback.set(vehicle->Vehicle_controller.speed_ctrl.Control(vehicle->ideal.velo.get()		,vehicle->ego.velo.get()	, (float)ctr_deltaT_ms));
+			float feedback_velo = vehicle->ego.velo.get();
+			// During fan spin-up, acceleration vibration must not be interpreted
+			// as wheel motion. Keep encoder-only feedback through the completed
+			// startup's No_run gap; moving motions resume the normal estimate.
+			if (vehicle->suction_flag_get() == True
+				&& (motion_pattern_get() == Suction_start
+					|| (motion_pattern_get() == No_run && motion_control_get() == NOP_STATE))) {
+				feedback_velo = (Encoder_GetProperty_Right().wheel_speed
+					- Encoder_GetProperty_Left().wheel_speed) / 2.0f;
+			}
+			vehicle->sp_feedback.set(vehicle->Vehicle_controller.speed_ctrl.Control(vehicle->ideal.velo.get()		,feedback_velo	, (float)ctr_deltaT_ms));
 			vehicle->om_feedback.set(vehicle->Vehicle_controller.omega_ctrl.Control(vehicle->ideal.rad_velo.get() 	,vehicle->ego.rad_velo.get(), (float)ctr_deltaT_ms));
 
 			//feedforward controll

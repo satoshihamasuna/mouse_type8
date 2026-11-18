@@ -128,6 +128,19 @@ class TurnDiagnosticsParserTests(unittest.TestCase):
         session._finish_run({'result': 'stopped'})
         self.assertFalse(session._run_settings['wall_diagnostics']['complete'])
 
+    def test_pillar_diagnostics_only_attach_to_active_run_and_missing_transfer_stays_incomplete(self):
+        import wall_diagnostics
+        for run_type in ('explore','shortest'):
+            session=self.make_session(run_type);session.state='idle'
+            line=b'PILLAR_STATS schema:1 detector:1 applied:0 total:0 straight:0 diagonal:0 quality_rejected:0 stored:0 dropped:0\r\n'
+            session._text(line);self.assertNotIn('pillar_diagnostics',session._run_settings)
+            session.state='running';session._text(line);session._finish_run({'result':'complete'})
+            self.assertTrue(session._run_settings['pillar_diagnostics']['complete'])
+            session=self.make_session(run_type)
+            session._run_settings['pillar_diagnostics']=wall_diagnostics.empty_pillar_diagnostics()
+            session._finish_run({'result':'stopped'})
+            self.assertFalse(session._run_settings['pillar_diagnostics']['complete'])
+
     def test_only_explicit_motor_stop_hands_bandwidth_to_diagnostics(self):
         session = self.make_session()
         session.state = 'running'; session._streaming = True
@@ -180,7 +193,7 @@ class TurnDiagnosticsParserTests(unittest.TestCase):
                       b'diagonal_updates:1 diagonal_segments:2 diagonal_controller:2 '
                       b'diagonal_fallback_cycles:94 diagonal_front_blocked_cycles:8 '
                       b'diagonal_edge:1 diagonal_edges_right:12 diagonal_edges_left:13 '
-                      b'diagonal_edge_delay_max_mm:2.500\r\n')
+                      b'diagonal_edge_delay_max_mm:2.500 diag_pose_handoffs:1\r\n')
         stats = session._run_settings['wall_control_stats']
         self.assertEqual(stats['diagonal_controller'], '2')
         self.assertEqual(stats['diagonal_fallback_cycles'], '94')
@@ -189,6 +202,7 @@ class TurnDiagnosticsParserTests(unittest.TestCase):
         self.assertEqual(stats['diagonal_edges_right'], '12')
         self.assertEqual(stats['diagonal_edges_left'], '13')
         self.assertEqual(stats['diagonal_edge_delay_max_mm'], '2.500')
+        self.assertEqual(stats['diag_pose_handoffs'], '1')
 
     def test_diagnostic_buffer_is_bounded_and_invalid_header_stays_incomplete(self):
         session = self.make_session()

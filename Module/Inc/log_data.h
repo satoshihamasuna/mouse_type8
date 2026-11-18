@@ -23,9 +23,10 @@ constexpr uint16_t FIELD_COUNT = HALF_FIELDS + ADC_FIELDS + 2;
 constexpr uint16_t RANGE_INDEX = HALF_FIELDS + ADC_FIELDS;
 constexpr uint16_t MOTION_INDEX = RANGE_INDEX + 1;
 
-inline uint16_t pack_ranges(uint8_t left, uint8_t right, uint8_t front_left, uint8_t front_right)
+inline uint16_t pack_ranges(uint8_t left, uint8_t right, uint8_t front_left, uint8_t front_right, uint8_t pillar_guard_mask = 0)
 {
-    return (left & 7U) | ((right & 7U) << 3) | ((front_left & 7U) << 6) | ((front_right & 7U) << 9);
+    return (left & 7U) | ((right & 7U) << 3) | ((front_left & 7U) << 6) | ((front_right & 7U) << 9)
+        | ((pillar_guard_mask & 3U) << 12);
 }
 
 inline void set_ir_fields(half_float *words, const int16_t *adc, uint16_t ranges, uint16_t motion)
@@ -85,7 +86,7 @@ typedef struct __attribute__((packed))
 	uint16_t index;
     half_float data[LogLayout::HALF_FIELDS];
     int16_t adc[LogLayout::ADC_FIELDS]; // sen_l/r/fl/fr.value: 距離変換前の点灯/消灯ADC差分
-    uint16_t ir_range_states; // L/R/FL/FR各3 bit。0範囲内/1近限界/2遠限界/3無効/4未観測
+    uint16_t ir_range_states; // L/R/FL/FR各3 bit。bit12/13は直進の左/右Open起点保護。
     uint16_t motion_pattern;
 } log_frame_t;
 

@@ -32,6 +32,19 @@ def frame(sequence=0, time_ms=100, period_ms=20, *, legacy=False, v2=False):
 
 
 class DecoderTests(unittest.TestCase):
+    def test_reserved_range_bits_preserve_open_origin_guard_without_new_columns(self):
+        values=list(values_v4());values[-2] |= 3 << 12
+        payload=struct.pack('<4sIIH49e4h2H',b'L8S4',0,100,5,*values)
+        wire=payload+struct.pack('<H',binascii.crc_hqx(payload,0xffff))
+        sample=log.StreamDecoder().feed(wire)[0]
+        packed=int(sample.values[-2])
+        self.assertEqual((packed >> 12) & 3,3)
+        self.assertEqual([(packed >> (3*i)) & 7 for i in range(4)],[1,4,2,4])
+        output=io.StringIO();capture=log.CsvCapture(output);capture.feed(wire)
+        row=next(csv.DictReader(io.StringIO(output.getvalue())))
+        self.assertEqual(int(row['ir.range_states']),2209 | (3 << 12))
+        self.assertEqual(len(row),60)
+
     def test_mixed_stream_preserves_text_split_by_binary_frames(self):
         text = []
         decoder = log.StreamDecoder()

@@ -48,6 +48,7 @@ target_link_options(${BUILD_UNIT_0_NAME} PRIVATE
 target_sources(${BUILD_UNIT_0_NAME} PRIVATE
   # User defined sources
   "Task/Src/zirconia_wall_control.cpp"
+  "Task/Src/diagonal_pose.cpp"
   "Module/Src/log_stream.cpp"
   "Module/Src/remote_explore.cpp"
   "Module/Src/interrupt_timing.cpp"

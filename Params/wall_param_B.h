@@ -15,6 +15,8 @@
 #define WALL_PARAM_B_H_
 
 #include "Params/typedef_wall_param.h"
+#include "Params/mouse_config.h"
+#include "Task/Inc/diagonal_pose.h"
 
 // zirconia移植元の初期値。距離[m]、速度[m/s]、姿勢[rad]。
 const static t_wall_control_param wall_control_param = {
@@ -91,12 +93,23 @@ const static t_wall_edge_param wall_edge_param = {
 };
 
 // Bのエッジ位置補正ソフト上限。未実機評価。Aの測定値を転用した設定ではない。
-// 順序: 直進入口、斜め入口、直進出口、斜め出口。[許容残差mm, 最大補正mm, 融合率]
-const static t_wall_position_param wall_position_param[5] = {
+// 順序: 直進入口、斜め入口、従来の直進出口、斜め出口、探索直進、最短の連続直進、斜め直線。[許容残差mm, 最大補正mm, 融合率]
+const static t_wall_position_param wall_position_param[7] = {
 	{8.0f, 4.0f, 1.0f}, {12.0f, 3.0f, 0.5f},
 	{16.0f, 8.0f, 1.0f}, {16.0f, 4.0f, 0.5f},
 	{8.0f, 4.0f, 0.5f}, // 探索直進: 従来の8 mm窓・半量補正
+	{8.0f, 4.0f, 0.5f}, // 最短の出口から連続する直進（機体別校正が済むまで無効）。
+	{8.0f, 3.0f, 0.5f}, // 斜め直線の枠組み。実適用は常に無効。
 };
+
+// Bも独立した未校正モデル。Aの位置基準・姿勢感度を流用しない。
+const static DiagonalFeatureShadowParam diagonal_feature_shadow_param = {
+	4.0f, 0.15f, 4.0f, 4.0f, 8.0f, 3.0f, 0.5f, 9.0f,
+	8.0f, 0.08726646f, 2.0f, 30.0f, {}
+};
+
+// Bの横・角度観測は独立校正待ち。
+const static DiagonalPose::Parameters diagonal_pose_param = {};
 
 // Bの斜め柱通過の試作値。Aの実測位置校正を転用していない。
 const static t_diagonal_edge_param diagonal_edge_param = {
@@ -136,6 +149,35 @@ const static t_search_turn_guard_param search_turn_guard_param = {
 	0.034906585f,	// aligned_rad
 	0.5f,	// quiet_yaw_radps
 	0.2617994f,	// exit_residual_limit_rad
+};
+
+// 壁切れ・柱のShadow試験条件。初期値を保持し、機体別に管理する。
+const static t_wall_edge_param wall_edge_trial_param = {
+    65.0f, 62.0f, 12.0f, // crossing, arm_range, arm_travel [mm]
+    66.0f, 0.5f, 8.0f, 32U, 4U, 6.0f, 2.0f,
+};
+
+// Bは未測定。Aの基準位置を転用しない。
+const static float wall_edge_trial_search_reference_mm = SEARCH_CORRECTION;
+
+// Bの特徴点位置は未校正。Aの採用位置をBへ適用しない。
+const static WallFeatureEkfParam wall_feature_ekf_param = {
+    false, .004f, .005f, .003f, .004f, 0.0f, .5f, 9.0f,
+};
+
+// 2026-11-14 B探索run_153203: section28左の広い独立柱を保持する試験値。
+// Aの32mmでは壁切れへ混同するため、BはOpen後の往復を40mmまで追跡する。
+constexpr static StraightFeatureHistoryParam straight_feature_history_param = {78.0f, 12.0f, 40.0f};
+
+const static PillarPeakParam straight_pillar_param = {
+    true, true, straight_feature_history_param.open_mm, straight_feature_history_param.open_travel_mm, 80.0f,
+    100.0f, 1.0f, 8.0f, 1.0f, 50.0f, 1.0f, .35f,
+    50.0f, 30.0f, 50.0f,
+};
+const static PillarPeakParam diagonal_pillar_param = {
+    false, false, 78.0f, 0.0f, 60.0f,
+    1.0f, 1.0f, .25f, .025f, 3.0f, 1.0f, 1.0f,
+    60.0f, 20.0f, 5.0f,
 };
 
 #endif /* WALL_PARAM_B_H_ */

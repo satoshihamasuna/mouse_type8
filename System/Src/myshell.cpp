@@ -29,6 +29,7 @@
 #include "Peripheral/Inc/ir_sensor.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 typedef int (*USRCMDFUNC)(int argc, char **argv);
 
@@ -51,6 +52,9 @@ static int usrcmd_search(int argc, char **argv);
 static int usrcmd_interface(int argc, char **argv);
 static int usrcmd_irsens(int argc, char **argv);
 static int usrcmd_wall_ekf(int argc, char **argv);
+static int usrcmd_wall_edge(int argc, char **argv);
+static int usrcmd_turn_ekf(int argc, char **argv);
+static int usrcmd_pose(int argc, char **argv);
 typedef struct {
 	const char *cmd;
 	const char *desc;
@@ -73,6 +77,9 @@ static const cmd_table_t cmdlist[] = {
 	{ "interface", "check IMU and photo sensor values.", usrcmd_interface },
 	{ "irsens", "Print IR values, distances and averages: irsens count [interval_ms].", usrcmd_irsens },
 	{ "wall_ekf", "Straight wall EKF: show / legacy / shadow / control (idle only).", usrcmd_wall_ekf },
+	{ "turn_ekf", "Turn pose EKF: show / legacy / shadow / control / reset (idle only).", usrcmd_turn_ekf },
+	{ "pose", "Local/world pose: show / reset [x_mm y_mm yaw_deg] (reset idle only).", usrcmd_pose },
+	{ "wall_edge", "Wall edge position trial: show / legacy / shadow / control (idle only).", usrcmd_wall_edge },
 	{ "ir_sensor", "Alias for irsens count [interval_ms].", usrcmd_irsens }
 };
 
@@ -404,6 +411,113 @@ static int usrcmd_info(int argc, char **argv)
     return -1;
 }
 
+static int usrcmd_pose(int argc, char **argv)
+{
+    const bool show=argc==1 || (argc==2 && ntlibc_strcmp(argv[1],"show")==0);
+    const bool reset=(argc==2 || argc==5) && ntlibc_strcmp(argv[1],"reset")==0;
+    if (!show && !reset) { printf("pose show|reset [x_mm y_mm yaw_deg]\r\n"); return -1; }
+    PoseFrames::Pose origin;
+    if (reset && argc==5) {
+        float values[3];
+        for(unsigned i=0;i<3;++i) {
+            char *end=nullptr;values[i]=strtof(argv[i+2],&end);
+            if (end==argv[i+2] || *end!='\0' || !isfinite(values[i]) || fabsf(values[i])>1000000.0f) {
+                printf("POSE_ERROR invalid_origin\r\n"); return -1;
+            }
+        }
+        origin={values[0],values[1],values[2]*0.017453292519943295f};
+    }
+    const uint32_t mask=__get_PRIMASK();
+    __disable_irq();
+    if (reset && (CtrlTask_type8::getInstance().is_control_enable()==True
+        || CtrlTask_type8::getInstance().motion_exeStatus_get()==execute)) {
+        __set_PRIMASK(mask);printf("POSE_ERROR busy\r\n");return -1;
+    }
+    auto &frames=CtrlTask_type8::getInstance().return_vehicleObj()->pose;
+    if (reset && !frames.set_start(origin)) {
+        __set_PRIMASK(mask);printf("POSE_ERROR busy\r\n");return -1;
+    }
+    const auto pose=frames.snapshot();
+    __set_PRIMASK(mask);
+    printf("POSE active:%u valid:%u motion:%lu frame:%lu phase:%u world_x_mm:%.4f world_y_mm:%.4f world_yaw_rad:%.6f local_s_mm:%.4f local_e_mm:%.4f local_yaw_rad:%.6f origin_x_mm:%.4f origin_y_mm:%.4f origin_yaw_rad:%.6f reference_yaw_rad:%.6f samples:%lu corrections:%lu rejected:%lu\r\n",
+        pose.active?1U:0U,pose.valid?1U:0U,static_cast<unsigned long>(pose.motion),static_cast<unsigned long>(pose.frame),
+        static_cast<unsigned>(pose.phase),pose.world.x_mm,pose.world.y_mm,pose.world.yaw_rad,
+        pose.local.x_mm,pose.local.y_mm,pose.local.yaw_rad,pose.origin.x_mm,pose.origin.y_mm,pose.origin.yaw_rad,
+        pose.reference_yaw_rad,static_cast<unsigned long>(pose.samples),static_cast<unsigned long>(pose.corrections),
+        static_cast<unsigned long>(pose.rejected));
+    return 0;
+}
+
+static int usrcmd_turn_ekf(int argc, char **argv)
+{
+	using Mode=TurnPose::Mode;
+	const bool show=argc==1 || (argc==2 && ntlibc_strcmp(argv[1],"show")==0);
+	const bool reset=argc==2 && ntlibc_strcmp(argv[1],"reset")==0;
+	Mode requested=Mode::Control;
+	if(!show && !reset) {
+		if(argc!=2) { printf("turn_ekf show|legacy|shadow|control|reset\r\n");return -1; }
+		if(ntlibc_strcmp(argv[1],"legacy")==0) requested=Mode::Legacy;
+		else if(ntlibc_strcmp(argv[1],"shadow")==0) requested=Mode::Shadow;
+		else if(ntlibc_strcmp(argv[1],"control")!=0) { printf("turn_ekf show|legacy|shadow|control|reset\r\n");return -1; }
+	}
+	const uint32_t mask=__get_PRIMASK();
+	__disable_irq();
+	if(!show && (CtrlTask_type8::getInstance().is_control_enable()==True
+		|| CtrlTask_type8::getInstance().motion_exeStatus_get()==execute)) {
+		__set_PRIMASK(mask);printf("TURN_EKF_ERROR busy\r\n");return -1;
+	}
+	auto &tracker=Interrupt::getInstance().turn_pose();
+	if(reset) tracker.reset();
+	else if(!show) tracker.set_mode(requested);
+	const auto snapshot=tracker.snapshot();
+	__set_PRIMASK(mask);
+	const char *name=snapshot.mode==Mode::Legacy?"legacy":snapshot.mode==Mode::Shadow?"shadow":"control";
+	printf("TURN_EKF mode:%s active:%u applied:%u eligible:%u reason:%s pattern:%u suction:%u bias_ready:%u k:%.5f x_left_mm:%.4f y_forward_mm:%.4f yaw_rad:%.6f beta_rad:%.6f sigma_beta_rad:%.6f sigma_yaw_rad:%.6f nis:%.3f predictions:%lu updates:%lu rejected:%lu applied_ticks:%lu\r\n",
+		name,snapshot.active?1U:0U,snapshot.applied?1U:0U,snapshot.eligible?1U:0U,
+		TurnPose::reason_name(snapshot.reason),static_cast<unsigned>(snapshot.pattern),snapshot.suction?1U:0U,
+		snapshot.bias_ready?1U:0U,snapshot.k_m_s2,snapshot.left_mm,snapshot.forward_mm,
+		snapshot.heading_rad,snapshot.slip_rad,snapshot.sigma_slip_rad,snapshot.sigma_heading_rad,snapshot.nis,
+		static_cast<unsigned long>(snapshot.predictions),static_cast<unsigned long>(snapshot.updates),
+		static_cast<unsigned long>(snapshot.rejected),static_cast<unsigned long>(snapshot.applied_ticks));
+	return 0;
+}
+
+static int usrcmd_wall_edge(int argc, char **argv)
+{
+	using WallPositionCorrection::Mode;
+	auto &ir = IrSensTask_type8::getInstance();
+	auto requested = ir.WallEdgeMode_Get();
+	const bool show = argc == 1 || (argc == 2 && ntlibc_strcmp(argv[1], "show") == 0);
+	if (!show) {
+		if (argc != 2) { printf("wall_edge show|legacy|shadow|control\r\n"); return -1; }
+		if (ntlibc_strcmp(argv[1], "legacy") == 0) requested = Mode::Legacy;
+		else if (ntlibc_strcmp(argv[1], "shadow") == 0) requested = Mode::Shadow;
+		else if (ntlibc_strcmp(argv[1], "control") == 0) requested = Mode::Control;
+		else { printf("wall_edge show|legacy|shadow|control\r\n"); return -1; }
+	}
+	const uint32_t mask = __get_PRIMASK();
+	__disable_irq();
+	if (!show && (CtrlTask_type8::getInstance().is_control_enable() == True
+		|| CtrlTask_type8::getInstance().motion_exeStatus_get() == execute)) {
+		__set_PRIMASK(mask); printf("WALL_EDGE_ERROR busy\r\n"); return -1;
+	}
+	if (!show) ir.WallEdgeMode_Set(requested);
+	const auto mode = ir.WallEdgeMode_Get();
+	const auto generation = ir.wall_edge_generation;
+	__set_PRIMASK(mask);
+	const auto &parameter = WallPositionCorrection::edge_param(mode);
+	printf("WALL_EDGE mode:%s arm_range_mm:%.3f arm_travel_mm:%.3f search_reference_mm:%.3f generation:%lu straight_entry_apply:%u diagonal_entry_apply:%u exit_apply:%u straight_pillar:1 diagonal_pillar:1 pillar_apply:%u pillar_active:%u feature_ekf:%u pillar_entry_apply:%u entry_wall_reference_mm:%.3f entry_pillar_reference_mm:%.3f straight_run_apply:%u diagonal_feature_framework:1 diagonal_feature_shadow:1 diagonal_feature_apply:0\r\n",
+		WallPositionCorrection::mode_name(mode), parameter.arm_range_mm, parameter.arm_travel_mm,
+		WallPositionCorrection::search_reference(mode), static_cast<unsigned long>(generation),
+		mode == Mode::Shadow ? 0U : 1U, mode == Mode::Legacy ? 1U : 0U, mode == Mode::Legacy ? 1U : 0U,
+		ir.FeatureEkfEnabled() && mode==Mode::Control && ir.WallEkfMode_Get()==IrSensTask::WallEkfMode::Control ? 1U : 0U,
+		mode == Mode::Legacy ? 0U : 1U,ir.FeatureEkfEnabled()?1U:0U,
+		ir.FeatureEkfEnabled() && mode==Mode::Control && ir.WallEkfMode_Get()==IrSensTask::WallEkfMode::Control ? 1U:0U,
+		STRAIGHT_CORRECTION,wall_feature_ekf_param.enabled ? STRAIGHT_CORRECTION+wall_feature_ekf_param.pillar_reference_mm-wall_edge_trial_search_reference_mm:0.0f,
+		ir.FeatureEkfEnabled() && mode==Mode::Control && ir.WallEkfMode_Get()==IrSensTask::WallEkfMode::Control ? 1U:0U);
+	return 0;
+}
+
 static int usrcmd_wall_ekf(int argc, char **argv)
 {
 	IrSensTask &ir = IrSensTask_type8::getInstance();
@@ -435,11 +549,13 @@ static int usrcmd_wall_ekf(int argc, char **argv)
 	__set_PRIMASK(mask);
 	const char *name = mode == IrSensTask::WallEkfMode::Legacy ? "legacy"
 		: mode == IrSensTask::WallEkfMode::Shadow ? "shadow" : "control";
-	printf("WALL_EKF mode:%s active:%u e_mm:%.4f psi_rad:%.6f var_e_mm2:%.5f var_psi_rad2:%.7f candidate:%u accepted:%u nis_l:%.3f nis_r:%.3f updates:%lu corners:%lu\r\n",
+	printf("WALL_EKF mode:%s active:%u e_mm:%.4f psi_rad:%.6f var_e_mm2:%.5f var_psi_rad2:%.7f candidate:%u accepted:%u nis_l:%.3f nis_r:%.3f updates:%lu corners:%lu states:3 ds_mm:%.4f var_ds_mm2:%.5f feature_updates:%lu feature_apply:%u\r\n",
 		name, active ? 1U : 0U, static_cast<double>(pose.lateral_m * 1000.0f), static_cast<double>(pose.heading_rad),
 		static_cast<double>(pose.variance_lateral_m2 * 1000000.0f), static_cast<double>(pose.variance_heading_rad2),
 		candidate, static_cast<unsigned>(pose.accepted_mask), static_cast<double>(pose.nis_left), static_cast<double>(pose.nis_right),
-		static_cast<unsigned long>(pose.wall_updates), static_cast<unsigned long>(pose.corner_updates));
+		static_cast<unsigned long>(pose.wall_updates), static_cast<unsigned long>(pose.corner_updates),
+		pose.longitudinal_error_m*1000.0f,pose.variance_longitudinal_m2*1000000.0f,static_cast<unsigned long>(pose.longitudinal_updates),
+		ir.FeatureEkfEnabled() && mode==IrSensTask::WallEkfMode::Control && ir.WallEdgeMode_Get()==WallPositionCorrection::Mode::Control ? 1U:0U);
 	return 0;
 }
 
@@ -1276,7 +1392,8 @@ static CameraRunPermit shell_camera_run_permit;
 static int shell_debug_camera_command(int argc, char **argv)
 {
 	if (argc == 3 && ntlibc_strcmp(argv[2], "show") == 0) {
-		printf("DEBUG_CAMERA_CAP protocol:1 ttl_ms:%lu search_turn:1 search_turn_log_hold:1\r\n", (unsigned long)CameraRunPermit::ttl_ms);
+		printf("DEBUG_CAMERA_CAP protocol:1 ttl_ms:%lu search_turn:1 search_turn_log_hold:1 turn_log_hold:1 saved_log_period_ms:%u saved_log_capacity:%u\r\n",
+			(unsigned long)CameraRunPermit::ttl_ms, (unsigned)LOG_DATA_PRIOD, (unsigned)LOG_DATA_SIZE);
 		return 0;
 	}
 	uint32_t token = 0;
@@ -1680,6 +1797,9 @@ static int shell_debug_turn_command(int argc, char **argv)
 			motion->execute_Motion();
 			Indicate_LED(0x00);
 		}
+		// Retain the latest samples through Lend for both manual and camera
+		// tuning. The following stop includes 400 ms of braking.
+		LogData::getInstance().log_enable = False;
 		if (shell_debug_turn_post_run(motion, pattern, debug->table.velo) != True) {
 			printf("DEBUG_TURN_ERROR unsupported_post_run:%d\r\n", pattern);
 			LogData::getInstance().log_enable = False;

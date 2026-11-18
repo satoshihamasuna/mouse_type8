@@ -20,7 +20,9 @@ inline uint8_t Sensor_IrSamplesReady(void) { return 1U; }
 enum t_sensor_dir { sensor_fl = 3, sensor_fr = 4, sensor_sl = 1, sensor_sr = 2 };
 extern int16_t side_wall_test_adc[5];
 inline int16_t Sensor_GetValue(t_sensor_dir direction) { return side_wall_test_adc[direction]; }
-inline void Indicate_LED(uint8_t) {}
-inline uint8_t Return_LED_Status() { return 0; }
+void Indicate_LED(uint8_t);
+uint8_t Return_LED_Status();
+void Indicate_LED_Pulse(uint8_t mask, uint16_t duration_ms);
+void Update_LED_Pulses(uint16_t elapsed_ms);
 
 #endif

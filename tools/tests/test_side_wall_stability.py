@@ -17,9 +17,11 @@ calibrations are built; only hardware access and the Vehicle container are stubb
 """
 
 import os
+import re
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -79,18 +81,77 @@ class SideWallStabilityTest(unittest.TestCase):
         start = shell.index("static int usrcmd_wall_ekf(int argc, char **argv)\n{")
         stop = shell.index("static void shell_irsens_usage", start)
         (Path(cls.work.name) / "wall_ekf_command.inc").write_text(shell[start:stop], encoding="utf-8")
+        start = shell.index("static int usrcmd_wall_edge(int argc, char **argv)\n{")
+        stop = shell.index("static int usrcmd_wall_ekf(int argc, char **argv)\n{", start)
+        (Path(cls.work.name) / "wall_edge_command.inc").write_text(shell[start:stop], encoding="utf-8")
         motion = (ROOT / "Task/Src/init_motion.cpp").read_text(encoding="utf-8")
         function = motion.index("void Motion::Init_Motion_search_turn")
         start = motion.index("\tfloat diff = vehicle->ego.x_point.get()", function)
         stop = motion.index("\t(motion_plan.end_radian.get() > 0)", start)
         (Path(cls.work.name) / "search_turn_post_correction.inc").write_text(motion[start:stop], encoding="utf-8")
+        runtime = (ROOT / "Task/Src/motion.cpp").read_text(encoding="utf-8")
+        led = (ROOT / "Peripheral/Src/interface.c").read_text(encoding="utf-8")
+        (Path(cls.work.name) / "led_interface.inc").write_text(
+            led[led.index('static uint8_t led_requested_state;'):led.index('t_bool Button_Status()')], encoding="utf-8")
+        for signature, filename in (("void  Motion::SetIdeal_search_turn()", "search_turn_runtime.inc"),
+                                    ("void Motion::SetIdeal_wall_control()", "search_wall_control.inc")):
+            start = runtime.index('{', runtime.index(signature)) + 1
+            stop = runtime.index('\n}\n', start)
+            (Path(cls.work.name) / filename).write_text(runtime[start:stop], encoding="utf-8")
         turn = (ROOT / "Task/Src/turn_motion.cpp").read_text(encoding="utf-8")
-        setters = [line.strip() for line in turn.splitlines()
-                   if 'ApplyWallPositionCorrection(' in line and 'detect_wall_edge_di' in line and ', false)' not in line]
-        assert len(setters) == 4
+        irq = (ROOT / "Module/Src/interrupt.cpp").read_text(encoding="utf-8")
+        for prefix, filename in [('pose_input.heading_prior =', 'heading_prior_input.inc'),
+                                 ('ir_sens.UpdateTurnHeadingPosterior(', 'heading_prior_output.inc')]:
+            begin = irq.index(prefix)
+            end = irq.index(';', begin) + 1
+            (Path(cls.work.name) / filename).write_text(irq[begin:end], encoding='utf-8')
+        setters = [call for call in re.findall(r'ApplyWallPositionCorrection\([^;]+;', turn)
+                   if 'detect_wall_edge_di' in call and 'void Motion::' not in call]
+        assert len(setters) == 2
         code = 'switch (which) {\n' + ''.join('case {}: {}; break;\n'.format(i, line.rstrip(';'))
                                               for i, line in enumerate(setters)) + '}\n'
         (Path(cls.work.name) / "diagonal_turn_delay.inc").write_text(code, encoding="utf-8")
+        start = turn.index('{', turn.index('void Motion::ApplyWallPositionCorrection(')) + 1
+        stop = turn.index('\n}\n', start)
+        (Path(cls.work.name) / "wall_position_apply.inc").write_text(turn[start:stop], encoding="utf-8")
+        for method,filename in [('handleTurnPrev_Straight','shortest_prev.inc'),('handleTurnPrev_Diagonal','shortest_diagonal_prev.inc'),('handleTurnMain','shortest_main.inc'),('SetIdeal_turn_in','shortest_update.inc'),('handleTurnPost_Straight','shortest_post.inc')]:
+            begin=turn.index('{',turn.index('void Motion::'+method))+1
+            end=turn.index('\n}',begin)
+            (Path(cls.work.name)/filename).write_text(turn[begin:end],encoding='utf-8')
+        begin=turn.index('{',turn.index('void Motion::handleTurnPost_Diagonal'))+1
+        end=turn.index('\n}',begin)
+        (Path(cls.work.name)/'diagonal_post.inc').write_text(turn[begin:end],encoding='utf-8')
+        begin=motion.index('if (continue_diagonal_pose) ir_sens->RebaseDiagonalFeatureCandidates')
+        end=motion.index('\n\tmotion_pattern_set(Diagonal)',begin)
+        reset=motion.index('if (!continue_diagonal_pose)',end)
+        stop=motion.index('\n\tir_sens->r_corner_length',reset)
+        (Path(cls.work.name)/'diagonal_resume.inc').write_text(motion[begin:end]+'\n'+motion[reset:stop],encoding='utf-8')
+        for source,filename in [(motion,'long_v90_init.inc'),
+                                ((ROOT/'Task/Src/init_motion2.cpp').read_text(encoding='utf-8'),'variable_long_v90_init.inc')]:
+            begin=source.index('void Motion::Init_Motion_long_turn_v90')
+            prior=source.index('const bool continue_diagonal_pose',begin)
+            prior_end=source.index(';',prior)+1
+            begin=source.index('if (!continue_diagonal_pose) ir_sens->ResetStraightWallControl',prior_end)
+            end=source.index('\n\terror_counter_reset();',begin)
+            (Path(cls.work.name)/filename).write_text(source[prior:prior_end]+'\n'+source[begin:end],encoding='utf-8')
+        begin=runtime.index('{',runtime.index('void Motion::RecordPillarCandidates()'))+1
+        end=runtime.index('\n}',begin)
+        (Path(cls.work.name)/'shortest_record.inc').write_text(runtime[begin:end],encoding='utf-8')
+        begin=runtime.index('ir_sens->RebaseStraightFeatureCandidates(-motion_plan.end_length.get());')
+        end=runtime.index('\n',runtime.index('vehicle->ego.length.set',begin))
+        (Path(cls.work.name)/'shortest_rebase.inc').write_text(runtime[begin:end],encoding='utf-8')
+        begin=runtime.index('const auto feature_frame=',runtime.index('void Motion::SetIdeal_straight()'))
+        end=runtime.index('\n\tmotion_control_set',begin)
+        (Path(cls.work.name)/'shortest_run.inc').write_text(runtime[begin:end],encoding='utf-8')
+        begin=motion.index('const bool continue_wall_pose',motion.index('void Motion::Init_Motion_straight'))
+        end=motion.index('\n\tif(',begin)
+        reset=motion.index('ir_sens->ResetStraightWallControl(continue_wall_pose)',end)
+        stop=motion.index('\n\tir_sens->r_corner_length',reset)
+        (Path(cls.work.name)/'shortest_resume.inc').write_text(motion[begin:end]+'\n'+motion[reset:stop],encoding='utf-8')
+        ctrl=(ROOT/'Task/Src/ctrl_task.cpp').read_text(encoding='utf-8')
+        begin=ctrl.index('case Run_Pause:')+len('case Run_Pause:')
+        end=ctrl.index('\n\t\t\tbreak;',begin)
+        (Path(cls.work.name)/'shortest_pause.inc').write_text(ctrl[begin:end],encoding='utf-8')
         for mouse in ("A", "B"):
             executable = Path(cls.work.name) / ("side-wall-" + mouse + (".exe" if os.name == "nt" else ""))
             invocation = command + [
@@ -98,7 +159,8 @@ class SideWallStabilityTest(unittest.TestCase):
                 "-DMOUSE_" + mouse, "-I", str(TEST_DIR / "side_wall_stubs"),
                 "-I", str(ROOT), "-I", cls.work.name, str(TEST_DIR / "side_wall_stability_harness.cpp"),
                 str(ROOT / "Task" / "Src" / "ir_sens_task.cpp"),
-                str(ROOT / "Task" / "Src" / "zirconia_wall_control.cpp"), "-o", str(executable),
+                str(ROOT / "Task" / "Src" / "zirconia_wall_control.cpp"),
+                str(ROOT / "Task" / "Src" / "diagonal_pose.cpp"), "-o", str(executable),
                 *parameter_sources(mouse),
             ]
             result = subprocess.run(invocation, capture_output=True, text=True,
@@ -119,8 +181,186 @@ class SideWallStabilityTest(unittest.TestCase):
     def test_turn_exit_range_yaw_disagreement_uses_parallel_legacy_control(self):
         self.run_case("ekf-exit-disagreement")
 
+    def test_feature_ekf_nonlinear_prediction_covariance_rebase_and_outliers(self):
+        self.run_case("feature-ekf-math")
+
+    def test_machine_specific_near_pillar_width_does_not_fire_wall_edges_on_either_side(self):
+        self.run_case("machine-pillar-width")
+
+    def test_shortest_entry_uses_real_motion_context_rebase_side_gate_and_rotation_cutoff(self):
+        self.run_case("shortest-feature-entry")
+
+    def test_shortest_cardinal_turn_retains_measured_exit_heading_once_with_fresh_ranges(self):
+        self.run_case("shortest-exit-heading")
+
+    def test_connected_straight_in_diagonal_v90_out_straight_heading_and_covariance(self):
+        self.run_case("motion-heading-chain")
+
+    def test_real_turn_tracker_replaces_heading_marginal_without_double_fusing(self):
+        self.run_case("turn-heading-posterior")
+
+    def test_local_straight_pose_updates_world_without_reapplying_resets_or_travel(self):
+        self.run_case("pose-frame-straight")
+
+    def test_diagonal_out_turn_seeds_straight_heading_only_from_calibrated_fresh_pose(self):
+        self.run_case("shortest-diagonal-exit-heading")
+
+    def test_diagonal_pose_route_count_gaps_and_ambiguity(self):
+        self.run_case("diagonal-pose-route")
+
+    def test_diagonal_pose_turn_handoff_rotates_pose_covariance_and_expires(self):
+        self.run_case("diagonal-pose-handoff")
+
+    def test_diagonal_pose_steering_on_real_ir_and_shadow_fallback(self):
+        self.run_case("diagonal-pose-steering")
+
+    def test_feature_coordinate_review_negative_entry_and_existing_run_origins(self):
+        self.run_case("feature-coordinate-review")
+
+    def test_open_origin_wide_pillar_does_not_steer_as_a_wall_and_preserves_opposite_wall(self):
+        self.run_case("open-origin-wall-control")
+
+    def test_recorded_mouse_a_open_pillars_keep_features_without_false_wall_control(self):
+        # A measured ADC data must not be reused as a B calibration.
+        result = subprocess.run([str(self.executables['A']), 'recorded-open-pillar',
+                                 str(TEST_DIR/'fixtures/straight_open_pillar_20261118.csv')],
+                                capture_output=True, text=True, errors='replace', timeout=15)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_known_feature_injection_preserves_pending_peak_but_unknown_jump_is_rejected(self):
+        self.run_case("feature-coordinate-correction")
+
+    def test_shortest_exit_handoff_periodic_features_and_duplicate_suppression(self):
+        sys.path.insert(0,str(ROOT/'tools'))
+        from ble import wall_diagnostics
+        for mouse,executable in self.executables.items():
+            with self.subTest(mouse=mouse):
+                r=subprocess.run([str(executable),'shortest-feature-exit'],capture_output=True,text=True,errors='replace',timeout=15)
+                self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+                walls=wall_diagnostics.empty_diagnostics();pillars=wall_diagnostics.empty_pillar_diagnostics()
+                for line in r.stdout.splitlines():
+                    if not line.strip():continue
+                    tag,*items=line.split();values=dict(item.split(':',1) for item in items)
+                    if tag in ('PILLAR_STATS','PILLAR_EDGE'):wall_diagnostics.receive_pillar(pillars,tag,values)
+                    else:wall_diagnostics.receive(walls,tag,values)
+                self.assertTrue(wall_diagnostics.validate(walls),walls)
+                self.assertTrue(wall_diagnostics.validate_pillar(pillars),pillars)
+                self.assertEqual(pillars['summary']['applied'],'1' if mouse=='A' else '0')
+                self.assertEqual(pillars['events'][0]['position_phase'],'5')
+
+    def test_diagonal_shadow_model_calibration_pose_gates_and_kalman_proposal_never_apply(self):
+        self.run_case('diagonal-feature-model')
+
+    def test_diagonal_shadow_real_motion_handoff_preserves_pose_and_diagnostics(self):
+        sys.path.insert(0,str(ROOT/'tools'))
+        from ble import wall_diagnostics
+        for mouse,executable in self.executables.items():
+            with self.subTest(mouse=mouse):
+                r=subprocess.run([str(executable),'diagonal-feature-adapter'],capture_output=True,text=True,errors='replace',timeout=15)
+                self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+                walls=wall_diagnostics.empty_diagnostics();pillars=wall_diagnostics.empty_pillar_diagnostics()
+                for line in r.stdout.splitlines():
+                    if not line.strip():continue
+                    tag,*items=line.split();values=dict(item.split(':',1) for item in items)
+                    if tag in ('PILLAR_STATS','PILLAR_EDGE'):wall_diagnostics.receive_pillar(pillars,tag,values)
+                    else:wall_diagnostics.receive(walls,tag,values)
+                self.assertTrue(wall_diagnostics.validate(walls),walls)
+                self.assertTrue(wall_diagnostics.validate_pillar(pillars),pillars)
+                self.assertEqual(pillars['summary']['applied'],'0')
+                self.assertEqual(pillars['events'][0]['position_status'],'uncalibrated')
+                self.assertEqual(pillars['events'][0]['position_phase'],'6')
+                self.assertEqual(pillars['events'][0]['diag_pose_status'],'6' if mouse=='A' else '1')
+                self.assertEqual(pillars['events'][0]['diag_pose_pillar'],'1' if mouse=='A' else '0')
+
+    def test_feature_ekf_real_adc_application_delay_shared_boundary_and_machine_gate(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from ble import wall_diagnostics
+        for mouse, executable in self.executables.items():
+            with self.subTest(mouse=mouse):
+                result=subprocess.run([str(executable),'feature-ekf-adapter'],capture_output=True,text=True,errors='replace',timeout=15)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                data=wall_diagnostics.empty_pillar_diagnostics()
+                for line in result.stdout.splitlines():
+                    if not line.strip():continue
+                    tag,*items=line.split()
+                    if tag in ('PILLAR_STATS','PILLAR_EDGE'):
+                        wall_diagnostics.receive_pillar(data,tag,dict(item.split(':',1) for item in items))
+                self.assertTrue(wall_diagnostics.validate_pillar(data),data)
+                self.assertEqual(data['summary']['applied'],'1' if mouse=='A' else '0')
+
+    def test_all_wall_and_pillar_detectors_indicate_valid_sides_without_latching_or_log_dependency(self):
+        self.run_case("wall-pillar-leds")
+
+    def test_search_turn_runtime_blocks_rotating_edges_and_primes_exit_after_mode_change(self):
+        self.run_case("search-turn-runtime")
+
     def test_wall_position_limits_range_states_and_diagnostic_bounds(self):
         self.run_case("wall-observation-diagnostics")
+
+    def test_wall_edge_trial_rejects_pillar_grazes_but_preserves_continuous_wall_arming(self):
+        self.run_case("wall-edge-trial-detector")
+
+    def test_wall_edge_trial_selects_before_latching_and_keeps_shadow_coordinates_unchanged(self):
+        self.run_case("wall-edge-trial-decision")
+
+    def test_wall_edge_trial_actual_motion_application_does_not_consume_rejected_candidates(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from ble import wall_diagnostics
+        for mouse, executable in self.executables.items():
+            with self.subTest(mouse=mouse):
+                result = subprocess.run([str(executable), "wall-edge-trial-motion"], capture_output=True,
+                                        text=True, errors="replace", timeout=15)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                data = wall_diagnostics.empty_diagnostics()
+                for line in result.stdout.splitlines():
+                    if not line.strip():
+                        continue
+                    tag, *items = line.split()
+                    if tag in ('WALL_CORR_STATS', 'WALL_RANGE_STATS', 'WALL_CORR'):
+                        wall_diagnostics.receive(data, tag, dict(item.split(':', 1) for item in items))
+                self.assertTrue(wall_diagnostics.validate(data), data)
+                self.assertEqual(data['summary']['shadow'], '1')
+                self.assertEqual(data['summary']['stale_generation'], '1')
+                shadow = next(e for e in data['events'] if e['reason'] == 'shadow')
+                self.assertEqual(float(shadow['delta_mm']), 0.0)
+                self.assertEqual(float(shadow['proposed_after_mm']), 11.0)
+
+    def test_wall_edge_trial_shell_changes_only_while_idle_and_resets_old_candidates(self):
+        self.run_case("wall-edge-trial-shell")
+
+    def test_straight_pillar_adc_peaks_need_open_before_and_after_and_work_beyond_range_limit(self):
+        self.run_case("straight-pillar-peak")
+
+    def test_close_open_pillar_is_retained_and_never_becomes_a_wall_edge_on_either_side(self):
+        self.run_case("straight-close-pillar-history")
+
+    def test_straight_feature_history_expires_on_long_walls_and_recovers_after_stops_and_invalid_samples(self):
+        self.run_case("straight-history-recovery")
+
+    def test_diagonal_pillar_keeps_flat_bottom_and_detects_early_peak_without_ten_mm_fill(self):
+        self.run_case("diagonal-pillar-minimum")
+
+    def test_pillar_rearm_requires_global_separation_and_taints_rotating_candidates(self):
+        self.run_case("pillar-quality-rearm")
+
+    def test_pillar_actual_adc_pose_front_snapshots_and_shadow_wire_roundtrip(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from ble import wall_diagnostics
+        for mouse, executable in self.executables.items():
+            with self.subTest(mouse=mouse):
+                result = subprocess.run([str(executable), "pillar-ir-wire"], capture_output=True,text=True,timeout=15)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                data=wall_diagnostics.empty_pillar_diagnostics()
+                for line in result.stdout.splitlines():
+                    parts=line.split()
+                    if parts and parts[0] in ('PILLAR_STATS','PILLAR_EDGE'):
+                        wall_diagnostics.receive_pillar(data,parts[0],dict(p.split(':',1) for p in parts[1:]))
+                self.assertTrue(wall_diagnostics.validate_pillar(data),data)
+                self.assertEqual(data['summary']['diagonal'],'1')
+                self.assertEqual(data['events'][0]['feature'],'diagonal_pillar_minimum')
+                self.assertEqual(float(data['events'][0]['e_mm']),4.0)
+                self.assertLess(int(data['events'][0]['minimum_ms']),int(data['events'][0]['ms']))
+                self.assertEqual(data['events'][0]['reason'],'shadow')
 
     def test_diagonal_edge_uses_a_spatial_reference_and_compensates_confirmation_delay(self):
         self.run_case("diagonal-edge-position")

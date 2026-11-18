@@ -5,15 +5,18 @@
 #include <stdint.h>
 #include "Params/wall_param.h"
 
-// Same passage-relative two states as the host LateralHeadingEkf: left-positive
-// e [m] and psi [rad]. No global XY, velocity or bias states; fixed memory.
+// 通路内の左偏差e[m]、姿勢psi[rad]、encoder進行距離に対する誤差ds[m]。
+// 進行座標を区間ごとにリセットしても、同じ通路のe/psiは保持する。
 class StraightWallEkf {
 public:
     struct Estimate {
         float lateral_m = 0.0f, heading_rad = 0.0f;
         float variance_lateral_m2 = 0.0f, covariance_m_rad = 0.0f, variance_heading_rad2 = 0.0f;
+        float longitudinal_error_m = 0.0f, variance_longitudinal_m2 = 0.0f;
+        float covariance_lateral_longitudinal_m2 = 0.0f, covariance_heading_longitudinal_m_rad = 0.0f;
+        float longitudinal_nis = 0.0f, longitudinal_gain = 0.0f;
         float nis_left = 0.0f, nis_right = 0.0f, unobserved_travel_m = 0.0f;
-        uint32_t wall_updates = 0, corner_updates = 0;
+        uint32_t wall_updates = 0, corner_updates = 0, longitudinal_updates = 0;
         uint8_t accepted_mask = 0;
         bool initialized = false, observed = false;
     };
@@ -29,6 +32,13 @@ public:
         estimate_.variance_heading_rad2 = isfinite(heading_variance_rad2) && heading_variance_rad2 > 0.0f
             ? heading_variance_rad2 : wall_ekf_param.initial_heading_std_rad * wall_ekf_param.initial_heading_std_rad;
         estimate_.initialized = true;
+        reset_longitudinal();
+    }
+    void reset_longitudinal() {
+        estimate_.longitudinal_error_m = 0.0f;
+        estimate_.variance_longitudinal_m2 = wall_feature_ekf_param.initial_std_m * wall_feature_ekf_param.initial_std_m;
+        estimate_.covariance_lateral_longitudinal_m2 = estimate_.covariance_heading_longitudinal_m_rad = 0.0f;
+        estimate_.longitudinal_nis = estimate_.longitudinal_gain = 0.0f;
     }
     bool predict(float ds_m, float delta_yaw_rad, float dt_s) {
         if (!estimate_.initialized || !isfinite(ds_m) || !isfinite(delta_yaw_rad)
@@ -36,13 +46,19 @@ public:
             clear(); return false;
         }
         const float mid = estimate_.heading_rad + delta_yaw_rad * 0.5f;
-        const float f = ds_m * cosf(mid);
         estimate_.lateral_m += ds_m * sinf(mid);
         estimate_.heading_rad += delta_yaw_rad;
-        estimate_.variance_lateral_m2 += 2.0f * f * estimate_.covariance_m_rad
-            + f * f * estimate_.variance_heading_rad2 + wall_ekf_param.lateral_walk_m_sqrt_s * wall_ekf_param.lateral_walk_m_sqrt_s * dt_s;
-        estimate_.covariance_m_rad += f * estimate_.variance_heading_rad2;
-        estimate_.variance_heading_rad2 += wall_ekf_param.heading_walk_rad_sqrt_s * wall_ekf_param.heading_walk_rad_sqrt_s * dt_s;
+        estimate_.longitudinal_error_m += ds_m * (cosf(mid) - 1.0f);
+        const float f[3][3] = {{1.0f, ds_m*cosf(mid), 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, -ds_m*sinf(mid), 1.0f}};
+        float p[3][3], fp[3][3] = {}, next[3][3] = {}; covariance(p);
+        for (unsigned i=0;i<3;++i) for (unsigned j=0;j<3;++j)
+            for (unsigned k=0;k<3;++k) fp[i][j] += f[i][k]*p[k][j];
+        for (unsigned i=0;i<3;++i) for (unsigned j=0;j<3;++j)
+            for (unsigned k=0;k<3;++k) next[i][j] += fp[i][k]*f[j][k];
+        next[0][0] += wall_ekf_param.lateral_walk_m_sqrt_s * wall_ekf_param.lateral_walk_m_sqrt_s * dt_s;
+        next[1][1] += wall_ekf_param.heading_walk_rad_sqrt_s * wall_ekf_param.heading_walk_rad_sqrt_s * dt_s;
+        next[2][2] += wall_feature_ekf_param.walk_m_sqrt_m * wall_feature_ekf_param.walk_m_sqrt_m * fabsf(ds_m);
+        covariance(next, true);
         estimate_.unobserved_travel_m += fabsf(ds_m);
         elapsed_s_ += dt_s;
         return finite();
@@ -100,6 +116,18 @@ public:
             && estimate_.unobserved_travel_m <= wall_ekf_param.coast_limit_m;
     }
     const Estimate &estimate() const { return estimate_; }
+    bool observe_longitudinal(float error_m, float variance_m2) {
+        estimate_.longitudinal_gain = 0.0f;
+        if (!estimate_.initialized || !isfinite(error_m) || !isfinite(variance_m2) || variance_m2 <= 0.0f) return false;
+        const float residual = error_m-estimate_.longitudinal_error_m;
+        estimate_.longitudinal_nis = residual*residual/(estimate_.variance_longitudinal_m2+variance_m2);
+        if (!isfinite(estimate_.longitudinal_nis) || estimate_.longitudinal_nis > wall_feature_ekf_param.nis_limit) return false;
+        if (!correct_state(error_m, variance_m2, 2U, true, wall_feature_ekf_param.maximum_gain)) return false;
+        ++estimate_.longitudinal_updates;
+        return true;
+    }
+    // 推定した誤差をego.lengthへ注入した分だけ、誤差状態を戻す。共分散は保持。
+    void inject_longitudinal(float delta_m) { estimate_.longitudinal_error_m -= delta_m; }
 
 private:
     Estimate estimate_;
@@ -107,7 +135,9 @@ private:
     bool finite() {
         if (isfinite(estimate_.lateral_m) && isfinite(estimate_.heading_rad)
             && isfinite(estimate_.variance_lateral_m2) && isfinite(estimate_.covariance_m_rad)
-            && isfinite(estimate_.variance_heading_rad2)) return true;
+            && isfinite(estimate_.variance_heading_rad2) && isfinite(estimate_.longitudinal_error_m)
+            && isfinite(estimate_.variance_longitudinal_m2) && isfinite(estimate_.covariance_lateral_longitudinal_m2)
+            && isfinite(estimate_.covariance_heading_longitudinal_m_rad)) return true;
         clear(); return false;
     }
     float nis(float value, float variance) const {
@@ -120,18 +150,43 @@ private:
             && nis(value, variance) <= wall_ekf_param.nis_limit;
     }
     bool correct(float value, float variance, bool infer_heading = true) {
-        const float p00 = estimate_.variance_lateral_m2, p01 = estimate_.covariance_m_rad;
-        const float p11 = estimate_.variance_heading_rad2;
-        const float k0 = p00 / (p00 + variance), k1 = infer_heading ? p01 / (p00 + variance) : 0.0f;
-        const float residual = value - estimate_.lateral_m, a = 1.0f - k0;
-        estimate_.lateral_m += k0 * residual;
-        estimate_.heading_rad += k1 * residual;
-        // Joseph covariance update; symmetric storage of the 2x2 matrix.
-        estimate_.variance_lateral_m2 = a * a * p00 + k0 * k0 * variance;
-        estimate_.covariance_m_rad = a * (p01 - k1 * p00) + k0 * k1 * variance;
-        estimate_.variance_heading_rad2 = p11 - 2.0f * k1 * p01 + k1 * k1 * (p00 + variance);
+        if (!correct_state(value, variance, 0U, infer_heading)) return false;
         estimate_.unobserved_travel_m = 0.0f;
         estimate_.observed = true;
+        return finite();
+    }
+    void covariance(float p[3][3], bool write = false) {
+        if (write) {
+            estimate_.variance_lateral_m2=p[0][0]; estimate_.covariance_m_rad=(p[0][1]+p[1][0])*.5f;
+            estimate_.variance_heading_rad2=p[1][1]; estimate_.variance_longitudinal_m2=p[2][2];
+            estimate_.covariance_lateral_longitudinal_m2=(p[0][2]+p[2][0])*.5f;
+            estimate_.covariance_heading_longitudinal_m_rad=(p[1][2]+p[2][1])*.5f;
+        } else {
+            p[0][0]=estimate_.variance_lateral_m2; p[0][1]=p[1][0]=estimate_.covariance_m_rad;
+            p[1][1]=estimate_.variance_heading_rad2; p[2][2]=estimate_.variance_longitudinal_m2;
+            p[0][2]=p[2][0]=estimate_.covariance_lateral_longitudinal_m2;
+            p[1][2]=p[2][1]=estimate_.covariance_heading_longitudinal_m_rad;
+        }
+    }
+    bool correct_state(float value, float variance, unsigned axis, bool infer_heading, float maximum_gain=1.0f) {
+        float p[3][3], k[3], a[3][3], ap[3][3]={}, next[3][3]={}; covariance(p);
+        const float denominator=p[axis][axis]+variance;
+        if (!isfinite(denominator) || denominator <= 0.0f || maximum_gain <= 0.0f || maximum_gain > 1.0f) return false;
+        for (unsigned i=0;i<3;++i) k[i]=p[i][axis]/denominator;
+        if (!infer_heading) k[1]=0.0f;
+        const float scale=k[axis]>maximum_gain ? maximum_gain/k[axis] : 1.0f;
+        for (auto &gain:k) gain*=scale;
+        const float residual=value-(axis==0 ? estimate_.lateral_m : estimate_.longitudinal_error_m);
+        estimate_.lateral_m+=k[0]*residual; estimate_.heading_rad+=k[1]*residual; estimate_.longitudinal_error_m+=k[2]*residual;
+        if (axis==2) estimate_.longitudinal_gain=k[2];
+        // Joseph form, fixed 3x3 storage. No heap allocation in the IRQ.
+        for (unsigned i=0;i<3;++i) for (unsigned j=0;j<3;++j) a[i][j]=(i==j?1.0f:0.0f)-(j==axis?k[i]:0.0f);
+        for (unsigned i=0;i<3;++i) for (unsigned j=0;j<3;++j) for (unsigned l=0;l<3;++l) ap[i][j]+=a[i][l]*p[l][j];
+        for (unsigned i=0;i<3;++i) for (unsigned j=0;j<3;++j) {
+            for (unsigned l=0;l<3;++l) next[i][j]+=ap[i][l]*a[j][l];
+            next[i][j]+=k[i]*k[j]*variance;
+        }
+        covariance(next,true);
         return finite();
     }
 };

@@ -220,6 +220,10 @@ int main(int argc, char **argv)
 	half_float sample[LogStream::FIELD_COUNT];
 	for(uint16_t i = 0; i < LogStream::FIELD_COUNT; ++i) sample[i].bitPattern = 0x3c00 + i;
 	const int16_t adc[] = {-32768, -7, 2049, 32767};
+	for(uint8_t guard=0;guard<4;++guard) {
+		const auto packed=LogLayout::pack_ranges(1,4,2,4,guard);
+		assert((packed&0x0fffU)==2209U && (packed>>12)==guard);
+	}
 	LogLayout::set_ir_fields(sample, adc, LogLayout::pack_ranges(1, 4, 2, 4), 7);
 	LogStream::enqueue_sample(sample, tick);
 	assert(transfers.empty()); // ADC enqueue never starts DMA or computes a CRC.

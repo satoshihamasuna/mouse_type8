@@ -5,6 +5,7 @@
 #include "Component/Inc/typedef.h"
 #include "Core/Inc/main.h"
 #include "Task/Inc/run_typedef.h"
+#include "Task/Inc/wall_position_correction.h"
 enum t_direction { North = 0, Dir_None = 4 };
 struct t_position { uint8_t x, y; t_direction dir; };
 #define MAZE_GOAL_X 7
@@ -21,8 +22,12 @@ public:
 		uint32_t cycles = 0, used = 0, updates = 0, segments = 0, fallback = 0, front_blocked = 0;
 		uint32_t edges_right = 0, edges_left = 0;
 		float edge_delay_max_mm = 0.0f;
+		uint32_t pose_control_cycles = 0;
+		uint32_t pose_handoffs = 0;
+		float pose_omega_max_radps = 0.0f;
 	} stats;
 	int IrSensor_Avg() { return test_sensor; }
+	WallPositionCorrection::Mode WallEdgeMode_Get() const { return WallPositionCorrection::Mode::Legacy; }
 	void ResetDiagonalWallDiagnostics() { stats = DiagonalWallStats{}; }
 	DiagonalWallStats DiagonalWallDiagnostics() const { assert(!test_shortest_running); return stats; }
 };

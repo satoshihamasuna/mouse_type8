@@ -6,6 +6,7 @@
 // Distance values retain the legacy clamped mm representation. State comes
 // from ADC endpoints BEFORE interpolation; an exact calibrated endpoint is valid.
 enum class IrRangeState : uint8_t { InRange = 0, NearLimit = 1, FarLimit = 2, Invalid = 3, Unknown = 4 };
+constexpr float IR_SIDE_MIN_MM = 25.0f;
 
 inline IrRangeState ir_range_state(int16_t adc, const int16_t *table, int count)
 {

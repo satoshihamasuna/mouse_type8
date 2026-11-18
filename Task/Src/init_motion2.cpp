@@ -14,6 +14,8 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 										 float end_velo, float acc,
 										 const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
 {
+	const bool continue_wall_pose = motion_control_get() == STRAIGHT_STATE
+		&& motion_is_enable_get() == True && ir_sens->CanContinueStraightWallPose();
 	if(motion_exeStatus_get() == error)
 	{
 		Motion_error_handling();
@@ -64,15 +66,14 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 	vehicle->ego.length.init();
 	vehicle->ego.radian.init();
 	//vehicle->ego.x_point.init();
-	vehicle->ego.turn_x.init();
-	vehicle->ego.turn_y.init();
+	vehicle->reset_turn_position_for_log();
 	vehicle->ego.turn_slip_theta.init();
 
 	vehicle->ideal.length.init();
 	vehicle->ideal.radian.init();
 	//vehicle->ideal.x_point.init();
-	vehicle->ideal.turn_x.init();
-	vehicle->ideal.turn_y.init();
+
+
 	vehicle->ideal.turn_slip_theta.init();
 	*/
 
@@ -116,9 +117,9 @@ void Motion::Init_Motion_turn_in		(const t_param *turn_param,t_run_pattern run_p
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
-	ir_sens->ResetStraightWallControl();
+	ir_sens->ResetStraightWallControl(continue_wall_pose, true);
 	ir_sens->EnableIrSensStraight();
-	ir_sens->Division_Wall_Correction_Reset();
+	ir_sens->Division_Wall_Correction_Reset(continue_wall_pose);
 
 	error_counter_reset();
 }
@@ -127,6 +128,7 @@ void Motion::Init_Motion_turn_out		(	const t_param *turn_param,t_run_pattern run
 											float end_velo, float acc,
 											const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
 {
+	const bool continue_diagonal_pose = motion_control_get()==DIAGONAL_STATE && motion_is_enable_get()==True;
 	if(motion_exeStatus_get() == error)
 	{
 		Motion_error_handling();
@@ -176,15 +178,14 @@ void Motion::Init_Motion_turn_out		(	const t_param *turn_param,t_run_pattern run
 	vehicle->ego.length.init();
 	vehicle->ego.radian.init();
 	//vehicle->ego.x_point.init();
-	vehicle->ego.turn_x.init();
-	vehicle->ego.turn_y.init();
+	vehicle->reset_turn_position_for_log();
 	vehicle->ego.turn_slip_theta.init();
 
 	vehicle->ideal.length.init();
 	vehicle->ideal.radian.init();
 	//vehicle->ideal.x_point.init();
-	vehicle->ideal.turn_x.init();
-	vehicle->ideal.turn_y.init();
+
+
 	vehicle->ideal.turn_slip_theta.init();
 	*/
 
@@ -228,7 +229,7 @@ void Motion::Init_Motion_turn_out		(	const t_param *turn_param,t_run_pattern run
 	run_time_limit_ms_reset();
 
 	ir_sens->EnableIrSensDiagonal();
-	ir_sens->Division_Wall_Correction_Reset();
+	ir_sens->Division_Wall_Correction_Reset(continue_diagonal_pose);
 
 	error_counter_reset();
 }
@@ -237,6 +238,8 @@ void Motion::Init_Motion_long_turn	(	const t_param *turn_param,t_run_pattern run
 		float end_velo, float acc,
 		const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
 {
+	const bool continue_wall_pose = motion_control_get() == STRAIGHT_STATE
+		&& motion_is_enable_get() == True && ir_sens->CanContinueStraightWallPose();
 	if(motion_exeStatus_get() == error)
 	{
 		Motion_error_handling();
@@ -286,15 +289,14 @@ void Motion::Init_Motion_long_turn	(	const t_param *turn_param,t_run_pattern run
 	vehicle->ego.length.init();
 	vehicle->ego.radian.init();
 	//vehicle->ego.x_point.init();
-	vehicle->ego.turn_x.init();
-	vehicle->ego.turn_y.init();
+	vehicle->reset_turn_position_for_log();
 	vehicle->ego.turn_slip_theta.init();
 
 	vehicle->ideal.length.init();
 	vehicle->ideal.radian.init();
 	//vehicle->ideal.x_point.init();
-	vehicle->ideal.turn_x.init();
-	vehicle->ideal.turn_y.init();
+
+
 	vehicle->ideal.turn_slip_theta.init();
 	*/
 
@@ -374,9 +376,9 @@ void Motion::Init_Motion_long_turn	(	const t_param *turn_param,t_run_pattern run
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
-	ir_sens->ResetStraightWallControl();
+	ir_sens->ResetStraightWallControl(continue_wall_pose);
 	ir_sens->EnableIrSensStraight();
-	ir_sens->Division_Wall_Correction_Reset();
+	ir_sens->Division_Wall_Correction_Reset(continue_wall_pose);
 
 	error_counter_reset();
 }
@@ -385,6 +387,7 @@ void Motion::Init_Motion_turn_v90		(	const t_param *turn_param,t_run_pattern run
 											float end_velo, float acc,
 											const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
 {
+	const bool continue_diagonal_pose = motion_control_get()==DIAGONAL_STATE && motion_is_enable_get()==True;
 	if(motion_exeStatus_get() == error)
 	{
 		Motion_error_handling();
@@ -434,15 +437,14 @@ void Motion::Init_Motion_turn_v90		(	const t_param *turn_param,t_run_pattern run
 	vehicle->ego.length.init();
 	vehicle->ego.radian.init();
 	//vehicle->ego.x_point.init();
-	vehicle->ego.turn_x.init();
-	vehicle->ego.turn_y.init();
+	vehicle->reset_turn_position_for_log();
 	vehicle->ego.turn_slip_theta.init();
 
 	vehicle->ideal.length.init();
 	vehicle->ideal.radian.init();
 	//vehicle->ideal.x_point.init();
-	vehicle->ideal.turn_x.init();
-	vehicle->ideal.turn_y.init();
+
+
 	vehicle->ideal.turn_slip_theta.init();
 	*/
 
@@ -469,7 +471,7 @@ void Motion::Init_Motion_turn_v90		(	const t_param *turn_param,t_run_pattern run
 
 	//ir_sens->EnableIrSensStraight();
 	ir_sens->EnableIrSensDiagonal();
-	ir_sens->Division_Wall_Correction_Reset();
+	ir_sens->Division_Wall_Correction_Reset(continue_diagonal_pose);
 
 	error_counter_reset();
 }
@@ -479,6 +481,7 @@ void Motion::Init_Motion_long_turn_v90		(	const t_param *turn_param,t_run_patter
 												float end_velo, float acc,
 												const t_pid_gain *sp_gain  ,const t_pid_gain *om_gain  )
 {
+	const bool continue_diagonal_pose = motion_control_get()==DIAGONAL_STATE && motion_is_enable_get()==True;
 	if(motion_exeStatus_get() == error)
 	{
 		Motion_error_handling();
@@ -528,15 +531,14 @@ void Motion::Init_Motion_long_turn_v90		(	const t_param *turn_param,t_run_patter
 	vehicle->ego.length.init();
 	vehicle->ego.radian.init();
 	//vehicle->ego.x_point.init();
-	vehicle->ego.turn_x.init();
-	vehicle->ego.turn_y.init();
+	vehicle->reset_turn_position_for_log();
 	vehicle->ego.turn_slip_theta.init();
 
 	vehicle->ideal.length.init();
 	vehicle->ideal.radian.init();
 	//vehicle->ideal.x_point.init();
-	vehicle->ideal.turn_x.init();
-	vehicle->ideal.turn_y.init();
+
+
 	vehicle->ideal.turn_slip_theta.init();
 	*/
 
@@ -561,9 +563,9 @@ void Motion::Init_Motion_long_turn_v90		(	const t_param *turn_param,t_run_patter
 	run_time_ms_reset();
 	run_time_limit_ms_reset();
 
-	ir_sens->ResetStraightWallControl();
-	ir_sens->EnableIrSensStraight();
-	ir_sens->Division_Wall_Correction_Reset();
+	if (!continue_diagonal_pose) ir_sens->ResetStraightWallControl(false, true);
+	ir_sens->EnableIrSensDiagonal();
+	ir_sens->Division_Wall_Correction_Reset(continue_diagonal_pose);
 
 	error_counter_reset();
 }

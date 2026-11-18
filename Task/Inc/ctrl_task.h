@@ -87,6 +87,7 @@ class Motion
 		float run_time_ms_limit;
 		float turn_start_time_ms;
 		SearchTurnHeading search_turn_heading;
+		SearchTurnHeading shortest_turn_heading;
 
 		void Motion_EndSetting_turn();
 		void Motion_EndSetting_straight();
@@ -106,8 +107,8 @@ class Motion
 		void handleTurnPost_Straight();
 		void handleTurnPrev_Diagonal();
 		void handleTurnPost_Diagonal();
-		void ApplyWallPositionCorrection(float reference_mm, float delay_mm,
-			WallPositionCorrection::Phase phase, uint8_t side, bool side_matches = true);
+		void ApplyWallPositionCorrection(float reference_mm,
+			WallPositionCorrection::Phase phase, uint8_t expected_side = 0);
 		void handleTurnMain();
 		void updateTurnKinematics();
 
@@ -129,6 +130,7 @@ class Motion
 		void SetIdeal_wall_control  ();
 
 		void Adjust_wall_corner();
+		void RecordPillarCandidates();
 
 		inline void active_ff_gain_set(const t_ff_gain *ff_gain)
 		{
@@ -171,10 +173,17 @@ class Motion
 		inline void			 motion_pattern_set(t_run_pattern _motion_pattern)  	{	motion_pattern	= _motion_pattern;	}
 
 		inline t_runControl  motion_control_get() 							 		{	return motion_control;				}
-		inline void			 motion_control_set(t_runControl _motion_control)   	{	motion_control	= _motion_control;	}
+		inline void motion_control_set(t_runControl state) {
+			const PoseFrames::StateLock lock;
+			motion_control=state; vehicle->pose.set_phase(state);
+		}
 
 		inline t_exeStatus 	 motion_exeStatus_get() 							 	{	return motion_exeStatus;				}
-		inline void			 motion_exeStatus_set(t_exeStatus _motion_exeStatus)   	{	motion_exeStatus	= _motion_exeStatus;	}
+		inline void motion_exeStatus_set(t_exeStatus status) {
+			const PoseFrames::StateLock lock;
+			if (status==execute && motion_exeStatus!=execute) vehicle->pose.new_motion();
+			motion_exeStatus=status;
+		}
 		t_exeStatus 		 motion_execute();
 
 		inline	void 		motion_enable_set()										{ 	is_motion_enable = True; Sensor_SetMotionActive(1U); }
@@ -185,6 +194,14 @@ class Motion
 
 		void Motion_start();
 		void Motion_end();
+		// 予備距離を先頭モーションの手前へ含め、独立した完了境界を作らない。
+		void SetRunStartPosition(float preliminary_distance_mm)
+		{
+			vehicle->ego.length.set(-preliminary_distance_mm);
+			vehicle->ideal.length.set(-preliminary_distance_mm);
+			// 以前の予備直進が設定していたFFを引き継ぎ、前走行の値を捨てる。
+			active_ff_gain_set(&ff_gain_default);
+		}
 
 
 		//Initialize motion parameters
@@ -192,8 +209,9 @@ class Motion
 		void Init_Motion_search_straight(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
 		void Init_Motion_search_turn	(const t_param *turn_param,const t_pid_gain *sp_gain = nullptr,const t_pid_gain *om_gain = nullptr);
 
-		void Init_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
-		void Init_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
+		// decelは減速度の大きさ[m/s^2]。省略時の0は従来通りaccを使う。
+		void Init_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default,float decel = 0.0f);
+		void Init_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default,float decel = 0.0f);
 		void Init_Motion_backward		(const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
 
 		void Init_Motion_pivot_turn		(float rad_target,float rad_acc,float rad_velo,const t_pid_gain *sp_gain,const t_pid_gain *om_gain,const t_ff_gain *ff_gain);
@@ -228,9 +246,9 @@ class Motion
 			return execute_Motion();
 		}
 
-		inline t_exeStatus exe_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default)
+		inline t_exeStatus exe_Motion_straight		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default,float decel = 0.0f)
 		{
-			Init_Motion_straight(len_target,acc,max_sp,end_sp,sp_gain,om_gain,ff_gain);
+			Init_Motion_straight(len_target,acc,max_sp,end_sp,sp_gain,om_gain,ff_gain,decel);
 			return execute_Motion();
 		}
 
@@ -240,9 +258,9 @@ class Motion
 			return execute_Motion();
 		}
 
-		inline t_exeStatus exe_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default)
+		inline t_exeStatus exe_Motion_diagonal		(float len_target,float acc,float max_sp,float end_sp,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default,float decel = 0.0f)
 		{
-			Init_Motion_diagonal(len_target,acc,max_sp,end_sp,sp_gain,om_gain,ff_gain);
+			Init_Motion_diagonal(len_target,acc,max_sp,end_sp,sp_gain,om_gain,ff_gain,decel);
 			return execute_Motion();
 		}
 

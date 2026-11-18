@@ -139,10 +139,10 @@ ZirconiaWallControl::Output ZirconiaWallControl::update(const Input &in)
         error = fabsf(left_away) >= fabsf(right_away) ? left_away : right_away;
     }
     if (in.use_estimated_pose && pose_control) error = in.estimated_error_m;
-    if (in.use_estimated_pose && phase_ == Estimated) error = 0.0f;
+    if ((in.use_estimated_pose || in.heading_only_gap) && phase_ == Estimated) error = 0.0f;
 
     float step;
-    if (in.use_estimated_pose && phase_ == Estimated && in.prediction_trusted) {
+    if (phase_ == Estimated && ((in.use_estimated_pose && in.prediction_trusted) || in.heading_only_gap)) {
         // During a short wall gap hold the last observed passage heading;
         // there is no wall-centre observation to justify lateral centring.
         const float desired = limit(-wall_control_param.tracking_heading_komega * in.heading_rad, wall_control_param.omega_limit);

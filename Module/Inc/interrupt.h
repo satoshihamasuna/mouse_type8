@@ -12,6 +12,7 @@
 #include "Component/Inc/math_utils.h"
 #include "Peripheral/Inc/peripheral.h"
 #include "Core/Inc/tim.h"
+#include "Task/Inc/turn_pose_ekf.h"
 
 void Interrupt_Initialize();
 
@@ -28,12 +29,15 @@ class Interrupt:public Singleton<Interrupt>
 
 		float z_acc_buff[ACC_BUFF_SIZE];
 		float z_acc_sum;
+		TurnPose::Tracker turn_pose_;
+		TurnPose::Input turn_pose_input_;
 
 	public:
 		void setTask();
 		void preprocess();
 		void main();
 		void postprocess();
+		TurnPose::Tracker &turn_pose() { return turn_pose_; }
 		uint32_t return_time_count()
 		{
 			return time_count;

@@ -50,9 +50,10 @@ int shell_shortest(int argc, char **argv)
 #else
 		const char *mouse = "B";
 #endif
-		printf("SHORTEST_CAP protocol:1 mouse:%s goal_x:%d goal_y:%d goal_size:%d max_x:%d max_y:%d state:%s ram_maze:%d diagonal_ekf:1 diagonal_controller:2 diagonal_edge:1 wall_diag:1 log_schema:4 correction_gate:1 range_state:1 profiles:",
+		printf("SHORTEST_CAP protocol:1 mouse:%s goal_x:%d goal_y:%d goal_size:%d max_x:%d max_y:%d state:%s ram_maze:%d diagonal_ekf:1 diagonal_controller:2 diagonal_edge:1 wall_diag:1 log_schema:4 correction_gate:2 range_state:1 wall_edge_trial:1 pillar_diag:1 pillar_detector:1 diag_pose_control:%u profiles:",
 			mouse, MAZE_GOAL_X, MAZE_GOAL_Y, MAZE_GOAL_SIZE, MAZE_SIZE_X - 1, MAZE_SIZE_Y - 1,
-			RemoteExplore::running() ? "running" : "idle", explore_completed_maze() != nullptr ? 1 : 0);
+			RemoteExplore::running() ? "running" : "idle", explore_completed_maze() != nullptr ? 1 : 0,
+			diagonal_pose_param.calibrated ? 1U : 0U);
 		for(uint16_t i = 0; i < run_config_count; ++i)
 			printf("%s%s", i == 0 ? "" : ",", run_config_table[i]->key);
 		printf("\r\n");
@@ -88,7 +89,7 @@ int shell_shortest(int argc, char **argv)
 	}
 	Motion *motion = &CtrlTask_type8::getInstance();
 	motion->return_irObj()->ResetDiagonalWallDiagnostics();
-	WallDiagnostics::instance().begin();
+	WallDiagnostics::instance().begin(motion->return_irObj()->WallEdgeMode_Get());
 	wall_class *wall = explore_completed_maze();
 	if(ntlibc_strcmp(argv[6], "flash") == 0)
 	{
@@ -146,12 +147,13 @@ int shell_shortest(int argc, char **argv)
 	Indicate_LED(0x30);
 	printf("WALL_DIAG_BEGIN schema:1 motors_stopped:1\r\n");
 	const auto wall_stats = motion->return_irObj()->DiagonalWallDiagnostics();
-	printf("SHORTEST_WALL_STATS diagonal_cycles:%lu diagonal_ekf_cycles:%lu diagonal_updates:%lu diagonal_segments:%lu diagonal_controller:2 diagonal_fallback_cycles:%lu diagonal_front_blocked_cycles:%lu diagonal_edge:1 diagonal_edges_right:%lu diagonal_edges_left:%lu diagonal_edge_delay_max_mm:%.3f\r\n",
+	printf("SHORTEST_WALL_STATS diagonal_cycles:%lu diagonal_ekf_cycles:%lu diagonal_updates:%lu diagonal_segments:%lu diagonal_controller:2 diagonal_fallback_cycles:%lu diagonal_front_blocked_cycles:%lu diagonal_edge:1 diagonal_edges_right:%lu diagonal_edges_left:%lu diagonal_edge_delay_max_mm:%.3f diag_pose_control_cycles:%lu diag_pose_control_max_abs_omega_radps:%.3f diag_pose_handoffs:%lu\r\n",
 		static_cast<unsigned long>(wall_stats.cycles), static_cast<unsigned long>(wall_stats.used),
 		static_cast<unsigned long>(wall_stats.updates), static_cast<unsigned long>(wall_stats.segments),
 		static_cast<unsigned long>(wall_stats.fallback), static_cast<unsigned long>(wall_stats.front_blocked),
 		static_cast<unsigned long>(wall_stats.edges_right), static_cast<unsigned long>(wall_stats.edges_left),
-		static_cast<double>(wall_stats.edge_delay_max_mm));
+		static_cast<double>(wall_stats.edge_delay_max_mm),static_cast<unsigned long>(wall_stats.pose_control_cycles),
+		static_cast<double>(wall_stats.pose_omega_max_radps),static_cast<unsigned long>(wall_stats.pose_handoffs));
 	WallDiagnostics::instance().finish_and_print();
 	// Endpoint is the commanded goal, not an independently measured position.
 	printf("SHORTEST_END result:%s goal_x:%d goal_y:%d goal_size:%d profile:%s maze:%s\r\n",

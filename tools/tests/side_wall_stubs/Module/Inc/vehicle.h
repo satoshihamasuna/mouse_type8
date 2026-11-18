@@ -13,6 +13,7 @@
 #define TEST_SIDE_WALL_VEHICLE_H_
 
 #include "Peripheral/Inc/peripheral.h"
+#include "Module/Inc/pose_frames.h"
 
 class param_element
 {
@@ -26,11 +27,21 @@ public:
 struct TestVehicleState
 {
     param_element velo, accel, length, radian, rad_velo, rad_accel, x_point;
+    param_element rad_jerk, turn_slip_theta, horizon_accel, horizon_velo;
 };
 
 struct Vehicle
 {
     TestVehicleState ego, ideal;
+    PoseFrames::Tracker pose;
+    void reset_turn_position_for_log() { pose.reset_log_origin(ego.radian.get()); }
+    struct Controller {
+        template<class Gain> void Gain_Set(const Gain &) {}
+        void I_param_reset() {}
+        void Disable_Integral() {}
+        void Enable_Integral() {}
+    };
+    struct { Controller speed_ctrl, omega_ctrl; } Vehicle_controller;
 };
 
 #endif

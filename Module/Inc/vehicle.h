@@ -15,135 +15,121 @@
 #include "Component/Inc/controller.h"
 
 #include "Task/Inc/run_typedef.h"
+#include "Module/Inc/pose_frames.h"
+#include "Params/turn_pose_param.h"
 
 class param_element
 {
 	private:
-		float param;
+		float param = 0.0f;
 	public:
 		inline void set(float value) 	{	param = value;	};
 		inline void init()				{	param = 0.0f;	};
-		inline float get()				{   return param;	};
+		inline float get() const			{   return param;	};
 };
 
 class turn_dir_element
 {
 	private:
-		t_turn_dir param;
+		t_turn_dir param = Turn_None;
 	public:
 		inline void set(t_turn_dir dir)	{	param = dir;	};
 		inline void init()				{	param = Turn_None;	};
-		inline t_turn_dir get()			{   return param;	};
+		inline t_turn_dir get() const	{   return param;	};
 };
 
 struct machine_params
 {
+		// 前後運動。lengthは区間内の進行位置 [mm]。
 		param_element velo;
 		param_element accel;
+		param_element length;
+
+		// 横運動。x_pointは既存の制御座標における左正の位置 [mm]。
 		param_element horizon_accel;
 		param_element horizon_velo;
+		param_element x_point;
+
+		// 上下加速度。
 		param_element z_accel;
-		param_element length;
+
+		// 姿勢 [rad] と角速度・角加速度・角躍度。
+		param_element radian;
+		param_element rad_velo;
 		param_element rad_accel;
 		param_element rad_jerk;
-		param_element rad_velo;
-		param_element radian;
-		param_element x_point;
-		param_element turn_x;
-		param_element turn_x_dash;
-		param_element turn_y;
-		param_element turn_y_dash;
+
+		// 機体の向きと速度方向の差 [rad]。poseの姿勢とは別の状態。
 		param_element turn_slip_theta;
-		param_element turn_slip_dot;
 		turn_dir_element 	  turn_dir_state;
+
+		void initialize()
+		{
+			velo.init(); accel.init(); horizon_accel.init(); horizon_velo.init();
+			z_accel.init(); length.init(); rad_accel.init(); rad_jerk.init();
+			rad_velo.init(); radian.init(); x_point.init();
+			turn_slip_theta.init(); turn_dir_state.init();
+		}
+		void integral_init()
+		{
+			length.init(); radian.init(); x_point.init();
+			turn_slip_theta.init();
+		}
 };
 
 class Vehicle
 {
 	protected:
-		int r_duty,l_duty;
-		int suction_duty;
+		int r_duty = 0,l_duty = 0;
+		int suction_duty = 0;
 		t_bool suction_flag = False;
 	public:
 
-		machine_params ego;
+		machine_params ego;   // 実測・制御用の区間状態。
+		machine_params ideal; // 目標状態。egoと同じ項目・単位。
+		// 機体が所有するローカル/全体座標と変換原点。pose.snapshot()で同時に参照する。
+		// egoの区間積分リセットとは独立し、走行開始/終了時に明示的にstart/stopする。
+		PoseFrames::Tracker pose;
+
+		// 電源・吸引と機体モデル。
+		param_element battery;
+		param_element V_suction;
+		int suction_out = 0;
+
+		// 制御器、モータ出力、FF/FBの内訳。
+		mouse_Controller Vehicle_controller;
+		float V_r = 0.0f,V_l = 0.0f;
+		int motor_out_r = 0,motor_out_l = 0;
+		param_element sp_feedforward,sp_feedback;
+		param_element om_feedforward,om_feedback;
+
 		void ego_initialize()
 		{
-			ego.velo.init();
-			ego.accel.init();
-			ego.horizon_accel.init();
-			ego.horizon_velo.init();
-			ego.z_accel.init();
-			ego.length.init();
-			ego.rad_accel.init();
-			ego.rad_jerk.init();
-			ego.rad_velo.init();
-			ego.radian.init();
-			ego.x_point.init();
-			ego.turn_x.init();
-			ego.turn_x_dash.init();
-			ego.turn_y.init();
-			ego.turn_y_dash.init();
-			ego.turn_slip_theta.init();
-			ego.turn_slip_dot.init();
-			ego.turn_dir_state.init();
+			ego.initialize();
+			reset_turn_position_for_log();
 		}
 
 		inline void ego_integral_init()
 		{
-			ego.length.init();
-			ego.radian.init();
-			ego.x_point.init();
-			ego.turn_x.init();
-			ego.turn_y.init();
-			ego.turn_slip_theta.init();
+			ego.integral_init();
+			reset_turn_position_for_log();
 		}
 
+		// 旧turn_x/y列の参照原点だけを変更する。位置はposeから算出し、積分しない。
+		void reset_turn_position_for_log()
+		{
+			pose.reset_log_origin(ego.radian.get());
+		}
 
-
-		machine_params ideal;
 		void ideal_initialize()
 		{
-			ideal.velo.init();
-			ideal.accel.init();
-			ideal.horizon_accel.init();
-			ideal.horizon_velo.init();
-			ideal.z_accel.init();
-			ideal.length.init();
-			ideal.rad_accel.init();
-			ideal.rad_jerk.init();
-			ideal.rad_velo.init();
-			ideal.radian.init();
-			ideal.x_point.init();
-			ideal.turn_x.init();
-			ideal.turn_x_dash.init();
-			ideal.turn_y.init();
-			ideal.turn_y_dash.init();
-			ideal.turn_slip_theta.init();
-			ideal.turn_slip_dot.init();
-			ideal.turn_dir_state.init();
+			ideal.initialize();
 		}
 
 		inline void ideal_integral_init()
 		{
-			ideal.length.init();
-			ideal.radian.init();
-			ideal.x_point.init();
-			ideal.turn_x.init();
-			ideal.turn_y.init();
-			ideal.turn_slip_theta.init();
+			ideal.integral_init();
 		}
-
-
-		param_element battery;
-
-
-		mouse_Controller Vehicle_controller;
-		float V_r,V_l;
-		int motor_out_r,motor_out_l;
-
-		param_element sp_feedforward,sp_feedback;
-		param_element om_feedforward,om_feedback;
 		virtual void motorSetDuty_l(int out_l)
 		{
 			l_duty = out_l;
@@ -152,11 +138,6 @@ class Vehicle
 		{
 			r_duty = out_r;
 		}
-
-
-		param_element  V_suction;
-		param_element  turn_slip_k;
-		int suction_out	= 0;
 		void suction_flag_set(t_bool flag)
 		{
 			suction_flag = flag;
@@ -170,15 +151,21 @@ class Vehicle
 		virtual void suctionSetDuty(int out_s)
 		{
 			suction_duty = out_s;
-			turn_slip_k.set(500.0f);
+			suction_out = out_s;
+		}
+
+		// 係数を状態として重複保持しない。直前のファン出力で機体別の基本値を選ぶ。
+		float turn_slip_k_m_s2() const
+		{
+			return TurnPose::slip_k_m_s2(suction_duty > 0);
 		}
 
 		virtual void suctionStop()
 		{
 			suction_flag = False;
 			suction_duty = 0;
+			suction_out = 0;
 			FAN_Motor_SetDuty(suction_duty);
-			turn_slip_k.set(75.0f);
 		}
 
 		virtual ~Vehicle()
@@ -206,17 +193,8 @@ class Vehicle_type8:public Vehicle,public Singleton<Vehicle_type8>{
 
 	void suctionSetDuty(int out_s) override
 	{
-		suction_duty = out_s;
+		Vehicle::suctionSetDuty(out_s);
 		FAN_Motor_SetDuty(suction_duty);
-		turn_slip_k.set(250.0f);
-	}
-
-	void suctionStop() override
-	{
-		suction_flag = False;
-		suction_duty = 0;
-		FAN_Motor_SetDuty(suction_duty);
-		turn_slip_k.set(75.0f);
 	}
 
 

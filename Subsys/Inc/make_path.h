@@ -80,6 +80,13 @@ class calcRunTime
 		const t_straight_param *const *st_set_mode;
 		const t_straight_param *const *di_set_mode;
 		uint16_t st_mode_size = 1;uint16_t di_mode_size = 1;
+		const t_speed_profile *st_speed_profile = nullptr;
+		const t_speed_profile *di_speed_profile = nullptr;
+		// 生成した値はベース用と区間用で分け、参照中の値を上書きしない。
+		t_velo_param st_base_velocity{};
+		t_velo_param di_base_velocity{};
+		t_velo_param st_section_velocity{};
+		t_velo_param di_section_velocity{};
 	public:
 		void turn_time_set(const t_param *const *mode);
 		void turn_time_set(const t_param *const*const *mode  ,uint16_t mode_size);
@@ -91,26 +98,13 @@ class calcRunTime
 		uint16_t straight_time_set(float length,float start_velo,float end_velo);
 		float return_turn_entry_velo(t_run_pattern run_pt) const;
 		float return_turn_exit_velo(t_run_pattern run_pt) const;
-		t_straight_param calc_end_straight_max_velo(float length);
-		t_straight_param straight_base_velo()
-		{
-			t_straight_param return_param;
-        	return_param.param 			  =	st_set_mode[0]->param;
-        	return_param.sp_gain		  = st_set_mode[0]->sp_gain;
-        	return_param.om_gain		  = st_set_mode[0]->om_gain;
-			return return_param;
-		}
+		t_straight_param calc_end_straight_max_velo(float length,float start_velo = -1.0f,float end_velo = -1.0f);
+		t_straight_param straight_base_velo();
+		bool speed_profiles_valid() const;
 		uint16_t diagonal_time_set(float length);
 		uint16_t diagonal_time_set(float length,float start_velo,float end_velo);
-		t_straight_param calc_end_diagonal_max_velo(float length);
-		t_straight_param diagonal_base_velo()
-		{
-			t_straight_param return_param;
-        	return_param.param 			  =	di_set_mode[0]->param;
-        	return_param.sp_gain		  = di_set_mode[0]->sp_gain;
-        	return_param.om_gain		  = di_set_mode[0]->om_gain;
-			return return_param;
-		}
+		t_straight_param calc_end_diagonal_max_velo(float length,float start_velo = -1.0f,float end_velo = -1.0f);
+		t_straight_param diagonal_base_velo();
 		calcRunTime()
 		{
 			turn_V90_time		= 2.0f;
@@ -209,6 +203,7 @@ class Dijkstra:public calcRunTime
 							  t_bool update_closure = True);
 		uint16_t straight_section_num(t_posDijkstra s_pos,t_posDijkstra e_pos,t_direction dir);
 		uint16_t diagonal_section_num(t_posDijkstra s_pos,t_posDijkstra e_pos,t_direction dir);
+		void stage_diagonal_pose_route(Motion *motion,int current,int next);
 };
 
 /*

@@ -15,6 +15,8 @@
 #define WALL_PARAM_A_H_
 
 #include "Params/typedef_wall_param.h"
+#include "Params/mouse_config.h"
+#include "Task/Inc/diagonal_pose.h"
 
 // zirconia移植元の初期値。距離[m]、速度[m/s]、姿勢[rad]。
 const static t_wall_control_param wall_control_param = {
@@ -91,11 +93,27 @@ const static t_wall_edge_param wall_edge_param = {
 };
 
 // エッジ位置補正のソフト上限。未実機評価の初期値で、Aの測定採用値ではない。
-// 順序: 直進入口、斜め入口、直進出口、斜め出口。[許容残差mm, 最大補正mm, 融合率]
-const static t_wall_position_param wall_position_param[5] = {
+// 順序: 直進入口、斜め入口、従来の直進出口、斜め出口、探索直進、最短の連続直進、斜め直線。[許容残差mm, 最大補正mm, 融合率]
+const static t_wall_position_param wall_position_param[7] = {
 	{8.0f, 4.0f, 1.0f}, {12.0f, 3.0f, 0.5f},
 	{16.0f, 8.0f, 1.0f}, {16.0f, 4.0f, 0.5f},
 	{8.0f, 4.0f, 0.5f}, // 探索直進: 従来の8 mm窓・半量補正
+	{8.0f, 4.0f, 0.5f}, // 最短の出口から連続する直進。従来の出口8 mmジャンプを使わない。
+	{8.0f, 3.0f, 0.5f}, // 斜め直線の枠組み。実適用は常に無効。
+};
+
+// Aの斜め進行距離観測はShadow専用。幾何基準・姿勢感度は全て未校正。
+const static DiagonalFeatureShadowParam diagonal_feature_shadow_param = {
+	4.0f, 0.15f, 4.0f, 4.0f, 8.0f, 3.0f, 0.5f, 9.0f,
+	8.0f, 0.08726646f, 2.0f, 30.0f, {}
+};
+
+// 機体Aの映像照合による暫定Shadow値。壁なしと未測定の型は左右別の仮基準と広い分散を使用。
+// 各行: 壁なし、外側前方に壁、外側後方に壁、両方。単位 mm。
+const static DiagonalPose::Parameters diagonal_pose_param = {
+	true, 0.700208f, // cot(55 deg), 光軸の実測値ではない
+	{{{32.0f,10.0f},{31.18f,2.50f},{32.0f,10.0f},{32.20f,7.45f}},
+	 {{22.0f,10.0f},{21.70f,2.50f},{26.21f,2.64f},{27.77f,6.96f}}}
 };
 
 // 斜めの柱通過。11点×1mm間隔の10mm履歴。位置精度は実機未評価。
@@ -136,6 +154,36 @@ const static t_search_turn_guard_param search_turn_guard_param = {
 	0.034906585f,	// aligned_rad
 	0.5f,	// quiet_yaw_radps
 	0.2617994f,	// exit_residual_limit_rad
+};
+
+// 壁切れ・柱のShadow試験条件。初期値を保持し、機体別に管理する。
+const static t_wall_edge_param wall_edge_trial_param = {
+    65.0f, 62.0f, 12.0f, // crossing, arm_range, arm_travel [mm]
+    66.0f, 0.5f, 8.0f, 32U, 4U, 6.0f, 2.0f,
+};
+
+// A探索2走行の映像照合による試験候補。
+const static float wall_edge_trial_search_reference_mm = 49.5f;
+
+// 2026-11-17 Aの録画探索: Wall->Open 19区間、Open->Open 左9/右5。
+// 最初は最大半量、±8mm窓/±4mm上限を維持。実適用は両control時のみ。
+const static WallFeatureEkfParam wall_feature_ekf_param = {
+    true, .004f, .005f, .003f, .004f, 39.5f, .5f, 9.0f,
+};
+
+// 2026-11-17 A探索の近い独立柱（非Open幅約26mm）を保持する試験値。
+// Openを12mm確認し、そこから32mm以内の往復を柱候補として扱う。
+constexpr static StraightFeatureHistoryParam straight_feature_history_param = {78.0f, 12.0f, 32.0f};
+
+const static PillarPeakParam straight_pillar_param = {
+    true, true, straight_feature_history_param.open_mm, straight_feature_history_param.open_travel_mm, 80.0f,
+    100.0f, 1.0f, 8.0f, 1.0f, 50.0f, 1.0f, .35f,
+    50.0f, 30.0f, 50.0f,
+};
+const static PillarPeakParam diagonal_pillar_param = {
+    false, false, 78.0f, 0.0f, 60.0f,
+    1.0f, 1.0f, .25f, .025f, 3.0f, 1.0f, 1.0f,
+    60.0f, 20.0f, 5.0f,
 };
 
 #endif /* WALL_PARAM_A_H_ */

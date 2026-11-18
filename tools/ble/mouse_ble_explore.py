@@ -120,6 +120,9 @@ class ExploreSession:
             wall = self._run_settings.get('wall_diagnostics')
             if wall is not None:
                 wall_diagnostics.validate(wall)
+            pillar = self._run_settings.get('pillar_diagnostics')
+            if pillar is not None:
+                wall_diagnostics.validate_pillar(pillar)
             diagnostics = self._run_settings.get('turn_diagnostics')
             if diagnostics is not None:
                 summary = diagnostics.get('summary') or {}
@@ -198,6 +201,12 @@ class ExploreSession:
                     self._finish_stream()  # 停止済みの診断転送へ帯域を渡す。
                     self._set_state('stopping')
                     self._event('phase', '診断ログ保存中（機体停止済み）')
+            elif text.startswith(('PILLAR_STATS ', 'PILLAR_EDGE ')):
+                if (self.state in ('starting', 'waiting_sensor', 'running', 'stopping') and self._run_settings is not None):
+                    diagnostics = self._run_settings.setdefault('pillar_diagnostics', wall_diagnostics.empty_pillar_diagnostics())
+                    wall_diagnostics.receive_pillar(diagnostics, text.split()[0], fields(text))
+                    self._save_run_settings()
+                    self._event('pillar_diagnostics', fields(text))
             elif text.startswith(('WALL_RANGE_STATS ', 'WALL_CORR_STATS ', 'WALL_CORR ')):
                 if (self.state in ('starting', 'waiting_sensor', 'running', 'stopping') and self._run_settings is not None):
                     diagnostics = self._run_settings.setdefault('wall_diagnostics', wall_diagnostics.empty_diagnostics())
@@ -527,6 +536,8 @@ class ExploreSession:
                                     settings['turn_diagnostics'] = {'summary': None, 'events': [], 'complete': False}
                                 if capability.get('wall_diag') == '1':
                                     settings['wall_diagnostics'] = wall_diagnostics.empty_diagnostics()
+                                if capability.get('pillar_diag') == '1':
+                                    settings['pillar_diagnostics'] = wall_diagnostics.empty_pillar_diagnostics()
                                 settings['logging_schema'] = {'telemetry': None, 'wall_diagnostics': 1 if capability.get('wall_diag') == '1' else None}
                                 if isinstance(payload, ShortestOptions) and capability.get('diagonal_ekf') == '1':
                                     settings['wall_control_stats'] = None
