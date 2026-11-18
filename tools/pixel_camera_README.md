@@ -45,6 +45,13 @@ py -3.11 tools/pixel_camera_capture.py status
 `tools/Start_Pixel_Tuning.cmd`を開きます。既存の`myshell debug parameter tuner`に「Pixel撮影・結果」「撮影条件」タブを追加しています。
 起動・保存済み結果の表示だけでは、接続・設定送信・録画・走行はしません。通常のApply and executeは従来の手かざし経路です。
 
+調整用と9×9迷路用は、EV・ズーム・ライト・AF固定を別々に保存します。調整GUIの「撮影条件」で編集し、撮影開始時に保存します。
+調整用は`tools/logs/pixel_camera/capture_profiles/tuning.json`、9×9用は同じフォルダーの`maze_9x9.json`です。
+未保存時の初期値は調整用−2.5 EV、9×9用−2 EVで、どちらもズーム1倍・ライトOFF・AF固定ONです。今回の照明・画角に合わせて変更してください。
+9×9の旧`explore_capture_preferences.json`があれば、そのEV・ライトを初期値へ取り込み、測定根拠の元ファイルは保持します。
+録画の直前に選択用途の全項目を送り直し、受付を照合します。用途を切り替えても直前のカメラ設定を引き継ぎません。未対応アプリや受付不一致では録画・走行を開始しません。
+ズームを変える場合も、その用途の登録済みArUcoを2個以上画角に残してください。固定画像範囲（`marker_search_rois_px`）を使う参照JSONは画角に合わせて再確認します。
+
 1. Pixelを通常のカメラGUIからPCへ接続し、録画・転送が終了した待機状態にします。他のBLEツールは切断します。
 2. 撮影タブで機体A/B、今回のカメラ高さ[mm]を確認し、「撮影条件」で盤面参照・機体/色検出JSONとHY0020アドレスを確認します。
    機体Bの前＝黄・後＝赤は、B専用JSONの`front_colour: yellow`・`rear_colour: red`で指定します。
@@ -62,7 +69,7 @@ py -3.11 tools/pixel_camera_capture.py status
    固定カメラ用の範囲で実際に復号した頂点だけを使い、未読時に範囲外の同じIDや前フレームの位置で補完しません。
 3. 「撮影用接続を準備」を押します。カメラ8765・BLE8766を使い、5 msの連続CSV保存を開始します。この操作では走行しません。
 4. 上部でMotion=turnまたはsearch_turn、ターン名または左右、速度プリセットを選び、Load defaultsで**実機のプリセット**を取得します。初回の未取得欄は空欄です。500調整は実機のpreset:500とvelo:0.5、探索370調整はpreset:370とvelo:0.37を取得してから編集します。
-5. Lend等の必要な項目を編集します。回数1・吸引OFFに限定しています。カメラは固定し、走行範囲・開始位置・向き・停止・手離しを確認して、撮影タブの確認チェックを毎回入れます。
+5. Lend等の必要な項目を編集します。回数は1です。通常ターンはGUIの吸引ON/OFFと値を使い、ONの場合は1～990を実機で照合します。探索ターンは吸引OFFです。カメラは固定し、走行範囲・開始位置・向き・停止・手離しを確認して、撮影タブの確認チェックを毎回入れます。
 6. 「撮影して1回走行」を押します。実機値と画面値が一致すれば設定再送を省き、変更があればApply相当のsetを1回送ってshowで再照合します。プリセットはここでは読み直しません。
 7. 録画上限は既定20秒（必要時は30秒を選択）です。RECORDING_READY後に録画ID・所有者・録画中状態・残り時間・電圧・新しい連続CSVを確認してから、撮影専用の一回実行を送ります。手かざしは不要です。
 8. 今回の動作をCSVで観測し、指令停止かつ実測速度20 mm/s以下・角速度0.15 rad/s以下を200 ms以上確認してから、PC・機体・動画の時刻でさらに各1秒以上の余白を待ち、録画だけを停止します。余白中に動けば確認をやり直します。CSVの途絶・欠落・CRC異常などで確認できなければ、Android側の録画上限まで待ちます。
@@ -76,6 +83,8 @@ py -3.11 tools/pixel_camera_capture.py status
 探索ターンの撮影は、`debug camera show`が`search_turn:1`を返す更新済みSTM32ファームウェアが必要です。未対応なら録画・一回許可・実行へ進みません。通常の手かざし実行は`Apply and execute`から使用できます。
 
 `search_turn_log_hold:1`も返す版では、撮影用search_turnの直後に本体の1 ms保存ログを確定します。後続45 mm直進とその400 ms制動で、400件のリングが旋回後の値だけに上書きされることを防ぎます。`disp log_bin`で読む本体保存ログは前走・探索ターン側の最新400件で、後続の停止処理は含みません。5 ms連続CSVと動画は従来どおり後続直進・停止まで保存します。保存ログの行番号はMCU実時刻ではないため、細かな区間境界の測定では連続CSVの同一サンプルと対応付けてください。
+`turn_log_hold:1`対応版では、通常の14ターンもLendまでの実行直後に1 msログを確定し、後段の減速・400 ms制動で上書きしません。撮影付きGUI・CLIは停止完了応答後に最新400件を`saved_1ms.csv`と`saved_1ms.settings.json`へ自動保存します。通常GUIの`Get log CSV`も同じ本体ログを取得します。
+自動取得には`debug camera show`の`saved_log_period_ms:1 saved_log_capacity:400`も必要です。旧版は`trial.json`の`saved_log.status=unsupported`とし、5 ms連続CSVを1 msログとは扱いません。新しいファームウェアへの更新が必要です。取得失敗時も動画・連続CSVを残し、実行を再送しません。
 撮影用の探索ターンも回数1・吸引OFFです。前45 mmの加速と後45 mmの減速を含むので、その全範囲を確認してください。
 撮影・設定照合中は操作をロックし、確認チェックは開始時に必ず消費します。自動の連続走行やパラメータ採用は行いません。
 機体のログで動作後200 ms以上の実測停止を確認し、速報映像でも停止後の中点位置が安定し、必要動作区間の観測率・ログとの比較条件を満たした場合だけ「速報で確認」と表示します。
@@ -117,9 +126,11 @@ PixelカメラのPCサーバーは従来どおり必要です。カメラGUIは�
 }
 ```
 
-露出は端末の整数ステップです。今回のPixelは1/6 EV刻みなので、−15は−2.5 EVです。省略時はカメラ側の設定を維持します。
+露出は端末の整数ステップです。今回のPixelは1/6 EV刻みなので、−15は−2.5 EVです。省略時は保存済みの調整用プロファイル（未保存なら−2.5 EV）を使います。
+CLIも各録画の直前に調整用プロファイルを適用します。上の`exposure_compensation_steps`はその露出だけを上書きします。
+新しい指定では`"camera_settings": {"ev": -2.5, "zoom_ratio": 1.0, "torch": false, "focus_lock": true}`で項目を上書きできます。EVと整数ステップの重複指定は拒否します。
 
-走行中に盤面全体がぼける場合は、撮影JSONとsensor.csvのAF状態を確認してください。AF固定対応のカメラAPKでは、PC接続後に以下を実行すると合焦後の固定を有効にできます。機体の指令は送りません。アプリのPC接続サービスを再起動するとOFFへ戻るため、再度設定します。CLIの録画開始時のconfigureは、この指定を省略して現在値を維持します。
+走行中に盤面全体がぼける場合は、撮影JSONとsensor.csvのAF状態を確認してください。調整用CLIは既定で録画ごとにAF固定ONを指定します。カメラ単体の確認では、PC接続後に以下を実行すると合焦後の固定を有効にできます。機体の指令は送りません。アプリのPC接続サービスを再起動するとOFFへ戻るため、再度設定します。
 
 ```powershell
 @'
@@ -184,11 +195,40 @@ Start-Process -FilePath $cameraPython -ArgumentList @('tools/pixel_camera_tuning
 & $cameraPython tools/pixel_camera_tuning_cli.py --session $session capture --settings search370_candidate.settings.json --operator-ready --request-id search_right370_001
 ```
 
-この撮影は録画中の確認後に自動で1回だけ走行し、手かざしを待ちません。探索ターンの符号付き並進FF係数`ff_sp_turn_accel_mag`も保存値のまま照合・設定します。撮影後の停止確認、1秒以上の余白、転送・全復号・品質検証はturnと共通です。
+この撮影は録画中の確認後に自動で1回だけ走行し、手かざしを待ちません。符号付き並進FF係数`ff_sp_turn_accel_mag`は、探索ターンと通常ターンの両方で保存値のまま照合・設定します。機体Aのturn1600などの負値も0へ置き換えません。撮影後の停止確認、1秒以上の余白、転送・全復号・品質検証はturnと共通です。
 
 `--settings`は実機設定JSONか、`actual_settings`を持つ照合記録JSONを受け取ります。`--set pid.om_kp=...`や`--set feedforward.ff_om_velo=...`も使えます。
 `capture`の`--operator-ready`はその1回分だけです。同じ`request-id`は失敗・途中送信・応答消失後も再使用できません。
 `--no-wait`は受付後に戻り、処理は継続します。通常は速報・全フレーム解析・一式保存まで待ちます。
+同一設定の再現性確認で取得を先に進める場合は、`capture --defer-analysis`を指定します。録画の停止・転送・復号検査とCSV/実機設定保存までで要求を完了し、次の準備操作を受け付けます。今回の設置・停止・手離し確認と、試行ごとに新しい`request-id`が必要です。結果の`analysis_deferred:true`・`archive_deferred:true`と`run_<ID>/deferred_analysis.json`の`PENDING`は、解析と一式保存が未実施であることを示します。この場合の終了コード0は取得の成功で、軌道の品質合格ではありません。
+
+```powershell
+& $cameraPython tools/pixel_camera_tuning_cli.py --session $session capture --settings candidate.settings.json --operator-ready --request-id in_l45_repeat002 --defer-analysis
+```
+
+後回しにした解析は機体へ接続せず、保存済み試行に対して行います。例えばリポジトリルートで次を実行し、最後に一式保存します。解析失敗時も元資料を保持し、走行は再送しません。
+
+```powershell
+$trialFolder = Join-Path $session 'run_in_l45_repeat002'
+@'
+import json, sys
+from pathlib import Path
+sys.path.insert(0, 'tools')
+from pixel_camera_tuning import analyze_trial
+from pixel_camera_archive import archive_trial, write_index
+folder = Path(sys.argv[1])
+codes = {str(stride): analyze_trial(folder, stride) for stride in (4, 1)}
+pending = folder / 'deferred_analysis.json'
+value = json.loads(pending.read_text(encoding='utf-8'))
+value.update(state='ANALYZED' if all(code == 0 for code in codes.values()) else 'ANALYSIS_FAILED', returncodes=codes)
+pending.write_text(json.dumps(value, indent=2) + '\n', encoding='utf-8')
+saved = archive_trial(folder / 'trial.json')
+write_index(saved.parent)
+print(saved)
+'@ | & $cameraPython - $trialFolder
+```
+
+同じ試行の解析は重複起動せず、途中終了時は既存のquick/fullと出力ログを確認してください。取得側の要求JSONは取得時の結果として保持されるため、後処理の状態は`deferred_analysis.json`と`archive.json`で確認します。
 待ち時間を超えたり接続が途切れたりしても、自動再送・自動再接続はしません。
 撮影記録JSONまたはCLI要求状態JSONの保存中にWindowsのアクセス拒否・共有違反（5/32/33）が起きた場合だけ、保存を最大3回、待ち時間合計0.35秒で再試行します。状態照会中の一時的なファイル競合にも同じ制限を適用します。録画開始・停止や走行指令は再送しません。解消しなければ保存エラーとして失敗し、最終記録の保存に失敗してもカメラクライアントを切断します。
 終了コードは通常成功0、要求・通信・撮影失敗1、撮影後の品質確認または一式保存に問題がある場合2です。状態照会のJSONも確認してください。
@@ -253,6 +293,8 @@ python tools/pixel_camera_tuning.py --review-trial tools/logs/pixel_camera/SESSI
 頂点の順番はArUcoの符号に対応するため、基準画像と現在画像の同じID・同じ頂点を照合できます。
 中心2点だけで射影変換を推定する方式ではありません。読めた登録済みマーカーはすべて使い、2枚の場合は8点の最小二乗、3枚以上はRANSACと残差で採否を判断します。
 2枚未満、重複ID、不正頂点、変換の退化、残差過大では補正を確定せず、前の行列を使い回しません。
+調整動画も格子補正のON/OFFにかかわらず、各評価フレームでArUco登録を必須にします。未検出フレームは位置評価から除外し、別フレームの中央値や別動画で代用しません。
+古い解析キャッシュにフレームごとのArUco参照の証拠がない場合は再利用を拒否します。元動画から新しい出力先へ再解析してください。
 
 画面には使用ID・採用頂点数・基準画像への対応誤差（px）を表示します。格子を併用した場合は、その画像の未使用格子点RMS（mm）も表示します。水色の十字は補正結果として求めた盤面位置で、未読IDの検出結果ではありません。
 `tools/logs/pixel_camera/marker_reference.json`が登録基準で、保存時に撮影フォルダーへ同じJSONをコピーします。
@@ -372,7 +414,7 @@ Pixel 4a (5G)の実機申告は−4〜＋4 EV、1/6 EV刻みです。指定値�
 露出補正は自動露出の目標値を変えます。ISO・シャッター・ピントの手動固定や光学画角の変更はこの画面にはありません。
 反射で失われた模様は、明るさや読み取り範囲の変更だけでは復元できない場合があります。
 
-露出補正はAndroidのPC接続サービスを停止するまで維持され、通常のTYPE8撮影にも使われます。
+露出補正はAndroidのPC接続サービスを停止するまで維持され、カメラ単体の撮影にも使われます。調整用・9×9迷路用の録画では、録画直前に各用途の保存値を適用します。
 `configure(width=1280, height=720, fps=240)`だけでは露出補正をリセットしません。0 EVへ戻すときも明示的に適用します。
 サービスを再起動すると0へ戻ります。画面の「接続を確認」で現在値を読み直せます。
 撮影用ライトの選択もサービス再起動でOFFへ戻ります。
@@ -476,7 +518,7 @@ pixel_camera_turn_capture.pyは撮影専用のdebug turn ... exe_cameraと既存
 
 アドレスは今回確認したHY0020のものです。別の機体や中継では実際のアドレスに合わせます。
 --mouseはユーザー指定の機体情報で、機体を自動識別した証拠にはしません。
-この入口は単体1回・吸引OFFに限定し、指定プリセットをRAMへ読み込んで実機応答の速度・回数・吸引を確認します。
+この入口は単体1回に限定し、指定プリセットをRAMへ読み込んで実機応答の速度・回数・吸引を確認します。プリセット初期値は吸引OFFです。通常ターンの吸引ONを使う場合は、GUIでApply済みのRAM設定を`--use-device-settings`と`--expected-settings`で引き継いで照合します。探索ターンは吸引OFFです。
 既定では既存のRAM調整値はプリセット読込みで戻ります。
 GUIで調整したRAM値を撮影するときは、`Apply`→`Show device values`で確認してGUIの`Disconnect`を押し、中継の終了を待ちます。
 次に上のコマンドへ`--use-device-settings --expected-settings <照合用.settings.json>`を追加してください。
@@ -488,7 +530,7 @@ USB reverseなどでカメラがすでに接続されている場合は、`--cam
 接続済み・IDLEを確認し、ADBの再設定やサーバーの自動起動を省きます。端末のUSB/Wi-Fi接続方式を変更する指定ではありません。
 カメラ用.venvへ自動的に切り替え、TYPE8側の既存Bleak/pyserial環境を参照します。
 
-1. 電圧・プリセット・速度・回数1・吸引OFF・連続CSV受信を確認する。
+1. 電圧・プリセット・速度・回数1・選択した吸引ON/OFFと値・連続CSV受信を確認する。
 2. 720p・240 fpsで録画し、録画ID・所有者・RECORDING状態の一致を待つ。
 3. RECORDING_READY後に電圧を再確認する。録画ID・所有者・RECORDING状態・残り10秒以上を、許可前と実行前にも照合する。
 4. debug camera arm tokenで15秒間・一回限りの許可を取得し、同じトークンのdebug turn ... exe_camera tokenを一度だけ送る。
@@ -506,11 +548,13 @@ USB reverseなどでカメラがすでに接続されている場合は、`--cam
 | trial.json | 機体、録画ID、動画・CSV・設定の対応、実行結果、未確認事項 |
 | telemetry.csv / telemetry.settings.json | 全連続ログと、走行前に読み返した実機設定 |
 | motion.csv / motion.settings.json | 走行と前後の区間。time_msがMCU時刻で、1行を1 msと扱わない |
+| saved_1ms.csv / saved_1ms.settings.json | 対応ファームウェアの本体保存ログ。ターン終了直後までの最新400件、1 ms間隔。cntは保存先頭からの相対msで、MCU絶対時刻ではない |
 | telemetry.raw.bin / telemetry.shell.bin | 中継が受信した原文 |
 | events.jsonl / pc.shell.bin | 電圧確認・撮影用許可・実行要求と開始応答の時刻と原文 |
 | gateway.stdout.txt / gateway.stderr.txt | 中継の起動・終了・エラー |
 
 本体のGet log CSVは直近400件（既定約0.4秒）のリングバッファです。単体ターンの全区間には連続CSVを使います。
+本体ログの取得状況と相対ファイル名は`trial.json`の`saved_log`へ保存します。一式保存にも同梱されます。400件より長いターンでは先頭側が残らない場合があり、全区間・動画との同期には`motion.csv`を使います。
 中継動作中のtelemetry.status.jsonは原子的な置換で更新されます。Windowsで読み取りと置換が競合した事例があるため、このコマンドは中継停止後にだけ読みます。
 
 模擬検証（BLE・カメラ・機体を使わない）:

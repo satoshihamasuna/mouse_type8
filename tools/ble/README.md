@@ -9,6 +9,7 @@
 | `telemetry.csv` | 既存の速度、角速度、壁距離、制御量などの波形。`time_ms`はMCU時刻。GUI選択周期のサンプル |
 | `run_*.json` | 機体、走行条件、周期、capability、壁制御モード、受信品質、診断集計と元イベント |
 | `run_*.wall_corrections.csv` | 壁切れによる走行距離補正の採否、段階・検出側、補正前/目標/補正後、遅延補償距離、ADC・範囲状態 |
+| `run_*.pillar_candidates.csv` | 直進独立柱・斜め極小区間のShadow候補。極小時刻/確認時刻、区間幅、4センサと機体横位置・姿勢・品質フラグ |
 | `run_*.turn_decisions.csv` | 探索ターンの通常/側壁/前壁差/前壁近接の判断、姿勢の信頼度、確認距離、ADC・範囲状態 |
 | カメラの`trial.json`、`sync.json`、`wall_events.csv` | 元動画・解析基準とMCU→動画の対応。判断CSVは位置解析フォルダに出力 |
 
@@ -33,8 +34,12 @@ PIDゲインの周期波形は取得しないため、調整時は使用した�
 | 列名 | 型・内容 |
 | --- | --- |
 | `sen_l.value`, `sen_r.value`, `sen_fl.value`, `sen_fr.value` | 符号付きint16。距離変換・制御用平均化前のLED点灯ADC−消灯ADC。点灯値と消灯値を個別に保存する形式ではない |
-| `ir.range_states` | uint16。左/右/前左/前右を各3 bitで格納。各値は `(value >> (3 * sensor_index)) & 7`、sensor_indexは0～3 |
+| `ir.range_states` | uint16。左/右/前左/前右を各3 bitで格納。各値は `(value >> (3 * sensor_index)) & 7`、sensor_indexは0～3。新ファームはbit12=左・bit13=右のOpen起点保護を格納し、`(value >> 12) & 3`で取り出せる。旧ファームの上位bitは0。4chの範囲状態・フレーム長・CSV列は変更なし |
 | `motion.pattern` | uint16。`Task/Inc/run_typedef.h`の`t_run_pattern`の値 |
+
+Open起点保護が立つ側は、連続壁の横制御・EKF横観測へ使いません。安定した測距を伴う長い壁で再取得し、保留は1区画までです。
+両側とも壁として使えない間は区間ジャイロ角を保持します。柱候補は別に記録し、直進の近限界・校正下限の平坦谷は
+`side_near_limit`として位置補正へ注入しません。LEDは従来どおり品質通過時の検出表示で、飽和候補の確認には候補ログも使います。
 
 ADC4本・範囲状態・走行パターンはbinary16へ変換せず、16 bitの値をそのまま保存・送信します。
 例えば2049や負のADCもCSVへ正確に保存できます。範囲状態は下記の0～4の分類です。
@@ -58,6 +63,43 @@ PCは明示通知後に波形配信を停止して診断へ帯域を渡し、`EX
 - `WALL_RANGE_STATS`: 開始指令から停止までの生ADCの状態集計。`moving_samples`は目標速度が **0.20 m/sより大きい** 周期。手かざし待ちは`all_samples`のみ。各センサーの4分類の合計は`moving_samples`。Unknownはinvalidに集計。
 - `WALL_CORR_STATS`: 全試行数、accepted/limited/rejected/invalid/wrong_side、stored/dropped。`p0`～`p4`の窓幅・最大補正量・混合率は、実行した機体から出力する設定値。
 - `WALL_CORR`: 試行時の`ms`、走行パターン`motion`、段階`phase`、検出側`side`、採否`reason`、各補正値、生ADC4本・状態4本。採用・棄却とも記録。単なる検出候補、横位置の柱ペア補正とは別。
+
+`wall_edge`試験対応（`wall_edge_trial:1` / `correction_gate:2`）ではschema 1の追加項目として、
+`WALL_CORR_STATS`に`shadow/not_selected/stale_generation`件数、実行モード、アーム条件・探索基準位置を出力します。
+`WALL_CORR`に`mode`、`feature`、`generation/event_generation`、
+`proposed_reason/proposed_delta_mm/proposed_after_mm`を追加します。`delta_mm/after_mm`は実際の適用結果です。
+`reason:shadow`は縦補正を適用せず予定値だけを記録した結果、`not_selected`は同時に有効な反対側を選んだ結果です。
+旧ログに追加項目を推測して補完しません。旧受信ツールでは新しい理由を未対応・受信不完備と判定するため、対応する受信側も更新してください。
+機体Aは停止中の`wall_ekf`選択に`wall_edge`も追従します。GUIの「EKF制御（control）」で探索直進・最短の直進ターン入口の壁切れ・独立柱をEKFへ実適用します。
+個別の`wall_edge shadow`で特徴点の縦補正だけをShadowへ戻せます。Bの両モード選択は独立です。
+モードは走行後JSONの`wall_diagnostics.summary.mode`と各イベントへ保存されます。
+
+`pillar_diag:1 pillar_detector:1`対応機は、同じ停止後転送に`PILLAR_STATS`と`PILLAR_EDGE`を追加します。
+保存先はJSONの`pillar_diagnostics`です。追加検出器は`wall_edge shadow/control`で動作します。
+`ms`は確認、`minimum_ms`は実観測した極小サンプルの時刻で、底の区間中央の時刻を補間した値ではありません。
+`e_mm/psi_rad/gyro_radps/control_ir/control_ir_dot`、`sl/sr/fl/fr_mm`、ADC・範囲状態は極小時の組です。
+`confirm_*`は確認時の状態です。`feature_mm`は極小サンプル座標と底区間から求めた特徴点位置です。
+`flags`はbit0=回転窓、1=世代不一致、2=座標ジャンプ、3=有効な前壁近接対、4=斜め側壁近距離限界、5=無効前壁、6=無効姿勢です。
+`reference_valid`と`proposal_valid`が明示されます。新しいAの90 mm探索直進では両control時に実適用し、`delta_mm/after_mm`へ結果を保存します。
+`position_evaluated:1`のとき、`reason/position_reason`はaccepted/limited/shadow/outside_window/invalid/wrong_side/not_selected/stale_generationです。
+`position_phase`は0=直進入口、1=斜め入口、3=斜め出口、4=探索直進、5=ターン出口から連続する直進（`straight_run`）、6=斜め直線（`diagonal_run`）の観測モデルです。最短の直進独立柱基準は原点移動後`−3+90n mm`（試験値）で、確認遅れを加算します。
+phase=5は直進出口とその後の`Straight/Run_Pause`で同じ区画の使用済み状態を引き継ぎます。`wall_edge show`の`straight_run_apply`で有効状態を確認できます。Bの進行距離補正は機体別校正まで無効です。
+新しい斜め観測は`position_shadow_only:1`で、A/Bとも実補正量0です。`position_model_ready:0 position_status:uncalibrated`は基準未校正であり、柱検出の失敗とは別の状態です。
+`position_status`にはready/uncalibrated/quality_rejected/pose_outside/duplicate/wrong_side/stale_generation/invalid/outside_window/nis_rejectedを記録します。
+`model_reference_mm/model_pose_shift_mm/model_e_mm/model_psi_rad`は名目基準・姿勢による特徴位置の移動・モデル入力横位置・角度です。柱は極小時、従来の差分エッジは確定時の入力です。
+`position_quality_flags`は新しい観測側の棄却条件で、従来の柱検出品質`flags`と区別します。たとえば両前壁が近限界の場合も新しい観測は棄却します。
+最短経路の斜め柱姿勢EKFは、上記の進行距離モデルとは別に`diag_pose_*`を記録します。このEKFは前壁センサを参照しません。
+`diag_pose_pillar`は斜め区間の経路に沿った1始まりの柱番号で、未対応は0です。`diag_pose_used`は更新に使った観測数、`diag_pose_ready`は横位置・角度の判定です。
+`diag_pose_status`は1=未校正、2=無効、3=該当柱なし、4=割り当てが曖昧、5=予測が飽和区間内、6=更新です。
+`diag_pose_s_mm/e_mm/heading_rad`は斜め直線開始を原点とする確定時の推定値、`diag_pose_sigma_*`は推定の標準偏差です。機体Aの`wall_ekf control`かつ`wall_edge control`では、横位置・角度を斜め走行の目標角速度へ反映します。角速度の変更は18 rad/s²までで、推定から求めた目標は0.9 rad/sと横加速度0.55 m/s²相当の小さいほうを上限とします。
+`SHORTEST_WALL_STATS`の`diag_pose_control_cycles`は実際に推定値を使った制御回数、`diag_pose_control_max_abs_omega_radps`はその間の切り替えを含む目標角速度の最大値です。`PILLAR_STATS.applied`は縦位置の適用件数を数え、斜めの操舵はここに加算しません。
+`diag_pose_handoffs`は、V90または連続する斜め退出・進入ターンを経て姿勢を新しい斜め区間へ引き継いだ回数です。新しい区間内の柱照合と操舵開始は`diag_pose_ready`と制御回数から確認します。
+新モデルのactual accepted/limitedや0以外のdeltaはPC側でも拒否します。`position_phase_name`列にはCSV用の名称を追加し、旧ログは従来どおり受信できます。
+`minimum_source_generation/minimum_rebase_mm`は、実際に採取した極小から同一通路内で座標を移した記録です。`minimum_ms`は元の実観測時刻を維持します。
+`PILLAR_STATS.applied`は実適用採用件数で、0固定ではありません。旧ログにこれらの追加項目がなければ従来のShadow専用として検証します。
+`WALL_CORR/PILLAR_EDGE`の`ekf:1`に`ekf_nis/ekf_gain/ekf_variance_mm2`を追加し、採用した3状態EKFの観測品質を残します。
+B・斜め・通常の最短直進へA探索の39.5 mm基準は適用しません。最短の直進入口は別原点へ移した基準を使います。
+旧ファームウェアの走行に柱診断を追加したり、欠測値を補完したりしません。64件の上限・欠落・重複・不正値を検証します。
 - `EXPLORE_TURN`: 従来項目を維持し、`checks`、`gyro_radps`、`candidate_mm`、`adc_*`、`range_*`を末尾へ追加。停止後ではなく判断時の値。
 
 壁切れ補正・探索判断はそれぞれ先頭64件を固定長メモリへ記録し、全件数も数えます。全制御周期のイベント波形記録ではありません。
@@ -130,9 +172,10 @@ python tools/ble/mouse_ble_explore_camera_gui.py
 30秒上限の旧カメラアプリでは実機への開始を送りません。探索・最短とも同じ録画ガードを使います。
 録画準備中の中止、録画ID不一致、残り時間不足、BLEログ未受信では実行確定を送りません。録画・走行の開始要求を自動再送しません。
 
-撮影の明るさは「撮影EV」と「ライト」で選択します。「維持」は端末の既存設定を変更しません。
-比較で保存した`tools/logs/pixel_camera/explore_capture_preferences.json`があれば、次回GUIの欄へ表示します。
-ファイルがなければ「維持」です。GUIを開くだけではカメラへ設定を送りません。
+「撮影EV」「ライト」「ズーム倍率」「AF固定」は9×9迷路専用の設定として、録画付き開始時に`tools/logs/pixel_camera/capture_profiles/maze_9x9.json`へ保存します。
+調整用の`tuning.json`とは別で、録画の直前に全項目を適用・照合します。GUIを開くだけではカメラへ設定を送りません。
+初期値は−2 EV・ライトOFF・ズーム1倍・AF固定ONです。旧`explore_capture_preferences.json`があればEV・ライトを初期値へ取り込み、測定根拠のファイルは保持します。
+ズームを変えた場合も登録済みArUcoが2個以上映る画角を確認してください。調整用GUI・CLIと共通の保存・適用仕様は[Pixel撮影手順](../pixel_camera_README.md#調整guiで撮影と単体走行をまとめる)を参照してください。
 EVは端末の刻み・範囲を取得して整数ステップへ変換し、設定受付が一致しなければ録画・走行へ進みません。
 選択値・受付結果は`trial.json`の`camera_configuration`、取得後の結果値は`camera_capture_controls`に保存します。
 受付の一致は明るさへの効果を証明しません。240fpsモードでの効果は短い確認撮影で比較してください。
@@ -150,6 +193,9 @@ BLEセッションの下の `camera_日時/` に `trial.json`、イベント時�
 元動画は既存カメラ保存先、CSVはBLE保存先に保持します。
 同期の初期値はPC受信時刻とカメラ経過時間による推定です。ハードウェア同期ではないため、青LEDや動き始めを比較して動画時刻を微調整し、`sync_manual.json`として保存します。
 位置解析は新しい`position_日時/`へ保存し、元の動画・ログを上書きしません。解析エラーでも動画・ログ・通常の波形比較画面を残し、`position_analysis_error.json`と解析ログを保存します。
+新しく開いたGUIは`tools/logs/pixel_camera/board_9x9_current_reference.json`があればそれを盤面基準の初期値に使い、なければ従来の`board_9x9_reference.json`を使います。
+壁配置を更新するときはArUco登録点を保持し、物理壁の版と根拠を別に記録してください。既に開いているGUIの入力欄は自動変更しません。
+過去動画の再解析では取得時の基準スナップショットを優先します。壁表示だけが古い場合は解析CLIの`--wall-map`で、その走行時の確認済み壁配置を指定できます。
 「保存済み試行を解析」から過去の`trial.json`も選べます。解析だけならBLE接続・通電は不要です。
 既存解析環境`D:/venv/venv3-11/Scripts/python.exe`を優先し、別環境はGUIで変更できます。
 盤面基準はカメラ移動後も各フレームで2個以上のArUcoの実検出頂点から求めます。欠測時に前フレームの座標変換を流用しません。

@@ -1,5 +1,125 @@
 # 解析ツール
 
+## ファーム内ターンEKFを保存ログで因果的に再生する
+
+`turn_pose_firmware_replay.py`は実際のC++実装と機体Aのパラメータをホストでコンパイルし、
+未来の加速度補間なしで保存CSVを再生します。出力ディレクトリは新規に限定します。
+
+```powershell
+python tools/analysis/turn_pose_firmware_replay.py --review tools/logs/turn_trajectory_overlay_A_20261118_v1 --output PATH_TO_NEW_OUTPUT
+```
+
+先に作成した軌跡比較の同じ動画座標を使い、採用された周期の増分だけを反映してRMSEを比較します。
+旧ログに制御stateがないため、旋回区間は角速度指令ピークの2%を超える区間で近似します。
+5ms配信点の因果再生で、欠けた1ms観測や実機IRQ負荷を復元するものではありません。
+出力は実行ファイル・入力/出力・各試行の軌跡・集計CSV・実装ハッシュ付きJSONです。
+採用範囲と結果は[ファーム採用時の検証](../logs/turn_pose_firmware_A_20261118_v4/README.md)を参照してください。
+
+## 単純積分・滑りモデル・動画の軌跡をHTMLで重ねる
+
+`turn_trajectory_overlay.py`は条件別滑り解析の`report.json`と有効動画観測から、
+単純積分・吸引別滑りEKF・動画の相対軌跡を同じ入口/時刻で比較するHTMLを生成します。
+入力ハッシュを照合し、入口位置と入口直線の向きだけを共通化します。
+推定方法ごとの回転/尺度/終点合わせは行わず、欠測は20msを超えて補間しません。
+
+```powershell
+python tools/analysis/turn_trajectory_overlay.py --review tools/logs/turn_slip_conditions_A_20261118_v1 --output PATH_TO_NEW_OUTPUT
+python -m unittest discover -s tools/tests -p test_turn_trajectory_overlay.py -v
+```
+
+`compare.html`に19試行の切替、3軌跡の表示切替、時刻スライダー、元動画の同期再生、
+位置誤差とRMSEの比較一覧を含みます。グラフのデータはHTML内に保存し、動画は元の保存先を参照します。
+動画が別の場所にある場合はHTML内で該当動画を選べます。
+出力は新規ディレクトリに限定し、`summary.csv`・各試行の誤差CSV・`manifest.json`も保存します。
+今回の成果物は[比較HTML](../logs/turn_trajectory_overlay_A_20261118_v1/compare.html)。
+動画のマーカー中点に対する照合であり、Kの同定に同じ試行を含むため独立な精度保証ではありません。
+
+## ターン中のヨー角・横滑り・平面位置をEKFで推定する
+
+`turn_pose_ekf.py`は機体AのMCU時刻付き保存ログを使う8状態のオフライン試作です。
+状態は入口固定座標の位置`x,y`、左正のヨー角、固定座標の速度`vx,vy`、
+ジャイロバイアス、前後・左右の加速度バイアスです。車輪平均の前進速度を観測し、
+ジャイロと前後・左右加速度で予測します。横滑り角は機体座標の速度から求め、
+`ego.turn_slip_theta`、画像、出口目標、旋回中の横滑りゼロ仮定は入力にしません。
+NumPy・pandasが必要です。
+
+吸引ON/OFFで[turn_pose_profiles_A.json](turn_pose_profiles_A.json)の雑音設定を自動選択します。
+選択元は設定JSONの`suction.enabled`で、速度からは推測しません。不明な状態は拒否します。
+非吸引の校正域は500mm/s、吸引は1600mm/s・duty650です。他の速度・吸引量への適用は外挿になります。
+
+中心付近のIMUというユーザー情報とターン動画から同定した滑りモデルを使う場合は、
+下のコマンドへ`--slip-model`を追加します。この場合は6状態`x,y,psi,beta,b_gyro,b_acc_left`に切り替わり、
+吸引別の`K`で`beta_dot=-K/u*beta-omega`を予測、横加速度`ay=-K*beta+b`で更新します。
+横加速度を予測入力と観測へ二重に使用しません。20点平均の車輪速度は
+`ego.velo-.010*ego.accel`から復元し、記録された周期の中央値と平均遅れを使います。
+途中でIRQ診断が1行欠けても平均周期が十分に測れていれば、この方式では利用可能です。
+`--slip-model`は中心IMUと校正済み滑りを仮定する事後解析で、`--geometry`とは併用できません。
+既存の8状態版は壁の幾何観測に対応し、吸引別の雑音設定を使います。
+条件別同定・走行単位の除外検証・実走行適用は
+[500非吸引と1600吸引の比較](../logs/turn_slip_conditions_A_20261118_v1/README.md)を参照してください。
+
+```powershell
+python tools/analysis/turn_pose_ekf.py `
+  --log PATH_TO_MCU_TIMESTAMPED_MOTION_CSV `
+  --settings PATH_TO_MOTION_SETTINGS_JSON `
+  --output PATH_TO_NEW_OUTPUT
+python -m unittest discover -s tools/tests -p test_turn_pose_ekf.py -v
+```
+
+出力は`states.csv`と入力ハッシュ付き`report.json`です。積分には`time_ms`差を使い、
+1制御回分の`sp_pulse`の速度換算には`irq.period_us`を使います。
+行番号や配信周期で車輪パルスを割りません。静止サンプル30点以上、連続sequence、
+有限な入力が必要です。先頭行のIRQ診断欠損だけはその行を省き、途中の欠損は拒否します。
+実機の20点平均加速度を約9.5制御周期だけ先へ補間して遅れを合わせるため、
+これは事後解析です。`--accel-delay-ms 0`で遅れ未補正の感度を比較できます。
+`--imu-forward-mm` / `--imu-left-mm`は車軸基準のIMU取付位置で、既定0は未測定の仮定です。
+角加速度と向心加速度のレバーアーム補正を行い、角加速度の算出にも未来点を使います。
+平均前の加速度や間引きで欠けたエンコーダ値は復元しません。
+
+壁なしでは入口を基準とする相対推定です。初期位置・方位、横加速度バイアス、
+傾きによる重力投影、IMU位置の誤差が残ります。共分散の数値だけで実精度を保証しません。
+ロール・ピッチは推定せず、固定バイアスで表せない傾きの変化はモデル外です。
+
+`--geometry PATH_TO_JSON`で既知の有限壁線分への光線観測を追加できます。
+JSONには`mouse:"A"`、`calibrated:true`、`range_model:"calibrated_beam_length"`、
+`walls:[{a_m:[x,y],b_m:[x,y]}]`、`sensors`が必要です。
+各sensorは`name,offset_m:[前,左],angle_rad,min_m,max_m,sigma_m,column,valid_column,valid_value`を持ちます。
+`column`はmm単位の校正済み光線距離、`valid_column`は有効状態の明示的な列です。
+壁・センサ位置は同じ入口固定座標を使い、全てm・radへ換算して計算します。
+斜入射・端点近傍・対応曖昧・範囲外・残差過大は棄却し、同じセンサの更新を20ms以上離します。
+壁を使わない間も同じ状態・共分散で予測を継続します。
+**現行の`sen_*.distance`を、そのまま旋回中の光線距離とみなしてはいけません。**
+ADC距離変換の基準、光軸・取付位置、入射角・反射率、壁面対応の校正が必要です。
+片壁では壁に沿う位置が拘束されず、壁切れ・柱や非平行壁など追加の幾何情報が必要です。
+
+機体A・500mm/sの20本と模擬壁の検討は
+[2026-11-18の解析結果](../logs/turn_pose_ekf_A_20261118_v1/README.md)を参照してください。
+実ログの旋回中は全センサが遠距離側の上限値で、壁ありの実精度は未検証です。
+機体Bの校正、ファームへの組込み、実機制御への採用は行っていません。
+
+## 左右の斜め特徴点から位置・角度をShadow検証する
+
+`diagonal_edge_geometry.py`は、物理柱との対応を確認した`pillar_comparison.csv`、
+`cases.json`、`map_verified.json`、`deep_provenance.json`を含む解析フォルダーと、
+センサ取付方向の`photo_geometry.json`を入力にします。NumPy・SciPy・Matplotlibが必要です。
+機体Aの今回の6柱×7走行に対応し、未校正の角度・取付位置を機体Bへ適用しません。
+
+```powershell
+python tools/analysis/diagonal_edge_geometry.py --review PATH_TO_REVIEW --photo-geometry PATH_TO_PHOTO_GEOMETRY_JSON --output PATH_TO_NEW_OUTPUT
+python -m unittest discover -s tools/tests -p test_diagonal_edge_geometry.py -v
+```
+
+画像座標を推定へ入力せず、前方・横・角度の幾何推定とPythonのEKFで再生します。
+極小と差分交差を分け、飽和・品質不良を除外し、左右交互の柱を世代・実時刻で扱います。
+確認時刻までに得たエッジだけを採用し、事後解と確認済みのみの解を分離します。
+高速では5ms角速度の再積分誤差も照合し、確認済みの1ms積算角スナップショットを使う別解も出します。
+運動データの時刻補間には次の5msサンプルが入ることがあり、実機の1msオンライン動作を再現した保証にはなりません。
+
+`report.html`、各柱の`predictions.csv`、`geometry_sweep.csv`、`fits.json`、
+`ekf_audits.json`、入力SHA256付き`provenance.json`を保存します。出力先は新規にし、入力を保持します。
+これはモデルの検証であり、ファームのEKFへは接続せず、Paramsを変更しません。
+写真の部品取付角とIR波形の実効特徴点方向、車軸と画像マーカー中点は別の校正項目です。
+
 周期ログの`L8S4`には`sen_l.value` / `sen_r.value` / `sen_fl.value` / `sen_fr.value`が追加されています。
 距離変換前の点灯/消灯ADC差分を整数のまま保存するため、距離値が25/80 mmなどへ制限される区間でも波形を確認できます。
 `ir.range_states`と`motion.pattern`も同時刻で保存します。定義は [ADC周期ログ](../ble/README.md#adcを含む周期ログl8s4) を参照してください。
@@ -10,6 +130,10 @@
 位置解析の`review.html`に、MCUが保存した探索ターン判断と壁切れ補正の表を追加しました。
 各行をクリックすると、その判断の約0.3秒前へ動画を移動します。画面のoffset・時計比率を調整すると移動先も追従します。
 壁距離・ADC差分・範囲状態・走行パターンの波形は、CSVに保存された全サンプルと実`time_ms`を使います。
+`wall_edge`試験の`reason:shadow`は灰色の線で表示し、実適用の緑と区別します。
+`proposed_delta_mm/proposed_after_mm`は補正予定、`delta_mm/after_mm`は実際の縦位置への適用結果です。
+追加の柱候補は`pillar_candidate`として同じ比較表に表示します。動画と波形の線は`minimum_ms`の実観測時刻へ合わせ、
+確認時刻`ms`と`confirmation_video_s`を別に残します。姿勢・横位置と前壁ADCは極小時の組で比較します。
 「波形の表示範囲」で全体／現在位置の前後1秒／前後0.25秒を選べます。波形をクリックして動画を移動できます。
 左＝青、右＝赤、前左＝緑、前右＝紫です。縦線は緑＝補正採用、赤＝棄却、紫＝探索時の補正動作判断で、壁端の真の通過時刻とは区別します。
 ADC等の旧ログ未記録項目は欠測のままとし、数値欄は12 ms以内に観測がある場合のみ表示します。
@@ -32,6 +156,13 @@ OpenCV（aruco入り）・NumPyが必要です。カメラ・BLE・機体へは�
 ```powershell
 python tools/analysis/maze_video_pose.py --trial PATH_TO_TRIAL_JSON --reference PATH_TO_9X9_REFERENCE_JSON --cell-mm 90 --stride 4 --output tools/logs/POSITION_NEW
 ```
+
+壁を変更した走行は、`--wall-map PATH_TO_VERIFIED_WALL_MAP_JSON`で走行時の物理壁配置を指定します。
+ArUco座標登録は`--reference`を使い、表示する壁180辺だけを`--wall-map`から選びます。
+HTMLの上部に壁配置の版・入力を表示し、`analysis.json`の`wall_map`へSHA256を記録します。
+旧動画へ現在の壁配置を一律に使わず、元動画の壁と照合してください。
+座標登録が成立しても、赤い壁や機体内部の黄色部品を前後マーカーと誤認する場合があります。
+姿勢の飛びを同期の調整で隠さず、元フレームでマーカーの位置を確認して除外します。
 
 出力先は未作成のフォルダーを指定します。240fpsの速報は`--stride 4`、詳細は`--stride 1`です。
 動画の元フレーム番号・実PTSと、CSVの実`time_ms`を使います。行番号を1 msへ変換しません。
@@ -75,6 +206,8 @@ mm出力も基準平面へ投影した見かけの位置です。真の横滑り
 Pixel撮影タブの解析は`pixel_camera_tuning_report.py --trial PATH --stride 4`（速報）／`--stride 1`（全フレーム詳細）です。
 録画・走行はせず、保存済みの動画・CSV・実機設定・プロファイルだけを使います。出力は試行内のquick/とfull/で区別し、既存出力を上書きしません。
 速報は元のPTS・フレーム番号を保った約60fpsで、PROVISIONALとして扱います。全フレーム用キャッシュと混用しません。
+解析範囲は走行開始応答からの推定に加え、実際の録画停止要求時刻まで含めます。吸引の立ち上がり待ちがある高速ターンでも旋回・停止を切り落としません。
+保存済み試行の再解析は`--output PATH_TO_NEW_FOLDER`で別の未作成フォルダーへ出力できます。必要なら`--video-start` / `--video-end`で範囲を明示します。
 停止確認は指令後の実測速度・角速度と、映像の停止後の安定性・必須区間の観測率を併用します。採用パラメータは自動更新しません。
 UIの操作と保存先は[Pixel撮影・調整](../pixel_camera_README.md#調整guiで撮影と単体走行をまとめる)を参照してください。
 
@@ -99,7 +232,7 @@ python -m unittest discover -s tools/tests -p test_turn_slip_observation.py -v
 機体やカメラへは接続しません。元の予測モデルを再生成する前に、
 [2026-11-12の滑り再評価](../turn_analysis/20261112_A_slip_analysis/README.md)の識別上の制約を確認してください。
 
-`turn_speed_prediction.py`は、機体Aの`Params/Param_A/turn_500.h`に記載された
+`turn_speed_prediction.py`は、機体Aの`Params/Param_A/turn_500/turn_500.h`に記載された
 14種類×3本の保存測定から有効な速度・旋回応答と横滑りを同定し、
 300／400／600 mm/sの候補ヘッダー、設定JSON、軌道CSV、比較図を作成します。
 Python 3.10以上、NumPy、pandas、SciPy、Matplotlibを使用します。
@@ -528,7 +661,7 @@ python tools/analysis/lzero_turn_lengths.py `
 long180だけは始終方向が平行で連立方程式からLstart/Lendを一意に分離できない。
 旋回軌跡の前進頂点を95 mmに置いてLstartを決め、終点からLendを決める。
 
-`Params/Param_A/turn_<speed>.h`へ小数第2位で反映し、右だけを測定した速度は
+`Params/Param_A/turn_<speed>/turn_<speed>.cpp`へ小数第2位で反映し、右だけを測定した速度は
 左右を同値にする。左右を測定した速度は方向別に反映する。最後にSTM32ビルドを行う。
 
 ### 使用するスクリプト
@@ -550,6 +683,8 @@ long180だけは始終方向が平行で連立方程式からLstart/Lendを一�
 
 `video_marker_pose.py`へ`--marker-reference`を指定すると、基準画像と共通する任意の2枚以上のArUcoの各4頂点を照合し、射影変換で較正します。
 3枚読めた場合は12頂点を使用します。基礎方式は特定の隅の検出を必要としません。
+登録参照を指定する調整用・9×9用の位置評価では、各フレームで登録済みArUcoを2個以上実検出することが必須です。格子補正OFFでも、別フレームの中央値や別動画の変換で欠測を補いません。
+調整解析では`calibration_valid=False`のフレームを評価から除外し、必要動作区間のArUco較正成立率も95%以上を要求します。フレームごとの参照を証明できない旧キャッシュは再解析が必要です。
 調整用基準の`grid_refinement.enabled`がONの場合は、45 mm格子も使ってフレームごとに再校正し、未使用の格子点で検査します。詳細は[Pixel撮影手順](../pixel_camera_README.md)を参照してください。
 
 色マーカーの候補点は一括で盤面へ射影し、高さ補正を使わない相対解析では間隔・盤内条件を配列で検査します。候補の色条件・間隔範囲・得点・同点時の順序は維持し、色ノイズが多い画像での重複計算を減らしています。
@@ -624,10 +759,16 @@ Lstart/Lendの採用値を求める場合は、上記のゼロ設定・対応タ
 | `ff_analyzer.py` | 走行ログからフィードフォワード係数を推定 |
 | `search_turn_sp_ff.py` | 探索ターンの並進フィードフォワードを推定 |
 | `search_turn_voltage_report.py` | 探索ターンの電圧と応答を解析 |
-| `turn_ff_report.py` | 高速ターンのフィードフォワードレポートを生成 |
+  | `turn_ff_report.py` | 高速ターンのフィードフォワードレポートを生成 |
 | `turn_sp_voltage_report.py` | 高速ターン中の並進電圧を解析 |
 | `log_compare.py` | 目標値、実測値、位置軌跡を比較 |
 | `odometry_compare.py` | オドメトリ方式を比較 |
+
+`turn_ff_report.py --project-header`には引き続き`Params/Param_A/turn_500/turn_500.h`などのヘッダーを指定できます。
+共有定義へ移行したヘッダーでは、同じフォルダの同じ名前の`.cpp`を読みます（例：`turn_500/turn_500.h`→`turn_500/turn_500.cpp`）。値の調整先もこの`.cpp`です。
+以前の一括定義版は、同じ機体の`run_param_A.cpp` / `run_param_B.cpp`内の該当区間を読みます。
+従来の値を含むヘッダーも読めます。読み分けは`python -m unittest discover -s tools/tests -p test_turn_ff_profiles.py -v`で確認します。
+解析が出力する候補ヘッダーを採用する場合も、実機で使用する定義の反映先は機体別の`.cpp`です。
 | `generate_aruco_print.py` | 動画較正用ArUcoを生成 |
 
 各コマンドの引数は次の形式で確認できる。
@@ -635,6 +776,20 @@ Lstart/Lendの採用値を求める場合は、上記のゼロ設定・対応タ
 ```powershell
 python tools\analysis\<script>.py --help
 ```
+
+## 斜めの柱特徴による姿勢推定の試作
+
+`diagonal_feature_localization.py` は、既知の柱の通過位置から進行位置 `s` [mm]、左横位置 `e` [mm]、左向き角 `psi` [rad] を共同推定するオフライン参照実装です。ファームウェアへは接続していません。
+左右・接続壁の型による実効基準、離反確認後の遅延更新、飽和の区間観測、回転中の時刻不確かさ、校正済み前センサ、座標軸変更時の平均・共分散変換を扱います。必要に応じて共通基準ずれの不確かさも保持し、横・角度と進行位置の採用判定を分けます。
+
+機体Aの13走行に対する走行単位の外部検証は [新斜め補正の検討結果](../logs/20261118_diagonal_correction_design_v1/report.html) に保存しています。原画像の誤検出・欠測、同期不一致、変更後迷路、候補の対応付け、校正対象と全残差を追えます。
+画像は他走行の校正と評価にのみ使い、当該走行の推定へ入力しません。前センサは取付・壁面対応の校正と測距状態が有効な場合だけ使います。機体Bの校正、実機適用、走行改善の確認は別途必要です。
+
+```powershell
+python -m unittest discover -s tools/tests -p 'test_diagonal_*.py' -v
+```
+
+保存データの再評価手順と前提は上記レポート末尾を参照してください。再生結果だけで補正定数を確定しないでください。
 
 ## Legacy
 

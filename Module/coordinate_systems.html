@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="mouse_type8 の Vehicle が持つ全体座標・動作ローカル座標・ログ参照原点の定義、変換、更新と初期化。">
+  <title>座標系ガイド | mouse_type8 Module</title>
+  <style>
+    :root{color-scheme:light;--paper:#f5f6f1;--surface:#fff;--ink:#20343d;--muted:#5d6f75;--line:#dce4df;--teal:#087f80;--teal-soft:#e9f5f2;--amber:#b35f20;--amber-soft:#fff3e7;--blue:#4266a0;--mono:Consolas,"SFMono-Regular",monospace}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:28px}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.85 -apple-system,BlinkMacSystemFont,"Segoe UI","Yu Gothic",Meiryo,sans-serif}a{color:var(--teal);text-underline-offset:3px}a:hover{color:#075b5c}button,input{font:inherit}button,a,input{touch-action:manipulation}:focus-visible{outline:3px solid #4266a0;outline-offset:4px}code,pre,.numeric{font-family:var(--mono)}code{font-size:.91em;background:#edf1ed;padding:.12em .35em;border-radius:4px;overflow-wrap:anywhere}pre{background:#172e39;color:#e4f1ed;padding:21px 24px;border-radius:12px;overflow:auto;font-size:13px;line-height:1.8}pre code{background:none;padding:0;color:inherit;overflow-wrap:normal}.page{max-width:1330px;margin:auto;display:grid;grid-template-columns:225px minmax(0,1fr);gap:44px;padding:40px 36px 60px}.sidebar{position:sticky;top:32px;align-self:start}.brand{font:700 12px/1.6 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}.sidebar-title{font-size:19px;font-weight:700;margin:9px 0 20px}.sidebar nav{display:grid;gap:3px}.sidebar nav a{color:var(--muted);text-decoration:none;font-size:13px;padding:8px 11px;border-left:2px solid var(--line)}.sidebar nav a:hover{background:var(--teal-soft);border-color:var(--teal);color:var(--ink)}.sidebar small{display:block;margin-top:26px;color:var(--muted);font-size:11px;line-height:1.9}.sidebar small a{color:inherit}main{min-width:0}.hero{padding:20px 0 27px;border-bottom:1px solid var(--line)}.eyebrow{font:600 11px/1.6 var(--mono);letter-spacing:.1em;color:var(--muted)}h1{font-size:clamp(30px,4vw,46px);line-height:1.35;letter-spacing:-.03em;margin:13px 0 16px}.lead{font-size:17px;max-width:780px;color:var(--muted);margin:0 0 22px}.pills{display:flex;gap:8px;flex-wrap:wrap}.pill{font:12px/1.5 var(--mono);padding:6px 10px;border:1px solid var(--line);border-radius:20px;background:var(--surface)}section{padding-top:37px}h2{font-size:24px;line-height:1.5;margin:0 0 16px;letter-spacing:-.02em}h2 .number{display:block;font:11px/1.6 var(--mono);letter-spacing:.13em;color:var(--teal);margin-bottom:5px}h3{font-size:17px;margin:23px 0 9px}p{margin:0 0 15px}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.card{padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:12px}.card h3{margin:4px 0 12px;font-size:20px}.card p{font-size:13px;margin:0;color:var(--muted)}.card .tag{font:11px/1.5 var(--mono);color:var(--teal)}.card.origin .tag{color:var(--amber)}.callout{border-left:3px solid var(--teal);padding:15px 20px;background:var(--teal-soft);border-radius:0 9px 9px 0;margin:20px 0}.callout p:last-child{margin-bottom:0}.callout.warm{border-color:var(--amber);background:var(--amber-soft)}.small{font-size:13px;color:var(--muted)}.source{font-size:12px;color:var(--muted);margin:13px 0 0}.source a{color:var(--muted)}.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:15px 0}table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}th{background:#edf2ee;font-weight:600}td,th{padding:13px 15px;border-bottom:1px solid var(--line);vertical-align:top}tr:last-child td{border-bottom:0}th:first-child{width:24%}.equations{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin:17px 0}.equation{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:18px 20px}.equation strong{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}.equation .math{font:14px/1.9 var(--mono);white-space:pre-line}.demo{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:23px}.demo-top{padding:18px 23px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.demo-top strong{font-size:15px}.presets{display:flex;gap:6px;flex-wrap:wrap}button{border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);padding:7px 10px;cursor:pointer;font-size:12px}button:hover{background:var(--teal-soft);border-color:#94c7c3}.figure-wrap{padding:7px 18px 0;background:linear-gradient(180deg,#fff,#fbfcf8)}svg{display:block;width:100%;height:auto}svg text{font-family:"Segoe UI","Yu Gothic",Meiryo,sans-serif}.legend{display:flex;gap:16px;flex-wrap:wrap;padding:0 22px 16px;color:var(--muted);font-size:12px}.legend span:before{content:"";width:14px;height:3px;display:inline-block;vertical-align:middle;margin-right:6px;background:var(--muted)}.legend .global:before{background:var(--teal)}.legend .local:before{background:var(--amber)}.legend .body:before{background:var(--blue)}.controls{padding:19px 23px;background:#f8faf6;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 24px}.control-head{display:flex;justify-content:space-between;gap:7px;align-items:baseline}.control label{font-size:12px}.control output{font:12px/1.5 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}.control input{display:block;width:100%;margin:11px 0 0;accent-color:var(--teal);cursor:pointer}.result{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line)}.result>div{background:#fff;padding:17px 21px}.result small{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.result output{font:600 21px/1.5 var(--mono);color:var(--teal)}.result output span{font-size:11px;font-weight:400;color:var(--muted)}.demo-foot{padding:13px 23px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;gap:8px 20px;justify-content:space-between;flex-wrap:wrap}.demo-foot .numeric{font-size:11px}.flow{display:grid;grid-template-columns:1fr 24px 1.3fr 24px 1fr;align-items:center;gap:6px;margin:20px 0}.flow .node{padding:19px 17px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px}.flow .node strong{display:block;margin-bottom:8px}.flow .node p{font-size:12px;color:var(--muted);margin:0}.flow .node.emphasis{background:var(--teal-soft);border-color:#a8d2c8}.flow .arrow{text-align:center;color:var(--teal);font-size:22px}.timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:19px}.step{border-top:3px solid var(--teal);padding:13px 16px 16px;background:var(--surface);border-radius:0 0 9px 9px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);border-left:1px solid var(--line)}.step .index{font:11px/1.5 var(--mono);color:var(--muted)}.step strong{display:block;font-size:14px;margin:7px 0}.step p{font-size:12px;color:var(--muted);margin:0}.split{display:grid;grid-template-columns:1fr 1fr;gap:15px}.list{padding-left:1.3em;margin:10px 0 17px}.list li{padding:3px 0}.api-link{font-family:var(--mono);font-size:12px}.footer{border-top:1px solid var(--line);margin-top:36px;padding-top:20px;display:flex;justify-content:space-between;gap:14px;font-size:12px;color:var(--muted)}.print-button{font-size:12px}noscript .callout{margin:0;border-radius:0}.static-example{display:none}
+    @media(max-width:1050px){.page{grid-template-columns:180px minmax(0,1fr);gap:26px;padding:28px 24px}.cards{gap:9px}.card{padding:16px}.timeline{grid-template-columns:1fr 1fr}}
+    @media(max-width:780px){.page{display:block;max-width:850px;padding:20px 18px 40px}.sidebar{position:static;margin-bottom:22px}.sidebar-title{display:none}.sidebar nav{display:flex;gap:8px;overflow-x:auto;padding:10px 0 3px}.sidebar nav a{flex:0 0 auto;padding:5px 9px;border:1px solid var(--line);border-radius:6px;font-size:12px;white-space:nowrap}.sidebar small{display:none}.hero{padding-top:6px}.lead{font-size:15px}.cards{grid-template-columns:1fr}.card h3{font-size:18px}.card p{font-size:13px}.equations,.split{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.flow .arrow{transform:rotate(90deg);line-height:1}.controls{grid-template-columns:1fr 1fr;gap:17px}.demo-top{padding:16px}.figure-wrap{padding:6px 2px 0}.legend{padding:0 15px 12px;gap:10px}.result>div{padding:13px 10px}.result output{font-size:17px}.result small{font-size:10px}.demo-foot{padding:12px 15px}.footer{display:block}.footer p{margin-bottom:8px}h2{font-size:22px}section{padding-top:31px}.table-wrap{margin-right:0}table{min-width:590px}pre{padding:17px;font-size:12px}}
+    @media(max-width:780px){#coordinate-plot text{font-size:22px}#coordinate-plot #grid text{font-size:18px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    @media print{body{background:#fff;font-size:10pt}.page{display:block;padding:0;max-width:none}.sidebar,.print-button,.presets,.controls{display:none}.hero{padding-top:0}.lead{font-size:11pt}h1{font-size:27pt}h2{font-size:17pt;break-after:avoid}h3{break-after:avoid}section{padding-top:20px}.card,.step,.equation,.callout,pre,.demo{break-inside:avoid}.cards{grid-template-columns:repeat(3,1fr)}.timeline{grid-template-columns:repeat(4,1fr)}.result output{font-size:15pt}.table-wrap{overflow:visible}table{min-width:0;font-size:9pt}td,th{padding:8px}pre{background:#f3f5f2;color:#20343d;border:1px solid #dce4df;font-size:9pt}.source a{color:#20343d}.demo{margin-top:13px}.figure-wrap{max-width:620px;margin:auto}.footer{font-size:9pt}a{text-decoration:none}}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar" aria-label="目次">
+      <div class="brand">mouse_type8 / Module</div>
+      <div class="sidebar-title">座標系ガイド</div>
+      <nav>
+        <a href="#overview">01　全体像</a>
+        <a href="#transform">02　座標変換を試す</a>
+        <a href="#angles">03　3種類の角度</a>
+        <a href="#updates">04　推定と更新</a>
+        <a href="#lifecycle">05　切替・初期化</a>
+        <a href="#telemetry">06　ログ用原点</a>
+        <a href="#usage">07　参照と操作</a>
+        <a href="#sources">08　実装の入口</a>
+      </nav>
+      <small>実装確認日：2026-11-18<br>機体 A / B 共通の座標仕様<br>外部ライブラリ・通信不要<br><a href="../README.md">リポジトリの README</a></small>
+    </aside>
+
+    <main>
+      <header class="hero">
+        <div class="eyebrow">FIRMWARE ARCHITECTURE NOTE · 2026-11-18</div>
+        <h1>走行をつなぐ座標系</h1>
+        <p class="lead">全体位置を保ちながら、直進・ターン・斜めをそれぞれのローカル軸で扱う。<br>位置の管理は <code>Vehicle::pose</code> に集め、参照する座標系を変えて使います。</p>
+        <div class="pills"><span class="pill">position : mm</span><span class="pill">angle : rad</span><span class="pill">yaw : 左旋回が正</span><span class="pill">1 Vehicle → 1 pose</span></div>
+      </header>
+
+      <section id="overview">
+        <h2><span class="number">01 / OWNERSHIP</span>保持する位置はひとつ。見方はふたつ。</h2>
+        <p><code>vehicle.h</code> の <code>Vehicle</code> が座標の状態を所有します。<code>ego</code> は実測・制御用の区間状態、<code>ideal</code> は目標状態、<code>pose</code> は全体位置と座標変換の担当です。</p>
+        <div class="cards">
+          <article class="card"><span class="tag">WORLD · 保存する状態</span><h3>全体座標</h3><p><code>world = (X, Y, θ)</code><br>走行全体の位置と機体の向き。動作切替で消さず、停止・エラー後にも残します。</p></article>
+          <article class="card"><span class="tag">LOCAL · 参照時に算出</span><h3>動作ローカル座標</h3><p><code>local = (s, e, ψ)</code><br>その動作の開始点から、前方 <b>+s</b>・左 <b>+e</b> を見る座標。位置を別に積分しません。</p></article>
+          <article class="card origin"><span class="tag">ORIGIN · 変換の基準</span><h3>原点と軸方向</h3><p><code>origin = (Oₓ, Oᵧ, φ)</code><br>ローカル原点の全体位置と、ローカル +s 軸の向き。機体の現在姿勢とは別の基準です。</p></article>
+        </div>
+        <div class="callout"><p><b>既定の全体軸は、開始方向が +X、左が +Y。</b>開始位置は (0, 0)、開始姿勢は 0 rad です。迷路の座標で扱う場合は、実際の開始位置・向きを <code>pose reset X Y yaw_deg</code> で指定します。</p></div>
+        <div class="table-wrap"><table><thead><tr><th>コード中の項目</th><th>意味</th><th>扱い</th></tr></thead><tbody>
+          <tr><td><code>p.world.x_mm / y_mm</code></td><td>全体の X / Y</td><td>固定した全体軸での位置。</td></tr>
+          <tr><td><code>p.local.x_mm / y_mm</code></td><td>ローカルの s / e</td><td><b>x が前、y が左。</b>全体位置と原点から算出。</td></tr>
+          <tr><td><code>p.origin</code></td><td>ローカル → 全体の変換</td><td>動作中は固定。新しい動作・phase で更新。</td></tr>
+          <tr><td><code>ego.length / x_point / radian</code></td><td>既存制御・検出用の区間値</td><td>独自の原点・リセットがあるため、<code>p.local</code> と同一視しない。</td></tr>
+        </tbody></table></div>
+        <p class="source">実装：<a href="Inc/vehicle.h">Inc/vehicle.h</a>、<a href="Inc/pose_frames.h">Inc/pose_frames.h</a></p>
+      </section>
+
+      <section id="transform">
+        <h2><span class="number">02 / TRANSFORM</span>原点を移し、軸を回す。</h2>
+        <p>ローカル軸の向き <b>φ</b> だけ位置ベクトルを回転し、原点を加えると全体位置になります。逆変換では原点を引き、<b>−φ</b> だけ回します。</p>
+        <div class="equations">
+          <div class="equation"><strong>ローカル → 全体　compose(origin, local)</strong><div class="math">X = Oₓ + cos φ · s − sin φ · e
+Y = Oᵧ + sin φ · s + cos φ · e
+θ = wrap(φ + ψ)</div></div>
+          <div class="equation"><strong>全体 → ローカル　relative(origin, world)</strong><div class="math">s =  cos φ · (X − Oₓ) + sin φ · (Y − Oᵧ)
+e = −sin φ · (X − Oₓ) + cos φ · (Y − Oᵧ)
+ψ = wrap(θ − φ)</div></div>
+        </div>
+        <p class="small"><code>wrap(a) = atan2(sin a, cos a)</code>。角度は ±π の範囲へ正規化します。入力 UI の角度は度表示、計算と API は rad です。</p>
+
+        <div class="demo" id="coordinate-demo">
+          <div class="demo-top"><strong>座標変換を試す</strong><div class="presets" aria-label="座標例"><button type="button" data-preset="straight">直進</button><button type="button" data-preset="diagonal">斜め45°</button><button type="button" data-preset="left">左90°ターン中</button><button type="button" data-preset="right">右90°ターン中</button></div></div>
+          <div class="figure-wrap">
+            <svg id="coordinate-plot" viewBox="0 0 760 450" role="img" aria-labelledby="plot-title plot-desc">
+              <title id="plot-title">全体軸とローカル軸の位置関係</title>
+              <desc id="plot-desc">原点Oから前方s、左方向eへ進んだ点Pを全体座標に変換する図。下のスライダーで位置と角度を変更できます。</desc>
+              <defs>
+                <marker id="arrow-world" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#087f80"/></marker>
+                <marker id="arrow-local" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#b35f20"/></marker>
+                <marker id="arrow-body" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#4266a0"/></marker>
+              </defs>
+              <g id="grid" aria-hidden="true"></g>
+              <g id="axes" aria-hidden="true"></g>
+              <g id="geometry" aria-hidden="true"></g>
+            </svg>
+          </div>
+          <div class="legend"><span class="global">全体軸 +X / +Y</span><span class="local">ローカル軸 +s / +e</span><span class="body">機体の向き θ</span></div>
+          <div class="controls">
+            <div class="control"><div class="control-head"><label for="ox">原点 Oₓ</label><output id="ox-value" for="ox">90 mm</output></div><input id="ox" type="range" min="0" max="180" step="1" value="90"></div>
+            <div class="control"><div class="control-head"><label for="oy">原点 Oᵧ</label><output id="oy-value" for="oy">90 mm</output></div><input id="oy" type="range" min="0" max="180" step="1" value="90"></div>
+            <div class="control"><div class="control-head"><label for="phi">軸の向き φ</label><output id="phi-value" for="phi">45°</output></div><input id="phi" type="range" min="-180" max="180" step="1" value="45"></div>
+            <div class="control"><div class="control-head"><label for="s">ローカル前方 s</label><output id="s-value" for="s">80 mm</output></div><input id="s" type="range" min="-60" max="140" step="1" value="80"></div>
+            <div class="control"><div class="control-head"><label for="e">ローカル左 e</label><output id="e-value" for="e">20 mm</output></div><input id="e" type="range" min="-70" max="70" step="1" value="20"></div>
+            <div class="control"><div class="control-head"><label for="psi">姿勢偏差 ψ</label><output id="psi-value" for="psi">5°</output></div><input id="psi" type="range" min="-180" max="180" step="1" value="5"></div>
+          </div>
+          <div class="result" aria-live="polite"><div><small>全体 X</small><output id="world-x">132.43 <span>mm</span></output></div><div><small>全体 Y</small><output id="world-y">160.71 <span>mm</span></output></div><div><small>全体姿勢 θ</small><output id="world-yaw">50.0° <span>/ 0.873 rad</span></output></div></div>
+          <div class="demo-foot"><span id="input-summary">O=(90, 90) mm / φ=45° / s=80, e=20 mm / ψ=5°</span><span class="numeric" id="roundtrip">往復変換誤差を計算中</span></div>
+          <noscript><div class="callout warm"><p>対話図には JavaScript が必要です。上の式はそのまま参照できます。既定例は O=(90,90) mm、φ=45°、s=80 mm、e=20 mm、ψ=5° → 全体位置 (132.43,160.71) mm、姿勢50°です。</p></div></noscript>
+        </div>
+        <div class="callout warm"><p><b>ターン中もローカル軸は入口方向に固定します。</b>機体が回るのは θ と ψ です。例の「左90°ターン中」は φ=0°、ψ=90°で、原点の軸そのものを90°回していません。</p></div>
+      </section>
+
+      <section id="angles">
+        <h2><span class="number">03 / ANGLES</span>経路方向・機体姿勢・滑り角を分ける。</h2>
+        <div class="table-wrap"><table><thead><tr><th>角度</th><th>定義</th><th>主な参照先</th></tr></thead><tbody>
+          <tr><td><b>経路方向 φ</b></td><td>ローカル前方軸の全体での向き。論理ターン角で次の方向を決める。</td><td><code>origin.yaw_rad</code>、<code>reference_yaw_rad</code></td></tr>
+          <tr><td><b>機体姿勢 θ</b></td><td>現在の機体の向き。測定した旋回量と採用した推定で更新。</td><td><code>world.yaw_rad</code></td></tr>
+          <tr><td><b>姿勢偏差 ψ</b></td><td>その動作の軸からの機体の向きの差。<code>wrap(θ − φ)</code>。</td><td><code>local.yaw_rad</code></td></tr>
+          <tr><td><b>滑り角 β</b></td><td>機体の向きと速度方向の差。速度方向は <code>θ + β</code>。</td><td><code>ego.turn_slip_theta</code>、<code>ideal.turn_slip_theta</code></td></tr>
+        </tbody></table></div>
+        <p><code>reference_yaw_rad</code> は次の経路軸にも使う方向です。旋回中は <code>origin.yaw_rad</code> が入口の軸を保ち、旋回完了時に <code>complete_turn()</code> が経路方向を更新し、続く <code>set_phase()</code> が新しい軸を取り込みます。</p>
+        <div class="split"><div class="card"><h3>右90°に補正 +1.5°を加えた例</h3><p>論理角は −90°、実際の旋回が −88.5°なら、出口の姿勢偏差は <b>+1.5°</b>。<code>complete_turn(-π/2)</code> は経路方向だけを変え、機体の姿勢を論理角へ丸めません。</p></div><div class="card"><h3>滑り角は姿勢の重複ではない</h3><p>機体が同じ方向を向いていても、横滑りがあれば速度の向きは変わります。βは滑りモデルに必要な状態です。未使用の保存変数 <code>turn_slip_dot</code> は削除済みです。</p></div></div>
+        <p class="small" style="margin-top:15px">各EKFの姿勢原点と、旧制御値 <code>ego.radian</code> の原点も区別します。<code>ego.radian</code> は区間や補正処理でゼロ化されるため、全体の θ を表す値として読み替えません。壁制御内部の Zirconia には右正・m単位の偏差があり、IRタスクで左正・mmとの符号・単位変換を行います。</p>
+        <p class="small">滑り係数 K は吸引I/Oから代入せず、<code>Vehicle::turn_slip_k_m_s2()</code> で実測・目標の計算に共通の基本値を参照します。機体Aは以前の推定値（非吸引41.28055、吸引254.90725 m/s²）、未校正Bは従来値（75 / 250 m/s²）です。直前のファン出力が0か正かで切り替え、係数の保存変数は持ちません。EKFの適用条件は別に確認します。</p>
+        <p class="source">実装：<a href="../Task/Src/turn_motion.cpp">turn_motion.cpp</a>、<a href="../Params/turn_pose_param.h">turn_pose_param.h</a>、<a href="../Task/Inc/search_turn_heading.h">search_turn_heading.h</a>、<a href="../Task/Src/ir_sens_task.cpp">ir_sens_task.cpp</a></p>
+      </section>
+
+      <section id="updates">
+        <h2><span class="number">04 / DATA FLOW</span>各EKFの採用結果を、ひとつの位置へ。</h2>
+        <div class="flow"><div class="node"><strong>エンコーダ / IMU</strong><p>符号付きの移動量とジャイロ。<br>直進・斜め・後退・その場旋回。</p></div><div class="arrow" aria-hidden="true">→</div><div class="node emphasis"><strong>Vehicle::pose</strong><p>全体位置へ増分・補正を反映。<br>参照時にローカルへ逆変換。</p></div><div class="arrow" aria-hidden="true">→</div><div class="node"><strong>snapshot / log_position</strong><p>全体・ローカル・原点の参照。<br>旧ログ列への座標変換。</p></div></div>
+        <div class="table-wrap"><table><thead><tr><th>入力・推定</th><th>全体座標への反映</th><th>実装の入口</th></tr></thead><tbody>
+          <tr><td>通常の移動</td><td><code>predict_body()</code>。前後・左右増分を中間姿勢で回転。現在の呼出しはエンコーダ前後移動量、左右増分0、ジャイロ×0.001 s。</td><td><a href="Src/interrupt.cpp">Interrupt::preprocess()</a></td></tr>
+          <tr><td>採用中のターンEKF</td><td><code>predict_turn()</code>。EKFが積分済みの固定軸増分を全体へ回転し、姿勢増分も1回だけ反映。通常予測との選択で使用。</td><td><a href="../Task/Inc/turn_pose_ekf.h">TurnPose::Output</a></td></tr>
+          <tr><td>直進の側壁推定</td><td>固定した通路原点へ現在位置を変換し、採用した横位置・姿勢を置き換えて全体へ戻す。進行位置は保持。</td><td><a href="../Task/Src/ir_sens_task.cpp">SetWallControl_RadVelo()</a></td></tr>
+          <tr><td>適用した縦位置補正</td><td><code>correct_passage()</code>。実際に適用した量だけ、経路方向へ反映。</td><td><a href="../Task/Src/ir_sens_task.cpp">ObserveFeature()</a>、<a href="../Task/Src/turn_motion.cpp">ApplyWallPositionCorrection()</a></td></tr>
+          <tr><td>斜め柱EKF</td><td>開始時に固有の進行位置・横位置を全体へ結び付け、校正・品質条件を満たす採用状態を <code>adopt_world()</code> で反映。</td><td><a href="../Task/Src/ir_sens_task.cpp">BeginDiagonalPoseRoute() / RecordPillarCandidates()</a></td></tr>
+        </tbody></table></div>
+        <div class="callout"><p><b>Tracker は座標変換と採用結果の反映を担当します。</b>各EKFの内部状態と共分散は、その推定器が保持します。全体側で同じセンサを独立観測として再融合する処理はありません。</p></div>
+        <p>共分散の固定軸変換は <code>P′ = J P Jᵀ</code>（<code>J = diag(R(φ), 1)</code>）で、<code>rotate_covariance()</code> を用意しています。位置の単位はmmなので、交差項の単位はmm·radです。この関数は推定原点そのものの不確かさを追加しません。<b>全体の新しいEKFや全体共分散は実装していません。</b></p>
+        <p class="small">機体A/Bで座標の規約は共通ですが、EKFの校正・採用範囲は機体ごとです。BにAの校正を適用する仕組みではありません。ターンEKFが不採用なら通常の予測経路を使います。</p>
+      </section>
+
+      <section id="lifecycle">
+        <h2><span class="number">05 / LIFECYCLE</span>境目では原点を変え、全体位置を残す。</h2>
+        <div class="timeline">
+          <div class="step"><span class="index">01 · START</span><strong>走行開始</strong><p><code>pose.start()</code><br>設定済み開始座標を採用。カウンターと有効性を初期化。</p></div>
+          <div class="step"><span class="index">02 · STRAIGHT</span><strong>直進の原点</strong><p>新しいモーションを予約し、<code>set_phase()</code> で原点と軸を取得。</p></div>
+          <div class="step"><span class="index">03 · TURN</span><strong>入口軸のまま旋回</strong><p>原点を入口に置き、軸は固定。実際の機体姿勢を更新。</p></div>
+          <div class="step"><span class="index">04 · NEXT</span><strong>出口から次の動作</strong><p>論理角で経路方向を更新。新しい原点からローカル位置を算出。</p></div>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>操作</th><th>全体・動作ローカルへの作用</th><th>補足</th></tr></thead><tbody>
+          <tr><td><code>set_start(p)</code></td><td>停止中に開始座標を設定し、現在の座標もそこへ戻す。</td><td>実行中は拒否。シェルは制御有効・実行状態も確認。</td></tr>
+          <tr><td><code>new_motion()</code></td><td>モーション番号を増やし、次のフレーム更新を予約。</td><td>この呼出し自体では位置原点を動かさない。</td></tr>
+          <tr><td><code>set_phase(phase)</code></td><td>phase変更または予約があれば、現在の全体位置と経路方向を新原点にする。</td><td>同じphaseの繰返しでは維持。位置はローカル0、姿勢偏差は保持。</td></tr>
+          <tr><td><code>complete_turn(logical)</code></td><td>経路方向とフレーム更新予約を変更。全体位置・機体姿勢は保持。</td><td>論理角を使う。角度補正値は加えない。</td></tr>
+          <tr><td><code>ego_initialize()</code><br><code>ego_integral_init()</code></td><td>旧egoの区間値とログ用原点を初期化。全体位置・動作原点は保持。</td><td><code>local</code> も同じ値を保つ。<code>ideal</code> の初期化はposeを変更しない。</td></tr>
+          <tr><td><code>Motion_end()</code><br>エラー停止</td><td><code>pose.stop()</code> で追跡を止め、最後の全体位置と動作ローカルを保持。</td><td>後続の旧ego初期化でログ用原点は変更。次の走行開始時に開始座標へ戻る。</td></tr>
+        </tbody></table></div>
+        <p><code>motion</code> はモーション番号、<code>frame</code> は原点・軸の更新番号です。ひとつのターン指令でも、前直進・旋回・後直進で複数のフレームを持てます。次モーションの設定待ちでは同じ軸を使い続けます。</p>
+        <p class="source">実装：<a href="../Task/Inc/ctrl_task.h">Motionの状態setter</a>、<a href="../Task/Src/init_motion.cpp">Motion_start() / Motion_end()</a>、<a href="../Task/Src/turn_motion.cpp">ターン完了処理</a></p>
+      </section>
+
+      <section id="telemetry">
+        <h2><span class="number">06 / TELEMETRY</span>旧ログの原点は、動作原点とは別。</h2>
+        <p>旧 <code>ego.turn_x/y</code> の保存変数と独立積分は削除済みです。互換性のためログの列名を残し、<code>pose.log_position()</code> で全体位置をログ用の固定原点へ変換します。持つのは参照原点だけで、別の位置推定ではありません。</p>
+        <div class="table-wrap"><table><thead><tr><th>参照・列名</th><th>位置の意味</th><th>軸の対応</th></tr></thead><tbody>
+          <tr><td><code>pose.snapshot().local</code></td><td>現在の動作・phaseの原点から見た位置。</td><td><code>x_mm = 前方s</code>、<code>y_mm = 左e</code></td></tr>
+          <tr><td><code>pose.log_position()</code></td><td>従来のゼロ化箇所で設定するログ用原点から見た位置。</td><td><code>x_mm = 前</code>、<code>y_mm = 左</code></td></tr>
+          <tr><td><code>ego.turn_x</code> 列</td><td>ログ用原点に対する左位置 [mm]。</td><td><code>log_position().y_mm</code></td></tr>
+          <tr><td><code>ego.turn_y</code> 列</td><td>ログ用原点に対する前位置 [mm]。</td><td><code>log_position().x_mm</code></td></tr>
+          <tr><td><code>ideal.turn_x/y</code> 列</td><td>更新処理がなかった旧理想位置の互換列。</td><td>予約値 <code>0</code> を出力。</td></tr>
+        </tbody></table></div>
+        <div class="callout warm"><p><b>ログの x は左、Poseのローカル x は前。</b>列名が似ていても成分の対応は逆です。また、ログ用原点は <code>origin</code> と独立なので、<code>ego.turn_x/y</code> を <code>snapshot().local</code> と直接比較しません。</p></div>
+        <p><code>reset_turn_position_for_log()</code> はログ用原点の位置を現在の全体位置に置き、軸角を <code>wrap(world.yaw_rad − ego.radian)</code> にします。これは旧センサ姿勢の原点を考慮した変換です。全体位置・動作ローカル・予測回数は変更しません。</p>
+        <p>列名・順序・単位・保存/配信バイナリ形式は従来どおりです。値の生成元は単一のposeへ移り、エンコーダと採用したEKF・壁補正を反映します。過去の速度による独立積分とは数値が変わる場合があります。</p>
+        <p class="small">全体位置と現在の動作ローカル全項目を周期CSVに追加したわけではありません。これらの参照先は <code>pose show</code> とsnapshot APIです。</p>
+        <p class="source">実装：<a href="Inc/vehicle.h">reset_turn_position_for_log()</a>、<a href="Inc/pose_frames.h">reset_log_origin() / log_position()</a>、<a href="Src/log_data.cpp">LogData::logging()</a></p>
+      </section>
+
+      <section id="usage">
+        <h2><span class="number">07 / ACCESS</span>同じ時点の座標をまとめて読む。</h2>
+        <div class="split"><div><h3>C++</h3><pre><code>// Vehicle が所有する状態を一度に取得。
+const auto p = vehicle-&gt;pose.snapshot();
+
+// 全体位置・姿勢
+p.world.x_mm;
+p.world.y_mm;
+p.world.yaw_rad;
+
+// 動作ローカル位置・姿勢偏差
+p.local.x_mm;   // s: 前
+p.local.y_mm;   // e: 左
+p.local.yaw_rad;
+
+// ローカル → 全体の変換原点
+p.origin;</code></pre><p class="small">snapshotはIRQマスクを保護しながら状態をコピーし、ローカルを算出します。別々に取得して時点を混ぜず、一つのsnapshotを使います。</p></div><div><h3>シェル</h3><pre><code>pose show
+
+# 開始座標を (0, 0, 0) に設定
+pose reset
+
+# 実際の開始位置が (45,45) mm、北向き
+pose reset 45 45 90</code></pre><p><code>reset</code> の入力角だけは<b>度</b>です。表示・内部値はrad。指定した開始座標は次の <code>Motion_start()</code> にも使用し、Flashには保存しません。</p><p class="small">phase番号：0=NOP、1=直進、2=斜め、3=旋回、4=その場旋回、5=制動。停止後は最後に追跡したphaseの座標が残ります。</p></div></div>
+        <div class="table-wrap"><table><thead><tr><th>診断項目</th><th>読み方</th></tr></thead><tbody>
+          <tr><td><code>active / valid</code></td><td>追跡中か、増分の拒否履歴がないか。<code>valid</code> は絶対位置精度の判定ではない。</td></tr>
+          <tr><td><code>samples</code></td><td>受理した予測増分の回数。通常予測とターン予測は同じ周期で重ねない。</td></tr>
+          <tr><td><code>corrections</code></td><td>補正・採用座標を反映した回数。独立した観測の件数ではない。</td></tr>
+          <tr><td><code>rejected</code></td><td>非有限値などの拒否回数。予測増分は移動長20 mm以下・旋回量1 rad以下を確認。</td></tr>
+        </tbody></table></div>
+        <p class="small">異常値を拒否した場合は有限な位置を保ち、<code>valid:0</code> を次の開始・原点再設定まで保持します。実機の位置精度と追加処理のIRQ時間は未評価です。</p>
+      </section>
+
+      <section id="sources">
+        <h2><span class="number">08 / SOURCE MAP</span>実装を追うときの入口</h2>
+        <div class="table-wrap"><table><thead><tr><th>ファイル</th><th>担当</th></tr></thead><tbody>
+          <tr><td><a class="api-link" href="Inc/vehicle.h">Module/Inc/vehicle.h</a></td><td><code>ego / ideal / pose</code> の所有と初期化、ログ原点のリセット。</td></tr>
+          <tr><td><a class="api-link" href="Inc/pose_frames.h">Module/Inc/pose_frames.h</a></td><td>変換式、全体位置、動作原点、予測・補正・参照API。</td></tr>
+          <tr><td><a class="api-link" href="Src/interrupt.cpp">Module/Src/interrupt.cpp</a></td><td>1周期の計測値と、採用した予測増分の接続。</td></tr>
+          <tr><td><a class="api-link" href="../Task/Src/ir_sens_task.cpp">Task/Src/ir_sens_task.cpp</a></td><td>直進・斜めの固有座標と全体座標の接続。</td></tr>
+          <tr><td><a class="api-link" href="../Task/Src/turn_motion.cpp">Task/Src/turn_motion.cpp</a></td><td>ターンの入口・出口、論理角、姿勢の引継ぎ。</td></tr>
+          <tr><td><a class="api-link" href="../Task/Inc/ctrl_task.h">Task/Inc/ctrl_task.h</a></td><td>新モーション・phaseの通知。</td></tr>
+          <tr><td><a class="api-link" href="Src/log_data.cpp">Module/Src/log_data.cpp</a></td><td>旧位置列をposeから生成。</td></tr>
+          <tr><td><a class="api-link" href="../System/Src/myshell.cpp">System/Src/myshell.cpp</a></td><td><code>pose show / reset</code>、停止中の設定と入力検証。</td></tr>
+          <tr><td><a class="api-link" href="../tools/tests/test_pose_frames.py">tools/tests/test_pose_frames.py</a></td><td>A/B定義の実装ホスト検証。変換、所有、切替、ログ参照を確認。</td></tr>
+        </tbody></table></div>
+        <p class="small">このページの図は変換式を理解するための計算例です。走行シミュレーターや実機の精度評価ではありません。動作条件・校正・検証結果は <a href="../README.md">README</a>、<a href="../tools/myshell_README.md">シェル仕様</a>、<a href="../tools/tests/README.md">テスト手順</a>を参照してください。</p>
+      </section>
+
+      <footer class="footer"><p>mouse_type8 · Module 座標系ガイド<br>実装確認日 2026-11-18 / A・B 共通</p><button class="print-button" type="button" id="print-page">印刷 / PDFに保存</button></footer>
+    </main>
+  </div>
+  <script>
+    (() => {
+      'use strict';
+      const ids = ['ox','oy','phi','s','e','psi'];
+      const inputs = Object.fromEntries(ids.map(id => [id,document.getElementById(id)]));
+      const rad = deg => deg*Math.PI/180;
+      const deg = radians => radians*180/Math.PI;
+      const wrap = a => Math.atan2(Math.sin(a),Math.cos(a));
+      const compose = (o,l) => ({x:o.x+Math.cos(o.a)*l.x-Math.sin(o.a)*l.y,y:o.y+Math.sin(o.a)*l.x+Math.cos(o.a)*l.y,a:wrap(o.a+l.a)});
+      const relative = (o,w) => ({x:Math.cos(o.a)*(w.x-o.x)+Math.sin(o.a)*(w.y-o.y),y:-Math.sin(o.a)*(w.x-o.x)+Math.cos(o.a)*(w.y-o.y),a:wrap(w.a-o.a)});
+      const clean = (n,digits) => (Math.abs(n)<.5*Math.pow(10,-digits)?0:n).toFixed(digits);
+      const ns = 'http://www.w3.org/2000/svg';
+      function svgElement(tag,attributes,text) {
+        const el=document.createElementNS(ns,tag);
+        for(const [key,value] of Object.entries(attributes)) el.setAttribute(key,String(value));
+        if(text!==undefined) el.textContent=text;
+        return el;
+      }
+      function draw(o,l,w) {
+        const W=760,H=450,pad=72;
+        const endS=compose(o,{x:l.x,y:0,a:0});
+        const extra=65;
+        const xmin=Math.min(0,o.x,w.x,endS.x)-extra,xmax=Math.max(0,o.x,w.x,endS.x)+extra;
+        const ymin=Math.min(0,o.y,w.y,endS.y)-extra,ymax=Math.max(0,o.y,w.y,endS.y)+extra;
+        const scale=Math.min((W-2*pad)/(xmax-xmin),(H-2*pad)/(ymax-ymin));
+        const left=(W-(xmax-xmin)*scale)/2,bottom=(H-(ymax-ymin)*scale)/2;
+        const sx=x=>left+(x-xmin)*scale,sy=y=>H-bottom-(y-ymin)*scale;
+        const grid=document.getElementById('grid'),axes=document.getElementById('axes'),g=document.getElementById('geometry');
+        grid.replaceChildren();axes.replaceChildren();g.replaceChildren();
+        const line=(parent,x1,y1,x2,y2,color,width,extraAttrs={})=>parent.append(svgElement('line',{x1:sx(x1),y1:sy(y1),x2:sx(x2),y2:sy(y2),stroke:color,'stroke-width':width,...extraAttrs}));
+        const label=(parent,x,y,text,color,size=14,dx=0,dy=0)=>parent.append(svgElement('text',{x:sx(x)+dx,y:sy(y)+dy,fill:color,'font-size':size,'paint-order':'stroke',stroke:'#fff','stroke-width':4,'stroke-linejoin':'round'},text));
+        for(let x=Math.ceil(xmin/30)*30;x<=xmax;x+=30) line(grid,x,ymin,x,ymax,'#e7eee7',1);
+        for(let y=Math.ceil(ymin/30)*30;y<=ymax;y+=30) line(grid,xmin,y,xmax,y,'#e7eee7',1);
+        for(let x=Math.ceil(xmin/90)*90;x<=xmax;x+=90) if(x!==0) label(grid,x,0,String(x),'#82948d',11,3,16);
+        for(let y=Math.ceil(ymin/90)*90;y<=ymax;y+=90) if(y!==0) label(grid,0,y,String(y),'#82948d',11,-27,-4);
+        line(axes,xmin,0,xmax,0,'#087f80',1.7,{'marker-end':'url(#arrow-world)'});
+        line(axes,0,ymin,0,ymax,'#087f80',1.7,{'marker-end':'url(#arrow-world)'});
+        label(axes,xmax,0,'+X','#087f80',15,-28,36);label(axes,0,ymax,'+Y','#087f80',15,10,5);
+        label(axes,0,0,'W (0,0)','#5d6f75',12,8,18);
+        const u={x:Math.cos(o.a),y:Math.sin(o.a)},v={x:-Math.sin(o.a),y:Math.cos(o.a)};
+        const axisLength=55;
+        line(g,o.x,o.y,o.x+axisLength*u.x,o.y+axisLength*u.y,'#b35f20',2.2,{'marker-end':'url(#arrow-local)'});
+        line(g,o.x,o.y,o.x+axisLength*v.x,o.y+axisLength*v.y,'#b35f20',2.2,{'marker-end':'url(#arrow-local)'});
+        label(g,o.x+axisLength*u.x,o.y+axisLength*u.y,'+s','#b35f20',14,8,3);
+        label(g,o.x+axisLength*v.x,o.y+axisLength*v.y,'+e','#b35f20',14,-22,-9);
+        line(g,o.x,o.y,endS.x,endS.y,'#b35f20',2,{'stroke-dasharray':'6 5'});
+        line(g,endS.x,endS.y,w.x,w.y,'#b35f20',2,{'stroke-dasharray':'6 5'});
+        if(Math.abs(l.x)>5) label(g,(o.x+endS.x)/2,(o.y+endS.y)/2,'s = '+clean(l.x,0),'#8d4c1c',12,9,17);
+        if(Math.abs(l.y)>5) label(g,(w.x+endS.x)/2,(w.y+endS.y)/2,'e = '+clean(l.y,0),'#8d4c1c',12,9,-6);
+        g.append(svgElement('circle',{cx:sx(o.x),cy:sy(o.y),r:5,fill:'#b35f20',stroke:'#fff','stroke-width':2}));
+        label(g,o.x,o.y,'O 原点','#8d4c1c',13,10,24);
+        const yawLength=38;
+        line(g,w.x,w.y,w.x+yawLength*Math.cos(w.a),w.y+yawLength*Math.sin(w.a),'#4266a0',2.8,{'marker-end':'url(#arrow-body)'});
+        const nose={x:sx(w.x)+14*Math.cos(w.a),y:sy(w.y)-14*Math.sin(w.a)};
+        const p1={x:sx(w.x)-9*Math.cos(w.a)+8*Math.sin(w.a),y:sy(w.y)+9*Math.sin(w.a)+8*Math.cos(w.a)};
+        const p2={x:sx(w.x)-9*Math.cos(w.a)-8*Math.sin(w.a),y:sy(w.y)+9*Math.sin(w.a)-8*Math.cos(w.a)};
+        g.append(svgElement('polygon',{points:`${nose.x},${nose.y} ${p1.x},${p1.y} ${p2.x},${p2.y}`,fill:'#4266a0',stroke:'#fff','stroke-width':2}));
+        label(g,w.x,w.y,'P 機体','#304b78',14,14,23);
+        label(g,w.x+yawLength*Math.cos(w.a),w.y+yawLength*Math.sin(w.a),'θ','#4266a0',15,8,-4);
+      }
+      function update() {
+        const value=Object.fromEntries(ids.map(id=>[id,Number(inputs[id].value)]));
+        const o={x:value.ox,y:value.oy,a:rad(value.phi)},l={x:value.s,y:value.e,a:rad(value.psi)};
+        const w=compose(o,l),back=relative(o,w);
+        for(const id of ids) document.getElementById(id+'-value').textContent=value[id]+(['phi','psi'].includes(id)?'°':' mm');
+        document.getElementById('world-x').innerHTML=clean(w.x,2)+' <span>mm</span>';
+        document.getElementById('world-y').innerHTML=clean(w.y,2)+' <span>mm</span>';
+        document.getElementById('world-yaw').innerHTML=clean(deg(w.a),1)+'° <span>/ '+clean(w.a,3)+' rad</span>';
+        document.getElementById('input-summary').textContent=`O=(${value.ox}, ${value.oy}) mm / φ=${value.phi}° / s=${value.s}, e=${value.e} mm / ψ=${value.psi}°`;
+        const error=Math.hypot(back.x-l.x,back.y-l.y),angleError=Math.abs(wrap(back.a-l.a));
+        document.getElementById('roundtrip').textContent='往復誤差 '+(error<1e-9?' < 10⁻⁹':error.toExponential(2))+' mm';
+        document.getElementById('coordinate-demo').dataset.ready='true';
+        document.getElementById('coordinate-demo').dataset.roundtripError=String(Math.max(error,angleError));
+        draw(o,l,w);
+      }
+      const presets={straight:{phi:0,s:80,e:0,psi:0},diagonal:{phi:45,s:80,e:20,psi:5},left:{phi:0,s:60,e:60,psi:90},right:{phi:0,s:60,e:-60,psi:-90}};
+      for(const input of Object.values(inputs)) input.addEventListener('input',update);
+      for(const button of document.querySelectorAll('[data-preset]')) button.addEventListener('click',()=>{for(const [id,value] of Object.entries(presets[button.dataset.preset]))inputs[id].value=String(value);update();});
+      document.getElementById('print-page').addEventListener('click',()=>window.print());
+      update();
+    })();
+  </script>
+</body>
+</html>

@@ -2,6 +2,8 @@
 
 コマンドはリポジトリのルートから実行する。以下は起動例で、この資料を読むだけで実機へ送信するものではない。
 
+録画付きで使う場合は先に[用途別の録画設定とArUco参照](capture-profiles.md)で専用GUIを選ぶ。以下の素のBLE中継の既定ポートはPixelカメラと競合するため、録画用の接続設定と混ぜない。
+
 ## 読む実装・説明
 
 | 内容 | 参照先 |
@@ -68,7 +70,7 @@ GUIの`Turn count`を増やすことは、任意の異なるターン列を組�
 - ゼロ設定を前提に専用解析ツールでLstart/Lendを逆算する場合は、[mouse-log-analysisの測定条件](../../mouse-log-analysis/references/turn-lengths.md)を使う。
   特にLstart=Lend=0、動画・ログ対応、対応motion、スロー倍率、品質条件を確認し、未対応の左斜め系を単純に名前置換しない。
   現在の非ゼロ設定での比較調整と、この逆算の入力条件は区別する。全体の進め方は[turn_500の調整方針](turn500-workflow.md)を参照する。
-- 最短への反映は機体別`Params/Param_A/turn_500.h`または`Param_B/turn_500.h`、選択は`run_config_plain500`と`mode_500`を確認する。
+- 最短への反映は機体別`Params/Param_A/turn_500/turn_500.cpp`または`Params/Param_B/turn_500/turn_500.cpp`、選択は`run_config_plain500`と`mode_500`を確認する。
 
 GUI・送受信を修正した場合は変更に応じて`test_myshell_debug_session.py`、`test_myshell_gui.py`（pytest）、
 BLEランチャーの`test_mouse_ble_transport.py`を選ぶ。ファームウェアも変更した場合はmouse-build-checkへ進む。

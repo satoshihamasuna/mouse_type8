@@ -22,6 +22,8 @@ description: "mouse_type8 の保存済み走行 CSV・設定 JSON・動画から
 - `turn_ff_report.py` と `turn_sp_voltage_report.py` は 1 ms 固定、`video_marker_pose.py` は `cnt * 0.001`。異なる周期の入力を扱う場合は、時間軸を合わせる対応を先に行う。
 - 出力は機体・取得日・解析条件を区別できる保存先に置き、入力ログを保持する。
 
+調整盤・9×9迷路の動画では[用途別の録画設定とArUco参照](../mouse-turn-tuning/references/capture-profiles.md)も確認し、用途に合った盤面基準・尺度と、各評価フレームのArUco登録証拠を照合する。
+
 ## 座標基準と判定の範囲を確認する
 
 - 入力と出力が盤面固定か、実測入口方向へ合わせた相対基準かを確認し、同じ基準の目標だけと比較する。[座標基準と判定の範囲](../mouse-turn-tuning/references/turn500-workflow.md#座標基準と判定の範囲)を参照する。

@@ -1,6 +1,6 @@
 ---
 name: mouse-turn-tuning
-description: "mouse_type8 の既存GUIとBLEで最短ターンを単体調整・連続検証し、設定付きログと機体別パラメータへ結び付ける。以前作ったターン調整ツールの確認や、そのGUIの操作・改善依頼にも使う。取得済みログの解析だけなら mouse-log-analysis を使う。"
+description: "mouse_type8 の既存GUIとBLEで最短ターンを単体調整・連続検証し、動画・走行ログからターン時のEKFパラメータも求め、機体別の採用値へ結び付ける。既存GUIの操作・改善、調整用と9×9迷路用の録画設定切替にも使う。保存済みログだけの解析は mouse-log-analysis と該当する解析手順を併用する。"
 ---
 
 # mouse_type8 のターン調整
@@ -12,7 +12,13 @@ description: "mouse_type8 の既存GUIとBLEで最短ターンを単体調整・
 | 1種類のターンの半径・Lstart/Lend・角度補償・PID/FFを調整し、実機値付きログを取得 | `tools/myshell_debug.py` |
 | 入出力が直進/斜めでつながる最大20ターンを組み、連続走行を確認 | `tools/myshell_turnpattern.py` |
 | 上記GUIをBLEで起動 | `tools/ble/mouse_ble_gateway.py` ＋ `tools/ble/mouse_gui_ble.py --gui debug` または `--gui turnpattern` |
+| 単体ターンを録画し、BLEログと比較 | `tools/pixel_camera_tuning.py`（`tools/Start_Pixel_Tuning.cmd`） |
+| 動画・走行ログからターンEKFの滑り係数・雑音を同定し、従来積分と比較 | [ターンEKFの同定手順](references/turn-ekf.md)。既存の`turn_slip_conditions.py`、軌跡比較・実C++再生を使う |
+| 9×9迷路の探索・最短を録画 | `tools/ble/mouse_ble_explore_camera_gui.py`（`tools/Start_BLE_Explore_Camera.cmd`） |
 | 探索・最短経路を通した評価 | `tools/ble/mouse_ble_explore_gui.py`。単体ターン調整とは別の入口 |
+
+録画付きGUIの起動、調整盤と9×9迷路の切替、画角の変更では[用途別の録画設定とArUco参照](references/capture-profiles.md)を読む。
+**調整用と9×9用の撮影設定は分離し、位置を評価する各フレームで登録済みArUcoを必ず参照する。**
 
 操作・接続・ログ取得では[既存GUIの手順](references/gui-workflow.md)を読む。
 実装の変更では、そこに挙げたPythonと`System/Src/myshell.cpp`、関連READMEを先に確認する。
@@ -29,6 +35,15 @@ turn_500の調整方針・対象順序・再開時の判断は[turn_500の調整
   取得済みCSV・設定JSON・動画の分析は[mouse-log-analysis](../mouse-log-analysis/SKILL.md)、ゼロ設定を前提にLstart/Lendを逆算する場合はその[測定手順](../mouse-log-analysis/references/turn-lengths.md)へ進む。
 - `Get log CSV`のCSVと同名`.settings.json`を一組にし、`unknown`や設定取得`error`を調整済みの証拠にしない。
   デバッグGUIに探索GUIと同じ壁制御の自動切替・記録があるとは限らない。未記録のモードをファイル名や日時から推測しない。
+
+## ターン時のEKFパラメータも評価する
+
+ターン調整では、幾何・PID/FFに加えてEKFの滑り係数・雑音・初期バイアスの評価も対象にする。
+動画と時刻付きログがそろう場合は[ターンEKFの同定手順](references/turn-ekf.md)で条件別の候補を求める。
+不足する入力や識別できない項目は明記し、既定値を今回求めた値として扱わない。
+機体A/B、速度、吸引ON/OFF・duty、左右・ターン形状を区別し、同定に使っていない試行と従来積分で検証する。
+EKFモードを固定して幾何調整を比較し、EKF候補を変えた後は軌道と連続接続を再確認する。
+解析候補の保存とファームへの反映は分け、反映も依頼された場合に対象機体の検証へ進む。
 
 ## 開始配置の記録を先に確認する
 
@@ -52,7 +67,7 @@ turn_500の調整方針・対象順序・再開時の判断は[turn_500の調整
   パターンJSONはターン列と共通設定であり、単体GUIで編集した各ターンの係数一式ではない。
 - 最短`plain500`はコンパイル済みの機体別`mode_500`を使う。GUIでうまく回ったことだけを、最短の調整完了とは扱わない。
 
-採用値の反映まで依頼されている場合は、機体に対応する`Params/Param_A/turn_500.h`または`Param_B/turn_500.h`へ根拠とともに反映し、
+採用値の反映まで依頼されている場合は、機体に対応する`Params/Param_A/turn_500/turn_500.cpp`または`Params/Param_B/turn_500/turn_500.cpp`へ根拠とともに反映し、
 [mouse-build-check](../mouse-build-check/SKILL.md)で該当する検証を行う。反映未依頼なら候補と入力の対応を保存する。
 RAM設定を保つ連続評価が必要なら、既存turnpatternの設定読込みを確認し、依頼された範囲で改善する。
 
