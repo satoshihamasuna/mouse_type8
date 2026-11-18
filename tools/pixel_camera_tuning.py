@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import csv
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import math
 import os
@@ -15,7 +15,8 @@ import time
 
 from pixel_camera_turn_capture import (CAMERA_MOTIONS, SEARCH_TURNS, MotionOnce, Shell, read_rows, save_motion_slice,
     utc_now, validate_recording, validate_settings, write_json, debug_motion_prefix,
-    device_motion_name, camera_capability_supported, settings_done_marker)
+    device_motion_name, camera_capability_supported, settings_done_marker, save_retained_log)
+from pixel_camera_profiles import load_camera_profile, validate_camera_settings
 
 
 def hidden_process():
@@ -81,9 +82,9 @@ def format_turn_set_command(motion, values, suction_enabled, duty, count):
     right = '_r' in motion or motion.startswith('r_')
     if any((v >= 0 if right else v <= 0) for v in (values[1], values[4])):
         raise ValueError('右は半径・角度が負、左は正です')
-    if any(v < 0 for index, v in enumerate(values[13:], 13)
-           if not (motion in SEARCH_TURNS and index == 21)):
-        raise ValueError('FF係数は0以上にしてください')
+    # 角速度の大きさの変化に掛ける並進FFは符号付き。turn1600にも負の採用値がある。
+    if any(v < 0 for index, v in enumerate(values[13:], 13) if index != 21):
+        raise ValueError('SP angular-speed acceleration以外のFF係数は0以上にしてください')
     if type(suction_enabled) is not bool or type(duty) is not int or not 0 <= duty <= 990 or type(count) is not int or not 1 <= count <= 100:
         raise ValueError('吸引設定または回数が不正です')
     return '{} set {} {} {} {}'.format(
@@ -118,8 +119,10 @@ class TrialRequest:
     geometry: Path
     seconds: int = 20
     operator_ready: bool = False
+    camera_settings: dict = field(default_factory=lambda: load_camera_profile('tuning'))
 
     def validate(self):
+        validate_camera_settings(self.camera_settings)
         if not self.operator_ready:
             raise ValueError('設置・停止・手離しを毎回確認してください')
         validate_settings(self.expected, self.expected['motion_name'], self.expected['preset_speed_mm_s'])
@@ -324,12 +327,14 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
     mouse, turn, preset = expected['mouse'], expected['motion_name'], expected['preset_speed_mm_s']
     value = dict(schema_version=1, state='PREPARING', started_at=utc_now(), mouse=mouse,
         mouse_identity_source='user_supplied', motion=turn, preset=preset, turn_count=1,
-        suction_enabled=False, settings_mode='gui_apply_then_show', stream_period_ms=5,
+        suction_enabled=None, suction_duty=None, requested_suction=dict(expected['suction']),
+        settings_mode='gui_apply_then_show', stream_period_ms=5,
         camera_height_mm=request.height_mm, height_source='approximate_for_capture',
         camera_fixed_confirmed=True, execution_resend_count=0, physical_240fps_verified=False,
         parameter_adoption_allowed=False, type8_log_csv=str(folder/'telemetry.csv'),
         recording_stop_mode='motion_end_plus_postroll', recording_limit_seconds=request.seconds,
         recording_postroll_seconds=1.0,
+        capture_profile='tuning', camera_settings=request.camera_settings,
         type8_settings_json=str(folder/'telemetry.settings.json'), live_session=str(session.folder),
         quick_report=str(folder/'quick/summary.json'), full_report=str(folder/'full/summary.json'))
     for source, name in ((request.reference, 'marker_reference_used.json'), (request.geometry, 'body_geometry_used.json')):
@@ -385,6 +390,7 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
             else:
                 value['settings_write_count'] = 0
             write_json(folder/'telemetry.settings.json', settings)
+            value.update(suction_enabled=settings['suction']['enabled'], suction_duty=settings['suction']['duty'])
             event('settings_verified', settings=settings, write_count=value['settings_write_count'])
             deadline = time.monotonic()+3
             while not tail.snapshot():
@@ -415,28 +421,39 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
                 if not motion.start_confirmed:
                     return dict(request_stop=False, fallback_reason='motion_start_not_confirmed')
                 # 実行直前の停止行から読む。前回の動作を今回の停止条件にしない。
+                recording_tail = tail
                 class MotionTail:
                     @property
                     def latest_at(self):
-                        return tail.latest_at
+                        return recording_tail.latest_at
                     def snapshot(self):
-                        return tail.snapshot()[motion_log_start:]
+                        return recording_tail.snapshot()[motion_log_start:]
                 return wait_motion_stop(client, recording_id, seconds, tail=MotionTail(),
                     health=lambda: last_health(session.folder/'telemetry.health.jsonl'),
                     baseline_crc=baseline_crc, alive=lambda: session.alive() and session.connection.is_open,
                     stop_evidence=log_stop_evidence, event=event)
             event('recording_requested', seconds=request.seconds)
             manifest, camera_value = record(session.camera, session.project, seconds=request.seconds,
-                mouse=mouse, label=folder.name, on_ready=motion, stop_policy=stop_policy)
+                mouse=mouse, label=folder.name, on_ready=motion, stop_policy=stop_policy,
+                camera_settings=request.camera_settings, capture_profile='tuning')
             value.update(capture_json=str(manifest), camera_state=camera_value['state'],
+                         camera_configuration=camera_value.get('camera_configuration'),
                          recording_stop=camera_value.get('recording_stop'),
                          video_file=camera_value.get('video_file'), recording_id=camera_value.get('recording_id'))
             if camera_value['state'] != 'PASSED' or not motion.start_confirmed:
                 raise RuntimeError('録画・転送・開始応答を確認できません。実行は再送しません')
             event('recording_transferred', stop=camera_value.get('recording_stop'))
+            # The stopped RAM dump can interrupt live-stream servicing. Keep
+            # that transfer outside this trial's continuous recording window.
+            tail.close()
+            tail = None
+            value['saved_log'] = dict(status='receiving')
+            value['saved_log'] = save_retained_log(shell, folder, settings, capability, turn, event)
             value['state'] = 'CAPTURED_REVIEW_REQUIRED'
         except Exception as error:
             value.update(state='FAILED', error=type(error).__name__+': '+str(error))
+            if value.get('saved_log', {}).get('status') == 'receiving':
+                value['saved_log'].update(status='failed', error=str(error))
         finally:
             if tail is not None:
                 try:

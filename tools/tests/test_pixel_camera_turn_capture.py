@@ -2,14 +2,18 @@
 import csv
 import copy
 import importlib.util
+import io
+import json
 from pathlib import Path
 import sys
+import struct
 import tempfile
 import unittest
 from unittest.mock import Mock
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
+sys.path.insert(0, str(TOOLS / 'ble'))
 spec = importlib.util.spec_from_file_location("pixel_camera_turn_capture", TOOLS / "pixel_camera_turn_capture.py")
 capture = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(capture)
@@ -60,6 +64,98 @@ class SettingsHandoffTests(unittest.TestCase):
             del changed[key]
             with self.subTest(missing=key), self.assertRaises(RuntimeError):
                 capture.verify_expected_settings(actual, changed)
+
+
+class RetainedLogTests(unittest.TestCase):
+    capability = ('DEBUG_CAMERA_CAP protocol:1 ttl_ms:15000 turn_log_hold:1 search_turn_log_hold:1 '
+                  'saved_log_period_ms:1 saved_log_capacity:400')
+
+    def shell(self, *, indices=(0, 1), magic=0xA55C, terminate=True, header=True):
+        from mouse_ble_log import LOG_LABELS
+        labels = ['cnt'] + list(LOG_LABELS)
+        frame = struct.Struct('<HH49e4h2H')
+        payload = b'DEBUG_CAMERA_RUN_DONE\r\n'
+        if header:
+            payload += ('HEADER,' + ','.join(labels) + '\r\n').encode()
+        payload += b'BINARY\r\n'
+        for index in indices:
+            payload += frame.pack(magic, index, *([.5] * 49), -32768, -7, 2049, 32767, 2209, 7)
+        if terminate:
+            payload += frame.pack(0xFFFF, 0, *([0] * 55)) + b'END\r\n'
+        wire = io.BytesIO(payload)
+        connection = Mock()
+        connection.readline.side_effect = wire.readline
+        connection.read.side_effect = lambda size: wire.read(min(size, 7))
+        return capture.Shell(connection, io.BytesIO(), Mock(), char_delay=0)
+
+    def test_stopped_turn_and_search_export_exact_integer_values_and_relative_time(self):
+        for motion in ('long_r180', 'search_turn_left'):
+            with self.subTest(motion=motion), tempfile.TemporaryDirectory() as name:
+                folder = Path(name)
+                shell = self.shell()
+                result = capture.save_retained_log(shell, folder, full_settings(), self.capability, motion, Mock())
+                rows = capture.read_rows(folder / result['csv'])
+                self.assertEqual(result['status'], 'saved')
+                self.assertEqual((result['period_ms'], result['frame_count'], result['capacity']), (1, 2, 400))
+                self.assertEqual([row['cnt'] for row in rows], ['0', '1'])
+                self.assertEqual([int(rows[0][key]) for key in ('sen_l.value', 'sen_r.value', 'sen_fl.value',
+                    'sen_fr.value', 'ir.range_states', 'motion.pattern')], [-32768, -7, 2049, 32767, 2209, 7])
+                self.assertNotIn('time_ms', rows[0])
+                sidecar = json.loads((folder / result['settings_json']).read_text())
+                self.assertEqual(sidecar['parameters'], full_settings()['parameters'])
+                self.assertIn('no absolute MCU time', sidecar['log']['timebase'])
+                commands = b''.join(call.args[0] for call in shell.connection.write.call_args_list)
+                self.assertEqual(commands, b'log mode0\rdisp log_bin\r')
+                self.assertIn(b'\x5c\xa5', shell.output.getvalue())
+
+    def test_old_firmware_does_not_claim_or_request_a_one_ms_log(self):
+        shell = Mock()
+        result = capture.save_retained_log(shell, Path('unused'), full_settings(),
+            'DEBUG_CAMERA_CAP protocol:1 ttl_ms:15000', 'long_r180', Mock())
+        self.assertEqual(result['status'], 'unsupported')
+        shell.send.assert_not_called()
+        shell.wait_line.assert_not_called()
+
+    def test_invalid_frames_and_missing_header_are_rejected_without_resending(self):
+        for options in (dict(indices=(0, 2)), dict(magic=0xA55A), dict(header=False), dict(indices=())):
+            with self.subTest(options=options), tempfile.TemporaryDirectory() as name:
+                shell = self.shell(**options)
+                with self.assertRaises((RuntimeError, ValueError)):
+                    capture.save_retained_log(shell, Path(name), full_settings(), self.capability,
+                                              'long_r180', Mock())
+                commands = b''.join(call.args[0] for call in shell.connection.write.call_args_list)
+                self.assertEqual(commands.count(b'disp log_bin'), 1)
+                self.assertNotIn(b'exe', commands)
+
+    def test_missing_binary_end_times_out_and_never_reports_a_complete_log(self):
+        with tempfile.TemporaryDirectory() as name:
+            folder = Path(name)
+            shell = self.shell(terminate=False)
+            with self.assertRaises(TimeoutError):
+                capture.save_retained_log(shell, folder, full_settings(), self.capability,
+                                          'long_r180', Mock(), timeout=.02)
+            self.assertFalse((folder / 'saved_1ms.settings.json').exists())
+
+    def test_no_log_request_is_sent_without_the_run_done_response(self):
+        shell = self.shell()
+        shell.wait_line = Mock(side_effect=TimeoutError('missing run done'))
+        with self.assertRaises(TimeoutError):
+            capture.save_retained_log(shell, Path('unused'), full_settings(), self.capability,
+                                      'long_r180', Mock())
+        shell.connection.write.assert_not_called()
+
+    def test_exactly_four_hundred_samples_are_allowed_and_overflow_is_rejected(self):
+        for count in (400, 401):
+            with self.subTest(count=count), tempfile.TemporaryDirectory() as name:
+                shell = self.shell(indices=range(count))
+                if count == 400:
+                    result = capture.save_retained_log(shell, Path(name), full_settings(), self.capability,
+                                                      'long_r180', Mock())
+                    self.assertEqual(result['frame_count'], 400)
+                else:
+                    with self.assertRaises(RuntimeError):
+                        capture.save_retained_log(shell, Path(name), full_settings(), self.capability,
+                                                  'long_r180', Mock())
 
 
 class OneShotTests(unittest.TestCase):
@@ -191,6 +287,21 @@ class OneShotTests(unittest.TestCase):
                            ("parameters", {"velo": 0.7}), ("suction", {"enabled": True})):
             with self.subTest(key=key), self.assertRaises(RuntimeError):
                 capture.validate_settings(dict(settings(), **{key: value}), "long_r180", 500)
+
+    def test_normal_turn_accepts_explicit_suction_on_with_valid_actual_duty(self):
+        actual = dict(settings(), suction=dict(enabled=True, duty=650))
+        capture.validate_settings(actual, 'long_r180', 500)
+        for duty in (None, 0, -1, 991, True, 650.0):
+            with self.subTest(duty=duty), self.assertRaises(RuntimeError):
+                capture.validate_settings(dict(actual, suction=dict(enabled=True,duty=duty)), 'long_r180', 500)
+        for enabled in (None, 0, 1, 'ON'):
+            with self.subTest(enabled=enabled), self.assertRaises(RuntimeError):
+                capture.validate_settings(dict(actual,suction=dict(enabled=enabled,duty=650)), 'long_r180', 500)
+        with self.assertRaises(RuntimeError):
+            capture.validate_settings(dict(actual,turn_count=True), 'long_r180', 500)
+        search = dict(actual, motion_name='search_turn_right', preset_speed_mm_s=370, parameters=dict(velo=.37))
+        with self.assertRaisesRegex(RuntimeError, '探索ターン'):
+            capture.validate_settings(search, 'search_turn_right', 370)
 
 
 class LogSliceTests(unittest.TestCase):

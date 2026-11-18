@@ -38,13 +38,12 @@ def load_pose_cache(path, trial, reference, geometry, window, frame_stride=1):
             or provenance.get('nominal_marker_span_mm') != geometry.get('nominal_marker_span_mm')
             or provenance.get('marker_span_limits_mm') != geometry.get('marker_span_limits_mm')
             or provenance.get('marker_detection') != geometry.get('marker_detection')
+            or provenance.get('marker_calibration', {}).get('per_frame_registration_required') is not True
             or window[0] < provenance['video_window'][0] or window[1] > provenance['video_window'][1]):
         raise ValueError('pose cache does not match video, calibration, detector, or analysis window')
     pose = pd.read_csv(path)
     if 'calibration_valid' not in pose:
-        if not provenance.get('calibration_mask_inference'):
-            raise ValueError('pose cache has no calibration validity evidence')
-        pose['calibration_valid'] = pose.marker_detected_raw
+        raise ValueError('pose cache has no per-frame ArUco calibration validity evidence')
     pose = pose[(pose.time_video_s >= window[0]) & (pose.time_video_s <= window[1])].reset_index(drop=True)
     pose.attrs['marker_calibration'] = provenance['marker_calibration']
     return pose
@@ -52,6 +51,7 @@ def load_pose_cache(path, trial, reference, geometry, window, frame_stride=1):
 
 def required_motion_quality(time, valid, calibration_valid, log_time, trial, offset_s, frame_stride=1):
     """MCUの動作区間と、予め固定した前200 ms・後100 msを検査する。"""
+    valid = np.asarray(valid, bool) & np.asarray(calibration_valid, bool)
     origin_ms = float(log_time[0])
     start = offset_s+((trial['log_quality']['motion_start_time_ms']-origin_ms) % (2**32))/1000
     end = offset_s+((trial['log_quality']['motion_end_time_ms']-origin_ms) % (2**32))/1000
@@ -67,7 +67,8 @@ def required_motion_quality(time, valid, calibration_valid, log_time, trial, off
         observation_rate=rate, calibration_rate=calibration_rate,
         stationary_before_observations=int(before.sum()), stationary_after_observations=int(after.sum()),
         frame_stride=frame_stride, minimum_stationary_observations=minimum,
-        accepted_for_relative_review=bool(contained and rate >= .95 and before.sum() >= minimum and after.sum() >= minimum),
+        accepted_for_relative_review=bool(contained and rate >= .95 and calibration_rate >= .95
+                                         and before.sum() >= minimum and after.sum() >= minimum),
         timing_basis='MCU motion boundaries mapped with trajectory-fitted time offset; no independent hardware sync')
 
 
@@ -130,7 +131,8 @@ def main():
     front = transform_points(pose[['blue_x_mm', 'blue_y_mm']].to_numpy(), board_transform)
     rear = transform_points(pose[['yellow_x_mm', 'yellow_y_mm']].to_numpy(), board_transform)
     relative = relative_marker_midpoint(front, rear, args.camera_height_mm,
-        geometry['front_height_mm'], geometry['rear_height_mm'], pose.marker_detected_raw.to_numpy(bool))
+        geometry['front_height_mm'], geometry['rear_height_mm'],
+        pose.marker_detected_raw.to_numpy(bool) & pose.calibration_valid.to_numpy(bool))
     xy = relative['displacement_xy_mm']
     valid = relative['valid']
     time = pose.time_video_s.to_numpy()

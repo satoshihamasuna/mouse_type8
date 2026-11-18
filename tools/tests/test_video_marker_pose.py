@@ -117,6 +117,45 @@ class CalibrationTests(unittest.TestCase):
         actual = pose.select_marker_pair([(floor_front, 200)], [(floor_rear, 200)], axes, None, geometry, axes)
         np.testing.assert_allclose(actual, pose.transform_points([front, rear], axes), atol=.001)
 
+    def test_reference_registration_is_required_in_each_frame_without_grid_refinement(self):
+        image = self.board()
+        corners, ids, _ = cv2.aruco.ArucoDetector(
+            cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)).detectMarkers(image)
+        quad = pose.detect_aruco_quad(image)
+        profile = create_marker_reference(dict(
+            corners={'all':dict(ids=ids.ravel().tolist(), corners_px=[q.reshape(4,2).tolist() for q in corners])},
+            board_reference=dict(available=True, points_px=dict(TL=quad[0].tolist(), TR=quad[1].tolist(),
+                BL=quad[2].tolist(), BR=quad[3].tolist()))), image_size=(600,600),
+            board_corner_ids=dict(TL=5,TR=7,BL=6,BR=4))
+        cv2.circle(image, (300,270), 10, (0,0,255), -1)
+        cv2.circle(image, (300,330), 10, (0,255,255), -1)
+        missing = image.copy()
+        for x,y in ((50,50),(500,50),(50,500),(500,500)):
+            missing[y:y+50,x:x+50] = 255
+        moved = cv2.warpAffine(image, np.float32([[1,0,15],[0,1,0]]), (600,600), borderValue=(255,255,255))
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/'dropout_and_camera_shift.avi'
+            writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*'MJPG'), 240, (600,600))
+            self.assertTrue(writer.isOpened())
+            for frame in [image]*4+[missing]*4+[moved]*4:
+                writer.write(frame)
+            writer.release()
+            result, _, _, _ = pose.read_video_pose(path, 'red', marker_reference=profile)
+            missing_path = Path(folder)/'no_arucos.avi'
+            writer = cv2.VideoWriter(str(missing_path), cv2.VideoWriter_fourcc(*'MJPG'), 240, (600,600))
+            self.assertTrue(writer.isOpened())
+            for _ in range(4):
+                writer.write(missing)
+            writer.release()
+            with self.assertRaisesRegex(RuntimeError, 'no valid marker calibration'):
+                pose.read_video_pose(missing_path, 'red', marker_reference=profile, calibration_video=path)
+        self.assertEqual(result.calibration_valid.tolist(), [True]*4+[False]*4+[True]*4)
+        self.assertEqual(result.marker_detected_raw.tolist(), [True]*4+[False]*4+[True]*4)
+        before = result.loc[:3, ['center_x_mm','center_y_mm']].median().to_numpy()
+        after = result.loc[8:, ['center_x_mm','center_y_mm']].median().to_numpy()
+        np.testing.assert_allclose(before, after, atol=1.5)
+        self.assertTrue(result.attrs['marker_calibration']['per_frame_registration_required'])
+
     def test_mouse_b_front_rear_and_810mm_board_keep_metric_scale(self):
         image=self.board(marker_ids=(0,1,2,3))
         corners,ids,_=cv2.aruco.ArucoDetector(

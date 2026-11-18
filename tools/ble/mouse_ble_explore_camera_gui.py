@@ -1,6 +1,5 @@
 """探索条件を選び、Pixel録画とBLEログの準備後に手かざしOKを表示する。"""
 import argparse
-import math
 import os
 from pathlib import Path
 import tkinter as tk
@@ -8,7 +7,8 @@ from tkinter import filedialog, messagebox, ttk
 
 import mouse_ble_explore as explore
 from mouse_ble_explore_gui import ExploreApp
-from explore_camera import ExploreCameraRun, analysis_python, load_camera_preferences
+from explore_camera import ExploreCameraRun, analysis_python, default_maze_reference
+from pixel_camera_profiles import load_camera_profile, save_camera_profile, validate_camera_settings
 
 
 class ExploreCameraApp(ExploreApp):
@@ -47,7 +47,7 @@ class ExploreCameraApp(ExploreApp):
         self.review_button.pack(side='right')
         self.start_button.configure(text='録画付き開始 → 手かざし待ち')
         self.analysis_enabled = tk.BooleanVar(value=True)
-        self.reference_path = tk.StringVar(value=str(Path(__file__).resolve().parents[1] / 'logs/pixel_camera/board_9x9_reference.json'))
+        self.reference_path = tk.StringVar(value=str(default_maze_reference()))
         self.cell_mm = tk.StringVar(value='90')
         self.analysis_python_path = tk.StringVar(value=str(analysis_python()))
         analysis = ttk.LabelFrame(root, text='保存後の位置解析（機体・カメラへ指令は送りません）', padding=6)
@@ -62,19 +62,27 @@ class ExploreCameraApp(ExploreApp):
         ttk.Entry(analysis,textvariable=self.analysis_python_path,width=75).grid(row=2,column=1,columnspan=2,sticky='ew')
         ttk.Button(analysis,text='選択',command=lambda:self.choose_analysis_file(self.analysis_python_path)).grid(row=2,column=3)
         ttk.Button(analysis,text='保存済み試行を解析',command=self.analyze_saved).grid(row=0,column=3)
-        preferences = load_camera_preferences()
-        self.capture_ev = tk.StringVar(value=str(preferences.get('ev','維持')))
-        self.capture_torch = tk.StringVar(value=('ON' if preferences['torch'] else 'OFF') if 'torch' in preferences else '維持')
+        preferences = load_camera_profile('maze_9x9')
+        self.capture_ev = tk.StringVar(value=str(preferences.get('ev', -2.0)))
+        self.capture_torch = tk.StringVar(value='ON' if preferences['torch'] else 'OFF')
+        self.capture_zoom = tk.DoubleVar(value=preferences['zoom_ratio'])
+        self.capture_focus = tk.BooleanVar(value=preferences['focus_lock'])
         ttk.Label(analysis,text='撮影EV（既存動画は変更しません）').grid(row=3,column=0,sticky='w')
         camera_controls = ttk.Frame(analysis)
         camera_controls.grid(row=3,column=1,columnspan=3,sticky='w')
         self.capture_ev_choice = ttk.Combobox(camera_controls,textvariable=self.capture_ev,
-            values=('維持','0','-0.5','-1.0','-1.5','-2.0','-2.5','+0.5'),width=9)
+            values=('0','-0.5','-1.0','-1.5','-2.0','-2.5','+0.5'),width=9)
         self.capture_ev_choice.pack(side='left')
         ttk.Label(camera_controls,text=' ライト ').pack(side='left')
         self.capture_torch_choice = ttk.Combobox(camera_controls,textvariable=self.capture_torch,
-            values=('維持','OFF','ON'),state='readonly',width=8)
+            values=('OFF','ON'),state='readonly',width=8)
         self.capture_torch_choice.pack(side='left')
+        ttk.Label(camera_controls,text=' ズーム倍率 ').pack(side='left')
+        self.capture_zoom_entry = ttk.Entry(camera_controls,textvariable=self.capture_zoom,width=6)
+        self.capture_zoom_entry.pack(side='left')
+        self.capture_focus_choice = ttk.Checkbutton(camera_controls,text='AF固定',variable=self.capture_focus)
+        self.capture_focus_choice.pack(side='left',padx=8)
+        ttk.Label(analysis,text='9×9専用に保存。各評価フレームで登録済みArUco 2個以上を参照します。').grid(row=4,column=0,columnspan=4,sticky='w')
         root.title('mouse_type8 — 探索・最短動画／位置解析・BLEログ')
         root.geometry('1180x980')
 
@@ -92,15 +100,19 @@ class ExploreCameraApp(ExploreApp):
             if self.camera_run and self.camera_run.active:
                 raise ValueError('録画の準備・走行・保存が進行中です')
             config = self.analysis_config()
+            settings = self.selected_camera_settings()
+            save_camera_profile('maze_9x9', settings)
             self.camera_run = ExploreCameraRun(self.session, lambda k,d:self.events.put((k,d)), analysis_config=config,
-                                              camera_settings=self.selected_camera_settings())
+                                              camera_settings=settings)
             self.camera_run.start(options)
             self.camera_choice.configure(state='disabled')
             self.start_button.configure(state='disabled')
             self.stop_button.configure(state='normal')
             self.capture_ev_choice.configure(state='disabled')
             self.capture_torch_choice.configure(state='disabled')
-        except (ValueError, AttributeError, tk.TclError) as error:
+            self.capture_zoom_entry.configure(state='disabled')
+            self.capture_focus_choice.configure(state='disabled')
+        except (ValueError, AttributeError, OSError, tk.TclError) as error:
             messagebox.showerror('録画付き走行', str(error), parent=self.root)
 
     def choose_analysis_file(self, variable):
@@ -109,15 +121,9 @@ class ExploreCameraApp(ExploreApp):
             variable.set(path)
 
     def selected_camera_settings(self):
-        settings = {}
-        if self.capture_ev.get() != '維持':
-            ev = float(self.capture_ev.get())
-            if not math.isfinite(ev):
-                raise ValueError('撮影EVは有限の数値で指定してください')
-            settings['ev'] = ev
-        if self.capture_torch.get() != '維持':
-            settings['torch'] = self.capture_torch.get() == 'ON'
-        return settings
+        return validate_camera_settings(dict(ev=float(self.capture_ev.get()),
+            torch=self.capture_torch.get() == 'ON', zoom_ratio=self.capture_zoom.get(),
+            focus_lock=self.capture_focus.get()))
 
     def analysis_config(self):
         if not self.analysis_enabled.get():
@@ -193,6 +199,8 @@ class ExploreCameraApp(ExploreApp):
             self.camera_choice.configure(state='normal')
             self.capture_ev_choice.configure(state='normal')
             self.capture_torch_choice.configure(state='readonly')
+            self.capture_zoom_entry.configure(state='normal')
+            self.capture_focus_choice.configure(state='normal')
             self.update_run_mode()
             if self.camera_close_pending:
                 self.close()

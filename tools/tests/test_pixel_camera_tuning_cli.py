@@ -55,6 +55,19 @@ class CliTests(unittest.TestCase):
     def args(self, *command):
         return cli.parser().parse_args(['--session', str(self.service.folder), *command])
 
+    def test_camera_settings_are_complete_and_legacy_steps_apply_on_every_capture(self):
+        overrides = dict(ev=-1.5, torch=True, zoom_ratio=1.3, focus_lock=False)
+        config = dict(self.config, camera_settings=overrides)
+        service = cli.TuningService(self.folder/'overridden', config, self.session)
+        for _ in range(2):
+            self.assertEqual(service.trial_request(self.settings, True).camera_settings, overrides)
+        config = dict(self.config, exposure_compensation_steps=-15)
+        service = cli.TuningService(self.folder/'legacy', config, self.session)
+        settings = service.trial_request(self.settings, True).camera_settings
+        self.assertNotIn('ev', settings)
+        self.assertEqual(settings['exposure_compensation_steps'], -15)
+        self.assertEqual(set(settings), {'exposure_compensation_steps','torch','zoom_ratio','focus_lock'})
+
     def test_missing_confirmation_or_invalid_settings_never_reaches_worker(self):
         self.service.perform = Mock()
         for payload in ({'settings':self.settings}, {'settings':self.settings, 'operator_ready':'true'}):
@@ -202,6 +215,54 @@ class CliTests(unittest.TestCase):
             self.assertEqual(execute.call_count, 2)
             analyze.assert_not_called()
         self.session.close.assert_not_called()
+
+    def test_deferred_capture_releases_worker_without_analysis_and_id_stays_consumed(self):
+        def capture(session, request, folder, parse, progress):
+            self.assertTrue(request.operator_ready)
+            folder.mkdir()
+            return dict(state='CAPTURED_REVIEW_REQUIRED', execution_write_attempted=True)
+        payload = dict(settings=self.settings, operator_ready=True, defer_analysis=True)
+        with patch.object(cli, 'capture_connected', side_effect=capture) as execute, \
+                patch.object(cli, 'analyze_trial') as analyze, \
+                patch('pixel_camera_archive.archive_trial') as archive:
+            self.service.submit('capture', payload, 'deferred')
+            result = self.wait_job('deferred')
+            self.assertEqual(result['state'], 'DONE')
+            self.assertTrue(result['result']['analysis_deferred'])
+            self.assertTrue(result['result']['archive_deferred'])
+            pending = json.loads((self.service.folder/'run_deferred'/'deferred_analysis.json').read_text(encoding='utf-8'))
+            self.assertEqual(pending['state'], 'PENDING')
+            self.assertEqual(pending['frame_strides'], [4, 1])
+            analyze.assert_not_called()
+            archive.assert_not_called()
+            self.service.submit('close', {}, 'close_after_capture')
+            self.assertEqual(self.wait_job('close_after_capture')['state'], 'DONE')
+            with self.assertRaises(FileExistsError):
+                self.service.submit('capture', payload, 'deferred')
+            execute.assert_called_once()
+
+    def test_defer_analysis_requires_boolean_and_current_operator_confirmation(self):
+        self.service.perform = Mock()
+        for payload in (
+                dict(settings=self.settings, defer_analysis=True),
+                dict(settings=self.settings, operator_ready=True, defer_analysis='true')):
+            with self.assertRaises(ValueError):
+                self.service.submit('capture', payload, 'invalid_deferred')
+        self.service.perform.assert_not_called()
+
+    def test_deferred_client_forwards_flag_and_capture_success_is_not_full_quality_pass(self):
+        args = self.args('capture', '--settings', str(self.settings_path), '--operator-ready',
+            '--request-id', 'deferred_client', '--defer-analysis', '--no-wait')
+        with patch.object(cli, 'exchange', return_value=dict(state='ACCEPTED')) as exchange:
+            cli.client(args)
+        self.assertIs(exchange.call_args.args[2]['payload']['defer_analysis'], True)
+        result = dict(capture=dict(state='CAPTURED_REVIEW_REQUIRED'), analysis_deferred=True,
+            archive_deferred=True)
+        with patch.object(cli, 'client', return_value=dict(state='DONE', result=result)):
+            self.assertEqual(cli.main(['--session', str(self.service.folder), 'status']), 0)
+        result['capture']['state'] = 'FAILED'
+        with patch.object(cli, 'client', return_value=dict(state='DONE', result=result)):
+            self.assertEqual(cli.main(['--session', str(self.service.folder), 'status']), 1)
 
     def test_apply_sends_one_set_and_mismatched_readback_is_not_retried(self):
         before, after = deepcopy(self.settings), deepcopy(self.settings)
@@ -372,6 +433,32 @@ class CliTests(unittest.TestCase):
             _ff_values=lambda:[s['feedforward'][key] for _,key in debug.FF_FIELDS],
             _turn_count_value=lambda:1,_pre_accel_value=lambda:6.5,_suction_duty_value=lambda:650)
         self.assertEqual(debug.DebugGui._set_command(gui),settings_set_command(s))
+
+    def test_turn1600_preserves_negative_sp_angular_acceleration_in_gui_and_cli(self):
+        import myshell_debug as debug
+        s = deepcopy(self.settings)
+        s.update(motion_name='long_r90', preset_speed_mm_s=1600)
+        s['parameters'].update(velo=1.6, r_min=-52., lstart=15.97, lend=27.58, degree=-90.)
+        s['feedforward']['ff_sp_turn_accel_mag'] = -.00019277
+        fields = dict(zip([key for _,key in debug.FIELDS],
+            [s['parameters'][name] for name in ('velo','r_min','lstart','lend','degree','correction')]
+            + [s['pid'][key] for key in ('sp_kp','sp_ki','sp_kd','om_kp','om_ki','om_kd')]))
+        fields.update(s['feedforward'])
+        gui = SimpleNamespace(values={k:Variable(v) for k,v in fields.items()},
+            motion=Variable('turn'),turn_type=Variable('long_r90'),suction_enable=Variable(False),
+            _ff_values=lambda:[s['feedforward'][key] for _,key in debug.FF_FIELDS],
+            _turn_count_value=lambda:1,_pre_accel_value=lambda:6.5,_suction_duty_value=lambda:650)
+        command = debug.DebugGui._set_command(gui)
+        self.assertEqual(command, settings_set_command(s))
+        self.assertEqual(float(command.split()[25]), -.00019277)
+        request = self.service.trial_request(s, True)
+        self.assertEqual(request.set_command, command)
+        self.assertEqual(request.expected['feedforward']['ff_sp_turn_accel_mag'], -.00019277)
+        for key in ('ff_sp_velo','ff_sp_accel','ff_om_velo','ff_om_jerk','ff_sp_turn_velo_sq'):
+            invalid = deepcopy(s)
+            invalid['feedforward'][key] = -.1
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                settings_set_command(invalid)
 
 
 if __name__ == '__main__':

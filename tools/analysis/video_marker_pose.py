@@ -410,7 +410,7 @@ def read_video_pose(
     valid_quads = np.asarray([quad for quad in quads if quad is not None])
     if len(valid_quads):
         fixed_quad = np.median(valid_quads, axis=0).astype(np.float32)
-    elif calibration_video is not None:
+    elif calibration_video is not None and marker_reference is None:
         fixed_quad = calibration_quad_from_video(calibration_video, marker_reference=marker_reference)
         if fixed_quad is None:
             raise RuntimeError("no valid marker calibration; reference mode requires at least two registered markers")
@@ -422,7 +422,7 @@ def read_video_pose(
     previous = None
     for offset, (index, frame, pts) in enumerate(iter_video_frames(path, marker_reference is not None, video_window, frame_stride)):
         local_homography = homography
-        if dynamic_grid:
+        if marker_reference is not None:
             if quads[offset] is None:
                 records.append(dict(frame=index, time_video_s=pts, marker_detected_raw=False, calibration_valid=False))
                 continue
@@ -515,6 +515,8 @@ def read_video_pose(
         calibration_frame_rate=len(valid_quads)/frame_count,
         four_aruco_detection_rate=complete_rate,
         used_marker_ids=sorted({marker_id for result in registrations if result.get("available") for marker_id in result["used_marker_ids"]}),
+        per_frame_registration_required=marker_reference is not None,
+        missing_registration_policy='exclude_frame' if marker_reference is not None else 'legacy_fixed_quad',
         metric_accuracy_verified=False,
         video_time_basis='decoded_presentation_timestamps',
     )

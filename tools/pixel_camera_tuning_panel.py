@@ -13,6 +13,7 @@ from pixel_camera_tuning import (LiveSession, TrialRequest, analyze_trial,
     capture_connected)
 from pixel_camera_turn_capture import write_json
 from pixel_camera_archive import archive_trial, archive_for_trial, write_index
+from pixel_camera_profiles import load_camera_profile, save_camera_profile
 
 
 def gui_expected_settings(gui, mouse):
@@ -54,6 +55,11 @@ class PixelTuningPanel:
         self.address = tk.StringVar(value=saved.get('address', 'C1:B5:60:87:91:73'))
         self.reference = tk.StringVar(value=saved.get('reference', str(reference if reference.exists() else base/'marker_reference.json')))
         self.geometry = tk.StringVar(value=saved.get('geometry', str(geometry if geometry.exists() else base/'body_geometry_A.json')))
+        camera = load_camera_profile('tuning')
+        self.capture_ev = tk.StringVar(value=str(camera.get('ev', -2.5)))
+        self.capture_torch = tk.BooleanVar(value=camera['torch'])
+        self.capture_focus = tk.BooleanVar(value=camera['focus_lock'])
+        self.capture_zoom = tk.DoubleVar(value=camera['zoom_ratio'])
         self.ready = tk.BooleanVar(value=False)
         self.status = tk.StringVar(value='未接続。撮影用接続を準備し、Load defaultsで実機プリセットを取得してください')
         self.detail_status = tk.StringVar(value='停止確認後1秒以上を撮影。確認できない場合は録画上限まで保存します。詳細検証は速報後に実行します')
@@ -69,7 +75,7 @@ class PixelTuningPanel:
         ttk.Entry(row, textvariable=self.height, width=7).pack(side=tk.LEFT, padx=4)
         ttk.Label(row, text='録画上限[秒]').pack(side=tk.LEFT, padx=(8,0))
         ttk.Combobox(row, textvariable=self.seconds, values=(20,30), state='readonly', width=4).pack(side=tk.LEFT, padx=4)
-        ttk.Checkbutton(row, text='設置・停止・固定カメラと画角・手離しを確認', variable=self.ready).pack(side=tk.LEFT, padx=10)
+        ttk.Checkbutton(row, text='設置・停止・ArUco 2個以上の画角・手離しを確認', variable=self.ready).pack(side=tk.LEFT, padx=10)
         buttons = ttk.Frame(self.tab)
         buttons.pack(fill=tk.X, pady=4)
         ttk.Button(buttons, text='撮影用接続を準備', command=self.prepare).pack(side=tk.LEFT)
@@ -93,10 +99,25 @@ class PixelTuningPanel:
             ttk.Label(conditions, text=label).grid(row=index, column=0, sticky=tk.W, pady=5)
             ttk.Entry(conditions, textvariable=variable, width=95).grid(row=index, column=1, sticky=tk.EW, padx=8)
         conditions.columnconfigure(1, weight=1)
+        camera_controls = ttk.LabelFrame(conditions, text='調整用の録画設定（9×9迷路とは別に保存）', padding=6)
+        camera_controls.grid(row=3, column=0, columnspan=2, sticky=tk.EW, pady=6)
+        ttk.Label(camera_controls, text='撮影EV').pack(side=tk.LEFT)
+        ttk.Combobox(camera_controls, textvariable=self.capture_ev,
+            values=('-1.5','-2.0','-2.5','-3.0','0'), width=8).pack(side=tk.LEFT, padx=4)
+        ttk.Label(camera_controls, text='ズーム倍率').pack(side=tk.LEFT)
+        ttk.Entry(camera_controls, textvariable=self.capture_zoom, width=6).pack(side=tk.LEFT, padx=4)
+        ttk.Checkbutton(camera_controls, text='ライト', variable=self.capture_torch).pack(side=tk.LEFT, padx=8)
+        ttk.Checkbutton(camera_controls, text='AF固定', variable=self.capture_focus).pack(side=tk.LEFT)
         ttk.Label(conditions, text='BLE 8766／カメラ8765。参照・目印高さと色条件は撮影ごとにコピーします。\n'
             '画面のターン設定を照合してから撮影します。プリセットは撮影時に読み直しません。\n'
+            '登録済みArUcoを各評価フレームで2個以上参照します。ズーム変更後もマーカーが画角に入ることを確認してください。\n'
             '速報は約60fpsの暫定結果、詳細は240fps全フレーム。自動の値採用・連続走行・実行再送はしません。',
-            wraplength=1100).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=10)
+            wraplength=1100).grid(row=4, column=0, columnspan=2, sticky=tk.W, pady=10)
+
+    def selected_camera_settings(self):
+        from pixel_camera_profiles import validate_camera_settings
+        return validate_camera_settings(dict(ev=float(self.capture_ev.get()), torch=self.capture_torch.get(),
+            focus_lock=self.capture_focus.get(), zoom_ratio=self.capture_zoom.get()))
 
     def _busy(self, value):
         self.gui._camera_busy = value
@@ -165,8 +186,9 @@ class PixelTuningPanel:
                 raise ValueError('先に「撮影用接続を準備」を押してください')
             request = TrialRequest(gui_expected_settings(self.gui, self.mouse.get()), self.gui._set_command(),
                 self.gui.char_delay.get(), self.height.get(), Path(self.reference.get()), Path(self.geometry.get()),
-                self.seconds.get(), self.ready.get())
+                self.seconds.get(), self.ready.get(), self.selected_camera_settings())
             request.validate()
+            save_camera_profile('tuning', request.camera_settings)
         except Exception as error:
             self.status.set(str(error))
             return

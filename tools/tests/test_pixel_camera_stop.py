@@ -242,6 +242,30 @@ class CaptureStopTests(unittest.TestCase):
         saved=list((self.root/'tools/logs/pixel_camera').glob('*.capture.json'))
         self.assertTrue(json.loads(saved[0].read_text())['video_inspection']['passed'])
 
+    def test_profile_receipt_mismatch_prevents_recording_and_motion(self):
+        self.client.configure.return_value = dict(torch=False, focus_lock=True, zoom_ratio=1., exposure_compensation_steps=-15)
+        with redirect_stdout(io.StringIO()):
+            _, value = record_trial(self.client, self.root, seconds=20, on_ready=self.ready,
+                camera_settings=dict(torch=False, focus_lock=True, zoom_ratio=1.4, exposure_compensation_steps=-15),
+                capture_profile='tuning')
+        self.assertEqual(value['state'], 'FAILED')
+        self.client.start_recording.assert_not_called()
+        self.ready.assert_not_called()
+        self.client.disconnect.assert_called_once()
+
+    def test_profile_is_applied_before_recording_and_saved_with_its_receipt(self):
+        settings = dict(torch=False, focus_lock=True, zoom_ratio=1.4, exposure_compensation_steps=-15)
+        self.client.configure.side_effect = lambda **kwargs: kwargs
+        def ready():
+            self.client.configure.assert_called_once_with(**settings)
+        with redirect_stdout(io.StringIO()):
+            _, value = record_trial(self.client, self.root, seconds=20, on_ready=ready,
+                stop_policy=self.policy, camera_settings=settings, capture_profile='tuning')
+        self.assertEqual(value['state'], 'PASSED')
+        self.assertEqual(value['camera_configuration']['selection'], settings)
+        self.assertEqual(value['camera_configuration']['response'], settings)
+        self.assertEqual(value['capture_profile'], 'tuning')
+
     def test_lost_stop_response_and_transfer_recovery_never_resend_stop_or_motion(self):
         self.client.stop_recording.side_effect=TimeoutError('lost response')
         self.client.wait_for_transfer.side_effect=[TimeoutError('transfer delayed'),self.result]

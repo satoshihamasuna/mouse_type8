@@ -40,6 +40,15 @@ class RelativePoseTests(unittest.TestCase):
         self.assertAlmostEqual(quality['video_motion_end_s'], 1.25)
         self.assertTrue(quality['accepted_for_relative_review'])
 
+    def test_body_detections_without_current_aruco_registration_do_not_pass(self):
+        time = np.arange(0, 3.001, .005)
+        body = np.ones(len(time), bool)
+        calibration = ~((time > 1.3) & (time < 1.6))
+        trial = dict(log_quality=dict(motion_start_time_ms=2000, motion_end_time_ms=3000))
+        quality = required_motion_quality(time, body, calibration, [1000], trial, 0)
+        self.assertFalse(quality['accepted_for_relative_review'])
+        self.assertLess(quality['observation_rate'], .95)
+
     def test_cache_requires_matching_video_and_detector_and_window(self):
         with tempfile.TemporaryDirectory() as folder:
             folder = Path(folder)
@@ -50,10 +59,15 @@ class RelativePoseTests(unittest.TestCase):
             reference, geometry = dict(reference_id='known'), dict(front_colour='red', marker_detection={})
             meta = dict(video_sha256=file_hash(video), cached_pose_sha256=file_hash(cache),
                 reference_digest=reference_digest(reference), front_colour='red', marker_detection={},
-                video_window=[0, .2], marker_calibration={})
+                video_window=[0, .2], marker_calibration=dict(per_frame_registration_required=True))
             cache.with_suffix('.provenance.json').write_text(json.dumps(meta), encoding='utf-8')
             trial = dict(video_file=str(video))
             self.assertEqual(len(load_pose_cache(cache, trial, reference, geometry, (0, .2))), 3)
+            old = dict(meta, marker_calibration={})
+            cache.with_suffix('.provenance.json').write_text(json.dumps(old), encoding='utf-8')
+            with self.assertRaises(ValueError):
+                load_pose_cache(cache, trial, reference, geometry, (0, .2))
+            cache.with_suffix('.provenance.json').write_text(json.dumps(meta), encoding='utf-8')
             with self.assertRaises(ValueError):
                 load_pose_cache(cache, trial, reference, geometry, (0, .2), frame_stride=4)
             for ref, geo, window in ((dict(reference_id='other'), geometry, (0, .2)),

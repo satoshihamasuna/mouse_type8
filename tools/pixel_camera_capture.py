@@ -78,7 +78,8 @@ def _write_capture_manifest(path, value, writer):
             time.sleep(delays[attempt])
 
 
-def record_trial(client, project, seconds=30, mouse="unknown", label="", on_ready=None, stop_policy=None):
+def record_trial(client, project, seconds=30, mouse="unknown", label="", on_ready=None, stop_policy=None,
+                 camera_settings=None, capture_profile=None):
     """on_readyは実録画開始後に一度だけ呼ぶ。stop_policy省略時は指定秒数で録画する。"""
     from pixel_camera.transfer import atomic_json
     if not 1 <= seconds <= 30:
@@ -91,12 +92,20 @@ def record_trial(client, project, seconds=30, mouse="unknown", label="", on_read
                  mouse=mouse, mouse_identity_source="user_supplied_not_device_verified", label=label,
                  motion_control="existing_TYPE8_tool_or_explicit_on_ready_callback",
                  type8_log_csv=None, physical_240fps_verified=False)
+    if camera_settings is not None:
+        value.update(capture_profile=capture_profile, camera_settings=camera_settings)
     _write_capture_manifest(manifest, value, atomic_json)
     recording_id = None
     result = None
     try:
         client.connect()
-        client.configure(width=1280, height=720, fps=240)
+        if camera_settings is None:
+            client.configure(width=1280, height=720, fps=240)
+        else:
+            from pixel_camera_profiles import configure_camera
+            value['capture_profile'] = capture_profile
+            value['camera_configuration'] = configure_camera(client, camera_settings)
+            _write_capture_manifest(manifest, value, atomic_json)
         recording_id = client.start_recording(duration_s=seconds)
         value["recording_id"] = recording_id
         _write_capture_manifest(manifest, value, atomic_json)

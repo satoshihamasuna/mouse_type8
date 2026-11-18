@@ -62,6 +62,69 @@ def camera_capability_supported(line, motion):
             and (motion not in SEARCH_TURNS or fields.get("search_turn") == "1"))
 
 
+def save_retained_log(shell, folder, settings, capability, motion, event, timeout=30):
+    """停止応答後に本体の1 msリングを読む。動画同期用の連続CSVとは分ける。"""
+    from log_protocol import saved_log_frame, saved_log_magic, decode_saved_values
+    fields = dict(part.split(":", 1) for part in capability.split()[1:])
+    hold = "search_turn_log_hold" if motion in SEARCH_TURNS else "turn_log_hold"
+    if fields.get(hold) != "1" or fields.get("saved_log_period_ms") != "1" or fields.get("saved_log_capacity") != "400":
+        result = dict(status="unsupported", reason="Firmware does not advertise a retained 1 ms log")
+        event("saved_log_unavailable", **result)
+        return result
+
+    shell.wait_line(lambda line: line == "DEBUG_CAMERA_RUN_DONE", timeout=8)
+    event("saved_log_requested", period_ms=1)
+    shell.connection.reset_input_buffer()
+    shell.send("log mode0")
+    shell.send("disp log_bin")
+    line = shell.wait_line(lambda line: line.startswith("HEADER,") or line == "BINARY", timeout=8)
+    if not line.startswith("HEADER,"):
+        raise RuntimeError("本体ログのHEADERを受信できません")
+    labels = line.split(",")[1:]
+    frame = saved_log_frame(labels)
+    magic = saved_log_magic(labels)
+    shell.wait_line(lambda line: line == "BINARY", timeout=8)
+    deadline = time.monotonic() + timeout
+
+    def read_exact(size):
+        data = bytearray()
+        while len(data) < size:
+            if time.monotonic() >= deadline:
+                raise TimeoutError("本体1 msログの受信が完了しません。実行は再送しません")
+            chunk = shell.connection.read(size - len(data))
+            if chunk:
+                data.extend(chunk)
+                shell.output.write(chunk)
+                shell.output.flush()
+        return data
+
+    folder = Path(folder)
+    path = folder / "saved_1ms.csv"
+    count = 0
+    with path.open("x", newline="", encoding="utf-8") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(labels)
+        while True:
+            actual_magic, index, *words = frame.unpack(read_exact(frame.size))
+            if actual_magic == 0xFFFF:
+                break
+            if actual_magic != magic or index != count or count >= 400:
+                raise RuntimeError("本体1 msログの形式・連番・件数が不正です")
+            writer.writerow([index] + decode_saved_values(labels, words))
+            count += 1
+    shell.wait_line(lambda line: line == "END", timeout=8)
+    if not count:
+        raise RuntimeError("本体1 msログが空です")
+    result = dict(status="saved", csv=path.name, settings_json="saved_1ms.settings.json",
+        period_ms=1, frame_count=count, capacity=400, drop_count=0,
+        timebase="cnt: elapsed ms from oldest retained sample; no absolute MCU time",
+        coverage="latest samples through turn Lend; post-run deceleration excluded")
+    sidecar = dict(settings, log=dict(result, columns=labels))
+    write_json(folder / result["settings_json"], sidecar)
+    event("saved_log_saved", **result)
+    return result
+
+
 def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
@@ -71,7 +134,7 @@ def write_json(path, value):
 
 
 def validate_settings(settings, motion, preset):
-    """GUI値ではなく実機応答を検証する。初回は回数1・吸引OFFのみ。"""
+    """実機応答の単体1回を検証する。通常ターンは照合済みの吸引ONにも対応。"""
     if motion not in CAMERA_MOTIONS or preset not in camera_preset_speeds(motion):
         raise RuntimeError("対応するターン名とプリセット速度を指定してください")
     if settings.get("error") or settings.get("motion_name") != motion:
@@ -81,8 +144,17 @@ def validate_settings(settings, motion, preset):
     if not math.isclose(settings.get("parameters", {}).get("velo", -1), preset / 1000.0,
                         abs_tol=0.001):
         raise RuntimeError("実機速度が要求値と一致しません")
-    if settings.get("turn_count") != 1 or settings.get("suction", {}).get("enabled") is not False:
-        raise RuntimeError("この撮影入口は回数1・吸引OFFに限定しています")
+    if type(settings.get("turn_count")) is not int or settings['turn_count'] != 1:
+        raise RuntimeError("この撮影入口は回数1に限定しています")
+    suction = settings.get('suction', {})
+    enabled = suction.get('enabled')
+    if type(enabled) is not bool:
+        raise RuntimeError('吸引ON/OFFの実機設定を確認できません')
+    if enabled:
+        if motion in SEARCH_TURNS:
+            raise RuntimeError('撮影用の探索ターンは吸引OFFに限定しています')
+        if type(suction.get('duty')) is not int or not 1 <= suction['duty'] <= 990:
+            raise RuntimeError('吸引ONの値は1～990で実機照合してください')
 
 
 def verify_expected_settings(actual, expected):
@@ -239,7 +311,9 @@ def capture(args, project, workspace):
     from myshell_debug import DebugGui
     from pixel_camera import PixelCameraClient
     from pixel_camera_capture import record_trial
+    from pixel_camera_profiles import load_camera_profile
 
+    camera_settings = load_camera_profile('tuning')
     expected = None
     if args.use_device_settings:
         expected = json.loads(args.expected_settings.read_text(encoding="utf-8"))
@@ -250,10 +324,11 @@ def capture(args, project, workspace):
     folder.mkdir(parents=True, exist_ok=False)
     value = dict(schema_version=1, started_at=utc_now(), state="PREPARING", mouse=args.mouse,
                  mouse_identity_source="user_supplied", motion=args.motion, preset=args.preset,
-                 turn_count=1, suction_enabled=False, stream_period_ms=5,
+                 turn_count=1, suction_enabled=None, suction_duty=None, stream_period_ms=5,
                  execution_resend_count=0, type8_log_csv=str(folder / "telemetry.csv"),
                  type8_settings_json=str(folder / "telemetry.settings.json"),
                  physical_240fps_verified=False,
+                 capture_profile='tuning', camera_settings=camera_settings,
                  settings_mode="verified_device_ram" if expected is not None else "load_preset",
                  camera_connection_mode="reuse_connected" if args.camera_existing_connection else "usb_setup")
     if expected is not None:
@@ -294,6 +369,7 @@ def capture(args, project, workspace):
                 raise RuntimeError("撮影専用の一回実行に対応するファームウェアが必要です")
             settings = read_device_settings(shell, args.motion, args.preset,
                                             DebugGui._parse_device_settings, args.mouse, expected)
+            value.update(suction_enabled=settings['suction']['enabled'], suction_duty=settings['suction'].get('duty'))
             write_json(folder / "telemetry.settings.json", settings)
             deadline = time.monotonic() + 5
             while not read_rows(folder / "telemetry.csv"):
@@ -316,13 +392,20 @@ def capture(args, project, workspace):
                 validate_recording(client.get_status(), client.last_recording_id, client.client_id, args.seconds)
             motion = MotionOnce(shell, args.motion, event, recording_check)
             manifest, camera_value = record_trial(client, project, seconds=args.seconds,
-                mouse=args.mouse, label=folder.name, on_ready=motion)
+                mouse=args.mouse, label=folder.name, on_ready=motion,
+                camera_settings=camera_settings, capture_profile='tuning')
             value.update(capture_json=str(manifest), recording_id=camera_value.get("recording_id"),
+                         camera_configuration=camera_value.get('camera_configuration'),
                          video_file=camera_value.get("video_file"), camera_state=camera_value["state"])
             value["state"] = "CAPTURED_REVIEW_REQUIRED" if camera_value["state"] == "PASSED" else "FAILED"
             value["video_motion_coverage"] = "not_yet_visually_reviewed"
+            if value["state"] == "CAPTURED_REVIEW_REQUIRED" and motion.start_confirmed:
+                value["saved_log"] = dict(status="receiving")
+                value["saved_log"] = save_retained_log(shell, folder, settings, capability, args.motion, event)
         except (Exception, KeyboardInterrupt) as error:
             value.update(state="FAILED", error=type(error).__name__ + ": " + str(error))
+            if value.get("saved_log", {}).get("status") == "receiving":
+                value["saved_log"].update(status="failed", error=str(error))
         finally:
             value.update(ready_callback_invoked=bool(motion and motion.attempted),
                          execution_write_attempted=bool(motion and motion.execution_write_attempted),
@@ -345,7 +428,9 @@ def capture(args, project, workspace):
             # Gateway is stopped; reading cannot race with its atomic replace.
             status = json.loads(status_path.read_text(encoding="utf-8"))
             quality["stream_status"] = status
-            if status.get("crc_errors", 0) or status.get("lost", 0):
+            # The stopped RAM dump can drop later live frames. Judge loss in
+            # the selected motion interval, retaining the full stream counters.
+            if status.get("crc_errors", 0) or quality.get("lost_frames", 0):
                 value["state"] = "INCOMPLETE_LOG"
         value["log_quality"] = quality
         if quality.get("full_motion_retained"):

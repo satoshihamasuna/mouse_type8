@@ -98,6 +98,8 @@ class ConnectedTrialTests(unittest.TestCase):
 
     def record(self,client,project,**kwargs):
         self.record_count += 1
+        self.assertEqual(kwargs['capture_profile'], 'tuning')
+        self.assertEqual(kwargs['camera_settings'], self.request.camera_settings)
         self.camera.last_recording_id='recording'+str(self.record_count)
         self.camera.phase=self.phase_on_ready
         kwargs['on_ready']()
@@ -109,6 +111,32 @@ class ConnectedTrialTests(unittest.TestCase):
         return tuning.capture_connected(self.session,self.request,self.root/name,
             lambda line,*args:deepcopy(self.after if line=='after' else self.current),
             record=self.record,shell_type=self.shell_type,tail_type=FakeTail)
+
+    def test_saved_one_ms_log_is_requested_after_recording_and_continuous_csv_is_kept(self):
+        saved = dict(status='saved', csv='saved_1ms.csv', period_ms=1, frame_count=400)
+        def retrieve(shell, folder, actual, capability, motion, event):
+            self.assertEqual(self.camera.phase, 'IDLE')
+            self.assertEqual(self.record_count, 1)
+            self.assertTrue((folder/'telemetry.csv').exists())
+            self.assertEqual(actual['parameters'], self.current['parameters'])
+            self.assertEqual((capability, motion), (self.capability, 'long_r180'))
+            return saved
+        with patch.object(tuning, 'save_retained_log', side_effect=retrieve) as exported:
+            value = self.capture()
+        exported.assert_called_once()
+        self.assertEqual(value['saved_log'], saved)
+        self.assertEqual(value['state'], 'CAPTURED_REVIEW_REQUIRED')
+        self.assertTrue((self.root/'run/motion.csv').exists())
+        self.assertTrue(value['type8_log_csv'].endswith('motion.csv'))
+
+    def test_failed_one_ms_transfer_keeps_the_video_and_continuous_log_without_rerun(self):
+        with patch.object(tuning, 'save_retained_log', side_effect=TimeoutError('incomplete log')):
+            value = self.capture()
+        self.assertEqual(value['state'], 'FAILED')
+        self.assertEqual(value['saved_log']['status'], 'failed')
+        self.assertEqual(value['video_file'], 'mock.mp4')
+        self.assertTrue((self.root/'run/motion.csv').exists())
+        self.assertEqual(sum(' exe_camera ' in command for command in self.sent), 1)
 
     def test_search_camera_preserves_signed_feedforward_and_runs_without_hand_wait(self):
         expected = settings()
@@ -172,9 +200,43 @@ class ConnectedTrialTests(unittest.TestCase):
         self.assertEqual(self.sent.count(self.request.set_command),1)
         self.assertLess(self.sent.index(self.request.set_command),next(i for i,c in enumerate(self.sent) if ' exe_camera ' in c))
 
+    def suction_request(self):
+        expected = settings()
+        expected.update(motion_name='long_r90',preset_speed_mm_s=1600)
+        expected['parameters'].update(velo=1.6,r_min=-52.,lstart=15.97,lend=27.58,degree=-90.)
+        expected['feedforward']['ff_sp_turn_accel_mag'] = -.00019277
+        expected['suction'] = dict(enabled=True,duty=650)
+        self.current = deepcopy(expected)
+        self.current['suction']['enabled'] = False
+        self.after = deepcopy(expected)
+        self.request = replace(self.request,expected=expected,set_command=tuning.settings_set_command(expected))
+
+    def test_turn1600_suction_on_is_set_once_verified_and_recorded(self):
+        self.suction_request()
+        value = self.capture()
+        self.assertEqual(value['state'],'CAPTURED_REVIEW_REQUIRED')
+        self.assertEqual(self.sent.count(self.request.set_command),1)
+        self.assertEqual(self.request.set_command.split()[-3:],['1','650','1'])
+        self.assertEqual((value['suction_enabled'],value['suction_duty']),(True,650))
+        actual = json.loads((self.root/'run/telemetry.settings.json').read_text())
+        self.assertEqual(actual['suction'],dict(enabled=True,duty=650))
+        self.assertEqual(sum(' exe_camera ' in command for command in self.sent),1)
+
+    def test_suction_on_readback_mismatch_never_records_or_executes(self):
+        self.suction_request()
+        self.after['suction']['enabled'] = False
+        value = self.capture()
+        self.assertEqual(value['state'],'FAILED')
+        self.assertEqual(self.record_count,0)
+        self.assertFalse(any(' arm ' in command or ' exe' in command for command in self.sent))
+
     def test_stop_policy_is_attached_after_single_execution_and_uses_only_new_motion(self):
         original=self.record
-        with patch('pixel_camera_stop.wait_motion_stop',return_value=dict(request_stop=True)) as monitor:
+        observed = []
+        def monitor_stop(*args, **kwargs):
+            observed.extend(kwargs['tail'].snapshot())
+            return dict(request_stop=True)
+        with patch('pixel_camera_stop.wait_motion_stop',side_effect=monitor_stop) as monitor:
             def record(client,project,**kwargs):
                 manifest,value=original(client,project,**kwargs)
                 self.assertEqual(sum(' exe_camera ' in c for c in self.sent),1)
@@ -186,7 +248,7 @@ class ConnectedTrialTests(unittest.TestCase):
         self.assertEqual(value['recording_stop'],dict(request_stop=True))
         monitor.assert_called_once()
         # FakeTailには既に過去の動作がある。それを今回の停止判定に流用しない。
-        self.assertEqual(len(monitor.call_args.kwargs['tail'].snapshot()),1)
+        self.assertEqual(len(observed),1)
         self.assertEqual(value['recording_limit_seconds'],20)
 
     def test_mismatched_readback_does_not_record_arm_or_execute(self):
@@ -270,6 +332,26 @@ class ConnectedTrialTests(unittest.TestCase):
             lambda *args:deepcopy(self.current),record=record,shell_type=self.shell_type,tail_type=factory)
         self.assertFalse(value['execution_write_attempted'])
         self.assertFalse(any(' arm ' in c or ' exe_camera ' in c for c in self.sent))
+
+
+class GuiProfileTests(unittest.TestCase):
+    def test_tuning_controls_are_independent_and_opening_does_not_prepare_devices(self):
+        import tkinter as tk
+        from tkinter import ttk
+        import pixel_camera_tuning_panel as panel
+        root = tk.Tk(); root.withdraw()
+        try:
+            settings = dict(ev=-2.5, torch=False, zoom_ratio=1.2, focus_lock=True)
+            with patch.object(panel, 'load_camera_profile', return_value=settings) as load, \
+                    patch.object(panel, 'LiveSession') as session:
+                controls = panel.PixelTuningPanel(SimpleNamespace(), ttk.Notebook(root))
+                load.assert_called_once_with('tuning')
+                session.assert_not_called()
+                self.assertEqual(controls.selected_camera_settings(), settings)
+                controls.capture_zoom.set(1.4)
+                self.assertEqual(controls.selected_camera_settings()['zoom_ratio'], 1.4)
+        finally:
+            root.destroy()
 
 
 class EvidenceTests(unittest.TestCase):

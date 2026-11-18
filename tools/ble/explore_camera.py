@@ -6,7 +6,6 @@ from datetime import datetime
 import html
 import json
 import math
-import re
 from pathlib import Path
 import subprocess
 import sys
@@ -16,6 +15,14 @@ import time
 TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
+
+from pixel_camera_profiles import configure_camera
+
+
+def default_maze_reference(directory=None):
+    directory = Path(directory) if directory is not None else TOOLS / 'logs/pixel_camera'
+    current = directory / 'board_9x9_current_reference.json'
+    return current if current.is_file() else directory / 'board_9x9_reference.json'
 
 
 def camera_client():
@@ -61,38 +68,6 @@ def load_camera_preferences(path=None):
         return dict(ev=ev, torch=torch) if isinstance(torch,bool) else {}
     except (OSError, ValueError, KeyError, TypeError):
         return {}
-
-
-def configure_camera(client, settings=None):
-    """撮影条件を明示した場合だけ変更し、設定受付を照合する。効果の実測とは別。"""
-    settings = settings or {}
-    if set(settings)-{'ev', 'torch'}:
-        raise ValueError('不明な撮影設定です')
-    requested = {}
-    evidence = dict(selection=settings, physical_brightness_effect_verified=False)
-    if 'ev' in settings:
-        from pixel_camera_framing import ev_to_steps
-        capabilities = client.get_capabilities()
-        cameras = [c for c in capabilities.get('cameras', [])
-                   if c.get('target_fixed_240_supported') and c.get('back_facing')]
-        if len(cameras) != 1:
-            raise ValueError('240fpsカメラの露出刻みを一意に確認できません')
-        camera = cameras[0]
-        limits = [int(v) for v in re.findall(r'-?\d+', str(camera['ev_steps_range']))]
-        if len(limits) != 2:
-            raise ValueError('カメラの露出補正範囲を確認できません')
-        steps = ev_to_steps(settings['ev'], camera['ev_step'], limits)
-        requested['exposure_compensation_steps'] = steps
-        evidence.update(ev_step=camera['ev_step'], ev_steps_range=limits)
-    if 'torch' in settings:
-        if not isinstance(settings['torch'], bool):
-            raise ValueError('ライトの設定はON/OFFで指定してください')
-        requested['torch'] = settings['torch']
-    response = client.configure(**requested)
-    if requested and any(response.get(key) != value for key,value in requested.items()):
-        raise RuntimeError('カメラの撮影設定の受付が一致しません。走行を開始しません')
-    evidence.update(requested=requested, response=response)
-    return evidence
 
 
 class ExploreCameraRun:
@@ -212,11 +187,18 @@ class ExploreCameraRun:
                      status='PREPARING', started_at=datetime.now().astimezone().isoformat(),
                      sync_method='PC receive/camera elapsed initial estimate; manual video alignment required')
         trial['run_type'] = 'shortest' if hasattr(options, 'profile') else 'explore'
+        trial['capture_profile'] = 'maze_9x9'
         trial['position_analysis'] = self.analysis_config
         try:
             self.folder = self.session.directory / ('camera_' + datetime.now().strftime('%Y%m%d_%H%M%S_%f'))
             self.folder.mkdir()
             self.ledger = (self.folder / 'events.jsonl').open('x', encoding='utf-8')
+            if self.analysis_config and self.analysis_config.get('reference'):
+                reference = json.loads(Path(self.analysis_config['reference']).read_text(encoding='utf-8'))
+                snapshot = self.folder / 'marker_reference_used.json'
+                save_json(snapshot, reference)
+                self.analysis_config = dict(self.analysis_config, reference=str(snapshot.resolve()))
+                trial['position_analysis'] = self.analysis_config
             save_json(self.folder / 'trial.json', trial)
             self.emit('camera_status', 'カメラを確認中（まだ手をかざさないでください）')
             self.client = self.client_factory()

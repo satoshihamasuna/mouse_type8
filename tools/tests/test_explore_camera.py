@@ -29,6 +29,14 @@ class ReadinessTests(unittest.TestCase):
 
 
 class ExposureTests(unittest.TestCase):
+    def test_current_maze_reference_is_preferred_and_legacy_remains_available(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            self.assertEqual(camera.default_maze_reference(root),root/'board_9x9_reference.json')
+            current=root/'board_9x9_current_reference.json'
+            current.write_text('{}',encoding='utf-8')
+            self.assertEqual(camera.default_maze_reference(root),current)
+
     def test_saved_preferences_are_only_loaded_as_valid_display_values(self):
         with tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'preferences.json'
@@ -118,11 +126,19 @@ class CoordinatorTests(unittest.TestCase):
             coordinator = camera.ExploreCameraRun(session, lambda k,d:phases.append((k,d)),
                 client_factory=Client, finalizer=lambda p:(p.parent/'review.html').write_text('review'), interval=.005,
                 analysis_config={'enabled':True} if mode=='analysis_error' else None)
+            if mode == 'analysis_error':
+                reference = dict(markers_cell={'0':[[0,0],[1,0],[1,1],[0,1]]})
+                camera.save_json(directory/'board_reference.json', reference)
+                coordinator.analysis_config['reference'] = str(directory/'board_reference.json')
             coordinator.start(explore.ShortestOptions(limit_seconds=180) if mode=='shortest'
                               else explore.ExploreOptions(limit_seconds=180))
             coordinator.thread.join(5)
             self.assertFalse(coordinator.active)
             trial = json.loads(next(directory.glob('camera_*/trial.json')).read_text(encoding='utf-8'))
+            if mode == 'analysis_error':
+                saved_reference = Path(trial['position_analysis']['reference'])
+                self.assertEqual(saved_reference.parent, coordinator.folder)
+                self.assertEqual(json.loads(saved_reference.read_text(encoding='utf-8')), reference)
         return actions, phases, api_calls, trial
 
     def test_recording_ready_precedes_ble_start_and_result_precedes_video_stop(self):
@@ -224,6 +240,14 @@ class CameraReceiptTests(unittest.TestCase):
 
 
 class GuiTests(unittest.TestCase):
+    def setUp(self):
+        from unittest.mock import patch
+        import mouse_ble_explore_camera_gui as gui
+        from pixel_camera_profiles import DEFAULTS
+        self.addCleanup(patch.stopall)
+        patch.object(gui, 'save_camera_profile').start()
+        patch.object(gui, 'load_camera_profile', return_value=dict(DEFAULTS['maze_9x9'])).start()
+
     def test_marker_colours_are_selected_from_saved_run_settings_instead_of_fixed_to_a(self):
         import mouse_ble_explore_camera_gui as gui
         root=gui.tk.Tk(); root.withdraw()
@@ -258,7 +282,10 @@ class GuiTests(unittest.TestCase):
                 self.assertEqual((options.goal_x,options.goal_y,options.goal_size),(7,6,1))
                 self.assertEqual((options.profile,options.maze_source),('plain600','flash'))
                 self.assertEqual((options.limit_seconds,options.wall_ekf_mode),(90,'control'))
-                self.assertEqual(coordinator.call_args.kwargs['camera_settings'],dict(ev=-.5,torch=False))
+                self.assertEqual(coordinator.call_args.kwargs['camera_settings'],
+                                 dict(ev=-.5,torch=False,zoom_ratio=1.,focus_lock=True))
+                gui.save_camera_profile.assert_called_once_with('maze_9x9',
+                    dict(ev=-.5,torch=False,zoom_ratio=1.,focus_lock=True))
         finally: root.destroy()
 
     def test_options_remain_user_selected_and_no_connection_is_started_on_open(self):

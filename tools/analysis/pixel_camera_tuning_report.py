@@ -16,6 +16,27 @@ from pixel_camera_tuning import log_stop_evidence
 from video_marker_pose import log_elapsed_seconds
 
 
+def analysis_video_window(trial, video_start=None, video_end=None):
+    duration = ((trial['log_quality']['motion_end_time_ms']-trial['log_quality']['motion_start_time_ms']) % 2**32)/1000
+    estimate = trial.get('video_motion_start_estimate_s', 7.0)
+    start = max(0, estimate-1.0) if video_start is None else video_start
+    end = estimate+duration+1.0
+    # RUN_STARTは吸引の立ち上がりより前。短い高速走行では、そこからの
+    # 指令時間だけで切ると実際の旋回・停止が解析範囲の外に残る。
+    stop = trial.get('recording_stop', {})
+    for key in ('request_camera_seconds', 'decision_camera_seconds'):
+        stamp = stop.get(key)
+        if isinstance(stamp, (int, float)) and not isinstance(stamp, bool) and np.isfinite(stamp) and stamp >= 0:
+            end = max(end, stamp)
+    if stop.get('request_stop') is False:
+        end = max(end, trial.get('recording_limit_seconds', end))
+    if video_end is not None:
+        end = video_end
+    if not np.isfinite([start, end]).all() or start < 0 or end <= start:
+        raise ValueError('動画の解析範囲は0以上の開始秒と、それより後の終了秒にしてください')
+    return float(start), float(end)
+
+
 def summarize(folder):
     folder = Path(folder)
     report = json.loads((folder/'report.json').read_text(encoding='utf-8'))
@@ -92,14 +113,15 @@ def main():
     parser.add_argument('--stride', type=int, choices=(1,4), required=True)
     parser.add_argument('--video-start', type=float)
     parser.add_argument('--video-end', type=float)
+    parser.add_argument('--output', type=Path, help='再解析用の未作成フォルダー。元のquick/fullを保持する')
     args = parser.parse_args()
     folder = args.trial.parent
     trial = json.loads(args.trial.read_text(encoding='utf-8'))
-    duration = ((trial['log_quality']['motion_end_time_ms']-trial['log_quality']['motion_start_time_ms']) % 2**32)/1000
-    estimate = trial.get('video_motion_start_estimate_s', 7.0)
-    start = args.video_start if args.video_start is not None else max(0, estimate-1.0)
-    end = args.video_end if args.video_end is not None else estimate+duration+1.0
-    output = folder/('quick' if args.stride == 4 else 'full')
+    try:
+        start, end = analysis_video_window(trial, args.video_start, args.video_end)
+    except ValueError as error:
+        parser.error(str(error))
+    output = args.output if args.output is not None else folder/('quick' if args.stride == 4 else 'full')
     command = [sys.executable, str(Path(__file__).with_name('pixel_camera_relative_pose.py')),
         '--trial', str(args.trial), '--marker-reference', str(folder/'marker_reference_used.json'),
         '--body-geometry', str(folder/'body_geometry_used.json'), '--camera-height-mm', str(trial['camera_height_mm']),

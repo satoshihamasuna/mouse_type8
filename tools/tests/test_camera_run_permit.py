@@ -11,6 +11,105 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class CameraRunPermitTests(unittest.TestCase):
+    def test_all_turn_patterns_retain_samples_before_manual_and_camera_post_run(self):
+        command = compiler_command()
+        if command is None:
+            self.skipTest('Host C++ compiler is required')
+        text = (ROOT/'System/Src/myshell.cpp').read_text(encoding='utf-8')
+        start = text.index('static int shell_debug_turn_command(')
+        start = text.index('if (ntlibc_strcmp(argv[3], "exe") == 0 || camera_run)', start)
+        opening = text.index('{', start)
+        depth, end = 1, opening + 1
+        while depth:
+            depth += (text[end] == '{') - (text[end] == '}')
+            end += 1
+        source = r'''
+#include <cassert>
+#include <cstdio>
+#include <deque>
+#include <algorithm>
+#include <vector>
+constexpr bool True=true, False=false;
+enum Pattern { Long_turnR90,Long_turnL90,Long_turnR180,Long_turnL180,
+    Turn_in_R45,Turn_in_L45,Turn_in_R135,Turn_in_L135,
+    Turn_out_R45,Turn_out_L45,Turn_out_R135,Turn_out_L135,Turn_RV90,Turn_LV90 };
+struct Gain{}; struct Param{};
+struct Debug { struct {float velo=.5f;} table; Gain sp_gain,om_gain; Param param;
+    float pre_accel=6.5f;int turn_count=1,suction_duty=650;bool suction_enable=false; };
+static Debug stored;
+struct IrSensTask{};
+struct LogData {
+    bool log_enable=false;std::deque<int> samples;
+    static LogData& getInstance(){static LogData log;return log;}
+    void reset_log(){samples.clear();}
+    void sample(int phase){if(log_enable){if(samples.size()==400)samples.pop_front();samples.push_back(phase);}}
+};
+struct Motion {
+    std::vector<int> calls;IrSensTask ir;
+    IrSensTask* return_irObj(){return &ir;}
+    void Motion_start(){calls.push_back(1);}
+    void Motion_end(){calls.push_back(5);}
+    void ticks(int phase,int count){for(int i=0;i<count;++i)LogData::getInstance().sample(phase);}
+    void Init_Motion_long_turn(const Param*,Pattern,const Gain*,const Gain*){}
+    void Init_Motion_turn_in(const Param*,Pattern,const Gain*,const Gain*){}
+    void Init_Motion_turn_out(const Param*,Pattern,const Gain*,const Gain*){}
+    void Init_Motion_turn_v90(const Param*,Pattern,const Gain*,const Gain*){}
+    void execute_Motion(){calls.push_back(3);ticks(24,210);}
+};
+struct CtrlTask_type8{static Motion& getInstance(){static Motion motion;return motion;}};
+struct Permit{void clear(){}};
+static Permit shell_camera_run_permit;
+static bool allow_camera=true;
+static int hand_waits=0;
+static bool shell_debug_camera_begin(int,char**,int){return allow_camera;}
+static void shell_debug_wait_sensor(IrSensTask*){++hand_waits;}
+static void shell_debug_suction_start(Motion*,bool,int){}
+static bool shell_debug_turn_pre_run(Motion* motion,Pattern,float,float){
+    motion->calls.push_back(2);motion->ticks(1,200);return true;
+}
+static bool shell_debug_turn_post_run(Motion* motion,Pattern,float){
+    motion->calls.push_back(4);motion->ticks(2,170);motion->ticks(25,400);return true;
+}
+static void Indicate_LED(int){}
+static void HAL_Delay(int){}
+static int run(bool camera_run,Pattern pattern){int argc=5;char*argv[5]={};Debug*debug=&stored;
+''' + text[opening + 1:end - 1] + r'''
+    return -99;
+}
+int main(){
+    auto& log=LogData::getInstance();auto& motion=CtrlTask_type8::getInstance();
+    for(int p=0;p<14;++p)for(bool camera:{false,true}){
+        motion.calls.clear();hand_waits=0;
+        assert(run(camera,static_cast<Pattern>(p))==0);
+        assert(motion.calls==std::vector<int>({1,2,3,4,5}));
+        assert(hand_waits==(camera?0:1));
+        assert(log.samples.size()==400);
+        assert(std::count(log.samples.begin(),log.samples.end(),24)==210);
+        assert(std::count(log.samples.begin(),log.samples.end(),25)==0);
+        assert(log.samples.back()==24 && !log.log_enable);
+    }
+    stored.turn_count=2;
+    assert(run(false,Long_turnR90)==0);
+    assert(std::count(log.samples.begin(),log.samples.end(),24)==400);
+    motion.calls.clear();allow_camera=false;
+    assert(run(true,Long_turnR90)==-1 && motion.calls.empty());
+}
+'''
+        environment = os.environ.copy()
+        if Path(command[0]).stem == 'zig':
+            environment.setdefault('ZIG_LOCAL_CACHE_DIR',str(ROOT/'build/ir-confidence-zig-cache'))
+            environment.setdefault('ZIG_GLOBAL_CACHE_DIR',str(ROOT/'build/ir-confidence-zig-global'))
+            if os.name == 'nt':command += ['-target','x86_64-windows-gnu']
+        with tempfile.TemporaryDirectory(prefix='camera-turn-log-',dir=ROOT/'build') as directory:
+            directory=Path(directory)
+            path=directory/'turn_log.cpp';path.write_text(source,encoding='utf-8')
+            executable=directory/('shell.exe' if os.name=='nt' else 'shell')
+            result=subprocess.run(command+['-std=c++14','-Wall','-Wextra','-fno-exceptions','-fno-rtti',
+                str(path),'-o',str(executable)],capture_output=True,env=environment,timeout=240)
+            self.assertEqual(result.returncode,0,result.stderr.decode(errors='replace'))
+            result=subprocess.run([str(executable)],capture_output=True,timeout=10)
+            self.assertEqual(result.returncode,0,result.stderr.decode(errors='replace'))
+
     def test_search_camera_retains_turn_before_post_run_braking(self):
         command = compiler_command()
         if command is None:

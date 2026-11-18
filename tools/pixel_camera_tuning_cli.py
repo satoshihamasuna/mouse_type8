@@ -26,6 +26,20 @@ from pixel_camera_tuning import (LiveSession, TrialRequest, analyze_trial, captu
     setting_differences, settings_set_command)
 from pixel_camera_turn_capture import (CAMERA_MOTIONS, Shell, utc_now, validate_settings,
     debug_motion_prefix, device_motion_name, camera_preset_speeds, settings_done_marker)
+from pixel_camera_profiles import load_camera_profile, validate_camera_settings
+
+
+def tuning_camera_settings(config):
+    settings = load_camera_profile('tuning')
+    overrides = dict(config.get('camera_settings', {}))
+    if 'exposure_compensation_steps' in config:
+        overrides['exposure_compensation_steps'] = config['exposure_compensation_steps']
+    if 'exposure_compensation_steps' in overrides:
+        settings.pop('ev', None)
+    elif 'ev' in overrides:
+        settings.pop('exposure_compensation_steps', None)
+    settings.update(overrides)
+    return validate_camera_settings(settings)
 
 
 def save_json(path, value):
@@ -58,6 +72,7 @@ class TuningService:
     """コマンドを直列化し、消費済みIDをディスクへ残して実行の再送を拒否する。"""
     def __init__(self, folder, config, session=None):
         self.folder, self.config, self.session = Path(folder).resolve(), deepcopy(config), session
+        self.camera_settings = tuning_camera_settings(self.config)
         self.folder.mkdir(parents=True, exist_ok=True)
         (self.folder / 'jobs').mkdir(exist_ok=True)
         self.operation_lock, self.state_lock = threading.Lock(), threading.RLock()
@@ -69,7 +84,7 @@ class TuningService:
         request = TrialRequest(deepcopy(settings), settings_set_command(settings),
             self.config.get('char_delay', .08), self.config['height_mm'],
             Path(self.config['reference']), Path(self.config['geometry']),
-            self.config.get('seconds', 20), ready)
+            self.config.get('seconds', 20), ready, self.camera_settings)
         request.validate()
         return request
 
@@ -83,6 +98,8 @@ class TuningService:
             # readyは要求ごとに必要。前回やサーバー起動時の確認を保持しない。
             if action == 'capture' and payload.get('operator_ready') is not True:
                 raise ValueError('今回の設置・停止・手離し確認が必要です（--operator-ready）')
+            if action == 'capture' and type(payload.get('defer_analysis', False)) is not bool:
+                raise ValueError('defer_analysisは真偽値で指定してください')
             self.trial_request(payload['settings'], True)
         elif action != 'close':
             raise ValueError('対応しない操作です')
@@ -172,6 +189,12 @@ class TuningService:
                 request_id=identifier, settings=request.expected, confirmed_for_this_request_only=True))
             output = dict(trial_json=str(folder / 'trial.json'), capture=result)
             if result['state'] == 'CAPTURED_REVIEW_REQUIRED':
+                if payload.get('defer_analysis', False):
+                    save_json(folder / 'deferred_analysis.json', dict(state='PENDING',
+                        trial_json=str(folder / 'trial.json'), frame_strides=[4, 1],
+                        archive_after_analysis=True, parameter_adoption_allowed=False))
+                    output.update(analysis_deferred=True, archive_deferred=True)
+                    return output
                 for stride, name in ((4, 'quick'), (1, 'full')):
                     progress(name + '_analysis', {})
                     try:
@@ -292,16 +315,6 @@ def serve(args):
         transport = folder / ('transport_' + uuid.uuid4().hex[:8])
         service.session = LiveSession(ROOT, transport)
         service.session.prepare(config['address'])
-        if 'exposure_compensation_steps' in config:
-            camera = service.session.camera
-            camera.connect()
-            try:
-                configured = camera.configure(exposure_compensation_steps=config['exposure_compensation_steps'], torch=False)
-                if configured.get('exposure_compensation_steps') != config['exposure_compensation_steps'] or configured.get('torch') is not False:
-                    raise RuntimeError('カメラの露出・ライト設定を照合できません')
-                save_json(folder / 'camera.configured.json', configured)
-            finally:
-                camera.disconnect()
         token = secrets.token_hex(24)
         server = make_http_server(service, token, args.port)
         service.on_close = server.shutdown
@@ -352,6 +365,8 @@ def client(args):
             if not args.operator_ready:
                 raise ValueError('今回の設置確認には--operator-readyが必要です')
             payload['operator_ready'] = True
+            if args.defer_analysis:
+                payload['defer_analysis'] = True
     identifier = args.request_id or ('cmd_' + uuid.uuid4().hex[:16])
     result = exchange(descriptor, '/jobs', dict(id=identifier, action=args.action, payload=payload))
     if args.no_wait or args.action == 'close':
@@ -392,6 +407,8 @@ def parser():
             command.add_argument('--set', dest='set_value', action='append', default=[], help='lend=25、pid.om_kp=0.1など')
         if action == 'capture':
             command.add_argument('--operator-ready', action='store_true')
+            command.add_argument('--defer-analysis', action='store_true',
+                help='録画・ログ取得で完了し、速報・全解析・一式保存を後回しにする')
     return result
 
 
@@ -409,6 +426,8 @@ def main(argv=None):
         if 'capture' in result:
             if result['capture']['state'] != 'CAPTURED_REVIEW_REQUIRED':
                 return 1
+            if result.get('analysis_deferred') is True:
+                return 0
             if result.get('full_returncode') != 0 or not result.get('full', {}).get('auto_stop_confirmed') or result.get('archive_error'):
                 return 2
         return 0
