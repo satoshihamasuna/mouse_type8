@@ -53,6 +53,18 @@ target_sources(${BUILD_UNIT_0_NAME} PRIVATE
   "Module/Src/interrupt_timing.cpp"
   "System/Src/explore.cpp"
   "System/Src/shortest_run.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/run_param_${MOUSE_TARGET_UPPER}.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_search/turn_search.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_300/turn_300.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_500/turn_500.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_700/turn_700.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_1000/turn_1000.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_1200/turn_1200.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_1400/turn_1400.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_1500/turn_1500.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_1600/turn_1600.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_1800/turn_1800.cpp"
+  "Params/Param_${MOUSE_TARGET_UPPER}/turn_2000/turn_2000.cpp"
 )
 
 # Add include directories

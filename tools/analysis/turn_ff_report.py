@@ -329,9 +329,22 @@ def arithmetic_value(text: str) -> float:
 
 def parse_profiles(header: Path) -> list[dict]:
     text = header.read_text(encoding="utf-8")
+    if re.search(r"^extern const t_turn_param_table\b", text, re.M):
+        source = header.with_suffix(".cpp")
+        if source.exists():
+            text = source.read_text(encoding="utf-8")
+        else:
+            # Older shared-definition snapshots keep all speeds in one file.
+            machine = header.parent.name.removeprefix("Param_")
+            source = header.parent / f"run_param_{machine}.cpp"
+            marker = f"// ===== Params/{header.parent.name}/{header.name} ====="
+            definition_text = source.read_text(encoding="utf-8")
+            if marker not in definition_text:
+                raise ValueError(f"Parameter definitions not found: {header}")
+            text = definition_text.split(marker, 1)[1].split("\n// ===== ", 1)[0]
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
     text = re.sub(r"//.*", "", text)
-    table_pattern = re.compile(r"const static t_turn_param_table\s+(\w+)\s*=\s*\{([^}]+)\};")
+    table_pattern = re.compile(r"const\s+(?:static\s+)?t_turn_param_table\s+(\w+)\s*=\s*\{([^}]+)\};")
     tables = {}
     for name, body in table_pattern.findall(text):
         values = [item.strip() for item in body.split(",")]
@@ -339,12 +352,12 @@ def parse_profiles(header: Path) -> list[dict]:
             "velocity_m_s": arithmetic_value(values[0]), "r_min_mm": arithmetic_value(values[1]),
             "degree": arithmetic_value(values[4]),
         }
-    gain_pattern = re.compile(r"const static t_ff_gain\s+(\w+)\s*=\s*\{([^}]+)\};")
+    gain_pattern = re.compile(r"const\s+(?:static\s+)?t_ff_gain\s+(\w+)\s*=\s*\{([^}]+)\};")
     gains = {}
     for name, body in gain_pattern.findall(text):
         values = [arithmetic_value(item.strip()) for item in body.split(",")]
         gains[name] = {f"ff_{field}": value for field, value in zip(FF_NAMES, values)}
-    param_pattern = re.compile(r"const static t_param\s+(\w+)\s*=\s*\{&(\w+),[^}]*,&(\w+)\};")
+    param_pattern = re.compile(r"const\s+(?:static\s+)?t_param\s+(\w+)\s*=\s*\{&(\w+),[^}]*,&(\w+)\};")
     motion_names = {
         "param_R90": "long_r90", "param_L90": "long_l90",
         "param_R180": "long_r180", "param_L180": "long_l180",

@@ -11,9 +11,9 @@
 #include "Params/mouse_config.h"
 
 #if defined(MOUSE_A)
-	#include "Params/run_param_A.h"
+	#include "Params/Param_A/run_param_A.h"
 #elif defined(MOUSE_B)
-	#include "Params/run_param_B.h"
+	#include "Params/Param_B/run_param_B.h"
 #else
     #error "MOUSEA または MOUSEB が定義されていません。mouse_select.h を確認してください。"
 #endif

@@ -328,7 +328,7 @@ def write_header(path, speed, candidates):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--header", type=Path, default=ROOT / "Params/Param_A/turn_500.h")
+    parser.add_argument("--header", type=Path, default=ROOT / "Params/Param_A/turn_500/turn_500.h")
     parser.add_argument("--output", type=Path, required=True, help="未作成の保存先")
     args = parser.parse_args()
     if args.output.exists():

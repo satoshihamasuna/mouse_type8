@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import unittest
 
-from test_side_wall_stability import compiler_command
+from test_side_wall_stability import compiler_command, parameter_sources
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -163,7 +163,8 @@ int main() {
                     executable=folder/('test'+mouse+('.exe' if os.name=='nt' else ''))
                     result=subprocess.run(command+['-std=c++14','-O0','-Wall','-Wextra',
                         '-fno-exceptions','-fno-rtti','-DMOUSE_'+mouse,
-                        '-I',str(folder),'-I',str(ROOT),str(path),'-o',str(executable)],
+                        '-I',str(folder),'-I',str(ROOT),str(path),
+                        *parameter_sources(mouse),'-o',str(executable)],
                         capture_output=True,env=environment,timeout=240)
                     self.assertEqual(result.returncode,0,result.stderr.decode(errors='replace'))
                     result=subprocess.run([str(executable)],capture_output=True,timeout=10)

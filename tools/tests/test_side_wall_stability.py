@@ -54,6 +54,10 @@ def compiler_command():
     return None
 
 
+def parameter_sources(mouse):
+    return [str(path) for path in sorted((ROOT / "Params" / ("Param_" + mouse)).rglob("*.cpp"))]
+
+
 class SideWallStabilityTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -95,6 +99,7 @@ class SideWallStabilityTest(unittest.TestCase):
                 "-I", str(ROOT), "-I", cls.work.name, str(TEST_DIR / "side_wall_stability_harness.cpp"),
                 str(ROOT / "Task" / "Src" / "ir_sens_task.cpp"),
                 str(ROOT / "Task" / "Src" / "zirconia_wall_control.cpp"), "-o", str(executable),
+                *parameter_sources(mouse),
             ]
             result = subprocess.run(invocation, capture_output=True, text=True,
                                     errors="replace", env=environment, timeout=240)
