@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ターン軌跡の比較 — 機体A</title>
+<style>
+:root{color-scheme:light;--ink:#182a39;--muted:#566676;--grid:#dde4e9;--simple:#697c90;--model:#d87917;--video:#15856a}
+*{box-sizing:border-box}body{margin:0;background:#f5f7fa;color:var(--ink);font:15px/1.6 "Yu Gothic UI","Meiryo",sans-serif}main{max-width:1500px;margin:auto;padding:26px 28px 40px}h1{margin:0;font-size:27px;letter-spacing:.02em}h2{font-size:17px;margin:0 0 10px}p{margin:6px 0 14px}.eyebrow{color:var(--muted);font-size:12px;letter-spacing:.12em}.subtitle{color:var(--muted);margin-top:3px}.toolbar{display:flex;gap:16px;flex-wrap:wrap;align-items:end;margin:22px 0 18px}label{display:block;font-size:13px}select,button,input{font:inherit}select,button{padding:8px 11px;border:1px solid #c5d0d9;border-radius:5px;background:white;color:var(--ink)}select{max-width:100%}button{cursor:pointer}button:disabled{opacity:.5;cursor:default}button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #448ede;outline-offset:3px}#trial{min-width:320px}.tag{display:inline-block;font-size:12px;color:#425463;background:#e6edf2;padding:2px 8px;border-radius:3px}.layout{display:grid;grid-template-columns:minmax(360px,.9fr) minmax(460px,1.1fr);gap:22px}.pane{min-width:0;background:#fff;padding:18px;border-radius:7px}.movie{position:relative;background:#10202d;border-radius:4px;overflow:hidden}video{display:block;width:100%;aspect-ratio:16/9;object-fit:contain}.media-status{font-size:12px;color:var(--muted);min-height:22px;overflow-wrap:anywhere}canvas{display:block;width:100%}#path{height:520px;touch-action:pan-y}#error{height:170px}.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;margin:6px 0 12px}.legend label{display:flex;align-items:center;gap:6px;cursor:pointer}.swatch{display:inline-block;width:24px;border-top:3px solid}.dash{border-top-style:dashed}.transport{display:flex;gap:12px;align-items:center;margin:15px 0 4px}.transport input{width:100%;min-width:50px;accent-color:#287fbc}.clock{font:13px ui-monospace,monospace;white-space:nowrap}.selected-info{color:var(--muted);font-size:13px;min-height:24px}.metrics{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;margin:16px 0 0}th,td{text-align:right;border-bottom:1px solid var(--grid);padding:8px 6px;font-size:13px}th:first-child,td:first-child{text-align:left}th{font-weight:500;color:var(--muted)}.note{font-size:12px;color:var(--muted);line-height:1.7}.summary{margin-top:22px;padding-top:15px;border-top:1px solid #d7dfe7}.summary a{color:#246ca0}.summary-table{overflow-x:auto}details{margin-top:16px}summary{cursor:pointer;font-size:14px}.comparison-row{cursor:pointer}.comparison-row:hover{background:#edf4f7}.positive{color:#12745b}.negative{color:#ad4d1b}.status{padding-left:10px;border-left:3px solid #8aa9b9;margin:12px 0 18px}#case-note{font-size:12px;color:var(--muted)}.axis-small{font-size:12px}@media(max-width:1050px){.layout{grid-template-columns:1fr}#path{height:540px}.chart-pane{grid-row:1}}@media(max-width:600px){main{padding:17px 12px}h1{font-size:23px}.pane{padding:12px}#trial{min-width:0;width:100%}.trial-field{width:100%}.toolbar{gap:10px}#path{height:400px}.clock{font-size:11px}.metrics th,.metrics td{font-size:11px;padding:7px 3px}.legend{gap:10px}.transport{gap:7px}}
+</style></head><body><main>
+<div class="eyebrow">MOUSE A · 500 非吸引 / 1600 吸引</div>
+<h1>ターンの軌跡を、3つの方法で比べる</h1>
+<p class="subtitle">単純積分・条件別滑りEKF・動画観測を、同じ入口・同じ時刻で重ね合わせます。</p>
+<div class="toolbar">
+<label>速度・吸引条件<br><select id="condition"><option value="all">両方</option><option value="500">500 mm/s・非吸引</option><option value="1600">1600 mm/s・吸引650</option></select></label>
+<label>ターン<br><select id="motion"><option value="all">右90° / 右180°</option><option value="long_r90">右90°</option><option value="long_r180">右180°</option></select></label>
+<label class="trial-field">試行<br><select id="trial"></select></label>
+<label>軌跡の表示範囲<br><select id="extent"><option value="all">前後直進を含む全体</option><option value="turn">旋回前後を拡大</option></select></label>
+</div>
+<p id="case-note"></p>
+<div class="layout">
+<section class="pane">
+<h2>元動画</h2><div class="movie"><video id="movie" controls preload="metadata" playsinline></video></div>
+<div id="media-status" class="media-status" aria-live="polite"></div>
+<div class="transport"><button id="play" type="button">再生</button><input id="cursor" type="range" min="0" max="1" step="0.001" value="0" aria-label="走行時刻"><span id="clock" class="clock"></span></div>
+<p class="note">スライダーと動画は同期します。軌跡上や誤差グラフをクリックして時刻を選べます。</p>
+<div class="status note">入口の位置・直進方向だけを共通化。終点合わせ、経路ごとの回転合わせ、距離尺度の調整はしていません。</div>
+<table class="metrics"><thead><tr><th>動画との差</th><th>全体RMSE</th><th>旋回RMSE</th><th>終端誤差</th></tr></thead><tbody id="metrics"></tbody></table>
+<p class="note">単位mm。両推定で同じ有効動画フレームを評価。終端は最後の共通観測時刻です。</p>
+<h2 style="margin-top:20px">時刻ごとの位置誤差</h2><canvas id="error" role="img" aria-label="単純積分と滑りEKFの動画に対する位置誤差"></canvas>
+<div class="selected-info" id="readout" aria-live="polite"></div>
+</section>
+<section class="pane chart-pane">
+<h2>軌跡の重ね合わせ <span class="tag">同一縮尺・mm</span></h2>
+<div class="legend">
+<label><input id="show-simple" type="checkbox" checked><span class="swatch dash" style="color:var(--simple)"></span>単純積分</label>
+<label><input id="show-model" type="checkbox" checked><span class="swatch" style="color:var(--model)"></span>滑りモデル＋EKF</label>
+<label><input id="show-video" type="checkbox" checked><span class="swatch" style="color:var(--video)"></span>動画の軌跡</label>
+</div>
+<canvas id="path" role="img" aria-label="右方向と前方向の座標に重ねた3つの軌跡。始点は共通の入口"></canvas>
+<p class="note">淡い線は全軌跡、濃い線は選択時刻まで。灰の○＝積分、橙の□＝モデル、緑の●＝動画の現在位置。動画の欠測は線でつなぎません。</p>
+</section>
+</div>
+<section class="summary">
+<details><summary>全19試行の比較一覧</summary><div class="summary-table"><table class="metrics"><thead><tr><th>条件 / 試行</th><th>積分RMSE</th><th>モデルRMSE</th><th>差</th></tr></thead><tbody id="all-cases"></tbody></table></div></details>
+<details><summary>比較条件・入力・制約</summary>
+<p class="note">車輪速度は20点平均を復元して実制御周期で換算し、ジャイロをMCU時刻差で積分。単純積分は横滑り0、モデルは吸引状態別のKと雑音設定を使用します。動画は登録済みArUcoによるフレームごとの座標です。時刻合わせは機首方向とジャイロから求めた共通値で、各軌跡を別々に合わせ直していません。</p>
+<p class="note">動画観測は高さ差を扱ったマーカー中点で、車軸中心そのものの真値ではありません。モデルのK同定に同じ試行を含むため、この画面の差は独立な精度検証ではありません。前後マーカー中点・IMUは機体中心付近という仮定です。縮尺・高さ・同期・機体位置の誤差が残ります。実走行動画は同期が未確定のため、今回は条件をそろえて比較できる単体調整19試行を表示しています。</p>
+<p class="note" id="source-info"></p>
+<p class="note"><a href="summary.csv">集計CSV</a> / <a href="manifest.json">座標・同期・入力ハッシュ</a> / <a href="README.md">再実行方法</a></p>
+</details>
+<details><summary>動画が開けない場合</summary><p class="note">元動画はDドライブの保存先を参照します。HTMLだけを別のPCへ移した場合は、該当する元動画をここで選択できます。軌跡と指標は動画ファイルがなくても表示できます。</p><label>選択中の試行に対応する元動画 <input id="video-file" type="file" accept="video/*"></label></details>
+</section>
+</main><script>
+"use strict";
+const DATA=__PAYLOAD__;
+const $=id=>document.getElementById(id), V=$('movie'), C=$('cursor');
+const colors={simple:'#697c90',model:'#d87917',video:'#15856a'};
+let current=null, selected=0, playing=false,lastStamp=0,pathMap=null,errorMap=null,objectURL=null, mediaReady=false,changing=false;
+const fmt=(n,k=2)=>Number.isFinite(n)?n.toFixed(k):'欠測';
+const motionName=c=>c.motion==='long_r90'?'右90°':'右180°';
+const name=c=>`${c.speed} ${c.suction?'吸引650':'非吸引'} / ${motionName(c)} / ${c.id}`;
+function interp(rows,t,columns,maxGap=0.02){
+ if(!rows.length||t<rows[0][0]-1e-6||t>rows.at(-1)[0]+1e-6)return null;
+ let a=0,b=rows.length-1;while(a<b){const m=(a+b)>>1;if(rows[m][0]<t)a=m+1;else b=m;}
+ let hi=rows[a],lo=rows[Math.max(0,a-1)];
+ if(Math.abs(hi[0]-t)<1e-6)return columns.every(k=>Number.isFinite(hi[k]))?columns.map(k=>hi[k]):null;
+ if(hi[0]-lo[0]>maxGap||!columns.every(k=>Number.isFinite(lo[k])&&Number.isFinite(hi[k])))return null;
+ const u=(t-lo[0])/(hi[0]-lo[0]);return columns.map(k=>lo[k]+(hi[k]-lo[k])*u);
+}
+function setupCanvas(canvas){const box=canvas.getBoundingClientRect(),dpr=devicePixelRatio||1;canvas.width=Math.round(box.width*dpr);canvas.height=Math.round(box.height*dpr);let ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,box.width,box.height);ctx.font='12px "Yu Gothic UI",sans-serif';return {ctx,w:box.width,h:box.height};}
+function niceStep(span,count){let raw=span/count,p=10**Math.floor(Math.log10(raw));return ([1,2,5,10].find(x=>x*p>=raw)||10)*p;}
+function axes(ctx,w,h,bounds,equal){
+ const pad={l:55,r:18,t:24,b:46},iw=w-pad.l-pad.r,ih=h-pad.t-pad.b;
+ let [xmin,xmax,ymin,ymax]=bounds;if(xmax<=xmin)xmax=xmin+1;if(ymax<=ymin)ymax=ymin+1;
+ if(equal){let scale=Math.min(iw/(xmax-xmin),ih/(ymax-ymin));const cx=(xmin+xmax)/2,cy=(ymin+ymax)/2;xmin=cx-iw/scale/2;xmax=cx+iw/scale/2;ymin=cy-ih/scale/2;ymax=cy+ih/scale/2;}
+ const X=x=>pad.l+(x-xmin)/(xmax-xmin)*iw,Y=y=>h-pad.b-(y-ymin)/(ymax-ymin)*ih;
+ ctx.lineWidth=1;ctx.fillStyle='#566676';ctx.strokeStyle='#e0e6eb';
+ const stepX=niceStep(xmax-xmin,w<450?4:6),stepY=niceStep(ymax-ymin,h<200?3:6);
+ for(let x=Math.ceil(xmin/stepX)*stepX;x<=xmax+1e-6;x+=stepX){ctx.beginPath();ctx.moveTo(X(x),pad.t);ctx.lineTo(X(x),h-pad.b);ctx.stroke();ctx.textAlign='center';ctx.fillText(fmt(x,stepX<1?2:0),X(x),h-pad.b+19);}
+ for(let y=Math.ceil(ymin/stepY)*stepY;y<=ymax+1e-6;y+=stepY){ctx.beginPath();ctx.moveTo(pad.l,Y(y));ctx.lineTo(w-pad.r,Y(y));ctx.stroke();ctx.textAlign='right';ctx.fillText(fmt(y,stepY<1?1:0),pad.l-8,Y(y)+4);}
+ return {X,Y,pad,xmin,xmax,ymin,ymax,iw,ih};
+}
+function line(ctx,rows,cols,map,color,dash,alpha,until=Infinity){ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.1;ctx.globalAlpha=alpha;ctx.setLineDash(dash);let begun=false,previous=null;for(const row of rows){if(row[0]>until)break;const ok=Number.isFinite(row[cols[0]])&&Number.isFinite(row[cols[1]]);if(!ok||(previous!==null&&row[0]-previous>.0201))begun=false;if(ok){let x=map.X(row[cols[0]]),y=map.Y(row[cols[1]]);if(begun)ctx.lineTo(x,y);else ctx.moveTo(x,y);begun=true;}previous=row[0];}ctx.stroke();ctx.globalAlpha=1;ctx.setLineDash([]);}
+function marker(ctx,p,map,color,shape){if(!p)return;let x=map.X(p[0]),y=map.Y(p[1]);ctx.fillStyle=color;ctx.strokeStyle=color;ctx.lineWidth=2;if(shape==='square'){ctx.fillRect(x-4.5,y-4.5,9,9);}else{ctx.beginPath();ctx.arc(x,y,shape==='open'?5:4.5,0,Math.PI*2);if(shape==='open'){ctx.fillStyle='white';ctx.fill();ctx.stroke();}else ctx.fill();}}
+function visibleInterval(){return $('extent').value==='turn'?[Math.max(0,current.turn[0]-.04),Math.min(current.duration,current.turn[1]+.06)]:[0,current.duration];}
+function drawPath(){if(!current)return;const {ctx,w,h}=setupCanvas($('path')),range=visibleInterval(),all=[];for(const r of current.trajectory){if(r[0]>=range[0]&&r[0]<=range[1])all.push([r[1],r[2]],[r[3],r[4]]);}for(const r of current.video){if(r[0]>=range[0]&&r[0]<=range[1]&&Number.isFinite(r[1]))all.push([r[1],r[2]]);}let xs=all.map(r=>r[0]),ys=all.map(r=>r[1]),span=Math.max(30,Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys)),margin=span*.07;
+ const map=axes(ctx,w,h,[Math.min(...xs)-margin,Math.max(...xs)+margin,Math.min(...ys)-margin,Math.max(...ys)+margin],true);pathMap=map;
+ ctx.fillStyle='#566676';ctx.textAlign='center';ctx.fillText('右方向 [mm]',w/2,h-7);ctx.save();ctx.translate(15,h/2);ctx.rotate(-Math.PI/2);ctx.fillText('前方向 [mm]',0,0);ctx.restore();
+ ctx.save();ctx.beginPath();ctx.rect(map.pad.l,map.pad.t,map.iw,map.ih);ctx.clip();
+ const series=[['simple',current.trajectory,[1,2],[7,5],'open'],['model',current.trajectory,[3,4],[],'square'],['video',current.video,[1,2],[],'circle']];
+ for(const [id,rows,cols,dash,shape] of series){if(!$('show-'+id).checked)continue;line(ctx,rows,cols,map,colors[id],dash,.27);line(ctx,rows,cols,map,colors[id],dash,1,selected);marker(ctx,interp(rows,selected,cols),map,colors[id],shape);}
+ ctx.restore();if(range[0]===0){ctx.fillStyle='#344754';ctx.textAlign='left';ctx.fillText('入口',map.X(0)+8,map.Y(0)-8);}
+}
+function drawError(){if(!current)return;const {ctx,w,h}=setupCanvas($('error')),max=Math.max(1,...current.errors.flatMap(r=>[r[1],r[2]])),map=axes(ctx,w,h,[0,current.duration,0,max*1.15],false);errorMap=map;
+ for(const [col,key] of [[1,'simple'],[2,'model']]){ctx.beginPath();ctx.lineWidth=1.7;ctx.strokeStyle=colors[key];ctx.setLineDash(key==='simple'?[6,4]:[]);for(let i=0;i<current.errors.length;i++){let row=current.errors[i];if(i===0)ctx.moveTo(map.X(row[0]),map.Y(row[col]));else ctx.lineTo(map.X(row[0]),map.Y(row[col]));}ctx.stroke();}ctx.setLineDash([]);ctx.strokeStyle='#223d51';ctx.beginPath();ctx.moveTo(map.X(selected),map.pad.t);ctx.lineTo(map.X(selected),h-map.pad.b);ctx.stroke();ctx.fillStyle='#566676';ctx.textAlign='left';ctx.fillText('位置誤差 [mm]',map.pad.l,13);ctx.textAlign='right';ctx.fillText('走行時刻 [s]',w-9,h-6);
+}
+function updateTime(t,seek=false){if(!current)return;selected=Math.max(0,Math.min(current.duration,t));C.value=selected;$('clock').textContent=`${selected.toFixed(3)} / ${current.duration.toFixed(3)} s`;
+ if(seek&&mediaReady){changing=true;V.currentTime=current.video_zero_s+selected;changing=false;}
+ const error=interp(current.errors,selected,[1,2]),state=interp(current.trajectory,selected,[6]);$('readout').textContent=`積分の差 ${fmt(error?.[0])} mm　モデルの差 ${fmt(error?.[1])} mm　推定滑り ${fmt(state?.[0],1)}°`;drawPath();drawError();}
+function updateMetrics(){let html='';for(const [key,label] of [['simple','単純積分'],['model','滑りモデル＋EKF']]){let m=current.metrics[key];html+=`<tr><td>${label}</td><td>${fmt(m.rmse_mm)}</td><td>${fmt(m.turn_rmse_mm)}</td><td>${fmt(m.endpoint_mm)}</td></tr>`;}$('metrics').innerHTML=html;}
+function choose(id){playing=false;V.pause();$('play').textContent='再生';current=DATA.cases.find(c=>c.id===id);$('trial').value=id;selected=current.duration;C.max=current.duration;mediaReady=false;if(objectURL){URL.revokeObjectURL(objectURL);objectURL=null;}V.src=current.video_uri;V.load();$('media-status').textContent='元動画を読み込み中…';$('case-note').textContent=`${current.speed} mm/s・${current.suction?'吸引ON / duty '+current.duty:'非吸引'}　${motionName(current)}　K=${fmt(current.k)} m/s²　Lstart=${fmt(current.parameters.lstart)} mm / Lend=${fmt(current.parameters.lend)} mm / 補正角=${fmt(current.parameters.correction,1)}°`;$('source-info').textContent=`元動画：${current.video_file}　共通の機首方向による同期。調整用19試行・モデル係数同定に使用したデータ。`;updateMetrics();updateTime(selected);}
+function filter(){const keep=DATA.cases.filter(c=>($('condition').value==='all'||String(c.speed)===$('condition').value)&&($('motion').value==='all'||c.motion===$('motion').value));let previous=current?.id;$('trial').replaceChildren(...keep.map(c=>{let o=document.createElement('option');o.value=c.id;o.textContent=name(c);return o;}));choose(keep.some(c=>c.id===previous)?previous:keep[0].id);}
+function play(){if(!current)return;playing=!playing;$('play').textContent=playing?'停止':'再生';if(playing){if(selected>=current.duration-.003)updateTime(0,true);lastStamp=performance.now();if(mediaReady){V.currentTime=current.video_zero_s+selected;V.play().catch(()=>{});}requestAnimationFrame(tick);}else V.pause();}
+function tick(stamp){if(!playing)return;const next=mediaReady&&!V.paused?V.currentTime-current.video_zero_s:selected+(stamp-lastStamp)/1000;lastStamp=stamp;updateTime(next);if(selected>=current.duration-.001){playing=false;V.pause();$('play').textContent='再生';}else requestAnimationFrame(tick);}
+$('condition').addEventListener('change',filter);$('motion').addEventListener('change',filter);$('trial').addEventListener('change',()=>choose($('trial').value));$('extent').addEventListener('change',drawPath);$('play').addEventListener('click',play);C.addEventListener('input',()=>updateTime(Number(C.value),true));for(const key of ['simple','model','video'])$('show-'+key).addEventListener('change',drawPath);
+V.addEventListener('loadedmetadata',()=>{mediaReady=true;$('media-status').textContent='動画と軌跡の時刻を同期できます。';V.currentTime=current.video_zero_s+selected;});V.addEventListener('error',()=>{mediaReady=false;$('media-status').textContent='元動画を開けません。軌跡の比較・時刻再生は利用できます。下の「動画が開けない場合」から元動画を選べます。';});V.addEventListener('timeupdate',()=>{if(!changing&&mediaReady)updateTime(V.currentTime-current.video_zero_s);});
+$('video-file').addEventListener('change',e=>{if(e.target.files[0]){if(objectURL)URL.revokeObjectURL(objectURL);objectURL=URL.createObjectURL(e.target.files[0]);V.src=objectURL;V.load();}});
+$('path').addEventListener('click',e=>{if(!pathMap)return;const box=$('path').getBoundingClientRect(),x=e.clientX-box.left,y=e.clientY-box.top;let best=[Infinity,0];for(const row of current.video){if(!Number.isFinite(row[1]))continue;let d=(pathMap.X(row[1])-x)**2+(pathMap.Y(row[2])-y)**2;if(d<best[0])best=[d,row[0]];}updateTime(best[1],true);});$('error').addEventListener('click',e=>{const box=$('error').getBoundingClientRect();updateTime((e.clientX-box.left-errorMap.pad.l)/errorMap.iw*current.duration,true);});
+for(const c of DATA.cases){let tr=document.createElement('tr');tr.className='comparison-row';let delta=c.metrics.simple.rmse_mm-c.metrics.model.rmse_mm;for(const [i,value] of [name(c),fmt(c.metrics.simple.rmse_mm)+' mm',fmt(c.metrics.model.rmse_mm)+' mm',(delta>=0?'改善 ':'増加 ')+fmt(Math.abs(delta))+' mm'].entries()){let td=document.createElement('td');td.textContent=value;if(i===3)td.className=delta>=0?'positive':'negative';tr.appendChild(td);}tr.addEventListener('click',()=>{$('condition').value='all';$('motion').value='all';filter();choose(c.id);window.scrollTo({top:0,behavior:'smooth'});});$('all-cases').appendChild(tr);}
+window.addEventListener('resize',()=>{drawPath();drawError();});
+window.addEventListener('error',e=>{document.body.dataset.runtimeError=e.message;});
+filter();document.body.dataset.ready='true';
+if(new URLSearchParams(location.search).has('selftest')){try{const initial=current.id;$('condition').value='1600';filter();if(current.speed!==1600)throw Error('condition filter');$('motion').value='long_r180';filter();if(current.motion!=='long_r180')throw Error('motion filter');updateTime(current.duration/2);if(Math.abs(Number(C.value)-current.duration/2)>.002)throw Error('time slider');$('show-simple').checked=false;drawPath();$('show-simple').checked=true;$('condition').value='all';$('motion').value='all';filter();choose(initial);document.body.dataset.selftest='passed';}catch(e){document.body.dataset.selftest='failed: '+e.message;}}
+</script></body></html>

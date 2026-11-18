@@ -6,7 +6,7 @@ from ble.wall_diagnostics import decoded_row
 
 def review_rows(settings, sync):
     rows = []
-    for key, kind in (('turn_diagnostics', 'turn_decision'), ('wall_diagnostics', 'wall_correction')):
+    for key, kind in (('turn_diagnostics', 'turn_decision'), ('wall_diagnostics', 'wall_correction'), ('pillar_diagnostics', 'pillar_candidate')):
         diagnostics = settings.get(key) or {}
         for event in diagnostics.get('events', []):
             row = decoded_row(event)
@@ -17,6 +17,12 @@ def review_rows(settings, sync):
                 video = sync['video_time_at_mcu_origin_s'] + sync.get('clock_scale', 1.) * (ms-sync['mcu_origin_ms'])/1000
                 if math.isfinite(video) and math.isfinite(ms):
                     row['video_s'] = video
+                    if kind == 'pillar_candidate':
+                        row['confirmation_video_s'] = video
+                        row['video_s'] = None
+                        minimum_ms = float(row['minimum_ms'])
+                        row['video_s'] = sync['video_time_at_mcu_origin_s'] + sync.get('clock_scale',1.) * (minimum_ms-sync['mcu_origin_ms'])/1000
+                        row['minimum_video_s'] = row['video_s']
             except (KeyError, ValueError, TypeError):
                 pass
             rows.append(row)

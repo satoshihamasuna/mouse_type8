@@ -478,7 +478,28 @@ def write_csv(path, rows):
         writer.writeheader(); writer.writerows(rows)
 
 
-def analyze(trial_path, reference_path, output, stride=4, cell_mm=None, manual_sync=None):
+def review_wall_map(reference, path=None):
+    """座標登録用の基準を保持し、描画する壁配置だけを明示的に選ぶ。"""
+    selected = reference if path is None else json.loads(Path(path).read_text(encoding='utf-8'))
+    walls = selected.get('wall_segments', [])
+    keys = set()
+    for wall in walls:
+        key = (wall.get('axis'), wall.get('grid_line'), wall.get('cell_segment'))
+        if (key[0] not in ('H', 'V') or type(key[1]) is not int or not 0 <= key[1] <= 9
+                or type(key[2]) is not int or not 0 <= key[2] < 9
+                or wall.get('state') not in ('wall', 'open', 'unknown') or key in keys):
+            raise ValueError('壁配置JSONの座標・状態・重複を確認してください')
+        keys.add(key)
+    if path is not None and len(walls) != 180:
+        raise ValueError('9×9の壁配置JSONには180辺が必要です')
+    metadata = dict(revision=selected.get('wall_revision', '更新確認なし'),
+                    source=str(Path(path).resolve()) if path is not None else '盤面基準JSON内の壁配置',
+                    sha256=sha256(path) if path is not None else None,
+                    edge_count=len(walls), selection='explicit_wall_map' if path is not None else 'embedded_reference')
+    return walls, metadata
+
+
+def analyze(trial_path, reference_path, output, stride=4, cell_mm=None, manual_sync=None, wall_map=None):
     if stride not in (1,2,4):
         raise ValueError('strideは1,2,4から選択してください')
     if cell_mm is not None and (not math.isfinite(cell_mm) or not 10<=cell_mm<=300):
@@ -487,6 +508,7 @@ def analyze(trial_path, reference_path, output, stride=4, cell_mm=None, manual_s
     reference=json.loads(Path(reference_path).read_text(encoding='utf-8'))
     if reference.get('schema')!=1 or reference.get('rows')!=9 or reference.get('columns')!=9:
         raise ValueError('9×9用の登録済み基準JSONを指定してください')
+    walls, wall_map_metadata = review_wall_map(reference, wall_map)
     output=Path(output); output.mkdir(parents=True,exist_ok=False)
     # Keep a reproducible source snapshot even if the working tree is edited
     # while a long decode is in progress.
@@ -516,7 +538,7 @@ def analyze(trial_path, reference_path, output, stride=4, cell_mm=None, manual_s
         run_type=settings.get('run_type','unknown'),options=settings.get('options'),
         source_video=str(video),video_sha256=source_hash,run_settings_sha256=sha256(trial['run_settings']),
         ble_csv_sha256=sha256(Path(trial['ble_directory'])/'telemetry.csv'),
-        reference=str(Path(reference_path).resolve()),reference_sha256=sha256(reference_path),
+        reference=str(Path(reference_path).resolve()),reference_sha256=sha256(reference_path),wall_map=wall_map_metadata,
         analysis_source_sha256=hashlib.sha256(source_snapshot).hexdigest(),opencv_version=cv2.__version__,numpy_version=np.__version__,
         stride=stride,cell_mm=cell_mm,front_colour=front_colour,rear_colour=rear_colour,nominal_marker_span_mm=50.,
         position_kind='apparent_front_rear_marker_midpoint_on_reference_plane',
@@ -547,7 +569,7 @@ def analyze(trial_path, reference_path, output, stride=4, cell_mm=None, manual_s
             matched.append(dict(p,time_mcu_estimated_ms=mcu,ble_time_error_ms=times[i]-mcu,
                                 **{'ble_'+k:v for k,v in ble[i].items()}))
     write_csv(output/'matched.csv',matched)
-    build_review(output,trial,ble,pose,reference,report)
+    build_review(output,trial,ble,pose,dict(reference, wall_segments=walls),report)
     lines=[f'# {report["mouse"]} {report["run_type"]} 動画位置解析',
         f'追跡率 {report["pose_coverage"]:.1%}、盤面登録 {report["calibration_coverage"]:.1%}、旋回区間 {len(turns)}。',
         f'同期: {sync["source"]} / 採用可能フラグ {sync["accepted"]}。',
@@ -586,6 +608,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--trial',type=Path)
     parser.add_argument('--reference',type=Path)
+    parser.add_argument('--wall-map',type=Path,help='走行時の9×9物理壁配置JSON。ArUco座標登録とは別に表示へ適用')
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--stride',type=int,choices=[1,2,4],default=4)
     parser.add_argument('--cell-mm',type=float)
@@ -598,7 +621,7 @@ def main():
     else:
         if not args.trial or not args.reference:
             parser.error('--trial と --reference が必要です')
-        analyze(args.trial,args.reference,args.output,args.stride,args.cell_mm,args.sync)
+        analyze(args.trial,args.reference,args.output,args.stride,args.cell_mm,args.sync,args.wall_map)
 
 
 if __name__=='__main__':

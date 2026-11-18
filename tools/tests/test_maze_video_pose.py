@@ -159,6 +159,39 @@ class SyncTests(unittest.TestCase):
 
 
 class WallReviewTests(unittest.TestCase):
+    def test_updated_wall_map_overrides_stale_drawing_without_changing_registration(self):
+        walls=[dict(axis=axis,grid_line=line,cell_segment=segment,state='open')
+               for axis in ('H','V') for line in range(10) for segment in range(9)]
+        stale=dict(markers_cell={'0':[[0,0],[1,0],[1,1],[0,1]]},wall_segments=walls)
+        updated=[dict(w) for w in walls]
+        updated[0]['state']='wall'
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            pose.json_save(root/'wall_map.json',dict(wall_revision='current_verified',wall_segments=updated))
+            selected,metadata=pose.review_wall_map(stale,root/'wall_map.json')
+            self.assertEqual(selected[0]['state'],'wall')
+            self.assertEqual(stale['wall_segments'][0]['state'],'open')
+            self.assertEqual(stale['markers_cell']['0'][0],[0,0])
+            self.assertEqual(metadata['revision'],'current_verified')
+            self.assertEqual(metadata['sha256'],pose.sha256(root/'wall_map.json'))
+            pose.json_save(root/'settings.json',{})
+            trial=dict(run_settings=str(root/'settings.json'),video_file=str(root/'video.mp4'))
+            report=dict(sync=dict(mcu_origin_ms=0,video_time_at_mcu_origin_s=0),wall_map=metadata)
+            pose.build_review(root,trial,[],[],dict(stale,wall_segments=selected),report)
+            rendered=(root/'review.html').read_text(encoding='utf-8')
+            data=json.loads(rendered.split('const D=',1)[1].split(',R=D.report',1)[0])
+            self.assertEqual(data['walls'],updated)
+            self.assertEqual(data['report']['wall_map']['revision'],'current_verified')
+            self.assertIn('id="wallMap"',rendered)
+
+    def test_explicit_wall_map_rejects_incomplete_or_duplicate_edges(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'wall_map.json'
+            for walls in ([dict(axis='H',grid_line=0,cell_segment=0,state='wall')],
+                          [dict(axis='H',grid_line=0,cell_segment=0,state='wall')]*180):
+                pose.json_save(path,dict(wall_segments=walls))
+                with self.assertRaises(ValueError):pose.review_wall_map({},path)
+
     def test_saved_run_settings_select_marker_colours_for_analysis_and_report(self):
         image,reference=TrackingTests.marker_frame()
         with tempfile.TemporaryDirectory() as directory:

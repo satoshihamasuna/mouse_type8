@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "mouse": "A",
+  "status": "PROVISIONAL_OFFLINE_CALIBRATION",
+  "selection": "explicit suction.enabled boolean; never infer from speed",
+  "source_report": "tools/logs/turn_slip_conditions_A_20261118_v1/report.json",
+  "imu_position": "approximately body center, user supplied 2026-11-18",
+  "suction_off": {
+    "calibration_speed_mm_s": 500,
+    "trials": 6,
+    "k_m_s2": 41.28055326324916,
+    "gyro_gain": 1.0,
+    "ay_std_m_s2": 1.1,
+    "optical_gyro_gain_diagnostic_not_applied": 0.9872407593000987,
+    "noise": {
+      "gyro_std": 0.04,
+      "accel_std": 1.1,
+      "wheel_slip_std": 0.04,
+      "velocity_walk": 0.08,
+      "initial_gyro_bias_std": 0.02,
+      "initial_accel_bias_std": 0.3,
+      "accel_bias_walk": 0.05
+    }
+  },
+  "suction_on": {
+    "calibration_speed_mm_s": 1600,
+    "suction_duty": 650,
+    "trials": 13,
+    "k_m_s2": 254.90725372104055,
+    "gyro_gain": 1.0,
+    "ay_std_m_s2": 7.0,
+    "optical_gyro_gain_diagnostic_not_applied": 0.9757873293267474,
+    "noise": {
+      "gyro_std": 0.65,
+      "accel_std": 7.0,
+      "wheel_slip_std": 0.08,
+      "velocity_walk": 0.15,
+      "initial_gyro_bias_std": 0.1,
+      "initial_accel_bias_std": 0.6,
+      "accel_bias_walk": 0.1
+    }
+  }
+}
