@@ -31,6 +31,7 @@ static volatile uint32_t		led_off_pattern[NUM_ADC] = {0x00000000, 0x00000000, 0x
 static uint16_t		adc_value[NUM_ADC];		// AD変換値
 static volatile uint8_t motion_active;
 static volatile uint8_t hand_wait_active;
+static volatile uint8_t measurement_active;
 static volatile uint8_t leds_enabled;
 static volatile uint8_t fresh_adc_cycles;
 
@@ -55,7 +56,7 @@ static void Sensor_TurnOnLED()
 
 static void Sensor_UpdateLEDActivity(void)
 {
-	const uint8_t enabled = (motion_active || hand_wait_active) ? 1U : 0U;
+	const uint8_t enabled = (motion_active || hand_wait_active || measurement_active) ? 1U : 0U;
 	if (enabled == leds_enabled) return;
 	if (enabled) {
 		// The first completion can contain a partly unlit DMA scan.
@@ -91,6 +92,28 @@ void Sensor_SetHandWaitActive(uint8_t active)
 	__set_PRIMASK(irq_mask);
 }
 
+uint8_t Sensor_BeginMeasurement(void)
+{
+	const uint32_t irq_mask = __get_PRIMASK();
+	__disable_irq();
+	const uint8_t available = !motion_active && !hand_wait_active && !measurement_active;
+	if (available) {
+		measurement_active = 1U;
+		Sensor_UpdateLEDActivity();
+	}
+	__set_PRIMASK(irq_mask);
+	return available;
+}
+
+void Sensor_EndMeasurement(void)
+{
+	const uint32_t irq_mask = __get_PRIMASK();
+	__disable_irq();
+	measurement_active = 0U;
+	Sensor_UpdateLEDActivity();
+	__set_PRIMASK(irq_mask);
+}
+
 void Sensor_AdcComplete(void)
 {
 	if (leds_enabled && fresh_adc_cycles > 0U) --fresh_adc_cycles;
@@ -104,7 +127,7 @@ uint8_t Sensor_IrSamplesReady(void)
 void Sensor_Initialize()
 {
 
-	  motion_active = hand_wait_active = leds_enabled = fresh_adc_cycles = 0U;
+	  motion_active = hand_wait_active = measurement_active = leds_enabled = fresh_adc_cycles = 0U;
 	  Sensor_TurnOffLED();
 	  DMA_NodeConfTypeDef nodeConf1,nodeConf2;
 	  HAL_DMAEx_List_GetNodeConfig(&nodeConf1, &Node_GPDMA1_Channel0);
@@ -161,6 +184,7 @@ void Sensor_Initialize()
 
 void Sensor_StopADC()
 {
+	Sensor_EndMeasurement();
 	Sensor_SetHandWaitActive(0U);
 	Sensor_SetMotionActive(0U);
 	HAL_LPTIM_IC_Stop(&hlptim1, LPTIM_CHANNEL_1);

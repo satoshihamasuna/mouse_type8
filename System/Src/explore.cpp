@@ -45,7 +45,7 @@ int shell_explore(int argc, char **argv)
 #else
 		const char *mouse = "B";
 #endif
-		printf("EXPLORE_CAP protocol:1 mouse:%s goal_x:%d goal_y:%d goal_size:%d max_x:%d max_y:%d state:%s turn_diag:1 turn_cov:1 turn_detail:1 wall_diag:1 log_schema:4 correction_gate:2 range_state:1 wall_edge_trial:1 pillar_diag:1 pillar_detector:1\r\n",
+		printf("EXPLORE_CAP protocol:1 mouse:%s goal_x:%d goal_y:%d goal_size:%d max_x:%d max_y:%d state:%s turn_diag:1 turn_cov:1 turn_detail:1 wall_diag:1 wall_detect:1 log_schema:4 correction_gate:2 range_state:1 wall_edge_trial:1 pillar_diag:1 pillar_detector:1\r\n",
 			mouse, MAZE_GOAL_X, MAZE_GOAL_Y, MAZE_GOAL_SIZE, MAZE_SIZE_X - 1, MAZE_SIZE_Y - 1,
 			RemoteExplore::running() ? "running" : "idle");
 		return 0;

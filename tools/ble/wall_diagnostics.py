@@ -12,6 +12,7 @@ REASONS = ('accepted', 'limited', 'outside_window', 'invalid', 'wrong_side') + O
 PILLAR_FLAGS = ('rotating_window', 'frame_changed', 'position_jump', 'front_pair_close', 'side_near_limit', 'invalid_front', 'invalid_pose')
 CHECK_NAMES = ('metric_pair', 'pair_window', 'centered', 'lateral_certain', 'aligned',
                'heading_certain', 'quiet_yaw', 'pose_trusted', 'ekf_control', 'pose_used')
+DETECTION_PHASES = ('straight', 'diagonal', 'before', 'turning', 'after', 'other')
 
 
 def empty_diagnostics():
@@ -20,6 +21,73 @@ def empty_diagnostics():
 
 def empty_pillar_diagnostics():
     return {'summary': None, 'events': [], 'complete': False, 'errors': []}
+
+
+def empty_detection_diagnostics():
+    return {'summary': None, 'events': [], 'complete': False, 'errors': []}
+
+
+def receive_detection(diagnostics, tag, values):
+    if tag == 'WALL_DETECT':
+        if len(diagnostics['events']) < 64:
+            diagnostics['events'].append(values)
+        elif 'event_overflow' not in diagnostics['errors']:
+            diagnostics['errors'].append('event_overflow')
+    elif tag == 'WALL_DETECT_STATS':
+        if diagnostics['summary'] is not None and 'duplicate_summary' not in diagnostics['errors']:
+            diagnostics['errors'].append('duplicate_summary')
+        diagnostics['summary'] = values
+
+
+def validate_detection(diagnostics):
+    try:
+        summary, events = diagnostics['summary'], diagnostics['events']
+        _require(summary['schema'] == '1')
+        total, edges, phases, stored, dropped = (int(summary[k]) for k in ('total', 'edges', 'phases', 'stored', 'dropped'))
+        _require(0 <= stored <= 64 and total >= stored and dropped == total-stored)
+        _require(edges >= 0 and phases >= 0 and total == edges+phases)
+        _require([int(e['index']) for e in events] == list(range(stored)))
+        observed = Counter()
+        previous = None
+        for e in events:
+            _require(e['kind'] in ('edge', 'phase_end') and e['phase'] in DETECTION_PHASES)
+            observed[e['kind']] += 1
+            ms, start = int(e['ms']), int(e['start_ms'])
+            _require(0 <= ms < 2**32 and 0 <= start < 2**32 and (ms-start) % 2**32 < 2**31)
+            if previous is not None:
+                _require((ms-previous) % 2**32 < 2**31)
+            previous = ms
+            for key in ('segment', 'generation', 'left_count', 'right_count'):
+                _require(0 <= int(e[key]) < 2**32)
+            samples, left, right = (int(e[k]) for k in ('samples', 'left_count', 'right_count'))
+            _require(1 <= samples < 2**32 and max(left, right) <= samples)
+            for key in ('motion', 'control', 'turn'):
+                _require(0 <= int(e[key]) <= 255)
+            _require(0 <= int(e['axis']) <= 2 and 0 <= int(e['turn_side']) <= 2)
+            expected = int(e['turn_side']) if e['phase'] == 'before' else 0
+            _require(int(e['expected_side']) == expected)
+            seen = int((left if expected == 1 else right) > 0) if expected else -1
+            _require(int(e['expected_seen']) == seen)
+            side = int(e['side'])
+            if e['kind'] == 'edge':
+                _require(side in (1, 2) and (left if side == 1 else right) > 0 and e['end'] == 'pending')
+                _require(abs(float(e['feature_mm'])-(float(e['length_mm'])-float(e['delay_mm']))) <= .0021)
+            else:
+                _require(side == 0 and e['phase'] in ('before', 'after') and e['end'] in ('transition', 'stop'))
+            _require(0 <= int(e['age_ticks']) <= 65535 and float(e['delay_mm']) >= 0)
+            for key in ('length_mm', 'delay_mm', 'gyro_radps', 'sl_mm', 'sr_mm', 'fl_mm', 'fr_mm'):
+                _require(math.isfinite(float(e[key])))
+            for sensor in ('l', 'r', 'fl', 'fr'):
+                _require(-32768 <= int(e['adc_'+sensor]) <= 32767 and 0 <= int(e['range_'+sensor]) < len(RANGE_NAMES))
+        for kind, count in (('edge', edges), ('phase_end', phases)):
+            _require(observed[kind] <= count and (dropped > 0 or observed[kind] == count))
+        _require(not diagnostics['errors'])
+        diagnostics['complete'] = True
+    except (KeyError, TypeError, ValueError, OverflowError):
+        diagnostics['complete'] = False
+    dropped = str((diagnostics.get('summary') or {}).get('dropped', '0'))
+    diagnostics['truncated'] = dropped.isdigit() and int(dropped) > 0
+    return diagnostics['complete']
 
 
 def receive_pillar(diagnostics, tag, values):
@@ -92,7 +160,7 @@ def validate_pillar(diagnostics):
             axis = int(e['axis']); _require(axis in (0, 1) and int(e['side']) in (1, 2))
             _validate_diagonal_pose(e, axis)
             _require(e['feature'] == ('straight_pillar_adc_maximum' if axis == 0 else 'diagonal_pillar_minimum'))
-            _require(e['mode'] in ('shadow', 'control') and int(e['flags']) in range(128))
+            _require(e['mode'] in ('legacy', 'shadow', 'control') and int(e['flags']) in range(128))
             _require(e['reason'] == ('quality_rejected' if int(e['flags']) else e.get('position_reason') if e.get('position_evaluated') == '1' else 'shadow'))
             observed['straight' if axis == 0 else 'diagonal'] += 1
             observed['quality_rejected'] += bool(int(e['flags']))
@@ -109,8 +177,11 @@ def validate_pillar(diagnostics):
                 _require((axis==0 and not int(e['flags']) and not diagonal_shadow) or (axis==1 and diagonal_shadow))
                 if 'position_phase' in e:_require(int(e['position_phase']) in ((1,3,6) if diagonal_shadow else (0,4,5)))
                 if e['position_reason'] in ('accepted', 'limited'):
-                    _require(axis==0 and e['mode'] == 'control' and e.get('ekf') == '1')
+                    legacy = e['mode'] == 'legacy' and e.get('ekf') == '0'
+                    _require(axis==0 and (legacy or (e['mode'] == 'control' and e.get('ekf') == '1')))
                     _require(abs(float(e['delta_mm'])) <= 4.001 and abs(after-before-float(e['delta_mm'])) <= .003)
+                    if legacy:
+                        _require(abs(float(e['delta_mm'])) <= abs(float(e['innovation_mm']))*.5+.003)
                     observed['applied'] += 1
                 else:
                     _require(float(e['delta_mm']) == 0 and after == before)
@@ -148,7 +219,7 @@ def receive(diagnostics, tag, values):
             diagnostics['events'].append(values)
         elif 'event_overflow' not in diagnostics['errors']:
             diagnostics['errors'].append('event_overflow')
-    else:
+    elif tag in ('WALL_RANGE_STATS', 'WALL_CORR_STATS'):
         key = 'range_summary' if tag == 'WALL_RANGE_STATS' else 'summary'
         if diagnostics[key] is not None and 'duplicate_summary' not in diagnostics['errors']:
             diagnostics['errors'].append('duplicate_summary')
@@ -226,8 +297,13 @@ def decoded_row(event):
         except (KeyError, TypeError, ValueError):
             row['range_'+sensor+'_name'] = ''  # 旧ログから推測しない
     if 'phase' in row:
-        try: row['phase_name'] = PHASE_NAMES[int(row['phase'])]
+        try: row['phase_name'] = row['phase'] if row['phase'] in DETECTION_PHASES else PHASE_NAMES[int(row['phase'])]
         except (IndexError, ValueError, TypeError): row['phase_name'] = ''
+    if row.get('kind') in ('edge', 'phase_end'):
+        for key in ('side', 'turn_side', 'expected_side'):
+            try: row[key+'_name'] = ('unspecified', 'left', 'right')[int(row[key])]
+            except (KeyError, IndexError, ValueError, TypeError): row[key+'_name'] = ''
+        row['expected_status'] = {'1': 'detected', '0': 'not_detected', '-1': 'unspecified'}.get(str(row.get('expected_seen')), '')
     if 'position_phase' in row:
         try: row['position_phase_name'] = PHASE_NAMES[int(row['position_phase'])]
         except (IndexError, ValueError, TypeError): row['position_phase_name'] = ''
@@ -238,7 +314,8 @@ def decoded_row(event):
 
 
 def export_tables(settings_path, settings):
-    for key, suffix in (('wall_diagnostics', '.wall_corrections.csv'), ('turn_diagnostics', '.turn_decisions.csv'), ('pillar_diagnostics', '.pillar_candidates.csv')):
+    for key, suffix in (('wall_diagnostics', '.wall_corrections.csv'), ('turn_diagnostics', '.turn_decisions.csv'),
+                        ('pillar_diagnostics', '.pillar_candidates.csv'), ('wall_detection_diagnostics', '.wall_detections.csv')):
         diagnostics = settings.get(key)
         if diagnostics is None:
             continue

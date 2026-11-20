@@ -27,6 +27,7 @@
 #include "Peripheral/Inc/battery.h"
 #include "Peripheral/Inc/imu.h"
 #include "Peripheral/Inc/ir_sensor.h"
+#include "Peripheral/Inc/ir_sensor_activity.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,6 +54,7 @@ static int usrcmd_interface(int argc, char **argv);
 static int usrcmd_irsens(int argc, char **argv);
 static int usrcmd_wall_ekf(int argc, char **argv);
 static int usrcmd_wall_edge(int argc, char **argv);
+static int usrcmd_wall_detect(int argc, char **argv);
 static int usrcmd_turn_ekf(int argc, char **argv);
 static int usrcmd_pose(int argc, char **argv);
 typedef struct {
@@ -80,6 +82,7 @@ static const cmd_table_t cmdlist[] = {
 	{ "turn_ekf", "Turn pose EKF: show / legacy / shadow / control / reset (idle only).", usrcmd_turn_ekf },
 	{ "pose", "Local/world pose: show / reset [x_mm y_mm yaw_deg] (reset idle only).", usrcmd_pose },
 	{ "wall_edge", "Wall edge position trial: show / legacy / shadow / control (idle only).", usrcmd_wall_edge },
+	{ "wall_detect", "Wall detections before/after turns: show (idle only).", usrcmd_wall_detect },
 	{ "ir_sensor", "Alias for irsens count [interval_ms].", usrcmd_irsens }
 };
 
@@ -482,6 +485,15 @@ static int usrcmd_turn_ekf(int argc, char **argv)
 	return 0;
 }
 
+static int usrcmd_wall_detect(int argc, char **argv)
+{
+	if (argc != 2 || ntlibc_strcmp(argv[1], "show") != 0) { printf("wall_detect show\r\n"); return -1; }
+	if (CtrlTask_type8::getInstance().is_control_enable() == True) { printf("WALL_DETECT_ERROR busy\r\n"); return -1; }
+	WallDetectionDiagnostics::instance().finish_and_print();
+	printf("WALL_DETECT_DONE\r\n");
+	return 0;
+}
+
 static int usrcmd_wall_edge(int argc, char **argv)
 {
 	using WallPositionCorrection::Mode;
@@ -506,15 +518,18 @@ static int usrcmd_wall_edge(int argc, char **argv)
 	const auto generation = ir.wall_edge_generation;
 	__set_PRIMASK(mask);
 	const auto &parameter = WallPositionCorrection::edge_param(mode);
-	printf("WALL_EDGE mode:%s arm_range_mm:%.3f arm_travel_mm:%.3f search_reference_mm:%.3f generation:%lu straight_entry_apply:%u diagonal_entry_apply:%u exit_apply:%u straight_pillar:1 diagonal_pillar:1 pillar_apply:%u pillar_active:%u feature_ekf:%u pillar_entry_apply:%u entry_wall_reference_mm:%.3f entry_pillar_reference_mm:%.3f straight_run_apply:%u diagonal_feature_framework:1 diagonal_feature_shadow:1 diagonal_feature_apply:0\r\n",
+	const bool pillar_apply=(mode==Mode::Legacy && wall_feature_ekf_param.enabled)
+		|| (ir.FeatureEkfEnabled() && mode==Mode::Control && ir.WallEkfMode_Get()==IrSensTask::WallEkfMode::Control);
+	printf("WALL_EDGE mode:%s arm_range_mm:%.3f arm_travel_mm:%.3f search_reference_mm:%.3f generation:%lu straight_entry_apply:%u diagonal_entry_apply:%u exit_apply:%u straight_pillar:1 diagonal_pillar:1 pillar_apply:%u pillar_active:%u feature_ekf:%u pillar_entry_apply:%u entry_wall_reference_mm:%.3f entry_pillar_reference_mm:%.3f straight_run_apply:%u diagonal_feature_framework:1 diagonal_feature_shadow:1 diagonal_feature_apply:0 pillar_pair_apply:%u\r\n",
 		WallPositionCorrection::mode_name(mode), parameter.arm_range_mm, parameter.arm_travel_mm,
 		WallPositionCorrection::search_reference(mode), static_cast<unsigned long>(generation),
 		mode == Mode::Shadow ? 0U : 1U, mode == Mode::Legacy ? 1U : 0U, mode == Mode::Legacy ? 1U : 0U,
-		ir.FeatureEkfEnabled() && mode==Mode::Control && ir.WallEkfMode_Get()==IrSensTask::WallEkfMode::Control ? 1U : 0U,
-		mode == Mode::Legacy ? 0U : 1U,ir.FeatureEkfEnabled()?1U:0U,
-		ir.FeatureEkfEnabled() && mode==Mode::Control && ir.WallEkfMode_Get()==IrSensTask::WallEkfMode::Control ? 1U:0U,
+		pillar_apply ? 1U : 0U,
+		1U,ir.FeatureEkfEnabled()?1U:0U,
+		pillar_apply ? 1U:0U,
 		STRAIGHT_CORRECTION,wall_feature_ekf_param.enabled ? STRAIGHT_CORRECTION+wall_feature_ekf_param.pillar_reference_mm-wall_edge_trial_search_reference_mm:0.0f,
-		ir.FeatureEkfEnabled() && mode==Mode::Control && ir.WallEkfMode_Get()==IrSensTask::WallEkfMode::Control ? 1U:0U);
+		ir.FeatureEkfEnabled() && mode==Mode::Control && ir.WallEkfMode_Get()==IrSensTask::WallEkfMode::Control ? 1U:0U,
+		mode==Mode::Legacy ? 1U:0U);
 	return 0;
 }
 
@@ -580,6 +595,45 @@ static t_bool shell_irsens_parse_integer(const char *text, int minimum, int *val
 	return True;
 }
 
+// Foreground-only ownership: no motor command, and every return releases the LEDs.
+class ShellIrMeasurement {
+public:
+	~ShellIrMeasurement() { finish(); }
+	bool begin(const char *prefix)
+	{
+		auto &ctrl = CtrlTask_type8::getInstance();
+		const uint32_t irq_mask = __get_PRIMASK();
+		__disable_irq();
+		if (ctrl.is_control_enable() != True && ctrl.motion_exeStatus_get() != execute)
+			active = Sensor_BeginMeasurement() != 0U;
+		__set_PRIMASK(irq_mask);
+		if (!active) {
+			printf("%s_ERROR busy\r\n", prefix);
+			return false;
+		}
+		const uint32_t start = HAL_GetTick();
+		while (!Sensor_IrSamplesReady()) {
+			if (static_cast<uint32_t>(HAL_GetTick() - start) >= 50U) {
+				finish();
+				printf("%s_ERROR adc_timeout\r\n", prefix);
+				return false;
+			}
+			HAL_Delay(1U);
+		}
+		return true;
+	}
+	void finish()
+	{
+		if (active) Sensor_EndMeasurement();
+		active = false;
+	}
+	ShellIrMeasurement() = default;
+	ShellIrMeasurement(const ShellIrMeasurement &) = delete;
+	ShellIrMeasurement &operator=(const ShellIrMeasurement &) = delete;
+private:
+	bool active = false;
+};
+
 static int usrcmd_irsens(int argc, char **argv)
 {
 	int count = 0;
@@ -592,10 +646,17 @@ static int usrcmd_irsens(int argc, char **argv)
 	}
 
 	IrSensTask &irsens = IrSensTask_type8::getInstance();
+	ShellIrMeasurement measurement;
+	if (!measurement.begin("IRSENS")) return -1;
 	int32_t value_sums[4] = {};
 	double distance_sums[4] = {};
 	printf("IRSENS_START count:%d interval_ms:%d\r\n", count, interval_ms);
 	for (int i = 0; i < count; ++i) {
+		if (!Sensor_IrSamplesReady()) {
+			measurement.finish();
+			printf("IRSENS_ERROR adc_not_ready\r\n");
+			return -1;
+		}
 		int16_t values[4];
 		float distances[4];
 		// Snapshot only: keep UART output and delays outside the interrupt mask.
@@ -617,6 +678,7 @@ static int usrcmd_irsens(int argc, char **argv)
 			(double)distances[0], (double)distances[1], (double)distances[2], (double)distances[3]);
 		if (i + 1 < count && interval_ms > 0) HAL_Delay((uint32_t)interval_ms);
 	}
+	measurement.finish();
 	printf("IRSENS_AVG count:%d value_fl:%.3f value_fr:%.3f value_sl:%.3f value_sr:%.3f "
 		"distance_fl_mm:%.3f distance_fr_mm:%.3f distance_sl_mm:%.3f distance_sr_mm:%.3f\r\n",
 		count, (double)value_sums[0] / count, (double)value_sums[1] / count,
@@ -673,8 +735,15 @@ static int usrcmd_interface(int argc, char **argv)
 	}
 
 	if(ntlibc_strcmp(argv[1], "photo") == 0 || ntlibc_strcmp(argv[1], "ir") == 0) {
+		ShellIrMeasurement measurement;
+		if (!measurement.begin("PHOTO")) return -1;
 		printf("PHOTO_START count:%d interval_ms:%d\r\n", count, interval_ms);
 		for(int i = 0; i < count; i++) {
+			if (!Sensor_IrSamplesReady()) {
+				measurement.finish();
+				printf("PHOTO_ERROR adc_not_ready\r\n");
+				return -1;
+			}
 			printf("PHOTO index:%d value_fl:%d value_fr:%d value_sl:%d value_sr:%d "
 				"raw_fr_on:%d raw_fr_off:%d raw_sl_on:%d raw_sl_off:%d "
 				"raw_sr_on:%d raw_sr_off:%d raw_fl_on:%d raw_fl_off:%d\r\n",
@@ -686,6 +755,7 @@ static int usrcmd_interface(int argc, char **argv)
 				ADC_get_value(LED_FL_ON), ADC_get_value(LED_FL_OFF));
 			if(i + 1 < count && interval_ms > 0) HAL_Delay((uint32_t)interval_ms);
 		}
+		measurement.finish();
 		printf("PHOTO_END\r\n");
 		return 0;
 	}
@@ -1626,6 +1696,12 @@ static t_bool shell_debug_turn_post_run(Motion *motion, t_run_pattern pattern, f
 	}
 }
 
+// 単体試験では通信時間を実行応答へ追加せず、停止後のwall_detect showで読む。
+struct ShellWallDetectionCapture {
+	ShellWallDetectionCapture() { WallDetectionDiagnostics::instance().begin(); }
+	~ShellWallDetectionCapture() { WallDetectionDiagnostics::instance().stop(); }
+};
+
 static int shell_debug_turn_command(int argc, char **argv)
 {
 	if (argc < 4) {
@@ -1746,6 +1822,7 @@ static int shell_debug_turn_command(int argc, char **argv)
 		}
 		// The indicator is reserved for the turn segment below.  Keep it off
 		// during the approach run, after the sensor-ready flashing has ended.
+		ShellWallDetectionCapture wall_detection_capture;
 		Indicate_LED(0x00);
 		motion->Motion_start();
 		shell_debug_suction_start(motion, debug->suction_enable, debug->suction_duty);
@@ -1977,6 +2054,7 @@ static int shell_debug_search_command(int argc, char **argv)
 			printf("DEBUG_WAIT_SENSOR\r\n");
 			shell_debug_wait_sensor(irsens);
 		}
+		ShellWallDetectionCapture wall_detection_capture;
 		Indicate_LED(0x00);
 		motion->Motion_start();
 		shell_debug_suction_start(motion, debug->suction_enable, debug->suction_duty);
@@ -2288,6 +2366,7 @@ static int shell_turnpattern_execute(void)
 		HAL_Delay(50);
 	}
 
+	ShellWallDetectionCapture wall_detection_capture;
 	motion->Motion_start();
 	shell_debug_suction_start(motion, shell_turnpattern.suction_enable, shell_turnpattern.suction_duty);
 	LogData::getInstance().reset_log();

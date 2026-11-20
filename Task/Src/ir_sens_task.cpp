@@ -105,6 +105,16 @@ void IrSensTask::UpdatePillarCandidates(Vehicle *vehicle, float forward_step_mm,
 	pillar_sample_ms = sample_ms;
 	diagonal_feature_wall_recorded=0;
 	for (auto &event : pillar_events) event = SpatialPillarPeak::Event{};
+	legacy_pillar_updated=0;
+	if (forward_step_mm==0) {
+		if (legacy_pillar_idle_ticks<5U) ++legacy_pillar_idle_ticks;
+	} else legacy_pillar_idle_ticks=0;
+	if (!isfinite(forward_step_mm) || forward_step_mm<0 || forward_step_mm>6
+		|| legacy_pillar_idle_ticks>4U || vehicle->ideal.velo.get()<=0
+		|| !isfinite(vehicle->ego.rad_velo.get()) || fabsf(vehicle->ego.rad_velo.get())>2)
+		legacy_pillar_seen=0;
+	if (sen_l.range_state==IrRangeState::Invalid) legacy_pillar_seen&=~1U;
+	if (sen_r.range_state==IrRangeState::Invalid) legacy_pillar_seen&=~2U;
 	if (irsens_motion==DIAGONAL_IRSENS && diagonal_heading_prior.usable()) {
 		diagonal_heading_prior.predict(vehicle->ego.rad_velo.get(),0.001f,wall_ekf_param.heading_walk_rad_sqrt_s);
 		if (diagonal_heading_ticks<220U) ++diagonal_heading_ticks;
@@ -113,7 +123,7 @@ void IrSensTask::UpdatePillarCandidates(Vehicle *vehicle, float forward_step_mm,
 	}
 	if (irsens_motion==DIAGONAL_IRSENS || diagonal_pose.bridging())
 		diagonal_pose.advance(forward_step_mm,vehicle->ego.rad_velo.get()*0.001f,irsens_motion==TURN_IRSENS);
-	if (WallEdgeMode_Get() == WallPositionCorrection::Mode::Legacy || irsens_motion == TURN_IRSENS) {
+	if (irsens_motion == TURN_IRSENS) {
 		return;
 	}
 	pillar_axis = irsens_motion == DIAGONAL_IRSENS ? 1U : 0U;
@@ -143,6 +153,27 @@ void IrSensTask::UpdatePillarCandidates(Vehicle *vehicle, float forward_step_mm,
 	}
 }
 
+void IrSensTask::RecordWallDetections(Vehicle *vehicle, uint8_t motion, uint8_t control, uint8_t turn, uint8_t direction)
+{
+	auto &log = WallDetectionDiagnostics::instance();
+	if (!log.enabled()) return;
+	WallDetectionDiagnostics::Sample sample;
+	sample.ms = pillar_sample_ms; sample.generation = wall_edge_generation;
+	sample.motion = motion; sample.control = control; sample.turn = turn;
+	sample.phase = WallDetectionDiagnostics::phase(motion,control,turn);
+	if (sample.phase == WallDetectionDiagnostics::Before || sample.phase == WallDetectionDiagnostics::Turning
+		|| sample.phase == WallDetectionDiagnostics::After)
+		sample.turn_side = direction == Turn_R ? 2U : direction == Turn_L ? 1U : 0U;
+	sample.axis = static_cast<uint8_t>(irsens_motion);
+	sample.length_mm = vehicle->ego.length.get(); sample.gyro_radps = vehicle->ego.rad_velo.get();
+	const t_sensor *sensors[] = {&sen_l, &sen_r, &sen_fl, &sen_fr};
+	for (unsigned i = 0; i < 4; ++i) {
+		sample.distance[i] = sensors[i]->distance; sample.adc[i] = sensors[i]->value; sample.range[i] = sensors[i]->range_state;
+	}
+	log.update(sample,(l_wall_corner == True ? 1U : 0U) | (r_wall_corner == True ? 2U : 0U),
+		l_corner_delay_mm,r_corner_delay_mm,l_corner_time,r_corner_time);
+}
+
 void IrSensTask::RecordPillarCandidates(Vehicle *vehicle, uint8_t motion, uint8_t control, uint8_t turn, bool search_frame,
 	const WallPositionCorrection::FeatureContext &context)
 {
@@ -159,7 +190,17 @@ void IrSensTask::RecordPillarCandidates(Vehicle *vehicle, uint8_t motion, uint8_
 			Indicate_LED_Pulse(i == 0 ? 0x20U : 0x10U,50U);
 		const int index = PillarDiagnostics::instance().record(pillar_events[i],pillar_minimum[i],confirmation,pillar_axis,
 			i == 0 ? 1U : 2U,motion,control,turn,WallEdgeMode_Get(),frame.valid,reference,frame.phase);
-		if (pillar_axis && frame.valid && WallPositionCorrection::diagonal_phase(frame.phase)) {
+		const bool clean=!PillarDiagnostics::quality_flags(pillar_events[i],pillar_minimum[i],confirmation,pillar_axis,i+1U)
+			&& (!pillar_axis || (!PillarDiagnostics::diagonal_front_pair_blocked(pillar_minimum[i])
+				&& !PillarDiagnostics::diagonal_front_pair_blocked(confirmation)));
+		if (WallEdgeMode_Get()==WallPositionCorrection::Mode::Legacy && clean) {
+			// 極値同士だけを組にする。65 mm交差や斜め差分交差の履歴には混ぜない。
+			legacy_pillar_length_mm[i]=confirmation.length_mm-pillar_events[i].delay_mm;
+			legacy_pillar_seen|=1U<<i; legacy_pillar_updated|=1U<<i;
+		}
+		else if (WallEdgeMode_Get()==WallPositionCorrection::Mode::Legacy) legacy_pillar_seen&=~(1U<<i);
+		if (pillar_axis && frame.valid && WallPositionCorrection::diagonal_phase(frame.phase)
+			&& WallEdgeMode_Get()!=WallPositionCorrection::Mode::Legacy) {
 			diagonal_feature_shadow.set_phase(frame.phase);
 			DiagonalFeatureShadow::Input input;
 			input.phase=frame.phase; input.side=i+1U; input.expected_side=frame.expected_side;
@@ -188,7 +229,8 @@ void IrSensTask::RecordPillarCandidates(Vehicle *vehicle, uint8_t motion, uint8_
 			}
 			diagonal_pose_peak_valid[i]=false;
 		}
-		if (frame.valid && !pillar_axis && FeatureEkfEnabled()
+		if (frame.valid && !pillar_axis && (FeatureEkfEnabled()
+			|| (WallEdgeMode_Get()==WallPositionCorrection::Mode::Legacy && wall_feature_ekf_param.enabled))
 			&& !PillarDiagnostics::quality_flags(pillar_events[i],pillar_minimum[i],confirmation,0,i==0?1U:2U)) {
 			auto &pending = pending_pillar_feature[i]; pending = PendingFeature{};
 			pending.pending = true; pending.sample = confirmation; pending.pillar_index = index;
@@ -197,6 +239,59 @@ void IrSensTask::RecordPillarCandidates(Vehicle *vehicle, uint8_t motion, uint8_
 			pending.delay_mm[i] = pillar_events[i].delay_mm; pending.generation[i] = confirmation.generation;
 		}
 		pillar_events[i].detected = false;
+	}
+}
+
+bool IrSensTask::LegacyPillarLateralCorrection(float &left_mm, float straight_window_mm)
+{
+	if (WallEdgeMode_Get()!=WallPositionCorrection::Mode::Legacy || !legacy_pillar_updated) return false;
+	const uint8_t updated=legacy_pillar_updated; legacy_pillar_updated=0;
+	if (legacy_pillar_seen!=3U) return false;
+	const float difference=legacy_pillar_length_mm[1]-legacy_pillar_length_mm[0];
+	if (!isfinite(difference)) return false;
+	if (irsens_motion==STRAIGHT_IRSENS) {
+		if (fabsf(difference)>=straight_window_mm) return false;
+		left_mm=42.0f*difference/65.0f;
+		return true;
+	}
+	if (irsens_motion!=DIAGONAL_IRSENS || updated==3U) return false;
+	float gap=updated==2U ? difference : -difference;
+	if (gap>=DIAG_SECTION*2.0f && gap<DIAG_SECTION*3.5f) gap/=3.0f;
+	if (fabsf(gap-DIAG_SECTION)>=20.0f) return false;
+	left_mm=(updated==2U ? -0.5f : 0.5f)*(gap-DIAG_SECTION);
+	return true;
+}
+
+void IrSensTask::ApplyLegacyPillarPosition(Vehicle *vehicle, WallPositionCorrection::Phase phase)
+{
+	using namespace WallPositionCorrection;
+	if (WallEdgeMode_Get()!=Mode::Legacy || !wall_feature_ekf_param.enabled) return;
+	unsigned order[2]={0,1};
+	if (pending_pillar_feature[0].pending && pending_pillar_feature[1].pending) {
+		const auto &l=pending_pillar_feature[0], &r=pending_pillar_feature[1];
+		if (fabsf(r.reference_mm+r.delay_mm[1]-r.sample.length_mm)<fabsf(l.reference_mm+l.delay_mm[0]-l.sample.length_mm)) {
+			order[0]=1; order[1]=0;
+		}
+	}
+	for (auto i:order) if (pending_pillar_feature[i].pending && pending_pillar_feature[i].phase==phase) {
+		auto &p=pending_pillar_feature[i]; p.pending=false;
+		auto result=evaluate(vehicle->ego.length.get(),p.reference_mm,p.delay_mm[i],phase,straight_pillar_param.maximum_after_peak_mm,true);
+		if (p.generation[i]!=wall_edge_generation) suppress(result,Reason::StaleGeneration);
+		else if (p.expected_side && p.expected_side!=i+1U) suppress(result,Reason::WrongSide);
+		else if (FeatureConsumed(p.reference_mm,true,phase)) suppress(result,Reason::NotSelected);
+		else if (result.accepted()) {
+			const auto &policy=wall_position_param[static_cast<unsigned>(phase)];
+			const float desired=result.innovation_mm*fminf(policy.blend,wall_feature_ekf_param.maximum_gain);
+			result.delta_mm=fmaxf(-policy.maximum_step_mm,fminf(policy.maximum_step_mm,desired));
+			result.after_mm=result.before_mm+result.delta_mm;
+			result.reason=fabsf(desired)>policy.maximum_step_mm ? Reason::Limited : Reason::Accepted;
+			result.proposed_reason=result.reason; result.proposed_delta_mm=result.delta_mm; result.proposed_after_mm=result.after_mm;
+			vehicle->ego.length.set(result.after_mm);
+			vehicle->pose.correct_passage(result.delta_mm,0.0f);
+			ShiftStraightFeatureMeasurements(result.delta_mm);
+			ConsumeFeature(p.reference_mm,true,phase); wall_correction=True;
+		}
+		PillarDiagnostics::instance().position_result(p.pillar_index,result);
 	}
 }
 
@@ -464,7 +559,7 @@ void IrSensTask::IrSensorWallSet(float forward_step_mm)
 	{
 		right_diagonal_edge.reset(); left_diagonal_edge.reset();
 		const auto &parameter = WallPositionCorrection::edge_param(WallEdgeMode_Get());
-		const bool classify_open_history = WallEdgeMode_Get() != WallPositionCorrection::Mode::Legacy;
+		const bool classify_open_history = true;
 		const auto right = right_wall_edge.update(sen_r.distance, forward_step_mm, sen_r.range_state != IrRangeState::Invalid, parameter, classify_open_history,
 			ir_range_is_metric(sen_r.range_state) && sen_r.distance>IR_SIDE_MIN_MM,straight_edge_rotation_valid);
 		const auto left = left_wall_edge.update(sen_l.distance, forward_step_mm, sen_l.range_state != IrRangeState::Invalid, parameter, classify_open_history,
@@ -640,7 +735,7 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 	if (irsens_motion == STRAIGHT_IRSENS)
 	{
 		bool synchronize_world_lateral=false;
-		ZirconiaWallControl::Input input;
+		StraightWallControl::Input input;
 		const bool moving_enabled = isEnableIrSens == True && vehicle->ideal.velo.get() > 0.20f;
 		input.enabled = moving_enabled && straight_left_average.ready() && straight_right_average.ready();
 		if (moving_enabled)
@@ -678,7 +773,7 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 		input.travel_m = wall_sample_updated ? wall_forward_step_mm / 1000.0f : 0.0f;
 		input.velocity_mps = vehicle->ego.velo.get();
 		input.heading_rad = straight_heading_rad;
-		// type8 x is positive left; zirconia's center error is positive right.
+		// type8 x is positive left; the wall controller's center error is positive right.
 		input.estimated_error_m = -vehicle->ego.x_point.get() / 1000.0f;
 		input.dt_s = delta_tms / 1000.0f;
 		input.sample_updated = wall_sample_updated;
@@ -690,8 +785,7 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 			| (ir_range_is_metric(straight_right_range) && ir_range_is_metric(sen_r.range_state) ? 2U : 0U);
 		if (!ir_range_can_see_wall(straight_left_range) || !ir_range_can_see_wall(sen_l.range_state)) input.permitted_mask &= ~1U;
 		if (!ir_range_can_see_wall(straight_right_range) || !ir_range_can_see_wall(sen_r.range_state)) input.permitted_mask &= ~2U;
-		straight_pillar_guard_mask = WallEdgeMode_Get() == WallPositionCorrection::Mode::Legacy ? 0U
-			: (straight_pillars[0].open_origin()?1U:0U) | (straight_pillars[1].open_origin()?2U:0U);
+		straight_pillar_guard_mask = (straight_pillars[0].open_origin()?1U:0U) | (straight_pillars[1].open_origin()?2U:0U);
 		// A qualified Open-origin return is a feature, not a continuous wall.
 		// Apply before BOTH fallback control and EKF wall assimilation, including ADC-average tails.
 		input.permitted_mask &= static_cast<uint8_t>(~straight_pillar_guard_mask);
@@ -732,7 +826,7 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 				candidates, input.sample_updated);
 			straight_wall_estimate = straight_wall_filter.estimate();
 			straight_wall_ekf_active = straight_wall_estimate.initialized;
-			ZirconiaWallControl::Input filtered = input;
+			StraightWallControl::Input filtered = input;
 			filtered.use_estimated_pose = true;
 			filtered.prediction_trusted = CanUseStraightWallEkfPose();
 			// Keep the concurrently running legacy output until the complete pose
@@ -758,7 +852,7 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 			}
 			if (wall_ekf_mode == WallEkfMode::Control && filtered.enabled
 				&& (straight_wall_ekf_control_output.pose_control
-					|| straight_wall_ekf_control_output.phase == ZirconiaWallControl::Estimated))
+					|| straight_wall_ekf_control_output.phase == StraightWallControl::Estimated))
 			{
 				straight_wall_ekf_used = true;
 				straight_wall_output = straight_wall_ekf_control_output;
@@ -773,9 +867,9 @@ void IrSensTask::SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms)
 		}
 		wall_sample_updated = false;
 		const auto &output = straight_wall_output;
-		sen_l.is_control = output.phase == ZirconiaWallControl::Tracking
+		sen_l.is_control = output.phase == StraightWallControl::Tracking
 			&& (output.trusted_mask & 1) ? True : False;
-		sen_r.is_control = output.phase == ZirconiaWallControl::Tracking
+		sen_r.is_control = output.phase == StraightWallControl::Tracking
 			&& (output.trusted_mask & 2) ? True : False;
 		sen_l.error = sen_l.is_control ? straight_left_distance_mm - STRAIGHT_REF : 0.0f;
 		sen_r.error = sen_r.is_control ? straight_right_distance_mm - STRAIGHT_REF : 0.0f;
@@ -959,7 +1053,7 @@ SearchTurnGuard::Decision IrSensTask::SearchTurnDecision(bool right_turn, bool f
 		input.ekf_control = wall_ekf_mode == WallEkfMode::Control;
 		input.ekf_pose_used = straight_wall_ekf_used;
 		input.pose_trusted = straight_wall_ekf_used && CanUseStraightWallEkfPose()
-			&& straight_wall_filter.estimate().accepted_mask != 0 && straight_wall_output.phase == ZirconiaWallControl::Tracking;
+			&& straight_wall_filter.estimate().accepted_mask != 0 && straight_wall_output.phase == StraightWallControl::Tracking;
 		const auto &pose = straight_wall_filter.estimate();
 		input.lateral_mm = pose.lateral_m * 1000.0f; input.heading_rad = pose.heading_rad;
 		input.lateral_variance_mm2 = pose.variance_lateral_m2 * 1000000.0f;

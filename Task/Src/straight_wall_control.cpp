@@ -10,16 +10,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Task/Inc/zirconia_wall_control.h"
+#include "Task/Inc/straight_wall_control.h"
 #include <math.h>
 
 namespace {
 float limit(float value, float bound) { return fmaxf(-bound, fminf(bound, value)); }
 }
 
-void ZirconiaWallControl::reset() { *this = ZirconiaWallControl{}; }
+void StraightWallControl::reset() { *this = StraightWallControl{}; }
 
-void ZirconiaWallControl::prime_tracking(float left_m, float right_m)
+void StraightWallControl::prime_tracking(float left_m, float right_m)
 {
     reset();
     if (!isfinite(left_m) || !isfinite(right_m)) return;
@@ -29,7 +29,7 @@ void ZirconiaWallControl::prime_tracking(float left_m, float right_m)
     phase_ = observed_mask_ ? Tracking : Estimated;
 }
 
-void ZirconiaWallControl::Side::update(bool available, float distance,
+void StraightWallControl::Side::update(bool available, float distance,
     float signal_value, float travel, float predicted, bool sample_updated)
 {
     if (!available) { *this = Side{}; return; }
@@ -56,7 +56,7 @@ void ZirconiaWallControl::Side::update(bool available, float distance,
     travel_m = predicted_m = 0.0f;
 }
 
-ZirconiaWallControl::Output ZirconiaWallControl::update(const Input &in)
+StraightWallControl::Output StraightWallControl::update(const Input &in)
 {
     Output out;
     if (!in.enabled || !isfinite(in.left_m) || !isfinite(in.right_m)

@@ -3,10 +3,37 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <new>
+#include <type_traits>
 #include "Task/Inc/wall_detection.h"
 #include "Task/Inc/ir_range_state.h"
 #include "Task/Inc/wall_position_correction.h"
 #include "Task/Inc/diagonal_pose.h"
+#include "Task/Inc/wall_detection_diagnostics.h"
+
+namespace wall_diagnostics_detail {
+// 非ゼロの既定値を持つEventを全件静的初期化すると、配列全体が.dataへ入る。
+// 空スロットはゼロ初期化し、記録する1件だけを元の既定値で構築する。
+template<typename Event, unsigned Capacity>
+class EventBuffer {
+    static_assert(std::is_trivially_destructible<Event>::value,
+                  "diagnostic events must not require destruction");
+public:
+    Event &reset(unsigned index) {
+        // placement newはメモリを確保せず、既存スロットでEventの生存期間を開始する。
+        return *::new (static_cast<void *>(&slots_[index].value)) Event{};
+    }
+    Event &operator[](unsigned index) { return slots_[index].value; }
+    const Event &operator[](unsigned index) const { return slots_[index].value; }
+private:
+    union Slot {
+        unsigned char unused;
+        Event value;
+        constexpr Slot() : unused(0) {}
+    };
+    Slot slots_[Capacity]{};
+};
+}
 
 // 柱候補と極小時の観測記録
 class PillarDiagnostics {
@@ -85,7 +112,7 @@ public:
         const float jump = confirmation.length_mm - minimum.length_mm - peak.sample_delay_mm;
         if (flags) ++rejected_;
         if (size_ >= capacity) return -1;
-        Event &out = events_[size_++]; out = Event{};
+        Event &out = events_.reset(size_++);
         out.minimum = minimum; out.confirmation = confirmation; out.peak = peak;
         out.axis = axis; out.side = side; out.motion = motion; out.control = control; out.turn = turn; out.mode = mode;
         out.flags = flags; out.coordinate_jump_mm = jump;
@@ -175,7 +202,7 @@ private:
     volatile bool enabled_ = false;
     unsigned size_ = 0;
     uint32_t total_ = 0, straight_ = 0, diagonal_ = 0, rejected_ = 0, applied_ = 0;
-    Event events_[capacity]{};
+    wall_diagnostics_detail::EventBuffer<Event, capacity> events_;
 };
 
 // 壁切れ補正と範囲状態の記録
@@ -198,6 +225,7 @@ public:
     static WallDiagnostics &instance() { static WallDiagnostics value; return value; }
     void begin(WallPositionCorrection::Mode mode = WallPositionCorrection::Mode::Legacy) {
         PillarDiagnostics::instance().begin();
+        WallDetectionDiagnostics::instance().begin();
         enabled_ = false;
         size_ = total_ = all_samples_ = moving_samples_ = 0;
         for (auto &count : decisions_) count = 0;
@@ -206,7 +234,7 @@ public:
         enabled_ = true;
     }
     bool enabled() const { return enabled_; }
-    void stop() { enabled_ = false; PillarDiagnostics::instance().stop(); }
+    void stop() { enabled_ = false; PillarDiagnostics::instance().stop(); WallDetectionDiagnostics::instance().stop(); }
     void sample(IrRangeState left, IrRangeState right, IrRangeState front_left, IrRangeState front_right, bool moving) {
         if (!enabled_) return;
         ++all_samples_;
@@ -227,7 +255,7 @@ public:
         ++total_;
         ++decisions_[static_cast<unsigned>(correction.reason)];
         if (size_ >= capacity) return;
-        Event &event = events_[size_++];
+        Event &event = events_.reset(size_++);
         event.time_ms = ms; event.motion = motion; event.phase = static_cast<uint8_t>(phase); event.side = side;
         event.correction = correction;
         event.mode = mode; event.generation = generation; event.event_generation = event_generation;
@@ -273,6 +301,7 @@ public:
             PillarDiagnostics::print_diagonal_model(e.diagonal_model);
         }
         PillarDiagnostics::instance().finish_and_print();
+        WallDetectionDiagnostics::instance().finish_and_print();
     }
 private:
     volatile bool enabled_ = false;
@@ -280,7 +309,7 @@ private:
     uint32_t total_ = 0, all_samples_ = 0, moving_samples_ = 0;
     WallPositionCorrection::Mode mode_ = WallPositionCorrection::Mode::Legacy;
     uint32_t decisions_[8] = {}, ranges_[4][4] = {};
-    Event events_[capacity]{};
+    wall_diagnostics_detail::EventBuffer<Event, capacity> events_;
 };
 
 #endif

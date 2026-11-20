@@ -20,9 +20,12 @@ void Motion::ApplyWallPositionCorrection(float reference_mm,
 		ir_sens->RecordDiagonalWallFeatures(vehicle,static_cast<uint8_t>(motion_pattern_get()),phase,expected_side);
 		return; // 斜めの新しい枠組みは常にShadow。走行用EKF・位置・指令へ注入しない。
 	}
-	if (ir_sens->wall_correction == True && phase != WallPositionCorrection::Phase::StraightRun) return;
+	if (ir_sens->wall_correction == True && phase != WallPositionCorrection::Phase::StraightRun) {
+		ir_sens->ApplyLegacyPillarPosition(vehicle,phase);
+		return;
+	}
 	const uint8_t mask = (ir_sens->l_wall_corner == True ? 1U : 0U) | (ir_sens->r_wall_corner == True ? 2U : 0U);
-	if (!mask) return;
+	if (!mask) { ir_sens->ApplyLegacyPillarPosition(vehicle,phase); return; }
 	if ((phase == WallPositionCorrection::Phase::SearchStraight || phase == WallPositionCorrection::Phase::StraightEntry
 		|| phase == WallPositionCorrection::Phase::StraightRun)
 		&& ir_sens->FeatureEkfEnabled()) {
@@ -51,6 +54,7 @@ void Motion::ApplyWallPositionCorrection(float reference_mm,
 		if (mask & 1U) diagnostics.record(HAL_GetTick(), static_cast<uint8_t>(motion_pattern_get()), phase, 1,
 			decision.left, adc, states, mode, ir_sens->wall_edge_generation, ir_sens->l_corner_generation);
 	}
+	ir_sens->ApplyLegacyPillarPosition(vehicle,phase);
 }
 
 void Motion::handleTurnPrev_Straight()

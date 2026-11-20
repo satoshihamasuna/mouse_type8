@@ -34,6 +34,7 @@ enum Pattern { Long_turnR90,Long_turnL90,Long_turnR180,Long_turnL180,
     Turn_in_R45,Turn_in_L45,Turn_in_R135,Turn_in_L135,
     Turn_out_R45,Turn_out_L45,Turn_out_R135,Turn_out_L135,Turn_RV90,Turn_LV90 };
 struct Gain{}; struct Param{};
+struct ShellWallDetectionCapture{};
 struct Debug { struct {float velo=.5f;} table; Gain sp_gain,om_gain; Param param;
     float pre_accel=6.5f;int turn_count=1,suction_duty=650;bool suction_enable=false; };
 static Debug stored;
@@ -132,6 +133,7 @@ int main(){
 constexpr bool True=true, False=false;
 struct Gain{};
 struct Param{};
+struct ShellWallDetectionCapture{};
 struct Table{float velo=.37f;};
 struct Debug{
     Table table; Gain sp_gain,om_gain,ff_gain; Param param;

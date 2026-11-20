@@ -1,7 +1,8 @@
-#ifndef TASK_INC_ZIRCONIA_WALL_CONTROL_H_
-#define TASK_INC_ZIRCONIA_WALL_CONTROL_H_
+#ifndef TASK_INC_STRAIGHT_WALL_CONTROL_H_
+#define TASK_INC_STRAIGHT_WALL_CONTROL_H_
 
 #include <stdint.h>
+#include <math.h>
 #include "Params/wall_param.h"
 #include "Task/Inc/straight_wall_ekf.h"
 
@@ -22,7 +23,7 @@
 
 // Adapted from program_zirconia/zirconia/software/Control/Src/wall_control.c
 // (independent_side_pose_v3). No hardware or trajectory ownership here.
-class ZirconiaWallControl
+class StraightWallControl
 {
 public:
     enum Phase : uint8_t { Disabled, Estimated, Confirming, AwayOnly, Tracking };
@@ -37,6 +38,8 @@ public:
         bool use_estimated_pose = false, prediction_trusted = false;
         bool heading_only_gap = false;
         uint8_t permitted_mask = 3, measurement_mask = 3, range_valid_mask = 3;
+        // 角加速度制御候補への差替え時に必要。現行制御では使用しない。
+        float accel_mps2 = NAN, measured_omega_radps = NAN;
     };
     struct Output {
         float error_m = 0.0f, raw_error_m = 0.0f;
@@ -52,6 +55,8 @@ public:
     Output update(const Input &input);
 
 private:
+    // 差替え候補が採用した指令を同期し、従来分岐へ戻るときも連続性を保つ。
+    friend class StraightWallAccelAdapter;
     struct Side {
         float distance_m = 0.0f, signal = 0.0f;
         float travel_m = 0.0f, predicted_m = 0.0f, recovery_m = 0.0f;
@@ -71,9 +76,9 @@ private:
     bool sync_valid_ = false;
 };
 
-// Match zirconia's ten fresh ADC readings, independently of the legacy
+// Average ten fresh ADC readings, independently of the legacy
 // twenty-cycle distance history used by wall-edge detection.
-class ZirconiaWallAverage
+class StraightWallAverage
 {
 public:
     void update(int16_t value) {

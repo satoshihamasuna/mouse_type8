@@ -81,6 +81,9 @@ float get_turn2_table_value(float time_period_ms,float time_ms)
 */
 void Motion::RecordPillarCandidates()
 {
+	ir_sens->RecordWallDetections(vehicle,static_cast<uint8_t>(motion_pattern_get()),
+		static_cast<uint8_t>(motion_control_get()),static_cast<uint8_t>(motion_plan.turn_state.get()),
+		turn_motion_param.param ? static_cast<uint8_t>(turn_motion_param.param->turn_dir) : static_cast<uint8_t>(Turn_None));
 	WallPositionCorrection::FeatureContext context;
 	const auto pattern=motion_pattern_get();
 	const bool straight_entry = pattern==Long_turnR90 || pattern==Long_turnL90 || pattern==Long_turnR180 || pattern==Long_turnL180
@@ -109,6 +112,19 @@ void Motion::RecordPillarCandidates()
 	ir_sens->RecordPillarCandidates(vehicle,static_cast<uint8_t>(motion_pattern_get()),
 		static_cast<uint8_t>(motion_control_get()),static_cast<uint8_t>(motion_plan.turn_state.get()),
 		motion_pattern_get() == Search_st_section && motion_plan.end_length.get() == 90.0f,context);
+	float lateral_mm=0.0f;
+	if (vehicle->ideal.velo.get()>0.2f && ir_sens->LegacyPillarLateralCorrection(lateral_mm,
+		pattern==Search_st_section ? 5.0f : 8.0f)) {
+		if (motion_control_get()==STRAIGHT_STATE && motion_plan.end_length.get()>=SECTION) {
+			ir_sens->CorrectStraightWallCorner(vehicle,lateral_mm);
+		} else if (motion_control_get()==DIAGONAL_STATE && motion_plan.end_length.get()>DIAG_SECTION
+			&& lateral_mm!=0.0f) {
+			ir_sens->RebaseDiagonalFeatureCandidates(0.0f,vehicle->ego.radian.get());
+			vehicle->ego.radian.set(0.0f);
+			vehicle->pose.correct_passage(0.0f,lateral_mm-vehicle->ego.x_point.get());
+			vehicle->ego.x_point.set(lateral_mm);
+		}
+	}
 }
 
 void Motion::SetIdeal_wall_control()
@@ -213,7 +229,8 @@ void Motion::Adjust_wall_corner()
 				ir_sens->RecordDiagonalCorner(false, vehicle->ego.length.get());
 			}
 			float lateral_mm = 0.0f;
-			if (!ir_sens->DiagonalPoseControlsCorner() && motion_plan.end_length.get() > DIAG_SECTION
+			if (ir_sens->WallEdgeMode_Get()!=WallPositionCorrection::Mode::Legacy
+				&& !ir_sens->DiagonalPoseControlsCorner() && motion_plan.end_length.get() > DIAG_SECTION
 				&& ir_sens->DiagonalCornerLateralCorrection(lateral_mm) && lateral_mm != 0.0f) {
 				ir_sens->RebaseDiagonalFeatureCandidates(0.0f,vehicle->ego.radian.get());
 				vehicle->ego.radian.set(0.0f);

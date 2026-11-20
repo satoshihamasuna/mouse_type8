@@ -50,7 +50,7 @@ int shell_shortest(int argc, char **argv)
 #else
 		const char *mouse = "B";
 #endif
-		printf("SHORTEST_CAP protocol:1 mouse:%s goal_x:%d goal_y:%d goal_size:%d max_x:%d max_y:%d state:%s ram_maze:%d diagonal_ekf:1 diagonal_controller:2 diagonal_edge:1 wall_diag:1 log_schema:4 correction_gate:2 range_state:1 wall_edge_trial:1 pillar_diag:1 pillar_detector:1 diag_pose_control:%u profiles:",
+		printf("SHORTEST_CAP protocol:1 mouse:%s goal_x:%d goal_y:%d goal_size:%d max_x:%d max_y:%d state:%s ram_maze:%d diagonal_ekf:1 diagonal_controller:2 diagonal_edge:1 wall_diag:1 wall_detect:1 log_schema:4 correction_gate:2 range_state:1 wall_edge_trial:1 pillar_diag:1 pillar_detector:1 diag_pose_control:%u profiles:",
 			mouse, MAZE_GOAL_X, MAZE_GOAL_Y, MAZE_GOAL_SIZE, MAZE_SIZE_X - 1, MAZE_SIZE_Y - 1,
 			RemoteExplore::running() ? "running" : "idle", explore_completed_maze() != nullptr ? 1 : 0,
 			diagonal_pose_param.calibrated ? 1U : 0U);

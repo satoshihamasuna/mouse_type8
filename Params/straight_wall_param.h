@@ -10,8 +10,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ZIRCONIA_WALL_PARAM_H_
-#define ZIRCONIA_WALL_PARAM_H_
+#ifndef STRAIGHT_WALL_PARAM_H_
+#define STRAIGHT_WALL_PARAM_H_
 
 #include "Params/wall_param.h"
 

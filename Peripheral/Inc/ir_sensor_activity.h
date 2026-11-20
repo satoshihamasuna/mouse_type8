@@ -11,6 +11,9 @@ extern "C" {
 // 待機の明示的な中断はSensor_SetHandWaitActive(0)で行う。
 void Sensor_SetMotionActive(uint8_t active);
 void Sensor_SetHandWaitActive(uint8_t active);
+// 停止中の前景測定だけが取得できる発光要求。走行・待機中は取得しない。
+uint8_t Sensor_BeginMeasurement(void);
+void Sensor_EndMeasurement(void);
 void Sensor_AdcComplete(void);
 uint8_t Sensor_IrSamplesReady(void);
 

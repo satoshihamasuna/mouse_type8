@@ -83,14 +83,23 @@ class TurnDiagnosticsParserTests(unittest.TestCase):
     def test_snapshot_selects_adc_and_irq_labels_from_the_received_protocol(self):
         from mouse_ble_log import CsvCapture
         session = self.make_session()
-        session.capture = CsvCapture(io.StringIO())
         values = [0.]*35+[100.,20.,150.,1000.]+[0.]*10+[-32768,-7,2049,32767,2209,7]
-        payload = struct.pack('<4sIIH49e4h2H',b'L8S4',0,100,5,*values)
-        session.capture.feed(payload+struct.pack('<H',binascii.crc_hqx(payload,0xffff)))
-        fields = session.snapshot()['values']
-        self.assertEqual(fields['sen_fl.value'],2049)
-        self.assertEqual(fields['irq.total_us'],100.)
-        self.assertNotIn('speed_ctrl.Kp',fields)
+        values[12], values[14] = .03125, .0078125
+        for protocol in (b'L8S4', b'L8S5'):
+            session.capture = CsvCapture(io.StringIO())
+            payload = struct.pack('<4sIIH49e4h2H',protocol,0,100,5,*values)
+            session.capture.feed(payload+struct.pack('<H',binascii.crc_hqx(payload,0xffff)))
+            fields = session.snapshot()['values']
+            self.assertEqual(fields['sen_fl.value'],2049)
+            self.assertEqual(fields['irq.total_us'],100.)
+            self.assertNotIn('speed_ctrl.Kp',fields)
+            if protocol == b'L8S5':
+                self.assertEqual(fields['estimate.heading_rad'], .03125)
+                self.assertEqual(fields['estimate.sigma_heading_rad'], .0078125)
+                self.assertNotIn('ideal.turn_x', fields)
+            else:
+                self.assertIn('ideal.turn_x', fields)
+                self.assertNotIn('estimate.heading_rad', fields)
         session.capture = CsvCapture(io.StringIO());session.capture.feed(sample(1))
         fields = session.snapshot()['values']
         self.assertEqual(fields['speed_ctrl.Kp'],45.)
@@ -127,6 +136,20 @@ class TurnDiagnosticsParserTests(unittest.TestCase):
         session._run_settings['wall_diagnostics'] = wall_diagnostics.empty_diagnostics()
         session._finish_run({'result': 'stopped'})
         self.assertFalse(session._run_settings['wall_diagnostics']['complete'])
+
+    def test_detection_logs_only_attach_to_active_run_and_missing_transfer_stays_incomplete(self):
+        import wall_diagnostics
+        for run_type in ('explore', 'shortest'):
+            session = self.make_session(run_type); session.state = 'idle'
+            line = b'WALL_DETECT_STATS schema:1 total:0 edges:0 phases:0 stored:0 dropped:0\r\n'
+            session._text(line)
+            self.assertNotIn('wall_detection_diagnostics', session._run_settings)
+            session.state = 'running'; session._text(line); session._finish_run({'result': 'complete'})
+            self.assertTrue(session._run_settings['wall_detection_diagnostics']['complete'])
+            session = self.make_session(run_type)
+            session._run_settings['wall_detection_diagnostics'] = wall_diagnostics.empty_detection_diagnostics()
+            session._finish_run({'result': 'stopped'})
+            self.assertFalse(session._run_settings['wall_detection_diagnostics']['complete'])
 
     def test_pillar_diagnostics_only_attach_to_active_run_and_missing_transfer_stays_incomplete(self):
         import wall_diagnostics

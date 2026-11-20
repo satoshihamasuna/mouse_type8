@@ -14,7 +14,7 @@
 #include "Component/Inc/maze_typedef.h"
 #include "Task/Inc/run_typedef.h"
 #include "Task/Inc/wall_detection.h"
-#include "Task/Inc/zirconia_wall_control.h"
+#include "Task/Inc/straight_wall_control.h"
 #include "Task/Inc/straight_wall_ekf.h"
 #include "Task/Inc/wall_position_correction.h"
 #include "Task/Inc/ir_range_state.h"
@@ -111,13 +111,16 @@ class IrSensTask
 		PillarDiagnostics::Sample pillar_minimum[2];
 		uint32_t pillar_sample_ms = 0;
 		uint8_t pillar_axis = 0;
+		float legacy_pillar_length_mm[2] = {};
+		uint8_t legacy_pillar_seen = 0, legacy_pillar_updated = 0;
+		uint8_t legacy_pillar_idle_ticks = 0;
 		PillarDiagnostics::Sample PillarSample(Vehicle *vehicle);
 		bool straight_edge_rotation_valid = true;
 		bool diagonal_edge_motion_valid = true;
 		bool right_straight_corner_seen = false, left_straight_corner_seen = false;
 		bool right_diagonal_corner_seen = false, left_diagonal_corner_seen = false;
-		ZirconiaWallControl straight_wall_control;
-		ZirconiaWallControl ekf_wall_control;
+		StraightWallControl straight_wall_control;
+		StraightWallControl ekf_wall_control;
 		StraightWallEkf straight_wall_filter;
 		PoseFrames::Pose straight_world_origin;
 		bool straight_world_bound=false;
@@ -168,7 +171,7 @@ class IrSensTask
 		float left_edge_guard_m = 0.0f, right_edge_guard_m = 0.0f;
 		float pending_corner_lateral_m = 0.0f;
 		bool corner_pending = false;
-		ZirconiaWallAverage straight_left_average, straight_right_average;
+		StraightWallAverage straight_left_average, straight_right_average;
 		float straight_left_distance_mm = 80.0f, straight_right_distance_mm = 80.0f;
 		IrRangeState straight_left_range = IrRangeState::Unknown, straight_right_range = IrRangeState::Unknown;
 		float wall_forward_step_mm = 0.0f;
@@ -199,8 +202,8 @@ class IrSensTask
 
 		param_element control_ir;
 		param_element control_ir_dot;
-		ZirconiaWallControl::Output straight_wall_output;
-		ZirconiaWallControl::Output straight_wall_ekf_control_output;
+		StraightWallControl::Output straight_wall_output;
+		StraightWallControl::Output straight_wall_ekf_control_output;
 		StraightWallEkf::Estimate straight_wall_estimate;
 		bool straight_wall_ekf_active = false;
 		bool straight_wall_ekf_used = false;
@@ -302,6 +305,7 @@ class IrSensTask
 			const StateLock lock;
 			if (irsens_motion!=DIAGONAL_IRSENS) return;
 			diagonal_feature_shadow.rebase(delta_mm,reset_heading_rad,reset_left_mm);
+			for (unsigned i=0;i<2;++i) if (legacy_pillar_seen&(1U<<i)) legacy_pillar_length_mm[i]+=delta_mm;
 			for (unsigned i=0;i<2;++i) if (diagonal_pillars[i].pending()) {
 				pillar_minimum[i].length_mm+=delta_mm; pillar_minimum[i].rebase_mm+=delta_mm;
 			}
@@ -310,6 +314,8 @@ class IrSensTask
 		void QueueWallFeature(Vehicle *vehicle, float reference_mm, uint8_t motion,
 			WallPositionCorrection::Phase phase = WallPositionCorrection::Phase::SearchStraight, uint8_t expected_side = 0);
 		void AssimilateFeatures(Vehicle *vehicle);
+		void ApplyLegacyPillarPosition(Vehicle *vehicle, WallPositionCorrection::Phase phase);
+		bool LegacyPillarLateralCorrection(float &left_mm, float straight_window_mm = 8.0f);
 		WallPositionCorrection::Result ObserveFeature(Vehicle *vehicle, float reference_mm, float delay_mm, float variance_m2,
 			bool pillar = false, WallPositionCorrection::Phase phase = WallPositionCorrection::Phase::SearchStraight);
 		void ShiftStraightFeatureMeasurements(float delta_mm) {
@@ -326,12 +332,14 @@ class IrSensTask
 			if (pending_wall_feature.pending) pending_wall_feature.sample.length_mm+=delta_mm;
 			if (right_straight_corner_seen) r_corner_length.set(r_corner_length.get()+delta_mm);
 			if (left_straight_corner_seen) l_corner_length.set(l_corner_length.get()+delta_mm);
+			for (unsigned i=0;i<2;++i) if (legacy_pillar_seen&(1U<<i)) legacy_pillar_length_mm[i]+=delta_mm;
 		}
 		void RebaseStraightFeatureCandidates(float delta_mm) {
 			const StateLock lock;
 			if (irsens_motion != STRAIGHT_IRSENS || !isfinite(delta_mm)) return;
 			if (straight_run_frame.valid) straight_run_frame.wall_reference_mm += delta_mm;
 			if (straight_run_consumed) straight_run_consumed_wall_mm += delta_mm;
+			for (unsigned i=0;i<2;++i) if (legacy_pillar_seen&(1U<<i)) legacy_pillar_length_mm[i]+=delta_mm;
 			for (unsigned i=0;i<2;++i) if (straight_pillars[i].pending() || pillar_events[i].detected) {
 				pillar_minimum[i].length_mm += delta_mm; pillar_minimum[i].rebase_mm += delta_mm;
 			}
@@ -355,6 +363,7 @@ class IrSensTask
 			turn_heading_connection=false;
 			straight_run_frame=WallPositionCorrection::FeatureContext{}; straight_run_consumed=false;
 			ResetDiagonalWallControl();
+			legacy_pillar_seen = legacy_pillar_updated = 0;
 			diagonal_feature_shadow.reset(); diagonal_feature_wall_recorded=0;
 			if (!preserve_diagonal_bridge || !diagonal_pose.bridging()) { diagonal_pose.stop(); diagonal_world_bound=false; }
 			diagonal_pose_steering.reset();
@@ -371,8 +380,8 @@ class IrSensTask
 			straight_wall_ekf_used = false;
 			straight_wall_candidate_mask = 0;
 			straight_pillar_guard_mask = 0;
-			straight_wall_ekf_control_output = ZirconiaWallControl::Output{};
-			straight_wall_output = ZirconiaWallControl::Output{};
+			straight_wall_ekf_control_output = StraightWallControl::Output{};
+			straight_wall_output = StraightWallControl::Output{};
 			straight_heading_rad = 0.0f;
 			straight_heading_variance_rad2 = wall_ekf_param.initial_heading_std_rad * wall_ekf_param.initial_heading_std_rad;
 			straight_heading_valid = false;
@@ -391,8 +400,8 @@ class IrSensTask
 			const StateLock lock;
 			ResetStraightWallControl(false, preserve_diagonal_bridge);
 			// The final ten rotating samples do not describe the new passage.
-			straight_left_average = ZirconiaWallAverage{};
-			straight_right_average = ZirconiaWallAverage{};
+			straight_left_average = StraightWallAverage{};
+			straight_right_average = StraightWallAverage{};
 			search_turn_guard.clear();
 			straight_prime_pending = true;
 			straight_heading_rad = valid ? heading_rad : 0.0f;
@@ -452,6 +461,7 @@ class IrSensTask
 			pending_wall_feature = PendingFeature{};
 			for (auto &pending : pending_pillar_feature) pending = PendingFeature{};
 			wall_correction = False;
+			legacy_pillar_seen = legacy_pillar_updated = 0;
 			right_wall_edge.reset(); left_wall_edge.reset();
 			right_diagonal_edge.reset(); left_diagonal_edge.reset();
 			for (unsigned i=0; i<2; ++i) {
@@ -523,6 +533,7 @@ class IrSensTask
 		void IrSensorReferenceSet(float ref_value);
 		void IrSensorDistanceSet(Vehicle *vehicle);
 		void IrSensorWallSet(float forward_step_mm);
+		void RecordWallDetections(Vehicle *vehicle, uint8_t motion, uint8_t control, uint8_t turn, uint8_t direction);
 		void SetWallControl_RadVelo(Vehicle *vehicle,float delta_tms);
 		inline void EnableIrSens()		{isEnableIrSens = True;}
 		inline void DisableIrSens()			{isEnableIrSens = False; ResetStraightWallControl();}
@@ -587,6 +598,7 @@ class IrSensTask
 			Indicate_LED(0x00);
 			//r_check = l_check =
 			wall_correction = False;
+			legacy_pillar_seen = legacy_pillar_updated = 0;
 			right_straight_corner_seen = left_straight_corner_seen = false;
 			right_diagonal_corner_seen = left_diagonal_corner_seen = false;
 		}

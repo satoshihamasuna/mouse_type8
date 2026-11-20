@@ -90,6 +90,9 @@ class SideWallStabilityTest(unittest.TestCase):
         stop = motion.index("\t(motion_plan.end_radian.get() > 0)", start)
         (Path(cls.work.name) / "search_turn_post_correction.inc").write_text(motion[start:stop], encoding="utf-8")
         runtime = (ROOT / "Task/Src/motion.cpp").read_text(encoding="utf-8")
+        begin = runtime.index('{', runtime.index('MotionHeading::Prior Motion::HeadingForLog()')) + 1
+        end = runtime.index('\n}', begin)
+        (Path(cls.work.name) / 'heading_for_log.inc').write_text(runtime[begin:end], encoding='utf-8')
         led = (ROOT / "Peripheral/Src/interface.c").read_text(encoding="utf-8")
         (Path(cls.work.name) / "led_interface.inc").write_text(
             led[led.index('static uint8_t led_requested_state;'):led.index('t_bool Button_Status()')], encoding="utf-8")
@@ -159,7 +162,7 @@ class SideWallStabilityTest(unittest.TestCase):
                 "-DMOUSE_" + mouse, "-I", str(TEST_DIR / "side_wall_stubs"),
                 "-I", str(ROOT), "-I", cls.work.name, str(TEST_DIR / "side_wall_stability_harness.cpp"),
                 str(ROOT / "Task" / "Src" / "ir_sens_task.cpp"),
-                str(ROOT / "Task" / "Src" / "zirconia_wall_control.cpp"),
+                str(ROOT / "Task" / "Src" / "straight_wall_control.cpp"),
                 str(ROOT / "Task" / "Src" / "diagonal_pose.cpp"), "-o", str(executable),
                 *parameter_sources(mouse),
             ]
@@ -177,6 +180,30 @@ class SideWallStabilityTest(unittest.TestCase):
                 result = subprocess.run([str(executable), case], capture_output=True,
                                         text=True, errors="replace", timeout=15)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_wall_and_pillar_diagnostic_slots_reset_defaults_after_full_buffer_reuse(self):
+        self.run_case("wall-diagnostics-reuse")
+
+    def test_turn_wall_detections_keep_opposite_and_missing_edges_even_after_correction(self):
+        sys.path.insert(0, str(ROOT/'tools'))
+        from ble import wall_diagnostics
+        for mouse, executable in self.executables.items():
+            with self.subTest(mouse=mouse):
+                result = subprocess.run([str(executable), 'turn-wall-detections'], capture_output=True,
+                                        text=True, errors='replace', timeout=15)
+                self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+                data = wall_diagnostics.empty_pillar_diagnostics()
+                for line in result.stdout.splitlines():
+                    if not line.strip():
+                        continue
+                    tag, *items = line.split()
+                    wall_diagnostics.receive_detection(data, tag, dict(item.split(':', 1) for item in items))
+                self.assertTrue(wall_diagnostics.validate_detection(data), data)
+                self.assertEqual([e['kind'] for e in data['events']], ['edge', 'phase_end', 'phase_end'])
+                before = data['events'][1]
+                self.assertEqual((before['phase'], before['expected_side'], before['expected_seen']), ('before', '2', '0'))
+                self.assertEqual((before['left_count'], before['right_count']), ('1', '0'))
+                self.assertEqual(data['events'][2]['end'], 'stop')
 
     def test_turn_exit_range_yaw_disagreement_uses_parallel_legacy_control(self):
         self.run_case("ekf-exit-disagreement")
@@ -198,6 +225,9 @@ class SideWallStabilityTest(unittest.TestCase):
 
     def test_real_turn_tracker_replaces_heading_marginal_without_double_fusing(self):
         self.run_case("turn-heading-posterior")
+
+    def test_adopted_heading_log_selects_passage_turn_diagonal_and_rejects_invalid_state(self):
+        self.run_case("heading-log")
 
     def test_local_straight_pose_updates_world_without_reapplying_resets_or_travel(self):
         self.run_case("pose-frame-straight")
@@ -333,6 +363,26 @@ class SideWallStabilityTest(unittest.TestCase):
 
     def test_close_open_pillar_is_retained_and_never_becomes_a_wall_edge_on_either_side(self):
         self.run_case("straight-close-pillar-history")
+
+    def test_legacy_adopts_separate_pillar_pairs_and_calibrated_direct_position_without_ekf(self):
+        self.run_case("legacy-pillar-adoption")
+
+    def test_legacy_pillar_direct_correction_roundtrips_actual_firmware_diagnostics(self):
+        sys.path.insert(0,str(ROOT/'tools'))
+        from ble import wall_diagnostics
+        for mouse,executable in self.executables.items():
+            with self.subTest(mouse=mouse):
+                r=subprocess.run([str(executable),'legacy-pillar-wire'],capture_output=True,text=True,timeout=15)
+                self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+                data=wall_diagnostics.empty_pillar_diagnostics()
+                for line in r.stdout.splitlines():
+                    if not line.strip():continue
+                    tag,*items=line.split()
+                    wall_diagnostics.receive_pillar(data,tag,dict(item.split(':',1) for item in items))
+                self.assertTrue(wall_diagnostics.validate_pillar(data),data)
+                self.assertEqual(data['summary']['applied'],'1' if mouse=='A' else '0')
+                self.assertEqual(data['events'][0]['mode'],'legacy')
+                self.assertEqual(data['events'][0]['ekf'],'0')
 
     def test_straight_feature_history_expires_on_long_walls_and_recovers_after_stops_and_invalid_samples(self):
         self.run_case("straight-history-recovery")
@@ -518,20 +568,20 @@ class SideWallStabilityTest(unittest.TestCase):
     def test_search_turn_diagnostics_bound_records_but_count_all_decisions(self):
         self.run_case("search-turn-diagnostics")
 
-    def test_zirconia_steering_symmetry_heading_damping_and_limits(self):
-        self.run_case("zirconia-symmetry")
+    def test_straight_wall_steering_symmetry_heading_damping_and_limits(self):
+        self.run_case("straight-wall-symmetry")
 
-    def test_zirconia_rejects_a_pillar_without_resetting_the_remaining_wall(self):
-        self.run_case("zirconia-independent")
+    def test_straight_wall_rejects_a_pillar_without_resetting_the_remaining_wall(self):
+        self.run_case("straight-wall-independent")
 
-    def test_zirconia_spatial_confidence_stop_and_expected_heading_motion(self):
-        self.run_case("zirconia-spatial")
+    def test_straight_wall_spatial_confidence_stop_and_expected_heading_motion(self):
+        self.run_case("straight-wall-spatial")
 
-    def test_zirconia_disable_invalid_input_and_estimator_sync(self):
-        self.run_case("zirconia-reset")
+    def test_straight_wall_disable_invalid_input_and_estimator_sync(self):
+        self.run_case("straight-wall-reset")
 
-    def test_zirconia_real_adc_adapter_front_wall_mode_and_speed_transitions(self):
-        self.run_case("zirconia-adapter")
+    def test_straight_wall_real_adc_adapter_front_wall_mode_and_speed_transitions(self):
+        self.run_case("straight-wall-adapter")
 
     def test_real_adc_path_can_qualify_before_the_old_time_window_or_count_gate(self):
         self.run_case("integration-adc")

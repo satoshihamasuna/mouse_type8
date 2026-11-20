@@ -1174,9 +1174,9 @@ static void integration_adc()
     CHECK(task.sen_l.control_cnt < 10 && task.sen_r.control_cnt < 10);
 }
 
-static ZirconiaWallControl::Input wall_input()
+static StraightWallControl::Input wall_input()
 {
-    ZirconiaWallControl::Input in;
+    StraightWallControl::Input in;
     in.enabled = in.sample_updated = true;
     in.left_m = in.right_m = 0.045f;
     in.left_signal = in.right_signal = 1000.0f;
@@ -1185,16 +1185,16 @@ static ZirconiaWallControl::Input wall_input()
     return in;
 }
 
-static void zirconia_symmetry()
+static void straight_wall_symmetry()
 {
-    ZirconiaWallControl a, b;
+    StraightWallControl a, b;
     auto right_offset = wall_input();
     right_offset.left_m = 0.050f;
     right_offset.right_m = 0.040f;
     auto left_offset = right_offset;
     left_offset.left_m = 0.040f;
     left_offset.right_m = 0.050f;
-    ZirconiaWallControl::Output ra, rb;
+    StraightWallControl::Output ra, rb;
     for (int i = 0; i < 150; ++i) {
         ra = a.update(right_offset);
         rb = b.update(left_offset);
@@ -1202,7 +1202,7 @@ static void zirconia_symmetry()
         CHECK(std::fabs(ra.alpha_radps2) <= 20.001f);
         CHECK(std::fabs(ra.omega_radps) <= 1.20001f);
     }
-    CHECK(ra.phase == ZirconiaWallControl::Tracking && ra.trusted_mask == 3);
+    CHECK(ra.phase == StraightWallControl::Tracking && ra.trusted_mask == 3);
     CHECK(ra.omega_radps > 0.0f && rb.omega_radps < 0.0f);
     // At the same right offset, already pointing left must reduce steering.
     right_offset.heading_rad = 0.15f;
@@ -1211,12 +1211,12 @@ static void zirconia_symmetry()
     CHECK(ra.omega_radps < before);
 }
 
-static void zirconia_independent()
+static void straight_wall_independent()
 {
-    ZirconiaWallControl controller;
+    StraightWallControl controller;
     auto in = wall_input();
     in.left_m = 0.040f;
-    ZirconiaWallControl::Output out;
+    StraightWallControl::Output out;
     for (int i = 0; i < 80; ++i) out = controller.update(in);
     CHECK(out.trusted_mask == 3 && out.transition == 1.0f);
     float previous = out.omega_radps;
@@ -1224,7 +1224,7 @@ static void zirconia_independent()
     in.right_m = 0.030f;
     in.right_signal = 3000.0f;
     for (int i = 0; i < 3; ++i) out = controller.update(in);
-    CHECK(out.trusted_mask == 1 && out.phase == ZirconiaWallControl::Tracking);
+    CHECK(out.trusted_mask == 1 && out.phase == StraightWallControl::Tracking);
     CHECK(near(out.raw_error_m, -0.005f));
     CHECK(out.pose_control && out.transition == 1.0f);
     CHECK(std::fabs(out.omega_radps - previous) <= 0.06001f);
@@ -1232,13 +1232,13 @@ static void zirconia_independent()
     in.right_m = 0.080f;
     out = controller.update(in);
     CHECK(out.trusted_mask == 1 && out.observed_mask == 1);
-    CHECK(out.phase == ZirconiaWallControl::Tracking && out.transition == 1.0f);
+    CHECK(out.phase == StraightWallControl::Tracking && out.transition == 1.0f);
     CHECK(std::fabs(out.omega_radps - previous) <= 0.02001f);
     // Losing the last reliable wall resets yaw, then ramps estimated control.
     in.left_m = 0.080f;
     in.estimated_error_m = 0.004f;
     out = controller.update(in);
-    CHECK(out.phase == ZirconiaWallControl::Estimated && out.trusted_mask == 0);
+    CHECK(out.phase == StraightWallControl::Estimated && out.trusted_mask == 0);
     CHECK(out.omega_radps == 0.0f);
     for (int i = 0; i < 50; ++i) {
         out = controller.update(in);
@@ -1248,16 +1248,16 @@ static void zirconia_independent()
     CHECK(out.omega_radps > 0.0f);
 }
 
-static void zirconia_spatial_confidence()
+static void straight_wall_spatial_confidence()
 {
     const float steps[] = {0.0002f, 0.0005f, 0.001f, 0.002f};
     for (float step : steps) {
-        ZirconiaWallControl controller;
+        StraightWallControl controller;
         auto in = wall_input();
         in.travel_m = step;
         in.right_m = 0.080f;
         in.left_m = 0.055f; // Far single wall: approaching it is eventually allowed.
-        ZirconiaWallControl::Output out;
+        StraightWallControl::Output out;
         float travel = 0.0f;
         for (int i = 0; i < 200 && !out.pose_control; ++i) {
             out = controller.update(in);
@@ -1268,12 +1268,12 @@ static void zirconia_spatial_confidence()
         for (int i = 0; i < 150; ++i) out = controller.update(in);
         CHECK(out.omega_radps > 0.0f);
     }
-    ZirconiaWallControl controller;
+    StraightWallControl controller;
     auto in = wall_input();
     in.travel_m = 0.0f;
-    ZirconiaWallControl::Output out;
+    StraightWallControl::Output out;
     for (int i = 0; i < 200; ++i) out = controller.update(in);
-    CHECK(out.phase == ZirconiaWallControl::Confirming && out.trusted_mask == 0);
+    CHECK(out.phase == StraightWallControl::Confirming && out.trusted_mask == 0);
     CHECK(out.omega_radps == 0.0f);
     in.travel_m = 0.001f;
     in.heading_rad = 0.1f;
@@ -1286,27 +1286,27 @@ static void zirconia_spatial_confidence()
     }
 }
 
-static void zirconia_reset_and_sync()
+static void straight_wall_reset_and_sync()
 {
-    ZirconiaWallControl controller;
+    StraightWallControl controller;
     auto in = wall_input();
     in.left_m = 0.046f;
     in.right_m = 0.044f;
-    ZirconiaWallControl::Output out;
+    StraightWallControl::Output out;
     for (int i = 0; i < 60; ++i) out = controller.update(in);
     CHECK(out.sync_estimator && near(out.raw_error_m, 0.001f));
     in.enabled = false;
     out = controller.update(in);
-    CHECK(out.phase == ZirconiaWallControl::Disabled && out.omega_radps == 0.0f);
+    CHECK(out.phase == StraightWallControl::Disabled && out.omega_radps == 0.0f);
     in.enabled = true;
     out = controller.update(in);
-    CHECK(out.phase == ZirconiaWallControl::Confirming && out.trusted_mask == 0);
+    CHECK(out.phase == StraightWallControl::Confirming && out.trusted_mask == 0);
     in.heading_rad = std::numeric_limits<float>::quiet_NaN();
     out = controller.update(in);
-    CHECK(out.phase == ZirconiaWallControl::Disabled && out.omega_radps == 0.0f);
+    CHECK(out.phase == StraightWallControl::Disabled && out.omega_radps == 0.0f);
 }
 
-static void zirconia_adc_adapter()
+static void straight_wall_adc_adapter()
 {
     IrSensTask_type8 task{};
     Vehicle vehicle{};
@@ -1342,18 +1342,18 @@ static void zirconia_adc_adapter()
     task.SetWallControl_RadVelo(&vehicle, 1.0f);
     CHECK(vehicle.ideal.rad_velo.get() == 0.0f);
     task.EnableIrSensDiagonal();
-    CHECK(task.straight_wall_output.phase == ZirconiaWallControl::Disabled);
+    CHECK(task.straight_wall_output.phase == StraightWallControl::Disabled);
     task.EnableIrSensStraight();
     task.IrSensorSet(&vehicle, 0.5f);
     task.SetWallControl_RadVelo(&vehicle, 1.0f);
-    CHECK(task.straight_wall_output.phase == ZirconiaWallControl::Confirming);
+    CHECK(task.straight_wall_output.phase == StraightWallControl::Confirming);
     // Slalom exit from a diagonal approach primes the known wall layout.
     task.EnableIrSensDiagonal();
     task.PrimeStraightWallControl();
     task.EnableIrSensStraight();
     task.IrSensorSet(&vehicle, 0.5f);
     task.SetWallControl_RadVelo(&vehicle, 1.0f);
-    CHECK(task.straight_wall_output.phase == ZirconiaWallControl::Tracking);
+    CHECK(task.straight_wall_output.phase == StraightWallControl::Tracking);
     CHECK(task.straight_wall_output.trusted_mask == 0);
     CHECK(task.straight_wall_output.pose_control);
     // The heading term must survive legacy resets of ego.radian at wall edges.
@@ -1365,19 +1365,19 @@ static void zirconia_adc_adapter()
     }
     CHECK(near(task.control_ir_dot.get(), 0.020f));
     task.ResetStraightWallControl();
-    CHECK(task.straight_wall_output.phase == ZirconiaWallControl::Disabled);
+    CHECK(task.straight_wall_output.phase == StraightWallControl::Disabled);
 }
 
 static void ekf_math_and_dropout()
 {
     // Before an EKF observation is accepted, retain only the existing
     // conservative response away from a newly detected close wall.
-    ZirconiaWallControl confirming;
+    StraightWallControl confirming;
     auto close = wall_input();
     close.use_estimated_pose = true;
     close.measurement_mask = 0;
     close.left_m = 0.030f; close.right_m = 0.080f;
-    ZirconiaWallControl::Output response;
+    StraightWallControl::Output response;
     for (int i = 0; i < 30; ++i) response = confirming.update(close);
     CHECK(!response.pose_control && response.trusted_mask == 0);
     CHECK(response.omega_radps < 0.0f && response.omega_radps >= -0.20001f);
@@ -1927,8 +1927,8 @@ static void wall_observation_diagnostics()
     input.range[2] = IrRangeState::FarLimit;
     decision = SearchTurnGuard::decide(input, {true, false});
     CHECK(!(decision.checks & SearchTurnGuard::MetricPair) && !(decision.flags & SearchTurnGuard::Suppressed));
-    ZirconiaWallControl control;
-    ZirconiaWallControl::Input in;
+    StraightWallControl control;
+    StraightWallControl::Input in;
     in.left_m = .025f; in.right_m = .045f; in.range_valid_mask = 2;
     in.travel_m = .0005f; in.dt_s = .001f; in.sample_updated = true; in.enabled = true; in.velocity_mps = .37f;
     auto output = control.update(in);
@@ -1958,6 +1958,82 @@ static void wall_observation_diagnostics()
     diag.finish_and_print();
     diag.record(71,1,Phase::StraightEntry,1,{},adc,states);
     CHECK(diag.total()==70); diag.begin(); CHECK(diag.total()==0 && diag.size()==0);
+}
+
+static void wall_diagnostics_reuse()
+{
+    using namespace WallPositionCorrection;
+    auto &walls=WallDiagnostics::instance();
+    auto &pillars=PillarDiagnostics::instance();
+    SpatialPillarPeak::Event peak{}; peak.detected=true; peak.motion_clean=true;
+    PillarDiagnostics::Sample sample{};
+    sample.distance[0]=sample.distance[1]=80;
+    sample.distance[2]=sample.distance[3]=125;
+    const int16_t adc[4]={11,22,33,44};
+    const IrRangeState states[4]={IrRangeState::InRange,IrRangeState::NearLimit,
+        IrRangeState::FarLimit,IrRangeState::Invalid};
+    Result dirty{}; dirty.reason=Reason::Accepted; dirty.proposed_reason=Reason::Limited;
+    dirty.before_mm=dirty.target_mm=dirty.after_mm=dirty.innovation_mm=7;
+    dirty.delta_mm=dirty.delay_mm=dirty.proposed_delta_mm=dirty.proposed_after_mm=3;
+    dirty.ekf=true; dirty.ekf_nis=dirty.ekf_gain=dirty.ekf_variance_mm2=2;
+    DiagonalFeatureShadow::Metadata model{};
+    model.shadow_only=model.model_ready=model.reference_valid=true;
+    model.status=DiagonalFeatureShadow::Ready; model.quality_flags=7;
+    model.nominal_reference_mm=model.pose_shift_mm=model.left_mm=model.heading_rad=9;
+    DiagonalPose::Result pose{};
+    pose.status=DiagonalPose::Updated; pose.lateral_heading_ready=true;
+    pose.used=2; pose.pose={1,2,3};
+    pose.sigma_s=pose.sigma_e=pose.sigma_heading=pose.innovation=pose.nis=4;
+    walls.begin(Mode::Control);
+    for (unsigned i=0;i<pillars.capacity;++i) {
+        const int index=pillars.record(peak,sample,sample,1,2,Diagonal,DIAGONAL_STATE,Post_Turn,Mode::Control,false);
+        CHECK(index==static_cast<int>(i));
+        DiagonalFeatureShadow::Decision decision{}; decision.position=dirty; decision.model=model;
+        pillars.diagonal_shadow_result(index,decision);
+        pillars.diagonal_pose_result(index,pose);
+        walls.record(i,Diagonal,Phase::DiagonalRun,2,dirty,adc,states,Mode::Control,8,9,model);
+    }
+    CHECK(pillars.record(peak,sample,sample,1,2,Diagonal,DIAGONAL_STATE,Post_Turn,Mode::Control,false)==-1);
+    walls.record(999,Diagonal,Phase::DiagonalRun,2,dirty,adc,states);
+    CHECK(walls.total()==65 && walls.size()==64 && pillars.size()==64);
+    CHECK(walls.event(63).time_ms==63 && pillars.event(63).diagonal_pose.status==DiagonalPose::Updated);
+    walls.stop();
+    CHECK(pillars.record(peak,sample,sample,1,2,Diagonal,DIAGONAL_STATE,Post_Turn,Mode::Control,false)==-1);
+    walls.record(999,Diagonal,Phase::DiagonalRun,2,dirty,adc,states);
+    CHECK(walls.total()==65 && pillars.size()==64);
+
+    walls.begin();
+    CHECK(walls.total()==0 && walls.size()==0 && pillars.size()==0);
+    const int16_t clean_adc[4]{};
+    for (unsigned i=0;i<pillars.capacity;++i) {
+        CHECK(pillars.record(peak,sample,sample,0,1,Search_st_section,STRAIGHT_STATE,0,Mode::Legacy,false)==static_cast<int>(i));
+        const auto &p=pillars.event(i);
+        CHECK(!p.position_evaluated && !p.reference_valid && !p.proposal_valid && p.flags==0);
+        CHECK(p.position.reason==Reason::Invalid && p.position.proposed_reason==Reason::Invalid);
+        CHECK(!p.position.ekf && p.position.before_mm==0 && p.position.target_mm==0 && p.position.after_mm==0);
+        CHECK(p.position.innovation_mm==0 && p.position.delta_mm==0 && p.position.delay_mm==0);
+        CHECK(p.position.proposed_delta_mm==0 && p.position.proposed_after_mm==0);
+        CHECK(p.position.ekf_nis==0 && p.position.ekf_gain==0 && p.position.ekf_variance_mm2==0);
+        CHECK(!p.diagonal_model.shadow_only && !p.diagonal_model.model_ready && !p.diagonal_model.reference_valid);
+        CHECK(p.diagonal_model.status==DiagonalFeatureShadow::NotEvaluated && p.diagonal_model.quality_flags==0);
+        CHECK(p.diagonal_model.nominal_reference_mm==0 && p.diagonal_model.pose_shift_mm==0);
+        CHECK(p.diagonal_model.left_mm==0 && p.diagonal_model.heading_rad==0);
+        CHECK(p.diagonal_pose.status==DiagonalPose::NoRoute && !p.diagonal_pose.lateral_heading_ready && p.diagonal_pose.used==0);
+        CHECK(p.diagonal_pose.pose.s==0 && p.diagonal_pose.pose.e==0 && p.diagonal_pose.pose.heading==0);
+        CHECK(p.diagonal_pose.sigma_s==0 && p.diagonal_pose.sigma_e==0 && p.diagonal_pose.sigma_heading==0);
+        CHECK(p.diagonal_pose.innovation==0 && p.diagonal_pose.nis==0);
+        walls.record(i,Search_st_section,Phase::SearchStraight,1,{},clean_adc,states);
+        const auto &w=walls.event(i);
+        CHECK(w.time_ms==i && w.mode==Mode::Legacy && w.generation==0 && w.event_generation==0);
+        CHECK(w.motion==Search_st_section && w.phase==static_cast<unsigned>(Phase::SearchStraight) && w.side==1);
+        CHECK(w.correction.reason==Reason::Invalid && w.correction.proposed_reason==Reason::Invalid);
+        CHECK(!w.correction.ekf && w.correction.before_mm==0 && w.correction.proposed_delta_mm==0);
+        CHECK(w.diagonal_model.status==DiagonalFeatureShadow::NotEvaluated && !w.diagonal_model.reference_valid);
+        CHECK(w.diagonal_model.left_mm==0 && w.diagonal_model.quality_flags==0);
+        for (unsigned sensor=0;sensor<4;++sensor) CHECK(w.adc[sensor]==0 && w.range[sensor]==states[sensor]);
+    }
+    CHECK(walls.total()==64 && walls.size()==64 && pillars.size()==64);
+    walls.stop();
 }
 
 static void wall_edge_trial_detector()
@@ -2165,9 +2241,9 @@ static void straight_close_pillar_history()
             task.RecordPillarCandidates(&vehicle,Search_st_section,STRAIGHT_STATE,0,true);
             if(rotating)CHECK(led_gpio==0); // Record a tainted candidate; never indicate it.
         }
-        CHECK(wall_count==(mode==Mode::Legacy?1U:0U));
-        CHECK(diag.size()==(mode==Mode::Legacy?0U:1U));
-        if(mode!=Mode::Legacy) {
+        CHECK(wall_count==0);
+        CHECK(diag.size()==1);
+        {
             CHECK(diag.event(0).side==(right?2:1));
             CHECK(diag.event(0).flags==(rotating?PillarDiagnostics::Rotating:0));
             CHECK(std::fabs(diag.event(0).feature_mm-42)<step+2);
@@ -2255,7 +2331,7 @@ static void open_origin_wall_control()
                     CHECK(task.straight_wall_candidate_mask&other);
                 }
                 else {
-                    CHECK(task.straight_wall_output.phase==ZirconiaWallControl::Estimated);
+                    CHECK(task.straight_wall_output.phase==StraightWallControl::Estimated);
                     CHECK(near(task.control_ir.get(),0));
                     CHECK(vehicle.ideal.rad_velo.get()<0); // Hold the inherited +yaw back toward the axis.
                 }
@@ -2515,13 +2591,16 @@ public:
     t_param turn_motion_param{};t_straight_param straight_motion_param{};
     t_run_pattern pattern=Straight;t_runControl control=STRAIGHT_STATE;
     uint32_t tick=10000;float clock=0,start_clock=0;
-    SearchTurnHeading shortest_turn_heading;
+    SearchTurnHeading shortest_turn_heading, search_turn_heading;
+    t_bool enabled=True;
+    t_exeStatus status=execute;
     static constexpr int deltaT_ms=1;
     static constexpr float detect_wall_edge_st=STRAIGHT_CORRECTION;
     static constexpr float detect_wall_edge_di=0;
     t_run_pattern motion_pattern_get() const{return pattern;}
     t_runControl motion_control_get() const{return control;}
-    t_bool motion_is_enable_get()const{return True;}
+    t_bool motion_is_enable_get()const{return enabled;}
+    t_exeStatus motion_exeStatus_get()const{return status;}
     void motion_pattern_set(t_run_pattern p){pattern=p;}
     void motion_exeStatus_set(t_exeStatus){}
     void motion_control_set(t_runControl c){control=c;}
@@ -2534,6 +2613,9 @@ public:
     float get_turn_table_value(float,float){return .5f;}
     void active_ff_gain_set(const t_ff_gain*){}
     void updateTurnKinematics(){}
+    MotionHeading::Prior HeadingForLog(){
+#include "heading_for_log.inc"
+    }
     void handleTurnPost_Diagonal(){
 #include "diagonal_post.inc"
     }
@@ -2587,6 +2669,132 @@ public:
         }
     }
 };
+
+static void legacy_pillar_adoption()
+{
+    using namespace WallPositionCorrection;
+    // Real ADC -> minimum detector -> production Motion adapter -> lateral correction.
+    // Keep the old difference crossings visible, but use only minima for the pair.
+    for (bool diagonal:{false,true}) for (bool right_last:{false,true})
+    for (bool tainted:{false,true}) for (bool logging:{false,true}) {
+        ShortestEntryHarness m;
+        m.sensors.WallEkfMode_Set(IrSensTask::WallEkfMode::Legacy);
+        m.pattern=diagonal?Diagonal:Straight;
+        m.control=diagonal?DIAGONAL_STATE:STRAIGHT_STATE;
+        if(diagonal)m.sensors.EnableIrSensDiagonal();else m.sensors.EnableIrSensStraight();
+        m.motion_plan.end_length.set(200);
+        m.vehicle->ideal.velo.set(.5f);m.vehicle->ego.velo.set(.5f);
+        m.vehicle->ego.x_point.set(11);m.vehicle->ego.radian.set(.02f);
+        auto &log=PillarDiagnostics::instance();if(logging)log.begin();else log.stop();
+        const float separation=diagonal?DIAG_SECTION+4:2;
+        unsigned old_crossings=0;
+        for(int tick=0;tick<300;++tick) {
+            const float x=tick*.5f;
+            for(unsigned side=0;side<2;++side) {
+                const bool last=(side==1)==right_last;
+                const float center=32+(last?separation:0);
+                const float range=80-40*fmaxf(0,1-fabsf(x-center)/12);
+                side_wall_test_adc[side==1?sensor_sr:sensor_sl]=side_adc_at(side==1?sens_sr_table:sens_sl_table,range);
+            }
+            side_wall_test_adc[sensor_fl]=side_wall_test_adc[sensor_fr]=0;
+            m.vehicle->ego.length.set(x);
+            m.vehicle->ego.rad_velo.set(tainted && x>=31 && x<=33?3:0);
+            m.sensors.IrSensorSet(m.vehicle,.5f,1000+tick);
+            old_crossings+=m.sensors.r_wall_corner==True || m.sensors.l_wall_corner==True;
+            m.record();
+        }
+        if(!diagonal)CHECK(old_crossings==0); // Open -> pillar -> Open is not Wall -> Open.
+        if(tainted)CHECK(near(m.vehicle->ego.x_point.get(),11));
+        else {
+            const float expected=(right_last?1:-1)*(diagonal?-2:84.0f/65.0f);
+            CHECK(fabsf(m.vehicle->ego.x_point.get()-expected)<.5f);
+            if(diagonal)CHECK(near(m.vehicle->ego.radian.get(),0));
+        }
+        if(logging)CHECK(log.size()==2);
+        float unused=0;CHECK(!m.sensors.LegacyPillarLateralCorrection(unused));
+        m.sensors.Division_Wall_Correction_Reset();
+        CHECK(!m.sensors.LegacyPillarLateralCorrection(unused));
+        log.stop();
+    }
+    // Calibrated A straight peaks get a bounded direct correction without an EKF.
+    // Wrong-side, old-generation, and already-used boundaries never consume a new one.
+    for(bool blocked:{false,true}) for(bool wrong_side:{false,true}) {
+        ShortestEntryHarness m;m.pattern=Turn_in_R45;m.control=STRAIGHT_STATE;
+        const t_pid_gain gain={1,0,0};
+        const t_turn_param_table table={.5f,30,40,10,-45,Turn_R,0};
+        m.turn_motion_param={&table,&gain,&gain};m.motion_plan.turn_state.set(Prev_Turn);
+        m.sensors.WallEkfMode_Set(IrSensTask::WallEkfMode::Legacy);m.sensors.EnableIrSensStraight();
+        m.vehicle->ideal.velo.set(.5f);m.vehicle->ego.velo.set(.5f);
+        auto &log=PillarDiagnostics::instance();log.begin();
+        for(int tick=0;tick<160;++tick) {
+            const float x=-40+tick*.5f;
+            const float range=80-40*fmaxf(0,1-fabsf(x-1)/12);
+            side_wall_test_adc[wrong_side?sensor_sl:sensor_sr]=side_adc_at(wrong_side?sens_sl_table:sens_sr_table,range);
+            side_wall_test_adc[wrong_side?sensor_sr:sensor_sl]=0;
+            side_wall_test_adc[sensor_fl]=side_wall_test_adc[sensor_fr]=0;
+            m.vehicle->ego.length.set(x);m.sensors.IrSensorSet(m.vehicle,.5f,2000+tick);
+            m.record();m.sensors.wall_correction=blocked?True:False;
+            const float before=m.vehicle->ego.length.get();
+            m.ApplyWallPositionCorrection(STRAIGHT_CORRECTION,Phase::StraightEntry,2);
+            if(m.vehicle->ego.length.get()!=before) {
+                CHECK(wall_feature_ekf_param.enabled && !blocked && !wrong_side);
+                CHECK(fabsf(m.vehicle->ego.length.get()-before)<=4);
+                CHECK(m.vehicle->ego.length.get()<before);
+            }
+        }
+        CHECK(log.size()==1);
+        const auto &e=log.event(0);
+        CHECK(e.position_evaluated==wall_feature_ekf_param.enabled);
+        if(wall_feature_ekf_param.enabled) {
+            CHECK(!e.position.ekf);
+            CHECK(e.position.reason==(wrong_side?Reason::WrongSide:blocked?Reason::NotSelected:Reason::Accepted));
+        }
+        log.stop();
+    }
+    // A clean second minimum must not pair with a pre-stop/reverse/rotation/gap sample.
+    for(unsigned interruption:{0U,1U,2U,3U,4U}) {
+        ShortestEntryHarness m;m.pattern=Diagonal;m.control=DIAGONAL_STATE;
+        m.sensors.WallEkfMode_Set(IrSensTask::WallEkfMode::Legacy);m.sensors.EnableIrSensDiagonal();
+        m.motion_plan.end_length.set(200);m.vehicle->ideal.velo.set(.5f);m.vehicle->ego.x_point.set(11);
+        for(int tick=0;tick<300;++tick) {
+            const float x=tick*.5f;
+            for(unsigned side=0;side<2;++side) {
+                const float center=32+(side==1?DIAG_SECTION+4:0);
+                const float range=80-40*fmaxf(0,1-fabsf(x-center)/12);
+                side_wall_test_adc[side==1?sensor_sr:sensor_sl]=side_adc_at(side==1?sens_sr_table:sens_sl_table,range);
+            }
+            float step=.5f;m.vehicle->ego.rad_velo.set(0);
+            if(tick==120) {
+                if(interruption==0)step=-.5f;
+                if(interruption==1)step=7;
+                if(interruption==2)m.vehicle->ego.rad_velo.set(3);
+                if(interruption==3)m.sensors.Division_Wall_Correction_Reset();
+            }
+            if(interruption==4 && tick>=120 && tick<125)step=0;
+            m.vehicle->ego.length.set(x);m.sensors.IrSensorSet(m.vehicle,step,3000+tick);m.record();
+        }
+        CHECK(near(m.vehicle->ego.x_point.get(),11));
+    }
+}
+
+static void legacy_pillar_wire()
+{
+    using namespace WallPositionCorrection;
+    ShortestEntryHarness m;m.pattern=Search_st_section;m.control=STRAIGHT_STATE;
+    m.sensors.WallEkfMode_Set(IrSensTask::WallEkfMode::Legacy);m.sensors.EnableIrSensStraight();
+    m.motion_plan.end_length.set(90);m.vehicle->ideal.velo.set(.5f);m.vehicle->ego.velo.set(.5f);
+    auto &log=PillarDiagnostics::instance();log.begin();
+    for(int tick=0;tick<160;++tick) {
+        const float x=tick*.5f,range=80-40*fmaxf(0,1-fabsf(x-43.5f)/12);
+        side_wall_test_adc[sensor_sr]=side_adc_at(sens_sr_table,range);
+        side_wall_test_adc[sensor_sl]=side_wall_test_adc[sensor_fl]=side_wall_test_adc[sensor_fr]=0;
+        m.vehicle->ego.length.set(x);m.sensors.IrSensorSet(m.vehicle,.5f,4000+tick);m.record();
+        m.ApplyWallPositionCorrection(SEARCH_CORRECTION,Phase::SearchStraight);
+    }
+    CHECK(log.size()==1);
+    CHECK(log.event(0).position.accepted()==wall_feature_ekf_param.enabled);
+    log.finish_and_print();
+}
 
 static void diagonal_feature_model()
 {
@@ -2982,6 +3190,49 @@ static void pose_frame_straight()
     }
 }
 
+static void heading_log()
+{
+    using Mode=IrSensTask::WallEkfMode;
+    ShortestEntryHarness m;
+    CHECK(!m.HeadingForLog().usable());
+    m.sensors.WallEkfMode_Set(Mode::Control);m.sensors.EnableIrSensStraight();
+    CHECK(!m.HeadingForLog().usable());
+    m.sensors.PrimeStraightTurnExit(.03f,true,.0004f);
+    auto logged=m.HeadingForLog();
+    CHECK(logged.usable() && near(logged.heading_rad,.03f) && near(logged.variance_rad2,.0004f));
+    m.enabled=False;CHECK(!m.HeadingForLog().usable());m.enabled=True;
+    m.status=error;CHECK(!m.HeadingForLog().usable());m.status=execute;
+    m.control=BRAKE_STATE;CHECK(!m.HeadingForLog().usable());
+    m.control=SLATURN_STATE;m.pattern=Long_turnR90;
+    m.shortest_turn_heading.begin(.03f,-PI/2,.0004f);
+    CHECK(!m.shortest_turn_heading.valid()); // Far from the exit, but current yaw is valid.
+    logged=m.HeadingForLog();CHECK(logged.usable() && near(logged.heading_rad,.03f));
+    m.sensors.BeginTurnHeading(logged);
+    m.sensors.UpdateTurnHeadingPosterior({.04f,.0001f,true});
+    logged=m.HeadingForLog();CHECK(near(logged.heading_rad,.04f) && near(logged.variance_rad2,.0001f));
+    m.sensors.UpdateTurnHeadingPosterior({.5f,.0001f,true});
+    CHECK(near(m.HeadingForLog().heading_rad,.03f)); // Rejected disagreement uses gyro prediction.
+    m.sensors.UpdateTurnHeadingPosterior({NAN,.0001f,true});
+    CHECK(near(m.HeadingForLog().heading_rad,.03f));
+    m.sensors.UpdateTurnHeadingPosterior({});
+    m.shortest_turn_heading.predict(-1.0f,.001f);
+    logged=m.HeadingForLog();CHECK(near(logged.heading_rad,.029f) && logged.variance_rad2>.0004f);
+    m.shortest_turn_heading.clear();CHECK(!m.HeadingForLog().usable());
+    m.pattern=Search_slalom_R;m.search_turn_heading.begin(-.02f,-PI/2,.0009f);
+    logged=m.HeadingForLog();CHECK(logged.usable() && near(logged.heading_rad,-.02f) && near(logged.variance_rad2,.0009f));
+    m.search_turn_heading.predict(NAN,.001f);CHECK(!m.HeadingForLog().usable());
+    m.control=DIAGONAL_STATE;m.sensors.WallEdgeMode_Set(WallPositionCorrection::Mode::Control);
+    m.sensors.EnableIrSensDiagonal();m.sensors.PrimeDiagonalPoseHeading({-.04f,.0004f,true});
+    logged=m.HeadingForLog();CHECK(logged.usable() && near(logged.heading_rad,-.04f) && near(logged.variance_rad2,.0004f));
+    for(unsigned i=0;i<220;++i)m.sensors.IrSensorSet(m.vehicle,.1f,++m.tick);
+    CHECK(!m.HeadingForLog().usable()); // An expired prior must not appear as a perfect zero.
+    m.control=STRAIGHT_STATE;m.sensors.EnableIrSensStraight();m.sensors.PrimeStraightTurnExit(0,true,.0004f);
+    logged=m.HeadingForLog();CHECK(logged.usable() && logged.heading_rad==0);
+    m.sensors.PrimeStraightTurnExit(NAN,true,.0004f);CHECK(!m.HeadingForLog().usable());
+    m.sensors.WallEkfMode_Set(Mode::Shadow);CHECK(!m.HeadingForLog().usable());
+    m.sensors.WallEkfMode_Set(Mode::Legacy);CHECK(!m.HeadingForLog().usable());
+}
+
 static void motion_heading_chain()
 {
     using EkfMode=IrSensTask::WallEkfMode;
@@ -3017,6 +3268,12 @@ static void motion_heading_chain()
             if(mode==EkfMode::Control) {expected+=.0003f*sign;variance+=q*.001f;}
             if(from_diagonal)m.handleTurnPrev_Diagonal();else m.handleTurnPrev_Straight();
             m.handleTurnMain();
+            const auto entry_log=m.HeadingForLog();
+            CHECK(entry_log.usable()==(mode==EkfMode::Control));
+            if(entry_log.usable()) {
+                CHECK(std::fabs(entry_log.heading_rad-expected)<.00001f);
+                CHECK(std::fabs(entry_log.variance_rad2-variance)<.00000002f);
+            }
             const auto prior=m.sensors.TakeTurnHeadingPrior();
             CHECK(prior.usable()==(mode==EkfMode::Control));
             if(prior.usable()) {
@@ -3049,6 +3306,12 @@ static void motion_heading_chain()
                 m.post();m.SetIdeal_wall_control();
                 CHECK(std::fabs(m.sensors.StraightHeadingForTurn()-(mode==EkfMode::Control?expected:0))<.00002f);
                 if(mode==EkfMode::Control) CHECK(std::fabs(m.sensors.StraightHeadingVarianceForTurn()-variance)<.00000002f);
+            }
+            const auto exit_log=m.HeadingForLog();
+            CHECK(exit_log.usable()==(mode==EkfMode::Control));
+            if(exit_log.usable()) {
+                CHECK(std::fabs(exit_log.heading_rad-expected)<.00002f);
+                CHECK(std::fabs(exit_log.variance_rad2-variance)<.00000002f);
             }
             CHECK(!m.shortest_turn_heading.valid());
             m.vehicle->ego.rad_velo.set(0);
@@ -3709,17 +3972,78 @@ static void feature_ekf_adapter()
     }
 }
 
+static void turn_wall_detections()
+{
+    using Log = WallDetectionDiagnostics;
+    const t_pid_gain gain = {1,0,0};
+    for (auto mode : {WallPositionCorrection::Mode::Legacy,WallPositionCorrection::Mode::Shadow,WallPositionCorrection::Mode::Control})
+    for (unsigned direction : {1U,2U}) for (unsigned observed : {0U,1U,2U}) {
+        ShortestEntryHarness m;
+        const t_turn_param_table table = {.5f,26,50,40,90,direction==1?Turn_L:Turn_R,0};
+        m.turn_motion_param={&table,&gain,&gain};
+        m.pattern=direction==1?Long_turnL90:Long_turnR90;
+        m.motion_plan.turn_state.set(Prev_Turn);m.control=STRAIGHT_STATE;
+        m.sensors.WallEdgeMode_Set(mode);m.sensors.EnableIrSensStraight();
+        m.vehicle->ideal.velo.set(.5f);m.vehicle->ego.velo.set(.5f);
+        auto &correction=WallDiagnostics::instance();correction.begin(mode);
+        auto &log=Log::instance();
+        m.sensors.wall_correction=True; // 補正済みでも検出ログを失わない。
+        for (unsigned i=0;i<85;++i) {
+            for(auto &adc:side_wall_test_adc) adc=0;
+            if (observed && i<55)
+                side_wall_test_adc[observed==1?sensor_sl:sensor_sr]=side_adc_at(observed==1?sens_sl_table:sens_sr_table,50);
+            m.vehicle->ego.length.set(i*.5f);
+            m.sensors.IrSensorSet(m.vehicle,.5f,m.tick++);
+            m.record();
+        }
+        CHECK(log.size()==(observed?1U:0U) && correction.size()==0);
+        if(observed) {
+            const auto &e=log.event(0);
+            CHECK(e.side==observed && e.sample.phase==Log::Before && e.sample.turn_side==direction);
+            CHECK(e.sample.axis==0 && e.samples>55 && e.delay_mm>=0);
+            CHECK(e.sample.adc[observed-1U]==0);
+        }
+        m.motion_plan.turn_state.set(direction==1?Turn_L:Turn_R);m.control=SLATURN_STATE;
+        m.sensors.IrSensMotion_Set(TURN_IRSENS);
+        m.sensors.IrSensorSet(m.vehicle,.5f,m.tick++);m.record();
+        const auto &before=log.event(observed?1:0);
+        CHECK(before.side==0 && before.sample.phase==Log::Before && before.samples==85);
+        CHECK(before.left==(observed==1?1U:0U) && before.right==(observed==2?1U:0U));
+        m.motion_plan.turn_state.set(Post_Turn);m.control=STRAIGHT_STATE;
+        m.sensors.EnableIrSensStraight();
+        for(unsigned i=0;i<3;++i) {m.sensors.IrSensorSet(m.vehicle,.5f,m.tick++);m.record();}
+        correction.stop();
+        const auto &after=log.event(log.size()-1);
+        CHECK(after.side==0 && after.sample.phase==Log::After && after.samples==3 && after.stopped);
+        CHECK(after.left==0 && after.right==0 && !log.enabled());
+        const auto count=log.total();m.record();CHECK(log.total()==count);
+        if(mode==WallPositionCorrection::Mode::Legacy && direction==2 && observed==1)
+            log.finish_and_print(); // 曲がる側と反対だけの検出をPythonでも照合する。
+    }
+    Log::Sample sample;sample.motion=Turn_out_R45;sample.control=DIAGONAL_STATE;sample.turn=Prev_Turn;
+    sample.phase=Log::phase(sample.motion,sample.control,sample.turn);sample.turn_side=2;sample.axis=1;
+    auto &log=Log::instance();log.begin();
+    for(unsigned i=0;i<70;++i) {sample.ms=i;log.update(sample,3,1,2,3,4);}
+    CHECK(log.total()==140 && log.size()==64);
+    log.stop();CHECK(log.total()==141 && log.size()==64);
+    log.begin();CHECK(log.total()==0 && log.size()==0);log.stop();
+}
+
 int main(int argc, char **argv)
 {
     if(argc==3 && std::strcmp(argv[1],"recorded-open-pillar")==0){recorded_open_pillar(argv[2]);return 0;}
     struct Case { const char *name; void (*run)(); };
     const Case cases[] = {
+        {"turn-wall-detections",turn_wall_detections},
+        {"legacy-pillar-adoption",legacy_pillar_adoption},
+        {"legacy-pillar-wire",legacy_pillar_wire},
         {"shortest-feature-entry",shortest_feature_entry},
         {"feature-coordinate-review",feature_coordinate_review},
         {"shortest-feature-exit",shortest_feature_exit},
         {"pose-frame-straight",pose_frame_straight},
         {"motion-heading-chain",motion_heading_chain},
         {"turn-heading-posterior",turn_heading_posterior},
+        {"heading-log",heading_log},
         {"shortest-exit-heading",shortest_exit_heading},
         {"shortest-diagonal-exit-heading",shortest_diagonal_exit_heading},
         {"feature-coordinate-correction",feature_coordinate_correction},
@@ -3745,6 +4069,7 @@ int main(int argc, char **argv)
         {"wall-edge-trial-motion", wall_edge_trial_motion_application},
         {"wall-edge-trial-shell", wall_edge_trial_shell},
         {"wall-observation-diagnostics", wall_observation_diagnostics},
+        {"wall-diagnostics-reuse", wall_diagnostics_reuse},
         {"window", window}, {"partial-window", partial_window},
         {"helper-speed", helper_speed}, {"linear-wall", linear_wall},
         {"decimal-boundaries", decimal_boundaries}, {"linear-activation", linear_activation},
@@ -3773,9 +4098,9 @@ int main(int argc, char **argv)
         {"search-turn-guard", search_turn_front_confirmation_and_fallbacks},
         {"search-turn-ir", search_turn_guard_real_ir_adapter},
         {"search-turn-diagnostics", search_turn_diagnostics_bounds},
-        {"zirconia-symmetry", zirconia_symmetry}, {"zirconia-independent", zirconia_independent},
-        {"zirconia-spatial", zirconia_spatial_confidence}, {"zirconia-reset", zirconia_reset_and_sync},
-        {"zirconia-adapter", zirconia_adc_adapter},
+        {"straight-wall-symmetry", straight_wall_symmetry}, {"straight-wall-independent", straight_wall_independent},
+        {"straight-wall-spatial", straight_wall_spatial_confidence}, {"straight-wall-reset", straight_wall_reset_and_sync},
+        {"straight-wall-adapter", straight_wall_adc_adapter},
         {"ekf-math", ekf_math_and_dropout}, {"ekf-adapter", ekf_adapter_switching},
         {"ekf-exit-disagreement", ekf_turn_exit_heading_disagreement},
         {"diagonal-ekf-math", diagonal_ekf_symmetry_and_covariance},

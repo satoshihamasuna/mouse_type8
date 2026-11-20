@@ -42,6 +42,71 @@ def valid_pillar():
 
 
 class WallDiagnosticsTests(unittest.TestCase):
+    @staticmethod
+    def detection_data():
+        data = diag.empty_detection_diagnostics()
+        data['summary'] = dict(schema='1', total='2', edges='1', phases='1', stored='2', dropped='0')
+        edge = dict(index='0', kind='edge', segment='1', start_ms='1000', ms='1010', motion='3', control='1', turn='3',
+                    phase='before', axis='0', turn_side='2', expected_side='2', expected_seen='0', side='1',
+                    left_count='1', right_count='0', samples='11', end='pending', generation='2', length_mm='12',
+                    delay_mm='1', age_ticks='2', gyro_radps='0.1', feature_mm='11', sl_mm='80', sr_mm='80', fl_mm='125', fr_mm='125')
+        for sensor in ('l', 'r', 'fl', 'fr'):
+            edge['adc_'+sensor] = '0'; edge['range_'+sensor] = '2'
+        phase = dict(edge, index='1', kind='phase_end', ms='1011', samples='12', side='0', end='transition',
+                     delay_mm='0', age_ticks='0')
+        phase.pop('feature_mm')
+        data['events'] = [edge, phase]
+        return data
+
+    def test_detection_export_distinguishes_opposite_side_missing_expected_and_unrecorded_logs(self):
+        data = self.detection_data()
+        self.assertTrue(diag.validate_detection(data), data)
+        before = json.dumps(data)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/'run.json'
+            diag.export_tables(path, {'wall_detection_diagnostics': data})
+            with path.with_suffix('.wall_detections.csv').open(encoding='utf-8-sig', newline='') as stream:
+                rows = list(csv.DictReader(stream))
+            self.assertEqual(rows[0]['side_name'], 'left')
+            self.assertEqual(rows[1]['expected_side_name'], 'right')
+            self.assertEqual(rows[1]['expected_status'], 'not_detected')
+            self.assertEqual(rows[1]['phase_name'], 'before')
+            self.assertEqual(rows[1]['feature_mm'], '')
+            old = Path(directory)/'old.json'
+            diag.export_tables(old, {'wall_diagnostics': valid()})
+            self.assertFalse(old.with_suffix('.wall_detections.csv').exists())
+        self.assertEqual(json.dumps(data), before)
+
+    def test_detection_missing_corrupt_reordered_and_duplicate_transfers_are_incomplete(self):
+        for change in (lambda d: d['events'].pop(), lambda d: d['events'].reverse(),
+                       lambda d: d['events'][0].update(expected_side='1'),
+                       lambda d: d['events'][0].update(expected_seen='1'),
+                       lambda d: d['events'][0].update(feature_mm='0'),
+                       lambda d: d['events'][1].update(side='1'),
+                       lambda d: d['events'][1].update(phase='turning'),
+                       lambda d: d['events'][0].update(adc_l='40000'),
+                       lambda d: d['events'][0].update(length_mm='nan')):
+            data = self.detection_data(); change(data)
+            self.assertFalse(diag.validate_detection(data), data)
+        data = self.detection_data()
+        diag.receive_detection(data, 'WALL_DETECT_STATS', data['summary'].copy())
+        self.assertFalse(diag.validate_detection(data))
+        data = diag.empty_detection_diagnostics()
+        self.assertFalse(diag.validate_detection(data))
+        for i in range(70):
+            diag.receive_detection(data, 'WALL_DETECT', dict(self.detection_data()['events'][0], index=str(i)))
+        self.assertEqual(len(data['events']), 64)
+        self.assertIn('event_overflow', data['errors'])
+
+    def test_detection_wraparound_after_phase_and_explicit_truncation(self):
+        data = self.detection_data()
+        for event in data['events']:
+            event.update(start_ms=str(2**32-5), ms='1', phase='after', expected_side='0', expected_seen='-1')
+        self.assertTrue(diag.validate_detection(data))
+        data['summary'].update(total='3', edges='2', dropped='1')
+        self.assertTrue(diag.validate_detection(data))
+        self.assertTrue(data['truncated'])
+
     def test_diagonal_framework_uncalibrated_quality_and_ready_are_shadow_only(self):
         data=valid_pillar();e=data['events'][0]
         data['summary'].update(straight='0',diagonal='1')
@@ -107,11 +172,24 @@ class WallDiagnosticsTests(unittest.TestCase):
             self.assertEqual(r[0]['range_l_name'],'far_limit')
             self.assertEqual(r[0]['minimum_ms'],'998')
 
+    def test_pillar_legacy_detection_and_bounded_direct_application_without_ekf(self):
+        data=valid_pillar();event=data['events'][0];event.update(mode='legacy')
+        self.assertTrue(diag.validate_pillar(data))
+        data['summary']['applied']='1'
+        event.update(reason='accepted',position_evaluated='1',position_reason='accepted',
+                     position_phase='4',ekf='0',after_mm='43.5',delta_mm='-1',
+                     target_mm='42.5',innovation_mm='-2')
+        self.assertTrue(diag.validate_pillar(data))
+        for values in (dict(ekf='1'),dict(mode='shadow'),dict(after_mm='45.5'),
+                       dict(delta_mm='-2',after_mm='42.5'),dict(flags='1')):
+            old=event.copy();event.update(values)
+            self.assertFalse(diag.validate_pillar(data));event.clear();event.update(old)
+
     def test_pillar_missing_corrupt_or_applied_records_are_incomplete(self):
         for change in (lambda d:d.update(events=[]),lambda d:d['events'][0].update(delta_mm='1'),
                        lambda d:d['events'][0].update(minimum_ms='1011'),lambda d:d['events'][0].update(flags='1'),
                        lambda d:d['events'][0].update(feature='wall_edge_crossing'),lambda d:d['events'][0].update(psi_rad='nan'),
-                       lambda d:d['events'][0].update(mode='legacy'),lambda d:d['summary'].update(quality_rejected='1')):
+                       lambda d:d['events'][0].update(mode='unknown'),lambda d:d['summary'].update(quality_rejected='1')):
             data=valid_pillar();change(data);self.assertFalse(diag.validate_pillar(data))
         data=valid_pillar()
         for i in range(70):diag.receive_pillar(data,'PILLAR_EDGE',dict(data['events'][0],index=str(i)))

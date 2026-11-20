@@ -22,6 +22,14 @@ static void assert_off(void)
 
 int test_ir_leds_on(void) { return leds_enabled != 0U; }
 
+void test_ir_sensor_values(int base)
+{
+	adc_value[LED_FL_ON] = (uint16_t)(base + 50); adc_value[LED_FL_OFF] = 50;
+	adc_value[LED_FR_ON] = (uint16_t)(base + 60); adc_value[LED_FR_OFF] = 50;
+	adc_value[LED_SL_ON] = (uint16_t)(base + 70); adc_value[LED_SL_OFF] = 50;
+	adc_value[LED_SR_ON] = (uint16_t)(base + 80); adc_value[LED_SR_OFF] = 50;
+}
+
 void test_ir_sensor_driver(void)
 {
 	Sensor_Initialize();
@@ -52,12 +60,35 @@ void test_ir_sensor_driver(void)
 	Sensor_SetMotionActive(0U);
 	assert(Sensor_IrSamplesReady());  // repeated idle/error updates preserve a newly armed wait
 	Sensor_SetHandWaitActive(0U); assert_off();  // explicit wait cancellation
+
+	assert(Sensor_BeginMeasurement());
+	assert(!Sensor_BeginMeasurement());  // exclusive ownership
+	Sensor_SetMotionActive(0U); // repeated idle/error IRQ cannot cancel measurement
+	Sensor_AdcComplete(); assert(!Sensor_IrSamplesReady());
+	Sensor_AdcComplete(); assert(Sensor_GetValue(sensor_fl) == 2400);
+	Sensor_EndMeasurement(); assert_off();
+	Sensor_SetMotionActive(1U);
+	assert(!Sensor_BeginMeasurement());
+	Sensor_EndMeasurement(); assert(test_ir_leds_on()); // release cannot darken a run
+	Sensor_SetMotionActive(0U); assert_off();
+	Sensor_SetHandWaitActive(1U);
+	assert(!Sensor_BeginMeasurement());
+	Sensor_EndMeasurement(); assert(test_ir_leds_on());
+	Sensor_SetHandWaitActive(0U); assert_off();
+	assert(Sensor_BeginMeasurement());
+	Sensor_SetMotionActive(1U);
+	Sensor_EndMeasurement(); assert(test_ir_leds_on());
+	Sensor_SetMotionActive(0U); assert_off();
 	test_irq_mask = 1U;
 	Sensor_SetHandWaitActive(1U); assert(test_irq_mask == 1U);
 	Sensor_SetHandWaitActive(0U); assert(test_irq_mask == 1U);
+	assert(Sensor_BeginMeasurement()); assert(test_irq_mask == 1U);
+	Sensor_EndMeasurement(); assert(test_irq_mask == 1U);
 	test_irq_mask = 0U;
 	Sensor_SetMotionActive(1U); assert(test_irq_mask == 0U);
 	Sensor_StopADC(); assert_off(); assert(test_adc_stops == 1U);
 	Sensor_SetHandWaitActive(1U);  // stopping ADC also cancels an idle hand wait
 	Sensor_StopADC(); assert_off(); assert(test_adc_stops == 2U);
+	assert(Sensor_BeginMeasurement());
+	Sensor_StopADC(); assert_off(); assert(test_adc_stops == 3U);
 }

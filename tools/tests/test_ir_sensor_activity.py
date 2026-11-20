@@ -71,9 +71,14 @@ class IrSensorActivityTest(unittest.TestCase):
             (work / "search_time_menu.inc").write_text(
                 "namespace Mode {\n" + function_body(menu, "int32_t Seach_Time_Select()")
                 + "\n}\n", encoding="utf-8")
+            shell = (ROOT / "System/Src/myshell.cpp").read_text(encoding="utf-8")
+            start = shell.index("static void shell_irsens_usage(void)\n{")
+            stop = shell.index("static int usrcmd_disp(int argc, char **argv)\n{", start)
+            (work / "ir_shell_commands.inc").write_text(shell[start:stop], encoding="utf-8")
             obj = work / "ir_driver.o"
             exe = work / ("ir_activity.exe" if os.name == "nt" else "ir_activity")
             demo_exe = work / ("ir_demo.exe" if os.name == "nt" else "ir_demo")
+            shell_exe = work / ("ir_shell.exe" if os.name == "nt" else "ir_shell")
             includes = ["-I", str(work), "-I", str(TEST_DIR), "-I", str(ROOT)]
             invocations = [
                 command + target + ["-x", "c", "-std=c11", "-c"] + includes +
@@ -82,8 +87,11 @@ class IrSensorActivityTest(unittest.TestCase):
                 [str(TEST_DIR / "ir_sensor_activity_harness.cpp"), str(obj), "-o", str(exe)],
                 command + target + ["-std=c++14", "-fno-exceptions", "-fno-rtti"] + includes +
                 [str(TEST_DIR / "ir_sensor_demo_harness.cpp"), str(obj), "-o", str(demo_exe)],
+                command + target + ["-std=c++14", "-fno-exceptions", "-fno-rtti"] + includes +
+                [str(TEST_DIR / "ir_sensor_shell_harness.cpp"), str(obj), "-o", str(shell_exe)],
                 [str(exe)],
                 [str(demo_exe)],
+                [str(shell_exe)],
             ]
             for invocation in invocations:
                 result = subprocess.run(invocation, capture_output=True, text=True,

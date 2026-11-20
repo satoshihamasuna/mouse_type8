@@ -120,6 +120,9 @@ class ExploreSession:
             wall = self._run_settings.get('wall_diagnostics')
             if wall is not None:
                 wall_diagnostics.validate(wall)
+            detections = self._run_settings.get('wall_detection_diagnostics')
+            if detections is not None:
+                wall_diagnostics.validate_detection(detections)
             pillar = self._run_settings.get('pillar_diagnostics')
             if pillar is not None:
                 wall_diagnostics.validate_pillar(pillar)
@@ -207,6 +210,12 @@ class ExploreSession:
                     wall_diagnostics.receive_pillar(diagnostics, text.split()[0], fields(text))
                     self._save_run_settings()
                     self._event('pillar_diagnostics', fields(text))
+            elif text.startswith(('WALL_DETECT_STATS ', 'WALL_DETECT ')):
+                if (self.state in ('starting', 'waiting_sensor', 'running', 'stopping') and self._run_settings is not None):
+                    diagnostics = self._run_settings.setdefault('wall_detection_diagnostics', wall_diagnostics.empty_detection_diagnostics())
+                    wall_diagnostics.receive_detection(diagnostics, text.split()[0], fields(text))
+                    self._save_run_settings()
+                    self._event('wall_detections', fields(text))
             elif text.startswith(('WALL_RANGE_STATS ', 'WALL_CORR_STATS ', 'WALL_CORR ')):
                 if (self.state in ('starting', 'waiting_sensor', 'running', 'stopping') and self._run_settings is not None):
                     diagnostics = self._run_settings.setdefault('wall_diagnostics', wall_diagnostics.empty_diagnostics())
@@ -536,6 +545,8 @@ class ExploreSession:
                                     settings['turn_diagnostics'] = {'summary': None, 'events': [], 'complete': False}
                                 if capability.get('wall_diag') == '1':
                                     settings['wall_diagnostics'] = wall_diagnostics.empty_diagnostics()
+                                if capability.get('wall_detect') == '1':
+                                    settings['wall_detection_diagnostics'] = wall_diagnostics.empty_detection_diagnostics()
                                 if capability.get('pillar_diag') == '1':
                                     settings['pillar_diagnostics'] = wall_diagnostics.empty_pillar_diagnostics()
                                 settings['logging_schema'] = {'telemetry': None, 'wall_diagnostics': 1 if capability.get('wall_diag') == '1' else None}
