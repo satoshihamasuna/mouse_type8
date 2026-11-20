@@ -68,16 +68,18 @@ const t_pid_gain sp_gain_turn90_2000 = {2.0,0.016,0.0};
 const t_pid_gain om_gain_turn90_2000 = {0.20,0.01,0.0};
 //const static t_turn_param_table slalom_L90_2000_table = {2.00f, 52.0f,12.57,42.89, 90.0f,Turn_L};
 //const static t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f,12.57,42.89,-90.0f,Turn_R};
-// Lstart/Lend are direction-specific medians from the 20260725
-// Lstart=Lend=0 marker videos.
-#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
-// Pink LED interval (20260725 direction-specific Lstart=Lend=0 videos).
-const t_turn_param_table slalom_L90_2000_table = {2.00f, 52.0f,17.66,38.18, 90.0f,Turn_L};
-const t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f,18.79,35.66,-90.0f,Turn_R};
-#else
-const t_turn_param_table slalom_L90_2000_table = {2.00f, 52.0f,13.67,35.58, 90.0f,Turn_L};
-const t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f,13.55,38.10,-90.0f,Turn_R};
-#endif
+//#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
+//const t_turn_param_table slalom_L90_2000_table = {2.00f, 52.0f,17.66,38.18, 90.0f,Turn_L};
+//const t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f,18.79,35.66,-90.0f,Turn_R};
+//#else
+//const t_turn_param_table slalom_L90_2000_table = {2.00f, 52.0f,13.67,35.58, 90.0f,Turn_L};
+//const t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f,13.55,38.10,-90.0f,Turn_R};
+//#endif
+// 2026-11-21予測更新：機体A 1600（Ls=12.0, Le=26.31/実測最適22.54, corr=±1.5）→ 1800（Ls=7.8, Le=25.0, corr=±1.25）の
+// 吸引ON（duty650）実測スケーリングおよび2000 mm/sログ解析から予測した暫定値。左・実機2000吸引duty650は未検証。
+// 根拠: tools/turn_analysis/20261121_AB_turn2000_90_180_prediction/README.md
+const t_turn_param_table slalom_L90_2000_table = {2.00f, 52.0f, 3.6f,27.8f, 90.0f,Turn_L,-1.0f};
+const t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f, 3.6f,27.8f,-90.0f,Turn_R, 1.0f};
 const t_param param_L90_2000 = {&slalom_L90_2000_table,&sp_gain_turn90_2000,&om_gain_turn90_2000,&ff_gain_long_turn_90_L_2000};
 const t_param param_R90_2000 = {&slalom_R90_2000_table,&sp_gain_turn90_2000,&om_gain_turn90_2000,&ff_gain_long_turn_90_R_2000};
 
@@ -88,14 +90,18 @@ const t_pid_gain om_gain_turn180_2000 = {0.10,0.002,0.0};
 /*20260725*/
 //const static t_turn_param_table slalom_L180_2000_table = {2.00f, 52.0f,26.07,35.18, 180.0f,Turn_L};
 //const static t_turn_param_table slalom_R180_2000_table = {2.00f,-52.0f,28.25,38.74,-180.0f,Turn_R};
-#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
-// Pink LED interval (L: 20260725 direction-specific videos; R: 20260726 videos).
-const t_turn_param_table slalom_L180_2000_table = {2.00f, 52.0f,9.10,37.03, 180.0f,Turn_L};
-const t_turn_param_table slalom_R180_2000_table = {2.00f,-52.0f,2.41,38.02,-180.0f,Turn_R};
-#else
-const t_turn_param_table slalom_L180_2000_table = {2.00f, 52.0f,2.41,38.02, 180.0f,Turn_L};
-const t_turn_param_table slalom_R180_2000_table = {2.00f,-52.0f,2.41,38.02,-180.0f,Turn_R};
-#endif
+//#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
+//const t_turn_param_table slalom_L180_2000_table = {2.00f, 52.0f,9.10,37.03, 180.0f,Turn_L};
+//const t_turn_param_table slalom_R180_2000_table = {2.00f,-52.0f,2.41,38.02,-180.0f,Turn_R};
+//#else
+//const t_turn_param_table slalom_L180_2000_table = {2.00f, 52.0f,2.41,38.02, 180.0f,Turn_L};
+//const t_turn_param_table slalom_R180_2000_table = {2.00f,-52.0f,2.41,38.02,-180.0f,Turn_R};
+//#endif
+// 2026-11-21予測更新：機体A 1600（r=±45.0, Ls=13.12, Le=27.38, corr=±2.0）→ 1800（r=±48.2, Ls=7.52, Le=31.5, corr=±2.0）の
+// 吸引ON（duty650）実測スケーリング、および2026-07-26 2000 mm/s（r=-52.0、実測幅89.58 mm、Ls=2.41 mm、旋回角超過+1.89〜+2.21°）から予測した暫定値。
+// 左・実機2000吸引duty650は未検証。根拠: tools/turn_analysis/20261121_AB_turn2000_90_180_prediction/README.md
+const t_turn_param_table slalom_L180_2000_table = {2.00f, 52.0f, 2.41f,35.62f, 180.0f,Turn_L,-2.0f};
+const t_turn_param_table slalom_R180_2000_table = {2.00f,-52.0f, 2.41f,35.62f,-180.0f,Turn_R, 2.0f};
 const t_param param_L180_2000 = {&slalom_L180_2000_table,&sp_gain_turn180_2000,&om_gain_turn180_2000,&ff_gain_long_turn_180_L_2000};
 const t_param param_R180_2000 = {&slalom_R180_2000_table,&sp_gain_turn180_2000,&om_gain_turn180_2000,&ff_gain_long_turn_180_R_2000};
 

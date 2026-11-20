@@ -38,16 +38,9 @@ extern const t_pid_gain sp_gain_turn90_2000;
 extern const t_pid_gain om_gain_turn90_2000;
 //const static t_turn_param_table slalom_L90_2000_table = {2.00f, 52.0f,12.57,42.89, 90.0f,Turn_L};
 //const static t_turn_param_table slalom_R90_2000_table = {2.00f,-52.0f,12.57,42.89,-90.0f,Turn_R};
-// Lstart/Lend are direction-specific medians from the 20260725
-// Lstart=Lend=0 marker videos.
-#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
-// Pink LED interval (20260725 direction-specific Lstart=Lend=0 videos).
+// 2026-11-21予測更新の暫定値（1600/1800吸引duty650実測スケーリング＋2000ログ整合）。左右の角度補正は鏡映し、旧マーカー長切替から独立。
 extern const t_turn_param_table slalom_L90_2000_table;
 extern const t_turn_param_table slalom_R90_2000_table;
-#else
-extern const t_turn_param_table slalom_L90_2000_table;
-extern const t_turn_param_table slalom_R90_2000_table;
-#endif
 extern const t_param param_L90_2000;
 extern const t_param param_R90_2000;
 
@@ -58,14 +51,9 @@ extern const t_pid_gain om_gain_turn180_2000;
 /*20260725*/
 //const static t_turn_param_table slalom_L180_2000_table = {2.00f, 52.0f,26.07,35.18, 180.0f,Turn_L};
 //const static t_turn_param_table slalom_R180_2000_table = {2.00f,-52.0f,28.25,38.74,-180.0f,Turn_R};
-#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
-// Pink LED interval (L: 20260725 direction-specific videos; R: 20260726 videos).
+// 2026-11-21予測更新の暫定値（1600/1800吸引duty650実測＋20260726 2000動画・ログ整合）。左右の角度補正は鏡映し、旧マーカー長切替から独立。
 extern const t_turn_param_table slalom_L180_2000_table;
 extern const t_turn_param_table slalom_R180_2000_table;
-#else
-extern const t_turn_param_table slalom_L180_2000_table;
-extern const t_turn_param_table slalom_R180_2000_table;
-#endif
 extern const t_param param_L180_2000;
 extern const t_param param_R180_2000;
 
