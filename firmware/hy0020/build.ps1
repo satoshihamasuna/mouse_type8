@@ -1,10 +1,16 @@
 param(
     [string]$SdkRoot = 'C:\ncs\v3.4.1',
     [string]$ToolchainRoot = 'C:\ncs\toolchains\4f5b6ad6dd',
+    [ValidateSet('A', 'B', 'Generic')]
+    [string]$Mouse = 'Generic',
     [switch]$Pristine
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$buildRelative = 'build\hy0020\mouse_uart_ble'
+if ($Mouse -ne 'Generic') {
+    $buildRelative += '_' + $Mouse
+}
 $sdkPath = (Resolve-Path -LiteralPath $SdkRoot).Path
 $toolchainPath = (Resolve-Path -LiteralPath $ToolchainRoot).Path
 $environmentFile = Join-Path $toolchainPath 'environment.json'
@@ -39,16 +45,20 @@ try {
     $buildArgs = @(
         '-m', 'west', 'build', '--no-sysbuild',
         '-b', 'hy0020_dip/nrf52832',
-        '-d', (Join-Path $projectRoot 'build\hy0020\mouse_uart_ble'),
+        '-d', (Join-Path $projectRoot $buildRelative),
         '-p', $pristineMode,
         $PSScriptRoot,
         '--', "-DBOARD_ROOT=$($PSScriptRoot.Replace('\', '/'))",
         "-DUSER_CACHE_DIR=$($env:ZEPHYR_CACHE_DIR.Replace('\', '/'))",
         "-DPython3_EXECUTABLE=$($pythonExe.Replace('\', '/'))"
     )
+    if ($Mouse -ne 'Generic') {
+        $nameConfig = Join-Path $PSScriptRoot "config\mouse_$($Mouse.ToLowerInvariant()).conf"
+        $buildArgs += "-DEXTRA_CONF_FILE=$($nameConfig.Replace('\', '/'))"
+    }
     & $pythonExe @buildArgs
     if ($LASTEXITCODE -ne 0) { throw 'BLE build failed.' }
-    Write-Host 'Built build/hy0020/mouse_uart_ble/zephyr/zephyr.hex'
+    Write-Host "Built $buildRelative\zephyr\zephyr.hex"
 } finally {
     Set-Location $savedLocation
     foreach ($key in $savedEnvironment.Keys) {

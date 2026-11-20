@@ -2,7 +2,30 @@
 
 mouse_type8 の USART1 を BLE（Nordic UART Service、NUS）へ双方向に中継する、
 HY0020 / AE-HY0020-DIP（nRF52832）用のファームウェアです。
-広告名は `HY0020-MOUSE` です。PC 側の使い方は [tools/ble/README.md](../../tools/ble/README.md) を参照してください。
+機体別の広告名は `HY0020-MOUSE-A` / `HY0020-MOUSE-B` です。
+PC 側の使い方は [tools/ble/README.md](../../tools/ble/README.md) を参照してください。
+
+## 機体とHY0020の対応
+
+2026年11月20日から、従来のHY0020を機体A、新しく書き込んだHY0020を機体Bへ割り当てます。
+広告名の変更はHY0020のファームウェアを書き換えて反映します。BLEアドレスは書き換え後も同じです。
+
+| 機体 | HY0020 | BLEアドレス | 機体別HEXの広告名 |
+| --- | --- | --- | --- |
+| A | 従来品 | `C1:B5:60:87:91:73` | `HY0020-MOUSE-A` |
+| B | 2026年11月20日の新品 | `E1:7F:86:21:84:73` | `HY0020-MOUSE-B` |
+
+通信方式・UART速度・端子・NUS UUIDは共通です。広告名は機体を見分けるための表示で、
+接続先を確実に選ぶときは表のアドレスを指定します。STM32側の機体設定は変更しません。
+
+2026年11月20日に両個体へ機体別HEXを書き込み、表の広告名・GATT名・アドレスの一致を実機で確認しました。
+書き込み前後にFlash全512 KiBとUICR全4 KiBを保存し、HEXの照合、全118876 byteの読み戻し一致、
+更新対象外ページとUICRの保持、リセット完了を確認しています。今回の名前変更で全消去は行っていません。
+BLE接続後のStatusの4エラーカウンターは両方とも0で、確認後は切断しました。
+機体A/B用ビルドはともに成功し、生成設定の違いは広告名だけ、バイナリの違いは末尾のA/Bの1 byteだけです。
+通信本体・UART設定は変更せず、STM32への書き込み・走行は行っていません。
+マウスとのUART実通信と電源再投入後の確認は別途必要です。
+ソース、機体別HEX、前後のメモリー、ハッシュ、検証JSONは`build/hy0020-names-20261120/`に保存しています。
 
 ```text
 PC の BLE ツール ⇄ Bluetooth / NUS ⇄ HY0020 ⇄ UART 460800 8N1 ⇄ mouse_type8
@@ -26,6 +49,7 @@ firmware/hy0020/
 ├─ README.md
 ├─ build.ps1                         nRF Connect SDK を使ったビルド
 ├─ CMakeLists.txt / Kconfig / prj.conf
+├─ config/mouse_a.conf / mouse_b.conf  機体別の広告名
 ├─ src/main.c                        UART–BLE 中継本体
 ├─ src/batch_policy.h                部分通知の待機期限判定（ホスト検証共用）
 ├─ boards/fdk/hy0020_dip/             HY0020 のボード・UART 端子設定
@@ -79,18 +103,25 @@ $env:NRFUTIL_HOME = Join-Path (Get-Location).Path '.tools\nrfutil\home'
 ```
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\firmware\hy0020\build.ps1
+# 機体A（従来のHY0020）
+powershell -ExecutionPolicy Bypass -File .\firmware\hy0020\build.ps1 -Mouse A
+
+# 機体B（新しいHY0020）
+powershell -ExecutionPolicy Bypass -File .\firmware\hy0020\build.ps1 -Mouse B
 ```
 
 既定の SDK は `C:\ncs\v3.4.1`、ツールチェーンは `C:\ncs\toolchains\4f5b6ad6dd` です。
 導入先が異なる場合は指定します。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\firmware\hy0020\build.ps1 -SdkRoot 'C:\ncs\v3.4.1' -ToolchainRoot 'C:\ncs\toolchains\使用するツールチェーン'
+powershell -ExecutionPolicy Bypass -File .\firmware\hy0020\build.ps1 -Mouse A -SdkRoot 'C:\ncs\v3.4.1' -ToolchainRoot 'C:\ncs\toolchains\使用するツールチェーン'
 ```
 
 `-Pristine` は HY0020 のビルドディレクトリを再構成する場合に使います。
-出力は `build/hy0020/mouse_uart_ble/zephyr/zephyr.hex`、
+出力は `build/hy0020/mouse_uart_ble_A/zephyr/zephyr.hex` と
+`build/hy0020/mouse_uart_ble_B/zephyr/zephyr.hex` です。
+`config/mouse_a.conf` / `config/mouse_b.conf` を追加設定として読み、広告名だけを切り替えます。
+`-Mouse`省略時は従来の汎用名`HY0020-MOUSE`と出力`build/hy0020/mouse_uart_ble/`を維持します。
 キャッシュは `build/hy0020/zephyr-cache/` です。STM32 の機体別ビルド出力と分けています。
 ツールチェーンの環境設定はスクリプトの実行中だけ適用します。
 
@@ -114,16 +145,16 @@ HY0020 へ 3.3 V を供給します。D1 と D2 は抵抗なしで短絡しま�
 FT232H の UART モニターなど、同じアダプターを使うプログラムは終了しておきます。
 
 ```powershell
-$openocdExe = Join-Path (Get-Location).Path '.tools\openocd\xpack-openocd-0.12.0-7\bin\openocd.exe'
+$openocdExe = Join-Path $env:USERPROFILE 'Downloads\xpack-openocd-0.12.0-7-win32-x64\xpack-openocd-0.12.0-7\bin\openocd.exe'
 
 # 接続確認（消去・書き込みなし）
 & $openocdExe -f firmware/hy0020/openocd/ft232h-hy0020.cfg -c 'init; shutdown'
 
-# ビルド済み HEX の書き込み・照合・リセット
-& $openocdExe -f firmware/hy0020/openocd/ft232h-hy0020.cfg -c 'adapter speed 100; program build/hy0020/mouse_uart_ble/zephyr/zephyr.hex verify reset exit'
+# 機体B用 HEX の書き込み・照合・リセット（機体Aはmouse_uart_ble_Aへ変更）
+& $openocdExe -f firmware/hy0020/openocd/ft232h-hy0020.cfg -c 'adapter speed 100; program build/hy0020/mouse_uart_ble_B/zephyr/zephyr.hex verify reset exit'
 ```
 
-この PC には [xPack OpenOCD v0.12.0-7](https://github.com/xpack-dev-tools/openocd-xpack/releases/tag/v0.12.0-7) を上記の場所へ導入しています。
+この PC では [xPack OpenOCD v0.12.0-7](https://github.com/xpack-dev-tools/openocd-xpack/releases/tag/v0.12.0-7) の上記Downloads内の実行ファイルを使用します。
 別の環境では OpenOCD の配置に合わせて変更してください。設定の既定速度は 10 kHz、
 中継版の書き込みはコピー元で確認済みの 100 kHz を明示します。
 終了コード 0、`Verified OK`、リセット完了を確認します。
