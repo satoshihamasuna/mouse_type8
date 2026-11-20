@@ -5,6 +5,9 @@
 
 namespace DemoUtil
 {
+	// メニューを共用し、demoはEKF、demo2は従来制御で実行する。
+	void run_demo(bool use_ekf);
+
 	enum search_type_t {
 		GOAL_SEARCH_FIRST_PRIORITY,
 		ACCELERATED_GOAL_SEARCH_FIRST_PRIORITY,

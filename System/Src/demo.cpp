@@ -50,9 +50,9 @@ void search_error_process(int init_history_cnt, wall_class *wall_data)
 	Mode::indicate_error();
 }
 
-namespace Mode
+namespace DemoUtil
 {
-void Demo()
+void run_demo(bool use_ekf)
 {
 	t_bool demo_end = False;
 	uint8_t mode = Return_LED_Status() & 0x30;
@@ -64,6 +64,16 @@ void Demo()
 	Motion *motion = &(CtrlTask_type8::getInstance());
 	IrSensTask *irsens = (CtrlTask_type8::getInstance().return_irObj());
 	SensorHandWait hand_wait;
+	auto &turn_pose = Interrupt::getInstance().turn_pose();
+	const uint32_t irq_mask = __get_PRIMASK();
+	__disable_irq();
+	const auto previous_wall_mode = irsens->WallEkfMode_Get();
+	const auto previous_edge_mode = irsens->WallEdgeMode_Get();
+	const auto previous_turn_mode = turn_pose.mode();
+	irsens->WallEkfMode_Set(use_ekf ? IrSensTask::WallEkfMode::Control : IrSensTask::WallEkfMode::Legacy);
+	irsens->WallEdgeMode_Set(use_ekf ? WallPositionCorrection::Mode::Control : WallPositionCorrection::Mode::Legacy);
+	turn_pose.set_mode(use_ekf ? TurnPose::Mode::Control : TurnPose::Mode::Legacy);
+	__set_PRIMASK(irq_mask);
 
 	Search solve_maze;
 	solve_maze.set_search_limit_time((6*60*1000));
@@ -505,5 +515,20 @@ void Demo()
 				break;
 		}
 	}
+	// シェル・デバッグに戻る際は、入る前の個別設定へ戻す。
+	const uint32_t restore_irq_mask = __get_PRIMASK();
+	__disable_irq();
+	irsens->WallEkfMode_Set(previous_wall_mode);
+	irsens->WallEdgeMode_Set(previous_edge_mode);
+	turn_pose.set_mode(previous_turn_mode);
+	__set_PRIMASK(restore_irq_mask);
+}
+}
+
+namespace Mode
+{
+void Demo()
+{
+	DemoUtil::run_demo(true);
 }
 }
