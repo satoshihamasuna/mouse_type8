@@ -71,7 +71,253 @@ class GatewayFailureReportTests(unittest.TestCase):
         self.assertIn('disabled_service', output.getvalue())
 
 
+class GatewayCleanupTests(unittest.IsolatedAsyncioTestCase):
+    async def test_cancelled_writer_keeps_original_ble_disconnect_and_releases_tasks(self):
+        reader_started = asyncio.Event()
+        writer_closed = asyncio.get_running_loop().create_future()
+        writer_closed.cancel()
+        gui_tasks = []
+        clients = []
+        servers = []
+
+        class Reader:
+            async def read(self, size):
+                reader_started.set()
+                await asyncio.Future()
+
+        class Writer:
+            closed = False
+
+            def close(self):
+                self.closed = True
+
+            async def wait_closed(self):
+                await writer_closed
+
+        writer = Writer()
+
+        class Peer:
+            def __init__(self, device, disconnected_callback, **options):
+                self.disconnected_callback = disconnected_callback
+                self.exited = False
+                self.writes = []
+                clients.append(self)
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                self.exited = True
+
+            async def read_gatt_char(self, characteristic):
+                return struct.pack('<IIII', 0, 0, 0, 0)
+
+            async def start_notify(self, characteristic, callback):
+                pass
+
+            async def write_gatt_char(self, *args, **kwargs):
+                self.writes.append((args, kwargs))
+
+        async def find_device(*args, **kwargs):
+            return object()
+
+        class Server:
+            closed = False
+
+            def close(self):
+                self.closed = True
+
+            async def wait_closed(self):
+                pass
+
+        async def start_server(callback, *args):
+            gui_tasks.append(asyncio.create_task(callback(Reader(), writer)))
+
+            async def disconnect():
+                await reader_started.wait()
+                clients[0].disconnected_callback(clients[0])
+
+            gui_tasks.append(asyncio.create_task(disconnect()))
+            server = Server()
+            servers.append(server)
+            return server
+
+        before = asyncio.all_tasks()
+        args = SimpleNamespace(name='fake-bridge', address='fake-address', port=8766)
+        with patch('bleak.BleakClient', Peer), \
+             patch('bleak.BleakScanner.find_device_by_address', find_device), \
+             patch.object(gateway.asyncio, 'start_server', start_server):
+            with self.assertRaisesRegex(RuntimeError, 'BLE disconnected; in-flight data will not be replayed'):
+                await gateway.run_link(args)
+        await asyncio.gather(*gui_tasks, return_exceptions=True)
+        self.assertTrue(writer.closed)
+        self.assertEqual(len(clients), 1)
+        self.assertTrue(clients[0].exited)
+        self.assertEqual(clients[0].writes, [])
+        self.assertTrue(servers[0].closed)
+        self.assertFalse(asyncio.all_tasks() - before)
+
+    async def test_external_cancellation_during_writer_close_is_preserved(self):
+        entered = asyncio.Event()
+
+        class Writer:
+            def close(self):
+                pass
+
+            async def wait_closed(self):
+                entered.set()
+                await asyncio.Future()
+
+        task = asyncio.create_task(gateway.close_local_writer(Writer()))
+        await entered.wait()
+        task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+
+    async def test_unexpected_writer_close_error_is_preserved(self):
+        class Writer:
+            def close(self):
+                pass
+
+            async def wait_closed(self):
+                raise ValueError('unexpected writer failure')
+
+        with self.assertRaisesRegex(ValueError, 'unexpected writer failure'):
+            await gateway.close_local_writer(Writer())
+
+
+class GatewayStatusReadTests(unittest.IsolatedAsyncioTestCase):
+    @staticmethod
+    def cancelled_read():
+        error = OSError('Windows BLE operation cancelled')
+        error.winerror = -2147023673
+        return error
+
+    @staticmethod
+    def peer(outcomes, connected=True):
+        class Peer:
+            is_connected = connected
+
+            def __init__(self):
+                self.reads = []
+
+            async def read_gatt_char(self, characteristic):
+                self.reads.append(characteristic)
+                result = outcomes[len(self.reads) - 1]
+                if isinstance(result, Exception):
+                    raise result
+                return result
+
+        return Peer()
+
+    async def test_cancelled_read_retries_status_once_without_writes_or_reconnect(self):
+        peer = self.peer([self.cancelled_read(), struct.pack('<4I', 0, 0, 7, 0)])
+        output = io.StringIO()
+        with patch.object(gateway.asyncio, 'sleep') as sleep, contextlib.redirect_stderr(output):
+            status = await gateway.read_health_status(peer, asyncio.Event())
+        self.assertEqual(status, (0, 0, 7, 0))
+        self.assertEqual(peer.reads, [gateway.STATUS, gateway.STATUS])
+        sleep.assert_awaited_once_with(0.1)
+        self.assertIn('retrying read once', output.getvalue())
+        # Peer exposes only read_gatt_char; any write/reconnect would fail this test.
+
+    async def test_second_cancellation_propagates_without_a_third_read(self):
+        second = self.cancelled_read()
+        peer = self.peer([self.cancelled_read(), second])
+        with patch.object(gateway.asyncio, 'sleep') as sleep, contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(OSError) as caught:
+                await gateway.read_health_status(peer, asyncio.Event())
+        self.assertIs(caught.exception, second)
+        self.assertEqual(len(peer.reads), 2)
+        sleep.assert_awaited_once()
+
+    async def test_disconnected_link_never_retries(self):
+        for connected, callback_seen in ((False, False), (True, True)):
+            with self.subTest(connected=connected, callback_seen=callback_seen):
+                failure = self.cancelled_read()
+                peer = self.peer([failure], connected)
+                disconnected = asyncio.Event()
+                if callback_seen:
+                    disconnected.set()
+                with patch.object(gateway.asyncio, 'sleep') as sleep:
+                    with self.assertRaises(OSError) as caught:
+                        await gateway.read_health_status(peer, disconnected)
+                self.assertIs(caught.exception, failure)
+                self.assertEqual(len(peer.reads), 1)
+                sleep.assert_not_awaited()
+
+    async def test_disconnect_during_retry_delay_never_reads_again(self):
+        for callback_seen in (False, True):
+            with self.subTest(callback_seen=callback_seen):
+                failure = self.cancelled_read()
+                peer = self.peer([failure])
+                disconnected = asyncio.Event()
+
+                async def disconnect(delay):
+                    if callback_seen:
+                        disconnected.set()
+                    else:
+                        peer.is_connected = False
+
+                with patch.object(gateway.asyncio, 'sleep', disconnect), contextlib.redirect_stderr(io.StringIO()):
+                    with self.assertRaises(OSError) as caught:
+                        await gateway.read_health_status(peer, disconnected)
+                self.assertIs(caught.exception, failure)
+                self.assertEqual(len(peer.reads), 1)
+
+    async def test_other_errors_and_invalid_payload_never_retry(self):
+        for result, expected in ((OSError('other failure'), OSError), (b'invalid', ValueError)):
+            with self.subTest(result=result):
+                peer = self.peer([result])
+                with patch.object(gateway.asyncio, 'sleep') as sleep:
+                    with self.assertRaises(expected):
+                        await gateway.read_health_status(peer, asyncio.Event())
+                self.assertEqual(len(peer.reads), 1)
+                sleep.assert_not_awaited()
+
+    async def test_recovered_read_still_detects_data_loss(self):
+        peer = self.peer([self.cancelled_read(), struct.pack('<4I', 1, 0, 0, 0)])
+        with patch.object(gateway.asyncio, 'sleep'), contextlib.redirect_stderr(io.StringIO()):
+            status = await gateway.read_health_status(peer, asyncio.Event())
+        with self.assertRaisesRegex(RuntimeError, 'data loss detected'):
+            gateway.check_status((0, 0, 0, 0), status)
+
+
 class GuiCaptureTests(unittest.TestCase):
+    def test_locked_status_snapshot_preserves_health_and_recovers_next_report(self):
+        payload = struct.pack('<4sIIH49e4h2H', log.MAGIC, 7, 100, 5, *range(55))
+        wire = payload + struct.pack('<H', binascii.crc_hqx(payload, 0xffff))
+        error = PermissionError('Windows status snapshot is temporarily locked')
+        error.winerror = 5
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'trial.csv'
+            recorder = gateway.GuiCapture(output, 5)
+            try:
+                recorder.feed(wire, lambda data: None)
+                with patch.object(Path, 'replace', side_effect=error), contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(recorder.report()['rows'], 1)
+                health = [json.loads(line) for line in output.with_suffix('.health.jsonl').read_text().splitlines()]
+                self.assertEqual(health[-1]['rows'], 1)
+                self.assertFalse(health[-1]['status_snapshot_published'])
+                self.assertEqual(output.with_suffix('.raw.bin').read_bytes(), wire)
+                recorder.report()
+                status = json.loads(output.with_suffix('.status.json').read_text())
+                self.assertEqual(status['rows'], 1)
+                health = [json.loads(line) for line in output.with_suffix('.health.jsonl').read_text().splitlines()]
+                self.assertTrue(health[-1]['status_snapshot_published'])
+            finally:
+                recorder.close()
+
+    def test_unrelated_status_write_failure_is_not_suppressed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recorder = gateway.GuiCapture(Path(directory) / 'trial.csv', 5)
+            try:
+                with patch.object(Path, 'replace', side_effect=OSError('disk failure')):
+                    with self.assertRaisesRegex(OSError, 'disk failure'):
+                        recorder.report()
+            finally:
+                recorder.close()
+
     def test_live_frames_are_saved_and_other_binary_bytes_are_unchanged(self):
         payload = struct.pack('<4sIIH49e4h2H', log.MAGIC, 7, 100, 5, *range(55))
         live_frame = payload + struct.pack('<H', binascii.crc_hqx(payload, 0xffff))

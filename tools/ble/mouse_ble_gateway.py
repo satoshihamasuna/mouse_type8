@@ -68,6 +68,22 @@ def decode_status(payload):
     return struct.unpack('<IIII', payload)
 
 
+async def read_health_status(client, disconnected):
+    """Retry one cancelled Windows STATUS read only while the link remains live."""
+    try:
+        return decode_status(await client.read_gatt_char(STATUS))
+    except OSError as error:
+        if (getattr(error, 'winerror', None) != -2147023673
+                or disconnected.is_set() or not getattr(client, 'is_connected', False)):
+            raise
+        print('Windows STATUS read cancelled; retrying read once on the live link',
+              file=sys.stderr, flush=True)
+        await asyncio.sleep(0.1)
+        if disconnected.is_set() or not getattr(client, 'is_connected', False):
+            raise
+        return decode_status(await client.read_gatt_char(STATUS))
+
+
 def check_status(initial, current):
     # Busy writes were explicitly rejected and can be retried; other errors lose data.
     if any(current[index] != initial[index] for index in (0, 1, 3)):
@@ -133,6 +149,7 @@ class GuiCapture:
         from mouse_ble_log import CsvCapture, control_packet
         control_packet(period_ms)
         self.output, self.period_ms = Path(output), period_ms
+        self.status_snapshot_deferred = False
         self.output.parent.mkdir(parents=True, exist_ok=True)
         self.files = contextlib.ExitStack()
         try:
@@ -159,9 +176,21 @@ class GuiCapture:
                   'latest_sequence': latest.sequence if latest else None,
                   'latest_time_ms': latest.time_ms if latest else None}
         temporary = self.output.with_suffix('.status.tmp')
-        temporary.write_text(json.dumps(status, indent=2), encoding='utf-8')
-        temporary.replace(self.output.with_suffix('.status.json'))
-        self.health.write(json.dumps(dict(status, monotonic=time.monotonic())) + '\n')
+        snapshot_published = True
+        try:
+            temporary.write_text(json.dumps(status, indent=2), encoding='utf-8')
+            temporary.replace(self.output.with_suffix('.status.json'))
+        except PermissionError as error:
+            if getattr(error, 'winerror', None) not in (5, 32):
+                raise
+            # A Windows reader can temporarily deny replacement. The append-only
+            # health/raw records remain authoritative; do not close the BLE link.
+            snapshot_published = False
+            if not self.status_snapshot_deferred:
+                print('Windows status snapshot update deferred; live capture continues', file=sys.stderr, flush=True)
+        self.status_snapshot_deferred = not snapshot_published
+        self.health.write(json.dumps(dict(status, monotonic=time.monotonic(),
+            status_snapshot_published=snapshot_published)) + '\n')
         self.health.flush()
         self.raw.flush()
         self.shell.flush()
@@ -182,6 +211,15 @@ async def run(args):
     finally:
         if recorder:
             recorder.close()
+
+
+async def close_local_writer(writer):
+    """Keep a cancelled close future from aborting cleanup; preserve task cancellation."""
+    writer.close()
+    result, = await asyncio.gather(writer.wait_closed(), return_exceptions=True)
+    if isinstance(result, BaseException) and not isinstance(
+            result, (ConnectionError, OSError, asyncio.CancelledError)):
+        raise result
 
 
 async def run_link(args, recorder=None):
@@ -232,8 +270,7 @@ async def run_link(args, recorder=None):
         async def serve_gui(reader, writer):
             nonlocal active_writer, session_task, failure
             if active_writer is not None:
-                writer.close()
-                await writer.wait_closed()
+                await close_local_writer(writer)
                 return
             active_writer = writer
             session_task = asyncio.current_task()
@@ -250,12 +287,10 @@ async def run_link(args, recorder=None):
             except Exception as error:
                 failure = error
             finally:
-                writer.close()
                 try:
-                    await writer.wait_closed()
-                except (ConnectionError, OSError):
-                    pass
-                client_done.set()
+                    await close_local_writer(writer)
+                finally:
+                    client_done.set()
 
         async def watch_health():
             while True:
@@ -265,7 +300,7 @@ async def run_link(args, recorder=None):
                     recorder.report()
                 await asyncio.sleep(1)
                 async with request_lock:
-                    current = decode_status(await client.read_gatt_char(STATUS))
+                    current = await read_health_status(client, disconnected)
                 check_status(initial, current)
 
         server = await asyncio.start_server(serve_gui, HOST, args.port)
@@ -289,15 +324,13 @@ async def run_link(args, recorder=None):
             if session_task is not None and not session_task.done():
                 session_task.cancel()
                 await asyncio.gather(session_task, return_exceptions=True)
-            if active_writer:
-                active_writer.close()
-                try:
-                    await active_writer.wait_closed()
-                except (ConnectionError, OSError):
-                    pass
-            for task in (health_task, disconnected_task, done_task):
-                task.cancel()
-            await asyncio.gather(health_task, disconnected_task, done_task, return_exceptions=True)
+            try:
+                if active_writer:
+                    await close_local_writer(active_writer)
+            finally:
+                for task in (health_task, disconnected_task, done_task):
+                    task.cancel()
+                await asyncio.gather(health_task, disconnected_task, done_task, return_exceptions=True)
             if recorder and not disconnected.is_set():
                 from mouse_ble_log import control_packet
                 try:
