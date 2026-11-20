@@ -50,6 +50,9 @@ class ExploreCameraApp(ExploreApp):
         self.reference_path = tk.StringVar(value=str(default_maze_reference()))
         self.cell_mm = tk.StringVar(value='90')
         self.analysis_python_path = tk.StringVar(value=str(analysis_python()))
+        self.marker_detection_path = tk.StringVar(value='')
+        self.wall_map_path = tk.StringVar(value='')
+        self.analysis_stride = tk.IntVar(value=1)
         analysis = ttk.LabelFrame(root, text='保存後の位置解析（機体・カメラへ指令は送りません）', padding=6)
         analysis.pack(fill='x', before=first)
         ttk.Checkbutton(analysis, text='前後マーカーを自動追跡（A: 前赤・後黄 / B: 前黄・後赤）', variable=self.analysis_enabled).grid(row=0,column=0,sticky='w')
@@ -82,7 +85,18 @@ class ExploreCameraApp(ExploreApp):
         self.capture_zoom_entry.pack(side='left')
         self.capture_focus_choice = ttk.Checkbutton(camera_controls,text='AF固定',variable=self.capture_focus)
         self.capture_focus_choice.pack(side='left',padx=8)
-        ttk.Label(analysis,text='9×9専用に保存。各評価フレームで登録済みArUco 2個以上を参照します。').grid(row=4,column=0,columnspan=4,sticky='w')
+        ttk.Button(analysis,text='色検出・壁配置の詳細',command=self.toggle_detection_options).grid(row=4,column=0,sticky='w')
+        ttk.Label(analysis,text='解析間隔（高速走行は1＝全フレーム）').grid(row=4,column=1,sticky='e')
+        ttk.Combobox(analysis,textvariable=self.analysis_stride,values=(1,2,4),state='readonly',width=6).grid(row=4,column=2,sticky='w')
+        advanced = self.advanced_detection = ttk.Frame(analysis)
+        advanced.grid(row=5,column=0,columnspan=4,sticky='ew')
+        ttk.Label(advanced,text='機体・色検出JSON（任意）').grid(row=0,column=0,sticky='w')
+        ttk.Entry(advanced,textvariable=self.marker_detection_path,width=65).grid(row=0,column=1,sticky='ew')
+        ttk.Button(advanced,text='選択',command=lambda:self.choose_analysis_file(self.marker_detection_path)).grid(row=0,column=2)
+        ttk.Label(advanced,text='確認済み壁配置JSON（空欄＝動画から検出）').grid(row=1,column=0,sticky='w')
+        ttk.Entry(advanced,textvariable=self.wall_map_path,width=65).grid(row=1,column=1,sticky='ew')
+        ttk.Button(advanced,text='選択',command=lambda:self.choose_analysis_file(self.wall_map_path)).grid(row=1,column=2)
+        advanced.grid_remove()
         root.title('mouse_type8 — 探索・最短動画／位置解析・BLEログ')
         root.geometry('1180x980')
 
@@ -105,6 +119,7 @@ class ExploreCameraApp(ExploreApp):
             self.camera_run = ExploreCameraRun(self.session, lambda k,d:self.events.put((k,d)), analysis_config=config,
                                               camera_settings=settings)
             self.camera_run.start(options)
+            self.wall_map_path.set('')  # 壁配置の明示指定は今回だけ。次の迷路へ持ち越さない。
             self.camera_choice.configure(state='disabled')
             self.start_button.configure(state='disabled')
             self.stop_button.configure(state='normal')
@@ -119,6 +134,12 @@ class ExploreCameraApp(ExploreApp):
         path = filedialog.askopenfilename(parent=self.root)
         if path:
             variable.set(path)
+
+    def toggle_detection_options(self):
+        if self.advanced_detection.winfo_manager():
+            self.advanced_detection.grid_remove()
+        else:
+            self.advanced_detection.grid()
 
     def selected_camera_settings(self):
         return validate_camera_settings(dict(ev=float(self.capture_ev.get()),
@@ -135,8 +156,18 @@ class ExploreCameraApp(ExploreApp):
         python = Path(self.analysis_python_path.get())
         if not reference.is_file() or not python.is_file():
             raise ValueError('位置解析の盤面基準JSONとPythonを選択してください')
-        return dict(reference=str(reference.resolve()), python=str(python.resolve()), cell_mm=cell, stride=4,
-                    marker_colours_source='run_settings.firmware.mouse', height_correction=False)
+        stride = self.analysis_stride.get()
+        if stride not in (1,2,4):
+            raise ValueError('解析フレーム間隔は1・2・4を選択してください')
+        config = dict(reference=str(reference.resolve()), python=str(python.resolve()), cell_mm=cell, stride=stride,
+                      marker_colours_source='run_settings.firmware.mouse', height_correction=False)
+        for key, variable in (('marker_detection',self.marker_detection_path), ('wall_map',self.wall_map_path)):
+            if variable.get().strip():
+                path = Path(variable.get())
+                if not path.is_file():
+                    raise ValueError('色検出・壁配置JSONの保存先を確認してください')
+                config[key] = str(path.resolve())
+        return config
 
     def analyze_saved(self):
         import threading
@@ -159,6 +190,7 @@ class ExploreCameraApp(ExploreApp):
                 except Exception as error:
                     self.events.put(('camera_failure',str(error)))
             threading.Thread(target=work,daemon=True,name='Saved pose analysis').start()
+            self.wall_map_path.set('')
         except (ValueError, tk.TclError) as error:
             messagebox.showerror('位置解析',str(error),parent=self.root)
 

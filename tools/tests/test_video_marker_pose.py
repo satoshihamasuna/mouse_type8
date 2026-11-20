@@ -191,6 +191,32 @@ class CalibrationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'distinct'):
             pose.read_video_pose(Path('does_not_exist.mp4'),'yellow',rear_colour='yellow')
 
+    def test_green_marker_excludes_yellow_pcb_blue_led_and_white_grid(self):
+        hsv=np.zeros((200,300,3),np.uint8)
+        for x,colour in ((60,(60,180,180)),(110,(30,180,180)),
+                         (160,(105,180,180)),(210,(60,0,180))):
+            cv2.circle(hsv,(x,100),5,colour,-1)
+        found=pose.colour_components(cv2.cvtColor(hsv,cv2.COLOR_HSV2BGR),'green')
+        self.assertEqual(len(found),1)
+        np.testing.assert_allclose(found[0][0],[60,100],atol=.1)
+
+    def test_video_accepts_green_front_and_red_rear(self):
+        image=self.board()
+        cv2.circle(image,(300,325),5,(0,255,0),-1)
+        cv2.circle(image,(300,275),5,(0,0,255),-1)
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'green_front_red_rear.avi'
+            writer=cv2.VideoWriter(str(path),cv2.VideoWriter_fourcc(*'MJPG'),240,(600,600))
+            self.assertTrue(writer.isOpened())
+            for _ in range(4):writer.write(image)
+            writer.release()
+            result,_,_,_=pose.read_video_pose(path,'green',rear_colour='red',
+                nominal_marker_span_mm=50.,marker_span_limits_mm=[40,65])
+        self.assertTrue(result.marker_detected_raw.all())
+        self.assertTrue(result.calibration_valid.all())
+        self.assertAlmostEqual(float(result.marker_separation_mm.mean()),50*360/401,delta=1.)
+        np.testing.assert_allclose(result[['center_x_mm','center_y_mm']].mean(),[180,180],atol=1.)
+
     def test_explicit_small_pale_marker_profile_does_not_accept_short_pcb_pair(self):
         hsv=np.zeros((200,300,3),np.uint8)
         hsv[80:83,150:153]=(30,35,180)

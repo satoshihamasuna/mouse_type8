@@ -193,11 +193,14 @@ class ExploreCameraRun:
             self.folder = self.session.directory / ('camera_' + datetime.now().strftime('%Y%m%d_%H%M%S_%f'))
             self.folder.mkdir()
             self.ledger = (self.folder / 'events.jsonl').open('x', encoding='utf-8')
-            if self.analysis_config and self.analysis_config.get('reference'):
-                reference = json.loads(Path(self.analysis_config['reference']).read_text(encoding='utf-8'))
-                snapshot = self.folder / 'marker_reference_used.json'
-                save_json(snapshot, reference)
-                self.analysis_config = dict(self.analysis_config, reference=str(snapshot.resolve()))
+            if self.analysis_config:
+                self.analysis_config = dict(self.analysis_config)
+                for key, name in (('reference', 'marker_reference_used.json'),
+                                  ('marker_detection', 'marker_detection_used.json'), ('wall_map', 'wall_map_used.json')):
+                    if self.analysis_config.get(key):
+                        snapshot = self.folder / name
+                        save_json(snapshot, json.loads(Path(self.analysis_config[key]).read_text(encoding='utf-8')))
+                        self.analysis_config[key] = str(snapshot.resolve())
                 trial['position_analysis'] = self.analysis_config
             save_json(self.folder / 'trial.json', trial)
             self.emit('camera_status', 'カメラを確認中（まだ手をかざさないでください）')
@@ -354,6 +357,9 @@ def analyze_trial(trial_path, config):
                '--reference', config['reference'], '--output', str(output), '--stride', str(config.get('stride', 4))]
     if config.get('cell_mm') is not None:
         command += ['--cell-mm', str(config['cell_mm'])]
+    for key, option in (('marker_detection', '--marker-detection'), ('wall_map', '--wall-map')):
+        if config.get(key):
+            command += [option, config[key]]
     with (trial_path.parent / (output.name + '.log')).open('x',encoding='utf-8') as log:
         result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT,
             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0)

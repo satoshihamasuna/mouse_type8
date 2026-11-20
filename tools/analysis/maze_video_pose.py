@@ -21,6 +21,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pixel_camera_framing import inspect_rois
 from analysis.wall_event_review import review_rows
+from marker_detection import colour_mask
 
 
 def sha256(path):
@@ -43,8 +44,14 @@ def detector():
     return cv2.aruco.ArucoDetector(cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50))
 
 
+class DuplicateMarkerIds(ValueError):
+    pass
+
+
 def detected_markers(frame, aruco):
     corners, ids, _ = aruco.detectMarkers(frame)
+    if ids is not None and len(set(map(int,ids.ravel()))) != len(ids):
+        raise DuplicateMarkerIds('同じArUco IDを複数検出しました')
     return {} if ids is None else {str(int(k)): q.reshape(4, 2) for k, q in zip(ids.ravel(), corners)}
 
 
@@ -76,7 +83,10 @@ def make_reference(frame_path, grid_report, output, seconds=1.5):
 
 
 def registration(frame, aruco, reference, search_matrix=None):
-    found = detected_markers(frame, aruco)
+    try:
+        found = detected_markers(frame, aruco)
+    except DuplicateMarkerIds:
+        return None, dict(marker_ids=[],reason='duplicate_aruco_ids')
     # Search positions never replace observed vertices. Each recovered ID must be
     # decoded in this frame; clipped tags remain missing.
     search = reference.get('source_markers_image_px',{})
@@ -126,38 +136,48 @@ def registration(frame, aruco, reference, search_matrix=None):
     return matrix, dict(marker_ids=ids, supporting_marker_ids=supporting, residual_cell=rms, reason='ok')
 
 
-def components(hsv, colour, matrix):
-    hue, saturation, value = cv2.split(hsv)
-    select = ((hue < 12) | (hue > 168)) if colour == 'red' else ((hue >= 22) & (hue <= 39))
-    mask = (select & (saturation >= 60) & (value >= 65)).astype(np.uint8)*255
+def components(hsv, colour, matrix, detection=None):
+    defaults = dict(hue_ranges=[[0, 11], [169, 179]] if colour == 'red' else [[22, 39]],
+                    minimum_saturation=60, minimum_value=65)
+    mask, minimum_area = colour_mask(hsv, colour, detection, defaults=defaults)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    pixel_area = 'minimum_area_px' in (detection or {}).get(colour, {})
     result = []
     for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
         area = cv2.contourArea(contour)
-        if not 3 <= area <= 350:
+        local = None
+        if pixel_area:
+            local = np.zeros((h,w),np.uint8)
+            cv2.drawContours(local,[contour-np.array([[[x,y]]])],-1,255,-1)
+            local = cv2.bitwise_and(local,mask[y:y+h,x:x+w])
+            area = cv2.countNonZero(local)
+        if not minimum_area <= area <= 350:
             continue
-        x,y,w,h = cv2.boundingRect(contour)
         if max(w,h)/max(1,min(w,h)) > 2.7:
             continue
         perimeter = cv2.arcLength(contour, True)
-        circularity = 4*math.pi*area/max(perimeter**2, 1)
+        circularity = 4*math.pi*cv2.contourArea(contour)/max(perimeter**2, 1)
         if circularity < .35:
             continue
-        moments = cv2.moments(contour)
-        pixel = np.array([moments['m10']/moments['m00'], moments['m01']/moments['m00']])
+        moments = cv2.moments(local,True) if pixel_area else cv2.moments(contour)
+        pixel = np.array([moments['m10']/moments['m00'],moments['m01']/moments['m00']])
+        if pixel_area:
+            pixel += [x,y]
         cell = project([pixel], matrix)[0]
         if (cell >= -.2).all() and (cell <= 9.2).all():
-            result.append(dict(pixel=pixel, cell=cell, area=area, circularity=circularity))
+            result.append(dict(pixel=pixel, cell=cell, area=int(area), circularity=circularity))
     return result
 
 
-def select_pair(fronts, rears, previous=None, dt=None, span_cell=50/90):
+def select_pair(fronts, rears, previous=None, dt=None, span_cell=50/90, span_limits=None):
     candidates = []
     for front in fronts:
         for rear in rears:
             vector = front['cell']-rear['cell']
             span = np.linalg.norm(vector)
-            if not .65*span_cell <= span <= 1.4*span_cell:
+            low, high = span_limits or (.65*span_cell, 1.4*span_cell)
+            if not low <= span <= high:
                 continue
             centre = (front['cell']+rear['cell'])/2
             heading = math.atan2(vector[1], vector[0])
@@ -186,8 +206,21 @@ def marker_colours(mouse):
     raise ValueError('マーカーの前後を選ぶには、実機設定JSONのfirmware.mouseにAまたはBが必要です')
 
 
-def track(video, reference, stride=4, cell_mm=90., progress=True, mouse='A'):
+def track(video, reference, stride=4, cell_mm=90., progress=True, mouse='A', detection_profile=None):
     front_colour, rear_colour = marker_colours(mouse)
+    profile = detection_profile or {}
+    if profile.get('mouse', mouse) != mouse:
+        raise ValueError('色検出プロファイルの機体とfirmware.mouseが一致しません')
+    if profile.get('front_colour', front_colour) != front_colour or profile.get('rear_colour', rear_colour) != rear_colour:
+        raise ValueError('色検出プロファイルの前後色が実機設定と一致しません')
+    detection = profile.get('marker_detection', {})
+    span = profile.get('nominal_marker_span_mm', 50.)
+    limits = profile.get('marker_span_limits_mm', [.65*span, 1.4*span])
+    if (not math.isfinite(span) or span <= 0 or len(limits) != 2
+            or not all(math.isfinite(v) for v in limits) or not 0 < limits[0] <= span <= limits[1]):
+        raise ValueError('色検出プロファイルの目印間隔を確認してください')
+    for colour in (front_colour, rear_colour):
+        colour_mask(np.zeros((1, 1, 3), np.uint8), colour, detection)
     capture = cv2.VideoCapture(str(video))
     if not capture.isOpened():
         raise ValueError('動画を開けません: '+str(video))
@@ -217,9 +250,19 @@ def track(video, reference, stride=4, cell_mm=90., progress=True, mouse='A'):
                        pose_valid=False, reason=quality['reason'])
             if matrix is not None:
                 hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                pair, reason = select_pair(components(hsv,front_colour,matrix), components(hsv,rear_colour,matrix),
+                pair, reason = select_pair(components(hsv,front_colour,matrix,detection), components(hsv,rear_colour,matrix,detection),
                     previous, None if last_good is None else pts-last_good,
-                    50/cell_mm if cell_mm else 50/90)
+                    span/(cell_mm or 90), [value/(cell_mm or 90) for value in limits])
+                row['detection_mode'] = 'selected_profile' if detection else 'standard'
+                if pair is None and reason == 'no_pair' and not detection:
+                    # Keep an already unambiguous standard pair. Only missing
+                    # pairs get a second observation with small/pale disk settings.
+                    small = dict(red=dict(minimum_area_px=3,minimum_saturation=35,hue_ranges=[[0,11],[160,179]]),
+                                 yellow=dict(minimum_area_px=3,hue_ranges=[[22,45]]))
+                    pair, reason = select_pair(components(hsv,front_colour,matrix,small),components(hsv,rear_colour,matrix,small),
+                        previous,None if last_good is None else pts-last_good,
+                        span/(cell_mm or 90),[value/(cell_mm or 90) for value in limits])
+                    row['detection_mode'] = 'small_marker_fallback'
                 row['reason'] = reason
                 if pair is not None:
                     centre, heading = pair['centre'], pair['heading']
@@ -480,7 +523,9 @@ def write_csv(path, rows):
 
 def review_wall_map(reference, path=None):
     """座標登録用の基準を保持し、描画する壁配置だけを明示的に選ぶ。"""
-    selected = reference if path is None else json.loads(Path(path).read_text(encoding='utf-8'))
+    if path is None:
+        raise ValueError('壁配置の明示指定が必要です。省略時は今回の動画から検出してください')
+    selected = json.loads(Path(path).read_text(encoding='utf-8'))
     walls = selected.get('wall_segments', [])
     keys = set()
     for wall in walls:
@@ -490,16 +535,16 @@ def review_wall_map(reference, path=None):
                 or wall.get('state') not in ('wall', 'open', 'unknown') or key in keys):
             raise ValueError('壁配置JSONの座標・状態・重複を確認してください')
         keys.add(key)
-    if path is not None and len(walls) != 180:
+    if len(walls) != 180:
         raise ValueError('9×9の壁配置JSONには180辺が必要です')
     metadata = dict(revision=selected.get('wall_revision', '更新確認なし'),
-                    source=str(Path(path).resolve()) if path is not None else '盤面基準JSON内の壁配置',
-                    sha256=sha256(path) if path is not None else None,
-                    edge_count=len(walls), selection='explicit_wall_map' if path is not None else 'embedded_reference')
+                    source=str(Path(path).resolve()), sha256=sha256(path),
+                    edge_count=len(walls), selection='explicit_wall_map')
     return walls, metadata
 
 
-def analyze(trial_path, reference_path, output, stride=4, cell_mm=None, manual_sync=None, wall_map=None):
+def analyze(trial_path, reference_path, output, stride=4, cell_mm=None, manual_sync=None, wall_map=None,
+            detection_profile=None):
     if stride not in (1,2,4):
         raise ValueError('strideは1,2,4から選択してください')
     if cell_mm is not None and (not math.isfinite(cell_mm) or not 10<=cell_mm<=300):
@@ -508,7 +553,8 @@ def analyze(trial_path, reference_path, output, stride=4, cell_mm=None, manual_s
     reference=json.loads(Path(reference_path).read_text(encoding='utf-8'))
     if reference.get('schema')!=1 or reference.get('rows')!=9 or reference.get('columns')!=9:
         raise ValueError('9×9用の登録済み基準JSONを指定してください')
-    walls, wall_map_metadata = review_wall_map(reference, wall_map)
+    if wall_map is not None:
+        walls, wall_map_metadata = review_wall_map(reference, wall_map)
     output=Path(output); output.mkdir(parents=True,exist_ok=False)
     # Keep a reproducible source snapshot even if the working tree is edited
     # while a long decode is in progress.
@@ -521,7 +567,15 @@ def analyze(trial_path, reference_path, output, stride=4, cell_mm=None, manual_s
     ble,settings,zero=read_ble(trial)
     mouse=settings.get('firmware',{}).get('mouse')
     front_colour,rear_colour=marker_colours(mouse)
-    pose=track(video,reference,stride,cell_mm,mouse=mouse)
+    profile = json.loads(Path(detection_profile).read_text(encoding='utf-8')) if detection_profile else None
+    pose=track(video,reference,stride,cell_mm,mouse=mouse,detection_profile=profile)
+    if wall_map is None:
+        from analysis.maze_wall_detection import detect_video_walls
+        walls, wall_map_metadata = detect_video_walls(video, reference, registration, detector)
+    json_save(output/'wall_map_used.json', dict(wall_revision=wall_map_metadata['revision'],
+                                              wall_segments=walls, detection=wall_map_metadata))
+    if profile is not None:
+        json_save(output/'marker_detection_used.json', profile)
     sync=fit_clock_drift(pose,ble,zero,fit_sync(pose,ble,zero,clock_offset(trial,zero)))
     if manual_sync:
         manual=json.loads(Path(manual_sync).read_text(encoding='utf-8'))
@@ -540,7 +594,12 @@ def analyze(trial_path, reference_path, output, stride=4, cell_mm=None, manual_s
         ble_csv_sha256=sha256(Path(trial['ble_directory'])/'telemetry.csv'),
         reference=str(Path(reference_path).resolve()),reference_sha256=sha256(reference_path),wall_map=wall_map_metadata,
         analysis_source_sha256=hashlib.sha256(source_snapshot).hexdigest(),opencv_version=cv2.__version__,numpy_version=np.__version__,
-        stride=stride,cell_mm=cell_mm,front_colour=front_colour,rear_colour=rear_colour,nominal_marker_span_mm=50.,
+        stride=stride,cell_mm=cell_mm,front_colour=front_colour,rear_colour=rear_colour,
+        marker_detection_modes={mode:sum(p.get('detection_mode')==mode for p in pose)
+            for mode in ('standard','small_marker_fallback','selected_profile')},
+        nominal_marker_span_mm=(profile or {}).get('nominal_marker_span_mm',50.),
+        marker_detection_profile=profile,
+        marker_detection_profile_sha256=sha256(detection_profile) if detection_profile else None,
         position_kind='apparent_front_rear_marker_midpoint_on_reference_plane',
         axes=reference['axes'],height_correction=False,camera_height_mm=None,
         sampled_frames=len(pose),valid_frames=good,pose_coverage=good/max(1,len(pose)),
@@ -609,6 +668,7 @@ def main():
     parser.add_argument('--trial',type=Path)
     parser.add_argument('--reference',type=Path)
     parser.add_argument('--wall-map',type=Path,help='走行時の9×9物理壁配置JSON。ArUco座標登録とは別に表示へ適用')
+    parser.add_argument('--marker-detection',type=Path,help='機体別の色・小さい目印の検出設定JSON。高さ・盤面登録は流用しない')
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--stride',type=int,choices=[1,2,4],default=4)
     parser.add_argument('--cell-mm',type=float)
@@ -621,7 +681,7 @@ def main():
     else:
         if not args.trial or not args.reference:
             parser.error('--trial と --reference が必要です')
-        analyze(args.trial,args.reference,args.output,args.stride,args.cell_mm,args.sync,args.wall_map)
+        analyze(args.trial,args.reference,args.output,args.stride,args.cell_mm,args.sync,args.wall_map,args.marker_detection)
 
 
 if __name__=='__main__':

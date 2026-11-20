@@ -46,6 +46,13 @@ class RegistrationTests(unittest.TestCase):
         self.assertIsNone(matrix)
         self.assertEqual(quality['reason'],'fewer_than_two_aruco')
 
+    def test_duplicate_marker_id_rejects_registration_instead_of_overwriting_vertices(self):
+        aruco=Mock()
+        aruco.detectMarkers.return_value=([np.zeros((1,4,2),np.float32)]*3,np.array([[0],[0],[1]]),None)
+        matrix,quality=pose.registration(np.zeros((720,1000,3),np.uint8),aruco,dict(markers_cell={}))
+        self.assertIsNone(matrix)
+        self.assertEqual(quality['reason'],'duplicate_aruco_ids')
+
     def test_red_walls_without_rear_marker_are_not_a_robot(self):
         image,reference,matrix=self.reference()
         cv2.line(image,(300,200),(300,500),(0,0,255),5)
@@ -72,7 +79,8 @@ class TrackingTests(unittest.TestCase):
         capture=Mock()
         capture.grab.side_effect=[True,False]
         capture.retrieve.return_value=(True,image)
-        capture.get.return_value=1000.
+        capture.read.return_value=(True,image)
+        capture.get.side_effect=lambda key:16 if key == cv2.CAP_PROP_FRAME_COUNT else 1000.
         return capture
 
     def test_mouse_b_uses_yellow_front_and_red_rear_without_moving_the_midpoint(self):
@@ -95,6 +103,42 @@ class TrackingTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'firmware.mouse'):
                     pose.track('synthetic.mp4',{},mouse=mouse)
                 capture.assert_not_called()
+
+    def test_tiny_pale_red_marker_is_kept_without_accepting_a_long_wall(self):
+        hsv=np.zeros((720,1000,3),np.uint8)
+        cv2.circle(hsv,(370,300),1,(165,45,100),-1)
+        cv2.line(hsv,(500,200),(500,500),(0,255,255),3)
+        matrix=np.array([[.01,0,-.5],[0,.01,-.2],[0,0,1.]])
+        found=pose.components(hsv,'red',matrix,dict(red=dict(minimum_area_px=3,minimum_saturation=35,hue_ranges=[[160,179]])))
+        self.assertEqual(len(found),1)
+        self.assertEqual(found[0]['area'],5)
+        np.testing.assert_allclose(found[0]['pixel'],[370,300])
+
+    def test_custom_hue_and_small_marker_profile_is_checked_against_saved_mouse(self):
+        image,reference=self.marker_frame()
+        profile=dict(mouse='B',front_colour='yellow',rear_colour='red',
+            marker_detection=dict(yellow=dict(hue_ranges=[[22,45]],minimum_area_px=3)))
+        with patch.object(pose.cv2,'VideoCapture',return_value=self.capture(image)):
+            row=pose.track('synthetic.mp4',reference,mouse='B',detection_profile=profile,progress=False)[0]
+        self.assertTrue(row['pose_valid'])
+        with patch.object(pose.cv2,'VideoCapture') as capture, self.assertRaisesRegex(ValueError,'一致'):
+            pose.track('synthetic.mp4',reference,mouse='A',detection_profile=profile)
+        capture.assert_not_called()
+
+    def test_small_pale_pair_uses_fallback_but_standard_pair_remains_preferred(self):
+        image,reference=self.marker_frame()
+        for small in (False,True):
+            frame=image.copy()
+            if small:
+                cv2.rectangle(frame,(360,290),(435,310),(255,255,255),-1)
+                red=cv2.cvtColor(np.uint8([[[165,45,100]]]),cv2.COLOR_HSV2BGR)[0,0].tolist()
+                cv2.circle(frame,(370,300),1,red,-1)
+                cv2.circle(frame,(425,300),1,(0,255,255),-1)
+            with patch.object(pose.cv2,'VideoCapture',return_value=self.capture(frame)):
+                row=pose.track('synthetic.mp4',reference,progress=False)[0]
+            self.assertTrue(row['pose_valid'],row)
+            self.assertEqual(row['detection_mode'],'small_marker_fallback' if small else 'standard')
+
 
     def test_impossible_jump_is_rejected_and_ambiguity_is_not_filled(self):
         c=self.component
@@ -159,6 +203,49 @@ class SyncTests(unittest.TestCase):
 
 
 class WallReviewTests(unittest.TestCase):
+    def test_each_video_can_have_a_different_maze_with_the_same_aruco_reference(self):
+        from analysis.maze_wall_detection import detect_video_walls
+        image,reference,_=RegistrationTests().reference()
+        reference['wall_segments']=[dict(axis='H',grid_line=3,cell_segment=3,state='wall')]
+        first,second=image.copy(),image.copy()
+        cv2.line(first,(350,320),(450,320),(0,0,255),5)
+        cv2.line(second,(450,320),(450,420),(0,0,255),5)
+        results=[]
+        for name,frame in (('first.mp4',first),('second.mp4',second)):
+            with patch.object(pose.cv2,'VideoCapture',return_value=TrackingTests.capture(frame)):
+                walls,_=detect_video_walls(name,reference,pose.registration,pose.detector,samples=4)
+            results.append({(w['axis'],w['grid_line'],w['cell_segment']):w['state'] for w in walls})
+        self.assertEqual((results[0][('H',3,3)],results[0][('V',4,3)]),('wall','open'))
+        self.assertEqual((results[1][('H',3,3)],results[1][('V',4,3)]),('open','wall'))
+        with self.assertRaisesRegex(ValueError,'明示指定'):
+            pose.review_wall_map(reference)
+
+    def test_white_wall_on_black_floor_is_detected_without_a_saved_wall_map(self):
+        from analysis.maze_wall_detection import wall_observations
+        frame=np.zeros((901,901,3),np.uint8)
+        cv2.line(frame,(300,400),(400,400),(240,240,240),5)
+        observations=wall_observations(frame,np.diag([.01,.01,1.]))
+        self.assertGreater(observations[('H',4,3)],.9)
+        self.assertEqual(observations[('H',4,4)],0.)
+
+    def test_current_video_walls_replace_stale_reference_and_missing_aruco_is_unknown(self):
+        from analysis.maze_wall_detection import detect_video_walls
+        image,reference,matrix=RegistrationTests().reference()
+        reference['wall_segments']=[dict(axis='H',grid_line=3,cell_segment=3,state='open')]
+        # The homography maps image (x,y) to (.01x-.5, .01y-.2).
+        cv2.line(image,(350,320),(450,320),(0,0,255),5)
+        capture=TrackingTests.capture(image)
+        with patch.object(pose.cv2,'VideoCapture',return_value=capture):
+            walls,metadata=detect_video_walls('current.mp4',reference,pose.registration,pose.detector,samples=4)
+        edge=next(w for w in walls if (w['axis'],w['grid_line'],w['cell_segment'])==('H',3,3))
+        self.assertEqual(edge['state'],'wall')
+        self.assertEqual(reference['wall_segments'][0]['state'],'open')
+        self.assertEqual(metadata['selection'],'current_video_wall_candidates')
+        self.assertEqual(len(walls),180)
+        with patch.object(pose.cv2,'VideoCapture',return_value=TrackingTests.capture(image)):
+            walls,_=detect_video_walls('missing.mp4',reference,lambda *a:(None,{}),pose.detector,samples=4)
+        self.assertTrue(all(w['state']=='unknown' for w in walls))
+
     def test_updated_wall_map_overrides_stale_drawing_without_changing_registration(self):
         walls=[dict(axis=axis,grid_line=line,cell_segment=segment,state='open')
                for axis in ('H','V') for line in range(10) for segment in range(9)]

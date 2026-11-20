@@ -130,6 +130,8 @@ class CoordinatorTests(unittest.TestCase):
                 reference = dict(markers_cell={'0':[[0,0],[1,0],[1,1],[0,1]]})
                 camera.save_json(directory/'board_reference.json', reference)
                 coordinator.analysis_config['reference'] = str(directory/'board_reference.json')
+                camera.save_json(directory/'detection.json',dict(mouse='A',marker_detection={}))
+                coordinator.analysis_config['marker_detection'] = str(directory/'detection.json')
             coordinator.start(explore.ShortestOptions(limit_seconds=180) if mode=='shortest'
                               else explore.ExploreOptions(limit_seconds=180))
             coordinator.thread.join(5)
@@ -139,6 +141,9 @@ class CoordinatorTests(unittest.TestCase):
                 saved_reference = Path(trial['position_analysis']['reference'])
                 self.assertEqual(saved_reference.parent, coordinator.folder)
                 self.assertEqual(json.loads(saved_reference.read_text(encoding='utf-8')), reference)
+                detection=Path(trial['position_analysis']['marker_detection'])
+                self.assertEqual(detection.parent,coordinator.folder)
+                self.assertEqual(json.loads(detection.read_text(encoding='utf-8'))['mouse'],'A')
         return actions, phases, api_calls, trial
 
     def test_recording_ready_precedes_ble_start_and_result_precedes_video_stop(self):
@@ -248,6 +253,30 @@ class GuiTests(unittest.TestCase):
         patch.object(gui, 'save_camera_profile').start()
         patch.object(gui, 'load_camera_profile', return_value=dict(DEFAULTS['maze_9x9'])).start()
 
+    def test_explicit_wall_map_is_consumed_by_one_trial_and_not_reused_for_the_next_maze(self):
+        from unittest.mock import patch
+        import mouse_ble_explore_camera_gui as gui
+        root=gui.tk.Tk();root.withdraw()
+        try:
+            app=gui.ExploreCameraApp(root)
+            app.session=SimpleNamespace()
+            with tempfile.TemporaryDirectory() as folder:
+                reference=Path(folder)/'reference.json';reference.write_text('{}',encoding='utf-8')
+                walls=Path(folder)/'walls.json';walls.write_text('{}',encoding='utf-8')
+                app.reference_path.set(str(reference));app.analysis_python_path.set(sys.executable)
+                app.wall_map_path.set(str(walls))
+                with patch.object(gui,'ExploreCameraRun') as coordinator:
+                    coordinator.return_value.active=False
+                    app.start()
+                    first=coordinator.call_args.kwargs['analysis_config']
+                    self.assertEqual(first['wall_map'],str(walls.resolve()))
+                    self.assertEqual(app.wall_map_path.get(),'')
+                    app.start()
+                    second=coordinator.call_args.kwargs['analysis_config']
+                    self.assertNotIn('wall_map',second)
+                    self.assertEqual(first['wall_map'],str(walls.resolve()))
+        finally:root.destroy()
+
     def test_marker_colours_are_selected_from_saved_run_settings_instead_of_fixed_to_a(self):
         import mouse_ble_explore_camera_gui as gui
         root=gui.tk.Tk(); root.withdraw()
@@ -258,6 +287,7 @@ class GuiTests(unittest.TestCase):
                 app.reference_path.set(str(reference)); app.analysis_python_path.set(sys.executable)
                 config=app.analysis_config()
             self.assertEqual(config['marker_colours_source'],'run_settings.firmware.mouse')
+            self.assertEqual(config['stride'],1)
             self.assertNotIn('front_colour',config)
             self.assertNotIn('rear_colour',config)
         finally: root.destroy()

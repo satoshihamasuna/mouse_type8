@@ -1,0 +1,4 @@
+# 任意の小型CNN学習・推論用。既存のOpenCV外観モデルだけなら不要。
+# CPU版を専用フォルダーへ入れる例:
+# python -m pip install --target .tools/vision_python311 --index-url https://download.pytorch.org/whl/cpu -r tools/requirements-vision-cnn.txt
+torch==2.15.0+cpu

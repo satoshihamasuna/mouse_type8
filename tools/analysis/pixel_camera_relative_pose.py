@@ -16,6 +16,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pixel_camera_geometry import relative_marker_midpoint
 from video_marker_pose import read_video_pose, board_to_pose_transform, transform_points, integrate_log, fit_time_and_pose
+from pixel_camera_detection import load_detection_geometry
 
 
 def file_hash(path):
@@ -29,6 +30,9 @@ def reference_digest(reference):
 
 def load_pose_cache(path, trial, reference, geometry, window, frame_stride=1):
     provenance = json.loads(path.with_suffix('.provenance.json').read_text(encoding='utf-8'))
+    model = geometry.get('marker_detection',{}).get('body_model',{})
+    if model.get('enabled',bool(model)) and provenance.get('detector_pipeline_version')!=2:
+        raise ValueError('学習モデルの旧キャッシュには実測・補完の区別がありません。別の出力先へ再解析してください')
     if (provenance.get('frame_stride', 1) != frame_stride
             or provenance['video_sha256'] != file_hash(trial['video_file'])
             or provenance['cached_pose_sha256'] != file_hash(path)
@@ -46,6 +50,7 @@ def load_pose_cache(path, trial, reference, geometry, window, frame_stride=1):
         raise ValueError('pose cache has no per-frame ArUco calibration validity evidence')
     pose = pose[(pose.time_video_s >= window[0]) & (pose.time_video_s <= window[1])].reset_index(drop=True)
     pose.attrs['marker_calibration'] = provenance['marker_calibration']
+    pose.attrs['body_detection'] = provenance.get('body_detection',{})
     return pose
 
 
@@ -92,7 +97,7 @@ def main():
     trial = json.loads(args.trial.read_text(encoding='utf-8'))
     settings_path = Path(trial['type8_settings_json'])
     settings = json.loads(settings_path.read_text(encoding='utf-8'))
-    geometry = json.loads(args.body_geometry.read_text(encoding='utf-8'))
+    geometry = load_detection_geometry(args.body_geometry)
     reference = json.loads(args.marker_reference.read_text(encoding='utf-8'))
     captured = (args.captured_trial and trial.get('state') == 'CAPTURED_REVIEW_REQUIRED'
                 and trial.get('camera_state') == 'PASSED' and trial.get('camera_run_start_confirmed') is True
@@ -125,7 +130,8 @@ def main():
         nominal_marker_span_mm=geometry.get('nominal_marker_span_mm'),
         marker_span_limits_mm=geometry.get('marker_span_limits_mm'),
         marker_detection=geometry.get('marker_detection'), video_window=[args.video_start, args.video_end], frame_stride=args.frame_stride,
-        marker_calibration=pose.attrs['marker_calibration'])
+        marker_calibration=pose.attrs['marker_calibration'],detector_pipeline_version=2,
+        body_detection=pose.attrs.get('body_detection',{}))
     (args.output/'apparent_floor_marker_pose.provenance.json').write_text(json.dumps(provenance, ensure_ascii=False, indent=2), encoding='utf-8')
     board_transform = np.linalg.inv(board_to_pose_transform(reference))
     front = transform_points(pose[['blue_x_mm', 'blue_y_mm']].to_numpy(), board_transform)
@@ -143,7 +149,8 @@ def main():
         center_dx_mm=xy[:, 0], center_dy_mm=xy[:, 1]))
     result.to_csv(args.output/'relative_marker_midpoint.csv', index=False)
     quality = dict(body_detection_rate=float(valid.mean()), frames=len(valid), valid_frames=int(valid.sum()),
-                   baseline_observations=int(baseline.sum()), marker_calibration=pose.attrs['marker_calibration'])
+                   baseline_observations=int(baseline.sum()), marker_calibration=pose.attrs['marker_calibration'],
+                   detector=pose.attrs.get('body_detection',{}))
     calibration_valid = pose.calibration_valid.to_numpy(bool)
     quality['body_detection_rate_given_calibration'] = float(valid.sum()/calibration_valid.sum()) if calibration_valid.any() else 0.0
     snapshot = dict(geometry, analysis_mode='relative_marker_midpoint', camera_height_mm=args.camera_height_mm,

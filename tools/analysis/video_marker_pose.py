@@ -35,50 +35,17 @@ WORLD_CORNERS = np.float32(
 
 
 def colour_components(frame: np.ndarray, colour: str, detection: dict | None = None) -> list[tuple[np.ndarray, int]]:
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    hue, sat, val = cv2.split(hsv)
-    if colour == "blue":
-        # The matte blue circle becomes weakly saturated in portrait videos
-        # after MP4 trimming/recompression, while its hue remains stable.
-        mask, saturation_min, value_min = (hue >= 93) & (hue <= 115), 55, 100
-    elif colour == "red":
-        mask, saturation_min, value_min = (hue <= 10) | (hue >= 170), 100, 95
-    elif colour == "magenta":
-        mask, saturation_min, value_min = (hue >= 140) & (hue <= 169), 90, 90
-    else:
-        mask, saturation_min, value_min = (hue >= 25) & (hue <= 36), 130, 145
-    area_min, opening_kernel_size, opening_kernel_shape = 15, 3, 'rect'
-    if detection:
-        limits = detection.get(colour, {})
-        if set(limits)-{'minimum_saturation', 'minimum_value', 'minimum_area_px', 'opening_kernel_size', 'opening_kernel_shape', 'hue_ranges'}:
-            raise ValueError('unknown colour detection setting')
-        if 'hue_ranges' in limits:
-            ranges = limits['hue_ranges']
-            if (not isinstance(ranges, (list, tuple)) or not 1 <= len(ranges) <= 4
-                    or any(not isinstance(bounds, (list, tuple)) or len(bounds) != 2
-                           or any(isinstance(value, bool) or not isinstance(value, (int, np.integer)) for value in bounds)
-                           or not 0 <= bounds[0] <= bounds[1] <= 179 for bounds in ranges)):
-                raise ValueError('hue_ranges must contain one to four inclusive integer ranges within zero to179')
-            mask = np.zeros(hue.shape, dtype=bool)
-            for low, high in ranges:
-                mask |= (hue >= low) & (hue <= high)
-        saturation_min = limits.get('minimum_saturation', saturation_min)
-        value_min = limits.get('minimum_value', value_min)
-        if not all(np.isfinite(v) and 0 <= v <= 255 for v in (saturation_min, value_min)):
-            raise ValueError('colour thresholds must be finite values between zero and 255')
-        area_min = limits.get('minimum_area_px', area_min)
-        opening_kernel_size = limits.get('opening_kernel_size', opening_kernel_size)
-        opening_kernel_shape = limits.get('opening_kernel_shape', opening_kernel_shape)
-        if not np.isfinite(area_min) or not 1 <= area_min <= 3000 or opening_kernel_size not in (0, 3):
-            raise ValueError('invalid colour component area or opening kernel size')
-        if opening_kernel_shape not in ('rect', 'ellipse'):
-            raise ValueError('invalid opening kernel shape')
-    mask &= (sat >= saturation_min) & (val >= value_min)
-    mask = mask.astype(np.uint8) * 255
-    if opening_kernel_size:
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT if opening_kernel_shape == 'rect' else cv2.MORPH_ELLIPSE,
-                                          (opening_kernel_size, opening_kernel_size))
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    from marker_detection import colour_mask
+    defaults = {
+        'blue': dict(hue_ranges=[[93, 115]], minimum_saturation=55, minimum_value=100),
+        'green': dict(hue_ranges=[[40, 85]], minimum_saturation=70, minimum_value=65),
+        'red': dict(hue_ranges=[[0, 10], [170, 179]], minimum_saturation=100, minimum_value=95),
+        'magenta': dict(hue_ranges=[[140, 169]], minimum_saturation=90, minimum_value=90),
+        'yellow': dict(hue_ranges=[[25, 36]], minimum_saturation=130, minimum_value=145),
+    }
+    settings = dict(defaults.get(colour, defaults['yellow']), minimum_area_px=15,
+                    opening_kernel_size=3, opening_kernel_shape='rect')
+    mask, area_min = colour_mask(cv2.cvtColor(frame, cv2.COLOR_BGR2HSV), colour, detection, defaults=settings)
     n, _, stats, centres = cv2.connectedComponentsWithStats(mask)
     h, w = frame.shape[:2]
     result = []
@@ -343,7 +310,7 @@ def read_video_pose(
 ) -> tuple[pd.DataFrame, np.ndarray, float, float]:
     if not isinstance(frame_stride, int) or not 1 <= frame_stride <= 4:
         raise ValueError('frame_stride must be an integer from1 to4')
-    colours = ('blue', 'red', 'magenta', 'yellow')
+    colours = ('blue', 'green', 'red', 'magenta', 'yellow')
     if front_colour not in colours or rear_colour not in colours or front_colour == rear_colour:
         raise ValueError('front and rear marker colours must be distinct supported colours')
     board_side_mm = marker_reference.get('board_side_mm', GRID_MM) if marker_reference is not None else GRID_MM
@@ -372,6 +339,40 @@ def read_video_pose(
     if not np.isfinite(start_s) or start_s < 0 or (end_s is not None and (not np.isfinite(end_s) or end_s <= start_s)):
         raise ValueError('invalid video time window')
     dynamic_grid = bool(marker_reference and marker_reference.get('grid_refinement', {}).get('enabled'))
+    body_model_cfg = (marker_detection or {}).get('body_model') if isinstance(marker_detection, dict) else None
+    use_body_model = bool(isinstance(body_model_cfg, dict) and body_model_cfg.get('enabled', True))
+    learned_body_model = None
+    keypoint_model = None
+    detection_provenance = dict(backend='colour_components', inferred_points_used_as_observations=False)
+    auto_train_samples = []
+    auto_prev_center = None
+    if use_body_model and body_model_cfg.get('model_file'):
+        from body_appearance_model import LearnedBodyKeypointModel
+        from pixel_camera_detection import file_sha256
+        model_path = Path(body_model_cfg['model_file'])
+        if not model_path.is_absolute():
+            model_path = Path(__file__).resolve().parents[2] / model_path
+        learned_body_model = LearnedBodyKeypointModel.load(model_path)
+        learned_body_model.validate_identity(body_model_cfg.get('expected_mouse'),front_colour,rear_colour)
+        model_digest = file_sha256(model_path)
+        if body_model_cfg.get('model_sha256') and body_model_cfg['model_sha256']!=model_digest:
+            raise ValueError('機体外観モデルのハッシュが一致しません')
+        detection_provenance.update(backend='learned_body_template',model_file=str(model_path.resolve()),
+            model_sha256=model_digest,training_metadata=learned_body_model.metadata)
+        if body_model_cfg.get('keypoint_model_file'):
+            from body_keypoint_cnn import BodyKeypointCNN
+            from pixel_camera_detection import project_path
+            keypoint_path = project_path(body_model_cfg['keypoint_model_file'])
+            keypoint_digest = file_sha256(keypoint_path)
+            if body_model_cfg.get('keypoint_model_sha256') and body_model_cfg['keypoint_model_sha256']!=keypoint_digest:
+                raise ValueError('キーポイントCNNのハッシュが一致しません')
+            keypoint_model = BodyKeypointCNN.load(keypoint_path)
+            for name,expected in (('mouse',body_model_cfg.get('expected_mouse')),('front_colour',front_colour),('rear_colour',rear_colour)):
+                if expected is not None and keypoint_model.metadata.get(name)!=expected:
+                    raise ValueError('キーポイントCNNの機体・前後色が一致しません')
+            detection_provenance.update(backend='body_template_and_cnn',keypoint_model_sha256=keypoint_digest,
+                keypoint_training_metadata=keypoint_model.metadata)
+    need_auto_train = use_body_model and (learned_body_model is None or body_model_cfg.get('auto_adapt', False))
     index = 0
     while True:
         ok, frame = cap.read()
@@ -388,15 +389,42 @@ def read_video_pose(
             continue
         timestamps.append(pts)
         if marker_reference is None:
-            quads.append(detect_aruco_quad(frame))
+            cur_quad = detect_aruco_quad(frame)
+            quads.append(cur_quad)
         else:
             result = marker_registration(frame, marker_reference)
             registrations.append(result)
-            quads.append(registration_quad(result))
+            cur_quad = registration_quad(result)
+            quads.append(cur_quad)
+        if need_auto_train and cur_quad is not None and len(auto_train_samples) < 30:
+            cur_h = cv2.getPerspectiveTransform(cur_quad, world_corners)
+            seed_pair = select_marker_pair(
+                colour_components(frame, front_colour, marker_detection),
+                colour_components(frame, rear_colour, marker_detection),
+                cur_h, auto_prev_center, body_geometry, geometry_transform,
+                board_side_mm, nominal_marker_span_mm, marker_span_limits_mm,
+            )
+            if seed_pair is not None:
+                s_centre = 0.5 * (seed_pair[0] + seed_pair[1])
+                s_span = float(np.linalg.norm(seed_pair[0] - seed_pair[1]))
+                nom_s = nominal_marker_span_mm or (body_geometry.get('nominal_marker_span_mm') if body_geometry else None) or 50.0
+                if abs(s_span - nom_s) <= 6.0 and (auto_prev_center is None or float(np.linalg.norm(s_centre - auto_prev_center)) <= 14.0):
+                    s_px = transform_points(seed_pair, np.linalg.inv(cur_h))
+                    auto_train_samples.append((frame.copy(), s_px[0], s_px[1]))
+                auto_prev_center = s_centre
         index += 1
         if progress is not None and len(quads) % 120 == 0:
             progress('calibration', len(quads), pts)
     cap.release()
+    if need_auto_train and len(auto_train_samples) >= 3:
+        from body_appearance_model import LearnedBodyKeypointModel
+        learned_body_model = LearnedBodyKeypointModel.fit_from_frames(auto_train_samples,
+            metadata=dict(mouse=body_model_cfg.get('expected_mouse'),front_colour=front_colour,rear_colour=rear_colour,
+                trained_on_current_video=True,source_video=str(Path(path).resolve())))
+        detection_provenance.update(backend='learned_body_template',adapted_on_current_video=True,
+            training_metadata=learned_body_model.metadata)
+    if use_body_model and learned_body_model is None:
+        raise ValueError('要求された機体学習モデルを準備できません。従来法へ黙って切り替えません')
     frame_count = len(quads)
     if frame_count < 3:
         raise ValueError('at least three video frames are required')
@@ -420,24 +448,52 @@ def read_video_pose(
 
     records = []
     previous = None
+    previous_heading = None
+    previous_velocity = None
     for offset, (index, frame, pts) in enumerate(iter_video_frames(path, marker_reference is not None, video_window, frame_stride)):
+        detection_info = dict(detection_method='colour_pair',front_colour_observed=False,
+            rear_colour_observed=False,marker_estimated_raw=False,body_ncc=float('nan'),keypoint_cnn_applied=False)
         local_homography = homography
         if marker_reference is not None:
             if quads[offset] is None:
                 records.append(dict(frame=index, time_video_s=pts, marker_detected_raw=False, calibration_valid=False))
                 continue
             local_homography = cv2.getPerspectiveTransform(quads[offset], world_corners)
-        pair = select_marker_pair(
-            colour_components(frame, front_colour, marker_detection),
-            colour_components(frame, rear_colour, marker_detection),
-            local_homography,
-            previous,
-            body_geometry, geometry_transform, board_side_mm, nominal_marker_span_mm, marker_span_limits_mm,
-        )
+        if learned_body_model is not None:
+            from body_appearance_model import detect_pair_with_body_model
+            min_ncc = float(body_model_cfg.get('min_body_ncc', 0.22))
+            body_res = detect_pair_with_body_model(
+                frame, front_colour, rear_colour, marker_detection,
+                local_homography, np.linalg.inv(local_homography), learned_body_model,
+                previous, previous_heading, previous_velocity,
+                body_geometry, geometry_transform, board_side_mm,
+                nominal_marker_span_mm, marker_span_limits_mm, min_body_ncc=min_ncc,
+                require_colour_pair=bool(body_model_cfg.get('require_colour_pair', False)),
+                refine_standard=bool(body_model_cfg.get('refine_standard',False)),keypoint_model=keypoint_model,
+            )
+            pair = (body_res[0], body_res[1]) if body_res is not None else None
+            if body_res is not None:
+                info = body_res[2]
+                detection_info.update(detection_method=info['method'],body_ncc=info['body_ncc'],
+                    front_colour_observed=info['front_colour_observed'],rear_colour_observed=info['rear_colour_observed'],
+                    marker_estimated_raw=not (info['front_colour_observed'] and info['rear_colour_observed']),
+                    keypoint_cnn_applied=info.get('keypoint_cnn_applied',False))
+        else:
+            pair = select_marker_pair(
+                colour_components(frame, front_colour, marker_detection),
+                colour_components(frame, rear_colour, marker_detection),
+                local_homography,
+                previous,
+                body_geometry, geometry_transform, board_side_mm, nominal_marker_span_mm, marker_span_limits_mm,
+            )
+            if pair is not None:
+                detection_info.update(front_colour_observed=True,rear_colour_observed=True)
         if pair is None:
             records.append(
-                {"frame": index, "time_video_s": pts, "marker_detected_raw": False, "calibration_valid": True}
+                {"frame": index, "time_video_s": pts, "marker_detected_raw": False, "calibration_valid": True,
+                 **dict(detection_info,detection_method='not_detected')}
             )
+            previous_velocity = None
             continue
         blue, yellow = pair
         centre = (blue + yellow) / 2.0
@@ -463,7 +519,7 @@ def read_video_pose(
             {
                 "frame": index,
                 "time_video_s": pts,
-                "marker_detected_raw": True,
+                "marker_detected_raw": bool(detection_info['front_colour_observed'] and detection_info['rear_colour_observed']),
                 "calibration_valid": True,
                 "blue_x_mm": blue[0],
                 "blue_y_mm": blue[1],
@@ -474,10 +530,20 @@ def read_video_pose(
                 "heading_rad": heading,
                 "marker_separation_mm": np.linalg.norm(blue - yellow),
                 **additional,
+                **detection_info,
             }
         )
+        if previous is not None:
+            inst_vel = centre - previous
+            if float(np.linalg.norm(inst_vel)) < 25.0:
+                previous_velocity = 0.5 * inst_vel if previous_velocity is None else 0.5 * previous_velocity + 0.5 * inst_vel
+            else:
+                previous_velocity = None
         previous = centre
+        previous_heading = heading
     pose = pd.DataFrame(records)
+    for column in ('marker_estimated_raw','front_colour_observed','rear_colour_observed','keypoint_cnn_applied'):
+        pose[column] = pose[column].fillna(False).astype(bool)
     if not pose.marker_detected_raw.any():
         raise ValueError('no valid body marker pair; colour/height/calibration quality must be checked')
     for column in ('front_floor_x_mm', 'front_floor_y_mm', 'midpoint_floor_x_mm', 'midpoint_floor_y_mm',
@@ -508,6 +574,11 @@ def read_video_pose(
     pose["turn_led_active"] = led_active
     pose.attrs["turn_led_threshold"] = led_threshold
     pose.attrs['board_side_mm'] = board_side_mm
+    pose.attrs['body_detection'] = dict(detection_provenance,
+        observed_pair_frames=int(pose.marker_detected_raw.sum()),
+        estimated_pair_frames=int(pose.marker_estimated_raw.sum()),
+        cnn_refined_frames=int(pose.keypoint_cnn_applied.sum()),
+        both_colour_observations_required_for_measurement=True)
     pose.attrs["marker_calibration"] = dict(
         method="registered_markers_plus_distributed_grid" if dynamic_grid else
                ("registered_marker_vertices" if marker_reference is not None else "four_decoded_arucos"),
@@ -928,9 +999,9 @@ def main():
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
-        "--front-color", choices=("blue", "red", "magenta", "yellow"), default="blue"
+        "--front-color", choices=("blue", "green", "red", "magenta", "yellow"), default="blue"
     )
-    parser.add_argument('--rear-color', choices=('blue', 'red', 'magenta', 'yellow'), default='yellow')
+    parser.add_argument('--rear-color', choices=('blue', 'green', 'red', 'magenta', 'yellow'), default='yellow')
     parser.add_argument(
         "--calibration-video",
         type=Path,
@@ -1074,7 +1145,7 @@ def main():
     (args.output / "metrics.json").write_text(
         json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    colour_labels = {"blue": "青", "red": "赤", "magenta": "マゼンタ", "yellow": "黄"}
+    colour_labels = {"blue": "青", "green": "緑", "red": "赤", "magenta": "マゼンタ", "yellow": "黄"}
     front_label, rear_label = colour_labels[args.front_color], colour_labels[args.rear_color]
     report = f"""# {front_label}・{rear_label}マーカー動画と走行ログの比較
 
