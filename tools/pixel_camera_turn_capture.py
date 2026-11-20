@@ -278,7 +278,7 @@ def read_rows(path):
     return list(csv.DictReader(data.splitlines()))
 
 
-def save_motion_slice(folder, settings):
+def save_motion_slice(folder, settings, period_ms=5):
     rows = read_rows(folder / "telemetry.csv")
     moving = [i for i, row in enumerate(rows)
               if abs(float(row["ideal.velo"])) > 0.01 or abs(float(row["ideal.rad_velo"])) > 0.01]
@@ -301,7 +301,7 @@ def save_motion_slice(folder, settings):
                   timebase="MCU time_ms; do not assume one row equals 1 ms")
     sidecar = dict(settings)
     sidecar["log"] = dict(csv=path.name, source_csv="telemetry.csv", frame_count=len(selected),
-                          period_ms=5, time_column="time_ms", **result)
+                          period_ms=period_ms, time_column="time_ms", **result)
     write_json(path.with_suffix(".settings.json"), sidecar)
     return result
 

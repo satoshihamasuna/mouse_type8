@@ -37,6 +37,36 @@ def analysis_video_window(trial, video_start=None, video_end=None):
     return float(start), float(end)
 
 
+def stop_observation_context(trial, raw):
+    """切出し前の連続CSVと、同じ動作に続くブレーキ終了を使う。"""
+    motion_path = Path(trial['type8_log_csv'])
+    telemetry = motion_path.parent/'telemetry.csv'
+    source = telemetry if trial.get('live_session') and telemetry.is_file() else motion_path
+    rows = read_rows(source)
+    origin = float(raw.time_ms.iloc[0])
+    commanded_end = (trial['log_quality']['motion_end_time_ms']-origin) % 2**32/1000
+    end, brake_end_ms = commanded_end, None
+    for row in rows:
+        try:
+            stamp = float(row['time_ms'])
+            elapsed = (stamp-origin) % 2**32/1000
+            pattern = int(float(row.get('motion.pattern', 0)))
+        except (KeyError, ValueError, TypeError, OverflowError):
+            continue
+        if not np.isfinite(elapsed) or elapsed < commanded_end or elapsed > commanded_end+60:
+            continue
+        if pattern == 25:  # Task/Inc/run_typedef.h: run_brake
+            if brake_end_ms is None and elapsed-commanded_end > .025:
+                break  # 後の別動作のブレーキを今回へ混ぜない。
+            end, brake_end_ms = elapsed, stamp
+        elif brake_end_ms is not None or elapsed-commanded_end > .025:
+            break
+    return rows, end, dict(log_source=str(source),
+        reference='brake_end' if brake_end_ms is not None else 'commanded_motion_end',
+        commanded_motion_end_s=commanded_end, brake_end_time_ms=brake_end_ms,
+        stationary_window_log_s=[end+.2, end+.6])
+
+
 def summarize(folder):
     folder = Path(folder)
     report = json.loads((folder/'report.json').read_text(encoding='utf-8'))
@@ -44,7 +74,7 @@ def summarize(folder):
     raw = pd.read_csv(trial['type8_log_csv'])
     time = log_elapsed_seconds(raw)
     start = (trial['log_quality']['motion_start_time_ms']-float(raw.time_ms.iloc[0])) % 2**32/1000
-    end = (trial['log_quality']['motion_end_time_ms']-float(raw.time_ms.iloc[0])) % 2**32/1000
+    stop_rows, end, stop_context = stop_observation_context(trial, raw)
     target = raw['ideal.rad_velo'].to_numpy()
     turning = time[abs(target) >= .02*abs(target).max()]
     comparison = pd.read_csv(folder/'relative_video_log_comparison.csv')
@@ -81,7 +111,7 @@ def summarize(folder):
     span = float(np.ptp(phase[stopped])) if stopped.any() else 0
     video_stopped = bool(stopped.sum() >= 12 and span >= .25 and scatter <= 1.0
                          and np.linalg.norm(xy[stopped]-endpoint, axis=1).max() <= 3)
-    log_stopped = log_stop_evidence(read_rows(Path(trial['type8_log_csv'])))
+    log_stopped = log_stop_evidence(stop_rows)
     quality = report['required_motion_window_quality']['accepted_for_relative_review']
     confirmed = bool(quality and report['trajectory_fit_rmse_mm'] <= 8 and video_stopped
                      and log_stopped['confirmed'] and trial.get('camera_state') == 'PASSED'
@@ -90,6 +120,7 @@ def summarize(folder):
         auto_stop_confirmed=confirmed, endpoint_right_mm=float(endpoint[0]), endpoint_forward_mm=float(endpoint[1]),
         stationary_observations=int(stopped.sum()), stationary_span_s=span, stationary_scatter_rms_mm=scatter,
         video_stationary=video_stopped, log_stop_evidence=log_stopped,
+        stationary_window_reference=stop_context,
         motion_observation_rate=report['required_motion_window_quality']['observation_rate'],
         trajectory_fit_rmse_mm=report['trajectory_fit_rmse_mm'], frame_stride=report['frame_stride'],
         observation_scope=report['observation_scope'], parameter_adoption_allowed=False,

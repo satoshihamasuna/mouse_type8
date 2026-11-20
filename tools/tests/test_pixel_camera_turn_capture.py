@@ -70,7 +70,7 @@ class RetainedLogTests(unittest.TestCase):
     capability = ('DEBUG_CAMERA_CAP protocol:1 ttl_ms:15000 turn_log_hold:1 search_turn_log_hold:1 '
                   'saved_log_period_ms:1 saved_log_capacity:400')
 
-    def shell(self, *, indices=(0, 1), magic=0xA55C, terminate=True, header=True):
+    def shell(self, *, indices=(0, 1), magic=0xA55D, terminate=True, header=True):
         from mouse_ble_log import LOG_LABELS
         labels = ['cnt'] + list(LOG_LABELS)
         frame = struct.Struct('<HH49e4h2H')
@@ -106,7 +106,7 @@ class RetainedLogTests(unittest.TestCase):
                 self.assertIn('no absolute MCU time', sidecar['log']['timebase'])
                 commands = b''.join(call.args[0] for call in shell.connection.write.call_args_list)
                 self.assertEqual(commands, b'log mode0\rdisp log_bin\r')
-                self.assertIn(b'\x5c\xa5', shell.output.getvalue())
+                self.assertIn(b'\x5d\xa5', shell.output.getvalue())
 
     def test_old_firmware_does_not_claim_or_request_a_one_ms_log(self):
         shell = Mock()

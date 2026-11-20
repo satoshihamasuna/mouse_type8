@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from contextlib import nullcontext
 
 import numpy as np
 import pandas as pd
@@ -52,13 +53,15 @@ class AnalysisWindowTests(unittest.TestCase):
 
 
 class EntryFrameTests(unittest.TestCase):
-    def evaluate(self, angle_deg, translation):
+    def evaluate(self, angle_deg, translation, brake_settling=False):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
-            stamps = np.arange(0, 3.001, .005)
+            stamps = np.arange(0, 4.001 if brake_settling else 3.001, .005)
             local = np.column_stack([
                 np.interp(stamps, [0, .5, 1, 1.5, 2, 3], [0, 0, 0, 90, 179, 179]),
                 np.interp(stamps, [0, .5, 1, 1.5, 2, 3], [0, 0, 140, 160, 47, 47])])
+            if brake_settling:
+                local[:, 0] += np.interp(stamps, [2.1, 2.55], [0, 6])
             theta = np.radians(angle_deg)
             forward = np.array([np.cos(theta), np.sin(theta)])
             basis = np.column_stack([[-forward[1], forward[0]], forward])
@@ -67,10 +70,19 @@ class EntryFrameTests(unittest.TestCase):
             raw = pd.DataFrame({'time_ms': np.rint(stamps * 1000).astype(int),
                 'ideal.rad_velo': np.where((stamps >= 1) & (stamps <= 1.5), -5., 0.),
                 'ideal.velo': np.where((stamps >= .5) & (stamps <= 2), .5, 0.)})
-            raw.to_csv(folder / 'motion.csv', index=False)
+            if brake_settling:
+                raw['ego.velo'] = np.where((stamps > 2) & (stamps < 2.6), .015, 0.)
+                raw['ego.rad_velo'] = 0.
+                raw['motion.pattern'] = np.where((stamps >= 2) & (stamps < 2.6), 25, 0)
+                raw.to_csv(folder / 'telemetry.csv', index=False)
+                raw[stamps <= 2.1].to_csv(folder / 'motion.csv', index=False)
+            else:
+                raw.to_csv(folder / 'motion.csv', index=False)
             trial = dict(type8_log_csv=str(folder / 'motion.csv'), preset=500,
                 log_quality=dict(motion_start_time_ms=500, motion_end_time_ms=2000),
                 camera_state='PASSED', camera_run_start_confirmed=True)
+            if brake_settling:
+                trial['live_session'] = str(folder)
             (folder / 'trial.json').write_text(json.dumps(trial), encoding='utf-8')
             details = dict(trial_json=str(folder / 'trial.json'), frame_stride=1,
                 observation_scope='all_frames', log_time_zero_at_video_s=0,
@@ -81,8 +93,9 @@ class EntryFrameTests(unittest.TestCase):
                 center_y_mm=comparison[:, 1])).to_csv(folder / 'relative_video_log_comparison.csv', index=False)
             pd.DataFrame(dict(time_video_s=stamps, detected=True, center_dx_mm=displacement[:, 0],
                 center_dy_mm=displacement[:, 1])).to_csv(folder / 'relative_marker_midpoint.csv', index=False)
-            with patch.object(report, 'read_rows', return_value=[]), patch.object(
-                    report, 'log_stop_evidence', return_value={'confirmed': True}):
+            with (nullcontext() if brake_settling else patch.object(report, 'read_rows', return_value=[])), (
+                    nullcontext() if brake_settling else patch.object(
+                        report, 'log_stop_evidence', return_value={'confirmed': True})):
                 summary = report.summarize(folder)
             normalized = pd.read_csv(folder / 'normalized_trajectory.csv')
             return summary, normalized
@@ -109,6 +122,32 @@ class EntryFrameTests(unittest.TestCase):
         self.assertFalse(frame['endpoint_or_exit_used_for_frame'])
         self.assertGreater(frame['entry_span_mm'], 30)
         self.assertLess(frame['entry_line_rms_mm'], 1e-9)
+
+    def test_stop_uses_full_log_and_waits_for_brake_settling(self):
+        summary, _ = self.evaluate(90, [0, 0], brake_settling=True)
+        self.assertTrue(summary['auto_stop_confirmed'])
+        self.assertTrue(summary['video_stationary'])
+        self.assertTrue(summary['log_stop_evidence']['confirmed'])
+        self.assertAlmostEqual(summary['endpoint_right_mm'], 185)
+        self.assertAlmostEqual(summary['stationary_scatter_rms_mm'], 0, places=8)
+        context = summary['stationary_window_reference']
+        self.assertEqual(context['reference'], 'brake_end')
+        self.assertTrue(context['log_source'].endswith('telemetry.csv'))
+        self.assertGreater(context['stationary_window_log_s'][0], 2.7)
+
+    def test_later_unrelated_brake_does_not_move_this_stop_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            raw = pd.DataFrame({'time_ms': [1000, 2000]})
+            path = folder/'motion.csv'
+            raw.to_csv(path, index=False)
+            pd.DataFrame({'time_ms': [1900, 2000, 2010, 2040, 2200, 2400],
+                'motion.pattern': [1, 1, 0, 0, 25, 0]}).to_csv(folder/'telemetry.csv', index=False)
+            trial = dict(type8_log_csv=str(path), live_session=str(folder),
+                log_quality=dict(motion_end_time_ms=2000))
+            _, end, context = report.stop_observation_context(trial, raw)
+            self.assertEqual(end, 1.)
+            self.assertEqual(context['reference'], 'commanded_motion_end')
 
 
 if __name__ == '__main__':

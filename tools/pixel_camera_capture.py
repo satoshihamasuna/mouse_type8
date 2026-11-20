@@ -97,8 +97,12 @@ def record_trial(client, project, seconds=30, mouse="unknown", label="", on_read
     _write_capture_manifest(manifest, value, atomic_json)
     recording_id = None
     result = None
+    started = time.monotonic()
+    timings = value['startup_timings_seconds'] = {}
     try:
         client.connect()
+        connected = time.monotonic()
+        timings['connect'] = connected-started
         if camera_settings is None:
             client.configure(width=1280, height=720, fps=240)
         else:
@@ -106,10 +110,15 @@ def record_trial(client, project, seconds=30, mouse="unknown", label="", on_read
             value['capture_profile'] = capture_profile
             value['camera_configuration'] = configure_camera(client, camera_settings)
             _write_capture_manifest(manifest, value, atomic_json)
+        configured = time.monotonic()
+        timings['configure'] = configured-connected
         recording_id = client.start_recording(duration_s=seconds)
+        accepted = time.monotonic()
+        timings['start_acceptance'] = accepted-configured
         value["recording_id"] = recording_id
         _write_capture_manifest(manifest, value, atomic_json)
         ready = wait_recording(client, recording_id)
+        timings.update(recording_ready=time.monotonic()-accepted, total=time.monotonic()-started)
         value.update(state="RECORDING", ready_at=datetime.now(timezone.utc).isoformat(),
                      ready_elapsed_seconds=ready.get("elapsed_seconds"))
         _write_capture_manifest(manifest, value, atomic_json)

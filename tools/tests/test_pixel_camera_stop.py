@@ -236,6 +236,8 @@ class CaptureStopTests(unittest.TestCase):
         self.policy.side_effect=lambda *args: (self.ready.assert_called_once() or decision_fixture())
         value=self.capture()
         self.assertEqual(value['state'],'PASSED')
+        self.assertTrue(all(value['startup_timings_seconds'][key] >= 0
+            for key in ('connect','configure','start_acceptance','recording_ready','total')))
         self.client.start_recording.assert_called_once()
         self.client.stop_recording.assert_called_once()
         self.assertTrue(value['recording_stop']['stop_write_attempted'])

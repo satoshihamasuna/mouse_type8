@@ -84,6 +84,15 @@ class CliTests(unittest.TestCase):
         self.service.perform.assert_not_called()
         self.assertEqual(list((self.service.folder/'jobs').iterdir()), [])
 
+    def test_invalid_stream_period_is_rejected_offline(self):
+        path=self.folder/'invalid_period.json'
+        with patch.object(cli,'LiveSession') as session:
+            for period in (2,1001,10.5,True):
+                with self.subTest(period=period):
+                    path.write_text(json.dumps(dict(self.config,stream_period_ms=period)),encoding='utf-8')
+                    with self.assertRaises(ValueError):cli.load_config(path)
+            session.assert_not_called()
+
     def test_duplicate_id_remains_consumed_after_new_service_instance(self):
         self.service.perform = Mock(return_value={'ok':True})
         payload = dict(settings=self.settings, operator_ready=True)

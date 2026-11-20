@@ -173,7 +173,8 @@ class PixelTuningPanel:
             self.gui.port.set('BLE')
             self.gui.connect_button.configure(text='Disconnect')
             self.status.set('接続準備完了。Load defaultsで実機プリセットを取得し、値を編集してください')
-        self._launch(lambda: session.prepare(address), attached)
+        self._launch(lambda: session.prepare(address,
+            progress=lambda message:self.gui.events.put(('pixel_progress', 'connection_preparing', dict(message=message)))), attached)
 
     def run(self):
         if self.gui._camera_busy or self.gui.lock.locked():
@@ -306,6 +307,8 @@ class PixelTuningPanel:
                 callback(result)
         elif item[0] == 'pixel_progress':
             name, fields = item[1:]
+            if name == 'connection_preparing':
+                self.status.set(fields['message'])
             labels = dict(recording_requested='停止後1秒で終了する録画を準備中…', camera_permit_confirmed='録画中を確認。走行用の一回許可を確認しました',
                 camera_motion_start_confirmed='1回の走行を開始。CSVで停止を確認しています',
                 recording_postroll='停止を200 ms確認。あと1秒以上撮影して終了します',

@@ -18,6 +18,36 @@ from pixel_camera_turn_capture import (CAMERA_MOTIONS, SEARCH_TURNS, MotionOnce,
     device_motion_name, camera_capability_supported, settings_done_marker, save_retained_log)
 from pixel_camera_profiles import load_camera_profile, validate_camera_settings
 
+_analysis_environment_lock = threading.Lock()
+_analysis_environment_ready = set()
+
+
+def check_analysis_environment():
+    """同じPythonの依存確認をプロセス内で再利用する。接続・設定送信はしない。"""
+    executable = analysis_python().resolve()
+    identity = (str(executable), executable.stat().st_mtime_ns)
+    with _analysis_environment_lock:
+        if identity in _analysis_environment_ready:
+            return
+        try:
+            check = subprocess.run([str(executable), '-c',
+                'import cv2,numpy,pandas,scipy,matplotlib; assert hasattr(cv2,"aruco")'],
+                capture_output=True, timeout=20, creationflags=hidden_process())
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError('画像解析環境の確認が20秒で終了しません。TYPE8_ANALYSIS_PYTHONを確認してください') from error
+        if check.returncode:
+            raise RuntimeError('画像解析環境がありません。TYPE8_ANALYSIS_PYTHONを設定してください')
+        _analysis_environment_ready.add(identity)
+
+
+def warm_analysis_environment():
+    def check():
+        try:
+            check_analysis_environment()
+        except (OSError, RuntimeError):
+            pass  # 準備ボタンで再確認して表示する。GUIの表示を妨げない。
+    threading.Thread(target=check, daemon=True, name='Camera analysis preflight').start()
+
 
 def hidden_process():
     return subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
@@ -120,6 +150,7 @@ class TrialRequest:
     seconds: int = 20
     operator_ready: bool = False
     camera_settings: dict = field(default_factory=lambda: load_camera_profile('tuning'))
+    detection_mode: str = 'profile'
 
     def validate(self):
         validate_camera_settings(self.camera_settings)
@@ -139,7 +170,8 @@ class TrialRequest:
         if setting_differences(self.expected, self.expected):
             raise ValueError('設定に欠落・非有限値があります')
         reference = json.loads(self.reference.read_text(encoding='utf-8'))
-        geometry = json.loads(self.geometry.read_text(encoding='utf-8'))
+        from pixel_camera_detection import load_detection_geometry
+        geometry = load_detection_geometry(self.geometry,self.detection_mode)
         if geometry.get('mouse') != self.expected['mouse'] or geometry.get('reference_id') != reference.get('reference_id'):
             raise ValueError('機体・盤面参照と画像プロファイルが一致しません')
         if any(not isinstance(geometry.get(key), (int,float)) or not math.isfinite(geometry[key])
@@ -245,13 +277,21 @@ def log_stop_evidence(rows):
                 stationary_start_time_ms=int(still[0]['time_ms']) if still else None)
 
 
+def validate_stream_period_ms(value):
+    if type(value) is not int or not 3 <= value <= 1000:
+        raise ValueError('stream_period_msは3〜1000の整数で指定してください')
+    return value
+
+
 class LiveSession:
     """明示した準備操作でだけ起動する。一度接続した中継を試行間で再利用する。"""
-    def __init__(self, project, folder):
+    def __init__(self, project, folder, *, stream_period_ms=5):
         self.project, self.folder = Path(project), Path(folder)
+        self.stream_period_ms = validate_stream_period_ms(stream_period_ms)
         self.gateway = self.connection = self.camera = None
 
-    def prepare(self, address, port=8766):
+    def prepare_camera(self, progress=lambda message: None):
+        """Pixelだけを確認する。BLE中継・連続CSVは開始しない。"""
         from pixel_camera_capture import camera_workspace
         workspace = camera_workspace()
         sys.path.insert(0, str(workspace/'python'))
@@ -259,22 +299,26 @@ class LiveSession:
             import av  # 録画やsetより先に依存を確認する。
         except ImportError as error:
             raise RuntimeError('カメラ用環境が必要です。Start_Pixel_Tuning.cmdから開いてください') from error
-        import serial
         from pixel_camera import PixelCameraClient
-        check = subprocess.run([str(analysis_python()), '-c',
-            'import cv2,numpy,pandas,scipy,matplotlib; assert hasattr(cv2,"aruco")'],
-            capture_output=True, creationflags=hidden_process())
-        if check.returncode:
-            raise RuntimeError('画像解析環境がありません。TYPE8_ANALYSIS_PYTHONを設定してください')
-        self.camera = PixelCameraClient(connection='wifi', port=8765, auto_start=False)
+        progress('画像解析環境を確認しています…')
+        check_analysis_environment()
+        progress('Pixelの接続・待機状態を確認しています…')
+        if self.camera is None:
+            self.camera = PixelCameraClient(connection='wifi', port=8765, auto_start=False)
         status = self.camera.get_status()
         if not status.get('connected') or status.get('device', {}).get('phase') != 'IDLE':
             raise RuntimeError('Pixel CameraをPCへ接続し、録画・転送の終了を待ってください')
+        return self
+
+    def prepare(self, address, port=8766, progress=lambda message: None):
+        import serial
+        self.prepare_camera(progress)
         self.folder.mkdir(parents=True, exist_ok=False)
         command = [sys.executable, str(self.project/'tools/ble/mouse_ble_gateway.py'),
                    '--port', str(port), '--address', address,
-                   '--capture-output', str(self.folder/'telemetry.csv'), '--capture-period-ms', '5']
+                   '--capture-output', str(self.folder/'telemetry.csv'), '--capture-period-ms', str(self.stream_period_ms)]
         try:
+            progress('BLEへ接続しています…')
             with (self.folder/'gateway.stdout.txt').open('xb') as out, (self.folder/'gateway.stderr.txt').open('xb') as err:
                 self.gateway = subprocess.Popen(command, cwd=self.project, stdout=out, stderr=err,
                     env=dict(os.environ, PYTHONUTF8='1'), creationflags=hidden_process())
@@ -284,6 +328,7 @@ class LiveSession:
                     raise RuntimeError('BLE中継を準備できません。他のBLEツールを切断し、gateway.stderr.txtを確認してください')
                 time.sleep(.1)
             self.connection = serial.serial_for_url(f'socket://127.0.0.1:{port}', timeout=.2, write_timeout=3)
+            progress('連続CSVの受信を確認しています…')
             deadline = time.monotonic()+5
             while True:
                 try:
@@ -321,6 +366,7 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
     record = record or record_trial
     if not session.alive() or not session.connection.is_open:
         raise RuntimeError('撮影用の接続を準備し直してください')
+    stream_period = validate_stream_period_ms(getattr(session, 'stream_period_ms', 5))
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=False)
     expected = request.expected
@@ -328,7 +374,7 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
     value = dict(schema_version=1, state='PREPARING', started_at=utc_now(), mouse=mouse,
         mouse_identity_source='user_supplied', motion=turn, preset=preset, turn_count=1,
         suction_enabled=None, suction_duty=None, requested_suction=dict(expected['suction']),
-        settings_mode='gui_apply_then_show', stream_period_ms=5,
+        settings_mode='gui_apply_then_show', stream_period_ms=stream_period,
         camera_height_mm=request.height_mm, height_source='approximate_for_capture',
         camera_fixed_confirmed=True, execution_resend_count=0, physical_240fps_verified=False,
         parameter_adoption_allowed=False, type8_log_csv=str(folder/'telemetry.csv'),
@@ -338,7 +384,11 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
         type8_settings_json=str(folder/'telemetry.settings.json'), live_session=str(session.folder),
         quick_report=str(folder/'quick/summary.json'), full_report=str(folder/'full/summary.json'))
     for source, name in ((request.reference, 'marker_reference_used.json'), (request.geometry, 'body_geometry_used.json')):
-        write_json(folder/name, json.loads(source.read_text(encoding='utf-8')))
+        snapshot = json.loads(source.read_text(encoding='utf-8'))
+        if name=='body_geometry_used.json':
+            from pixel_camera_detection import load_detection_geometry, freeze_geometry_detection
+            snapshot = freeze_geometry_detection(load_detection_geometry(source,request.detection_mode),folder)
+        write_json(folder/name,snapshot)
     write_json(folder/'requested.settings.json', expected)
     write_json(folder/'trial.json', value)
     tail, motion, settings, manifest, camera_value = None, None, None, None, None
@@ -356,6 +406,8 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
             if not status.get('connected') or status.get('device', {}).get('phase') != 'IDLE':
                 raise RuntimeError('Pixelが接続済み・待機中ではありません')
             health = last_health(session.folder/'telemetry.health.jsonl')
+            if health.get('period_ms', 5) != stream_period:
+                raise RuntimeError('連続ログの周期が接続設定と一致しません')
             if time.monotonic()-health['monotonic'] > 3:
                 raise RuntimeError('連続ログの通信状態が古いため開始しません')
             baseline_crc = health['crc_errors']
@@ -416,6 +468,23 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
                 clock = (status['device']['elapsed_seconds'], time.monotonic())
             motion = MotionOnce(shell, turn, event, recording_check)
             motion_log_start = max(0, len(tail.snapshot())-1)
+            retained_error = None
+            def retrieve_retained_log(phase):
+                nonlocal tail, retained_error
+                if 'saved_log' in value:
+                    return  # A partial/failed dump is never requested again.
+                value['saved_log_capture_phase'] = phase
+                value['saved_log'] = dict(status='receiving')
+                try:
+                    # The RAM dump can interrupt live-stream servicing. Close
+                    # this trial's CSV only after motion and postroll are done.
+                    if tail is not None:
+                        tail.close()
+                        tail = None
+                    value['saved_log'] = save_retained_log(shell, folder, settings, capability, turn, event)
+                except Exception as error:
+                    value['saved_log'].update(status='failed', error=str(error))
+                    retained_error = error
             def stop_policy(client, recording_id, seconds):
                 from pixel_camera_stop import wait_motion_stop
                 if not motion.start_confirmed:
@@ -428,10 +497,15 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
                         return recording_tail.latest_at
                     def snapshot(self):
                         return recording_tail.snapshot()[motion_log_start:]
-                return wait_motion_stop(client, recording_id, seconds, tail=MotionTail(),
+                stop = wait_motion_stop(client, recording_id, seconds, tail=MotionTail(),
                     health=lambda: last_health(session.folder/'telemetry.health.jsonl'),
                     baseline_crc=baseline_crc, alive=lambda: session.alive() and session.connection.is_open,
                     stop_evidence=log_stop_evidence, event=event)
+                if stop.get('request_stop'):
+                    # Secure the held 1 ms samples before waiting for the video
+                    # transfer. Even a dump failure must still finalize video.
+                    retrieve_retained_log('after_confirmed_postroll_before_video_transfer')
+                return stop
             event('recording_requested', seconds=request.seconds)
             manifest, camera_value = record(session.camera, session.project, seconds=request.seconds,
                 mouse=mouse, label=folder.name, on_ready=motion, stop_policy=stop_policy,
@@ -443,12 +517,10 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
             if camera_value['state'] != 'PASSED' or not motion.start_confirmed:
                 raise RuntimeError('録画・転送・開始応答を確認できません。実行は再送しません')
             event('recording_transferred', stop=camera_value.get('recording_stop'))
-            # The stopped RAM dump can interrupt live-stream servicing. Keep
-            # that transfer outside this trial's continuous recording window.
-            tail.close()
-            tail = None
-            value['saved_log'] = dict(status='receiving')
-            value['saved_log'] = save_retained_log(shell, folder, settings, capability, turn, event)
+            # Fixed-duration/fallback recording may not confirm postroll early.
+            retrieve_retained_log('after_video_transfer_fallback')
+            if retained_error is not None:
+                raise retained_error
             value['state'] = 'CAPTURED_REVIEW_REQUIRED'
         except Exception as error:
             value.update(state='FAILED', error=type(error).__name__+': '+str(error))
@@ -465,7 +537,7 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
                 camera_run_start_confirmed=bool(motion and motion.start_confirmed), trigger_mode='recording_only_without_hand')
     try:
         if settings is not None and (folder/'telemetry.csv').exists():
-            quality = save_motion_slice(folder, settings)
+            quality = save_motion_slice(folder, settings, period_ms=stream_period)
             rows = read_rows(folder/'telemetry.csv')
             value['log_stop_evidence'] = log_stop_evidence(rows)
             deadline = time.monotonic()+3
@@ -521,6 +593,7 @@ def main():
     install_ble_port(8766)
     from myshell_debug import DebugGui
     gui = DebugGui()
+    gui.after_idle(warm_analysis_environment)
     gui.port.set('BLE')
     gui.motion.set('turn')
     gui.turn_type.set('long_r180')

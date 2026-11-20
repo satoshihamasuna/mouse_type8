@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / '.tools' / f'ble_python{sys.version_info.major}{sy
 
 from myshell_debug import DebugGui
 from pixel_camera_tuning import (LiveSession, TrialRequest, analyze_trial, capture_connected,
-    setting_differences, settings_set_command)
+    setting_differences, settings_set_command, validate_stream_period_ms)
 from pixel_camera_turn_capture import (CAMERA_MOTIONS, Shell, utc_now, validate_settings,
     debug_motion_prefix, device_motion_name, camera_preset_speeds, settings_done_marker)
 from pixel_camera_profiles import load_camera_profile, validate_camera_settings
@@ -70,9 +70,11 @@ class BusyError(RuntimeError):
 
 class TuningService:
     """コマンドを直列化し、消費済みIDをディスクへ残して実行の再送を拒否する。"""
-    def __init__(self, folder, config, session=None):
+    def __init__(self, folder, config, session=None, *, confirmation_source='explicit CLI --operator-ready'):
         self.folder, self.config, self.session = Path(folder).resolve(), deepcopy(config), session
+        self.confirmation_source = confirmation_source
         self.camera_settings = tuning_camera_settings(self.config)
+        validate_stream_period_ms(self.config.get('stream_period_ms', 5))
         self.folder.mkdir(parents=True, exist_ok=True)
         (self.folder / 'jobs').mkdir(exist_ok=True)
         self.operation_lock, self.state_lock = threading.Lock(), threading.RLock()
@@ -84,7 +86,8 @@ class TuningService:
         request = TrialRequest(deepcopy(settings), settings_set_command(settings),
             self.config.get('char_delay', .08), self.config['height_mm'],
             Path(self.config['reference']), Path(self.config['geometry']),
-            self.config.get('seconds', 20), ready, self.camera_settings)
+            self.config.get('seconds', 20), ready, self.camera_settings,
+            detection_mode=self.config.get('detection_mode','profile'))
         request.validate()
         return request
 
@@ -185,7 +188,7 @@ class TuningService:
         if action == 'capture':
             request = self.trial_request(payload['settings'], payload['operator_ready'])
             result = capture_connected(self.session, request, folder, DebugGui._parse_device_settings, progress)
-            save_json(folder / 'operator_confirmation.json', dict(source='explicit CLI --operator-ready',
+            save_json(folder / 'operator_confirmation.json', dict(source=self.confirmation_source,
                 request_id=identifier, settings=request.expected, confirmed_for_this_request_only=True))
             output = dict(trial_json=str(folder / 'trial.json'), capture=result)
             if result['state'] == 'CAPTURED_REVIEW_REQUIRED':
@@ -293,8 +296,9 @@ def make_http_server(service, token, port=8767):
     return ThreadingHTTPServer(('127.0.0.1', port), Handler)
 
 
-def serve(args):
-    config = json.loads(args.config.read_text(encoding='utf-8'))
+def load_config(path):
+    config = json.loads(path.read_text(encoding='utf-8'))
+    validate_stream_period_ms(config.get('stream_period_ms', 5))
     if config.get('mouse') not in ('A', 'B') or not isinstance(config.get('height_mm'), (int, float)) \
             or not math.isfinite(config['height_mm']) or not 20 < config['height_mm'] < 5000:
         raise ValueError('configには対象機体A/Bと今回のheight_mmが必要です')
@@ -303,6 +307,11 @@ def serve(args):
         raise ValueError('文字送信間隔または録画上限が不正です')
     for key in ('reference', 'geometry'):
         json.loads(Path(config[key]).read_text(encoding='utf-8'))
+    return config
+
+
+def serve(args):
+    config = load_config(args.config)
     folder = args.session.resolve()
     folder.mkdir(parents=True, exist_ok=True)
     lock = folder / 'service.lock'
@@ -313,7 +322,7 @@ def serve(args):
     try:
         save_json(folder / 'config.used.json', config)
         transport = folder / ('transport_' + uuid.uuid4().hex[:8])
-        service.session = LiveSession(ROOT, transport)
+        service.session = LiveSession(ROOT, transport, stream_period_ms=config.get('stream_period_ms', 5))
         service.session.prepare(config['address'])
         token = secrets.token_hex(24)
         server = make_http_server(service, token, args.port)

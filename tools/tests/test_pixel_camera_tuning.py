@@ -129,6 +129,123 @@ class ConnectedTrialTests(unittest.TestCase):
         self.assertTrue((self.root/'run/motion.csv').exists())
         self.assertTrue(value['type8_log_csv'].endswith('motion.csv'))
 
+    def test_trial_metadata_survives_reference_and_geometry_snapshots(self):
+        geometry = json.loads(self.geometry.read_text(encoding='utf-8'))
+        geometry.update(motion='profile_only', preset=999, execution_resend_count=99)
+        self.geometry.write_text(json.dumps(geometry), encoding='utf-8')
+        value = self.capture()
+        saved = json.loads((self.root/'run/trial.json').read_text(encoding='utf-8'))
+        for result in (value, saved):
+            self.assertEqual(result['motion'], 'long_r180')
+            self.assertEqual(result['preset'], 500)
+            self.assertEqual(result['turn_count'], 1)
+            self.assertEqual(result['execution_resend_count'], 0)
+            self.assertEqual(result['recording_limit_seconds'], 20)
+            self.assertTrue(result['camera_fixed_confirmed'])
+        snapshot = json.loads((self.root/'run/body_geometry_used.json').read_text(encoding='utf-8'))
+        self.assertEqual(snapshot['motion'], 'profile_only')
+        self.assertEqual(snapshot['preset'], 999)
+        self.assertEqual(sum(' exe_camera ' in command for command in self.sent), 1)
+
+    def test_ten_ms_stream_is_recorded_while_retained_log_stays_one_ms(self):
+        self.session.stream_period_ms=10
+        self.health['period_ms']=10
+        class TenMsTail(FakeTail):
+            def __init__(self,*args):
+                super().__init__(*args)
+                self.rows=[dict(row,sequence=i) for i,row in enumerate(self.rows[::2])]
+        with patch.object(tuning,'save_retained_log',return_value=dict(status='saved',period_ms=1)):
+            value=tuning.capture_connected(self.session,self.request,self.root/'ten_ms',
+                lambda *args:deepcopy(self.current),record=self.record,shell_type=self.shell_type,tail_type=TenMsTail)
+        self.assertEqual(value['state'],'CAPTURED_REVIEW_REQUIRED')
+        self.assertEqual(value['stream_period_ms'],10)
+        sidecar=json.loads((self.root/'ten_ms/motion.settings.json').read_text(encoding='utf-8'))
+        self.assertEqual(sidecar['log']['period_ms'],10)
+        self.assertEqual(value['saved_log']['period_ms'],1)
+        self.assertEqual(sum(' exe_camera ' in command for command in self.sent),1)
+
+    def test_stream_period_readback_mismatch_never_records_or_executes(self):
+        self.session.stream_period_ms=10
+        self.health['period_ms']=5
+        value=self.capture('period_mismatch')
+        self.assertEqual(value['state'],'FAILED')
+        self.assertFalse(value['execution_write_attempted'])
+        self.assertEqual(self.record_count,0)
+        self.assertFalse(any(' exe_camera ' in command for command in self.sent))
+
+    def record_with_stop_policy(self, client, project, **kwargs):
+        manifest, value = ConnectedTrialTests.record(self, client, project, **kwargs)
+        self.camera.phase = 'RECORDING'
+        value['recording_stop'] = kwargs['stop_policy'](client, client.last_recording_id, kwargs['seconds'])
+        self.camera.phase = 'IDLE'
+        self.transfer_seen = True
+        return manifest, value
+
+    def test_confirmed_postroll_saves_one_ms_log_before_video_transfer(self):
+        self.record = self.record_with_stop_policy
+        self.transfer_seen = False
+        saved = dict(status='saved', period_ms=1, frame_count=157)
+        def retrieve(shell, folder, actual, capability, motion, event):
+            stopped.assert_called_once()
+            self.assertEqual(self.camera.phase, 'RECORDING')
+            self.assertFalse(self.transfer_seen)
+            self.assertTrue((folder/'telemetry.csv').exists())
+            return saved
+        with patch('pixel_camera_stop.wait_motion_stop', return_value=dict(request_stop=True)) as stopped, \
+             patch.object(tuning, 'save_retained_log', side_effect=retrieve) as exported:
+            value = self.capture()
+        exported.assert_called_once()
+        self.assertTrue(self.transfer_seen)
+        self.assertEqual(value['saved_log'], saved)
+        self.assertEqual(value['saved_log_capture_phase'], 'after_confirmed_postroll_before_video_transfer')
+        self.assertEqual(value['state'], 'CAPTURED_REVIEW_REQUIRED')
+        self.assertTrue(value['log_quality']['full_motion_retained'])
+        self.assertEqual(sum(' exe_camera ' in command for command in self.sent), 1)
+
+    def test_pretransfer_log_failure_still_finalizes_video_without_dump_or_motion_retry(self):
+        self.record = self.record_with_stop_policy
+        self.transfer_seen = False
+        with patch('pixel_camera_stop.wait_motion_stop', return_value=dict(request_stop=True)), \
+             patch.object(tuning, 'save_retained_log', side_effect=TimeoutError('incomplete log')) as exported:
+            value = self.capture()
+        self.assertTrue(self.transfer_seen)
+        exported.assert_called_once()
+        self.assertEqual(value['state'], 'FAILED')
+        self.assertEqual(value['saved_log']['status'], 'failed')
+        self.assertEqual(value['video_file'], 'mock.mp4')
+        self.assertTrue((self.root/'run/motion.csv').exists())
+        self.assertEqual(sum(' exe_camera ' in command for command in self.sent), 1)
+
+    def test_video_failure_preserves_pretransfer_saved_log(self):
+        def record(*args, **kwargs):
+            manifest, value = self.record_with_stop_policy(*args, **kwargs)
+            value['state'] = 'FAILED'
+            return manifest, value
+        self.record = record
+        saved = dict(status='saved', period_ms=1, frame_count=157)
+        with patch('pixel_camera_stop.wait_motion_stop', return_value=dict(request_stop=True)), \
+             patch.object(tuning, 'save_retained_log', return_value=saved) as exported:
+            value = self.capture()
+        exported.assert_called_once()
+        self.assertEqual(value['state'], 'FAILED')
+        self.assertEqual(value['saved_log'], saved)
+        self.assertTrue(value['execution_write_attempted'])
+        self.assertEqual(sum(' exe_camera ' in command for command in self.sent), 1)
+
+    def test_unconfirmed_postroll_keeps_after_transfer_log_fallback(self):
+        self.record = self.record_with_stop_policy
+        self.transfer_seen = False
+        def retrieve(*args):
+            self.assertTrue(self.transfer_seen)
+            self.assertEqual(self.camera.phase, 'IDLE')
+            return dict(status='saved')
+        with patch('pixel_camera_stop.wait_motion_stop', return_value=dict(request_stop=False)), \
+             patch.object(tuning, 'save_retained_log', side_effect=retrieve) as exported:
+            value = self.capture()
+        exported.assert_called_once()
+        self.assertEqual(value['state'], 'CAPTURED_REVIEW_REQUIRED')
+        self.assertEqual(value['saved_log_capture_phase'], 'after_video_transfer_fallback')
+
     def test_failed_one_ms_transfer_keeps_the_video_and_continuous_log_without_rerun(self):
         with patch.object(tuning, 'save_retained_log', side_effect=TimeoutError('incomplete log')):
             value = self.capture()
