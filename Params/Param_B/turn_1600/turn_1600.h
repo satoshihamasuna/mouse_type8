@@ -34,6 +34,8 @@ extern const t_param param_R180_1600;
 //k = 250
 extern const t_pid_gain sp_gain_turnV90_1600;
 extern const t_pid_gain om_gain_turnV90_1600;
+extern const t_ff_gain ff_gain_turnLV90_1600;
+extern const t_ff_gain ff_gain_turnRV90_1600;
 //const static t_turn_param_table slalom_LV90_1600_table = {1.60f, 38.0f,9.50,29.66, 90.0f,Turn_L};
 //const static t_turn_param_table slalom_RV90_1600_table = {1.60f,-38.0f,9.50,29.66,-90.0f,Turn_R};
 extern const t_turn_param_table slalom_LV90_1600_table;
@@ -44,6 +46,7 @@ extern const t_param param_RV90_1600;
 //k = 250
 extern const t_pid_gain sp_gain_turnIn45_1600;
 extern const t_pid_gain om_gain_turnIn45_1600;
+extern const t_ff_gain ff_gain_turnIn45_1600;
 //const static t_turn_param_table slalom_inL45_1600_table = {1.60f, 53.0f,9.84,41.94, 45.0f,Turn_L};
 //const static t_turn_param_table slalom_inR45_1600_table = {1.60f,-53.0f,9.84,41.94,-45.0f,Turn_R};
 extern const t_turn_param_table slalom_inL45_1600_table;
