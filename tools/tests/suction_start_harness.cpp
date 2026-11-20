@@ -12,6 +12,7 @@ extern "C" void Sensor_SetMotionActive(uint8_t) {}
 namespace {
 constexpr float OM_JERK_FF_LIMIT_V = 2.0f;
 constexpr float SP_TURN_FF_LIMIT_V = 1.0f;
+constexpr float SUCTION_OM_FB_LIMIT_V = 0.5f;
 #if defined(MOUSE_A)
 constexpr float default_slip_k_off = 41.28055f, default_slip_k_on = 254.90725f;
 #else
@@ -89,10 +90,10 @@ static void stationary_noise(const t_run_config *config, float noise)
     vehicle.battery.set(7.4f);
     test_right.wheel_speed = test_left.wheel_speed = 0.0f;
     control.motion_enable_set();
-    const auto *gains = config->straight_mode[0];
+    const auto *gains = config->straight_control->bands[0].gain;
     const float voltage = config->suction / 1000.0f * 8.40f;
     const int stay_ms = static_cast<int>(voltage / SUCTION_ACC) + 300;
-    control.Init_Motion_suction_start(voltage, stay_ms, gains->sp_gain, gains->om_gain);
+    control.Init_Motion_suction_start(voltage, stay_ms, &gains->sp_gain);
     check(vehicle.turn_slip_k_m_s2() == default_slip_k_off,
         "suction motion selected suction K before issuing fan duty");
     float previous = 0.0f;
@@ -119,7 +120,7 @@ static void stationary_noise(const t_run_config *config, float noise)
     // 実際の前後移動は引き続き逆向きに抑える。
     const float speeds[] = {0.02f, -0.02f};
     for (float speed : speeds) {
-        control.Init_Motion_suction_start(voltage, stay_ms, gains->sp_gain, gains->om_gain);
+        control.Init_Motion_suction_start(voltage, stay_ms, &gains->sp_gain);
         vehicle.ego.velo.set(0.0f);
         test_right.wheel_speed = speed;
         test_left.wheel_speed = -speed;
@@ -139,7 +140,7 @@ static void stationary_noise(const t_run_config *config, float noise)
     test_right.wheel_speed = 0.47f;
     test_left.wheel_speed = -0.47f;
     control.motion_control();
-    check(std::fabs(vehicle.sp_feedback.get() - gains->sp_gain->Kp * 0.01f) < 1e-5f,
+    check(std::fabs(vehicle.sp_feedback.get() - gains->sp_gain.Kp * 0.01f) < 1e-5f,
         "moving control no longer uses the normal fused velocity");
     const float expected_ff = ff_gain_straight_suction.sp_bias + ff_gain_straight_suction.sp_velo * 0.5f;
     check(std::fabs(vehicle.sp_feedforward.get() - expected_ff) < 1e-5f,
@@ -208,6 +209,118 @@ static void reset_stale_targets()
         "stationary startup inherited feedforward");
 }
 
+static void heading_hold_survives_completion()
+{
+    const float rates[] = {-0.2f, 0.2f};
+    for (float rate : rates) {
+        Vehicle vehicle{};
+        IrSensTask sensors;
+        TestControl control(&vehicle, &sensors, 1);
+        vehicle.ego_initialize();
+        vehicle.ideal_initialize();
+        vehicle.battery.set(7.4f);
+        test_right.wheel_speed = test_left.wheel_speed = 0.0f;
+        control.motion_enable_set();
+        control.Init_Motion_suction_start(0.8f, 200.0f);
+        for (int tick = 0; tick < 200; ++tick) {
+            vehicle.ego.rad_velo.set(tick < 150 ? rate : 0.0f);
+            vehicle.ego.radian.set(vehicle.ego.radian.get() + vehicle.ego.rad_velo.get()*0.001f);
+            control.SetIdeal_suction_start();
+            control.motion_control();
+        }
+        const float angle = vehicle.ego.radian.get();
+        const float correction = vehicle.om_feedback.get();
+        check(correction * angle < 0.0f, "startup did not oppose the accumulated heading error");
+        while (control.motion_pattern_get() == Suction_start) {
+            control.SetIdeal_suction_start();
+            control.motion_control();
+        }
+        check(vehicle.ego.radian.get() == angle,
+            "startup completion discarded the heading error before it was corrected");
+        check(std::fabs(vehicle.om_feedback.get() - correction) < 1e-6f,
+            "startup completion removed the holding torque");
+        for (int tick = 0; tick < 30; ++tick) control.motion_control();
+        check(std::fabs(vehicle.om_feedback.get() - correction) < 1e-6f,
+            "completed startup failed to hold the initial direction in No_run");
+
+        // 次の走行は既存のゲイン設定・積分リセットで通常制御へ戻る。
+        control.motion_pattern_set(Straight);
+        control.motion_control_set(STRAIGHT_STATE);
+        vehicle.Vehicle_controller.omega_ctrl.Gain_Set(basic_om_gain);
+        vehicle.Vehicle_controller.omega_ctrl.I_param_reset();
+        control.motion_control();
+        check(vehicle.om_feedback.get() == 0.0f, "startup yaw correction leaked into the next motion");
+    }
+}
+
+static void startup_gains_and_feedback_limit()
+{
+    Vehicle vehicle{};
+    IrSensTask sensors;
+    TestControl control(&vehicle, &sensors, 1);
+    vehicle.ego_initialize();
+    vehicle.ideal_initialize();
+    vehicle.battery.set(7.4f);
+    test_right.wheel_speed = test_left.wheel_speed = 0.0f;
+    control.motion_enable_set();
+    control.Init_Motion_suction_start(0.8f, 200.0f);
+    const auto &yaw = vehicle.Vehicle_controller.omega_ctrl;
+    check(yaw.Kp == om_gain_suction_start.Kp && yaw.Ki == om_gain_suction_start.Ki,
+        "startup did not select this machine's stationary gains");
+    const float rates[] = {-20.0f, 20.0f};
+    for (float rate : rates) {
+        control.Init_Motion_suction_start(0.8f, 200.0f);
+        vehicle.ego.rad_velo.set(rate);
+        for (int tick = 0; tick < 50; ++tick) {
+            control.SetIdeal_suction_start();
+            control.motion_control();
+            check(std::fabs(vehicle.om_feedback.get()) == SUCTION_OM_FB_LIMIT_V,
+                "stationary heading feedback exceeded its voltage limit");
+            check(vehicle.om_feedback.get()*rate < 0.0f, "limited yaw correction has the wrong sign");
+        }
+        check(vehicle.Vehicle_controller.omega_ctrl.get_I_peration() == 0.0f,
+            "stationary saturation accumulated an integral kick");
+        vehicle.ego.rad_velo.set(0.0f);
+        control.motion_control();
+        check(vehicle.om_feedback.get() == 0.0f,
+            "saturation release retained a stationary yaw command");
+    }
+    const float angles[] = {-0.2f, 0.2f};
+    for (float angle : angles) {
+        vehicle.ego.radian.set(angle);
+        for (int tick = 0; tick < 100; ++tick) {
+            control.motion_control();
+            check(vehicle.om_feedback.get()*angle < 0.0f
+                && std::fabs(vehicle.om_feedback.get()) == SUCTION_OM_FB_LIMIT_V,
+                "saturation lost the original heading reference");
+        }
+        vehicle.ego.radian.set(angle*0.1f);
+        control.motion_control();
+        const float expected = -angle*0.1f*om_gain_suction_start.Ki*1000.0f;
+        check(std::fabs(vehicle.om_feedback.get()-expected) < 1e-6f,
+            "heading correction did not recover from the absolute angle after saturation");
+        vehicle.ego.radian.set(0.0f);
+        control.motion_control();
+        check(vehicle.om_feedback.get() == 0.0f,
+            "returning to the initial heading retained a saturation kick");
+    }
+    control.motion_pattern_set(Straight);
+    control.motion_control_set(STRAIGHT_STATE);
+    vehicle.ego.rad_velo.set(20.0f);
+    control.motion_control();
+    check(std::fabs(vehicle.om_feedback.get()) > SUCTION_OM_FB_LIMIT_V,
+        "stationary voltage limit leaked into moving control");
+    control.motion_disable_set();
+    control.motion_control();
+    check(vehicle.motor_out_l == 0 && vehicle.motor_out_r == 0,
+        "disabled control continued heading hold");
+
+    const t_pid_gain explicit_gain = {0.15f,0.006f,0.0f};
+    control.Init_Motion_suction_start(0.8f, 200.0f, &basic_sp_gain, &explicit_gain);
+    check(yaw.Kp == explicit_gain.Kp && yaw.Ki == explicit_gain.Ki,
+        "explicit startup tuning gains were ignored");
+}
+
 int main()
 {
     slip_model_follows_output();
@@ -218,5 +331,7 @@ int main()
         stationary_noise(config, -0.015f);
     }
     reset_stale_targets();
+    heading_hold_survives_completion();
+    startup_gains_and_feedback_limit();
     std::puts("suction_start stationary/noise/braking/launch checks passed");
 }

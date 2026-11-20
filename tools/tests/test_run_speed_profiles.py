@@ -1,5 +1,6 @@
 """実calcRunTime・走行呼出し・モーション初期化の速度条件をA/Bで確認する。"""
 import os
+import json
 from pathlib import Path
 import re
 import subprocess
@@ -58,17 +59,10 @@ class RunSpeedProfileTests(unittest.TestCase):
                                + '\nlast_sp=sp_gain;last_om=om_gain;last_ff=ff_gain;\n}\n')
         (folder/'motion_declarations.inc').write_text('\n'.join(declarations+wrappers), encoding='utf-8')
         (folder/'motion_initialization.inc').write_text('\n'.join(definitions), encoding='utf-8')
-        # 全速度設定を保持済みの機体別校正表と照合する。
-        names = re.findall(r'extern const t_straight_param \*const ((?:st|di)_mode_\w+)\[(\d+)\];',
-                           (ROOT/'Params/Param_A/run_param_A.h').read_text(encoding='utf-8'))
-        assert len(names) == 38
-        cases = []
-        for name, count in names:
-            kind = 'straight' if name.startswith('st_') else 'diagonal'
-            suffix = name.split('_mode_',1)[1]
-            profile = kind+'_speed_'+('plain500' if suffix == '500_v0' else suffix)
-            cases.append('{&'+profile+','+name+','+count+'},')
-        (folder/'mode_profile_cases.inc').write_text('\n'.join(cases),encoding='utf-8')
+        # 新形式の実装と独立した、移行前の速度候補・機体別PID/FFの固定値。
+        original = json.loads((ROOT/'tools/tests/fixtures/run_speed_candidates.json').read_text(encoding='utf-8'))
+        controls = json.loads((ROOT/'tools/tests/fixtures/run_control_gains.json').read_text(encoding='utf-8'))
+        assert len(original) == 38
         run = (ROOT/'Subsys/Src/make_path.cpp').read_text(encoding='utf-8')
         constant = next(line for line in run.splitlines() if line.startswith('static constexpr float RUN_START_LENGTH_MM'))
         (folder/'run_start_constants.inc').write_text(constant+'\n', encoding='utf-8')
@@ -87,6 +81,24 @@ class RunSpeedProfileTests(unittest.TestCase):
                 (folder/('run_'+label+'_'+kind+'.inc')).write_text(run[start:stop],encoding='utf-8')
         cls.executables = {}
         for mouse in ('A', 'B'):
+            cases, expected = [], []
+            assert set(original) == set(controls[mouse])
+            for name, candidates in original.items():
+                axis = 'straight' if name.startswith('st_') else 'diagonal'
+                suffix = name.split('_mode_',1)[1]
+                suffix = 'plain500' if suffix == '500_v0' else suffix
+                profile = axis+'_speed_'+suffix
+                control = axis+'_control_'+suffix
+                values = ','.join('{'+','.join(str(v)+'f' for v in candidate)+'}' for candidate in candidates)
+                expected.append('const t_velo_param expected_'+name+'[] = {'+values+'};')
+                bands = controls[mouse][name]
+                values = ','.join('{'+str(band[0])+'f,{'+','.join(str(v)+'f' for v in band[1])
+                                  +'},{'+','.join(str(v)+'f' for v in band[2])+'},&'+band[3]+'}' for band in bands)
+                expected.append('const ExpectedControlBand control_'+name+'[] = {'+values+'};')
+                cases.append('{&'+profile+',expected_'+name+','+str(len(candidates))+',&'+control
+                             +',control_'+name+','+str(len(bands))+'},')
+            (folder/'mode_profile_expected.inc').write_text('\n'.join(expected),encoding='utf-8')
+            (folder/'mode_profile_cases.inc').write_text('\n'.join(cases),encoding='utf-8')
             executable = folder/('speed-'+mouse+('.exe' if os.name == 'nt' else ''))
             result = subprocess.run(command + ['-std=c++14', '-O0', '-Wall', '-Wextra',
                 '-fno-exceptions', '-fno-rtti', '-DMOUSE_'+mouse,
@@ -123,8 +135,8 @@ class RunSpeedProfileTests(unittest.TestCase):
     def test_invalid_profiles_and_nonfinite_inputs_are_rejected(self):
         self.run_case('invalid')
 
-    def test_switching_to_legacy_restores_explicit_candidate_policy(self):
-        self.run_case('legacy')
+    def test_missing_speed_or_control_profiles_are_rejected(self):
+        self.run_case('missing-profiles')
 
     def test_base_and_diagonal_queries_preserve_straight_selected_values(self):
         self.run_case('lifetime')
@@ -143,6 +155,15 @@ class RunSpeedProfileTests(unittest.TestCase):
 
     def test_actual_suction_and_variable_turn_dispatch_use_profile_rates(self):
         self.run_case('high-speed-dispatch')
+
+    def test_high_speed_profiles_use_shared_pid_and_ff_without_legacy_parameters(self):
+        self.run_case('high-control')
+
+    def test_invalid_control_bands_are_rejected(self):
+        self.run_case('invalid-controls')
+
+    def test_search_and_debug_profiles_preserve_machine_specific_settings(self):
+        self.run_case('standalone')
 
 
 if __name__ == '__main__':

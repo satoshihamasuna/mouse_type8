@@ -24,6 +24,7 @@
 	namespace {
 		constexpr float OM_JERK_FF_LIMIT_V = 2.0f;
 		constexpr float SP_TURN_FF_LIMIT_V = 1.0f;
+		constexpr float SUCTION_OM_FB_LIMIT_V = 0.5f;
 	}
 
 
@@ -209,14 +210,25 @@ void CtrlTask::motion_control()
 			// During fan spin-up, acceleration vibration must not be interpreted
 			// as wheel motion. Keep encoder-only feedback through the completed
 			// startup's No_run gap; moving motions resume the normal estimate.
-			if (vehicle->suction_flag_get() == True
+			const bool suction_heading_hold = vehicle->suction_flag_get() == True
 				&& (motion_pattern_get() == Suction_start
-					|| (motion_pattern_get() == No_run && motion_control_get() == NOP_STATE))) {
+					|| (motion_pattern_get() == No_run && motion_control_get() == NOP_STATE));
+			if (suction_heading_hold) {
 				feedback_velo = (Encoder_GetProperty_Right().wheel_speed
 					- Encoder_GetProperty_Left().wheel_speed) / 2.0f;
+				// 停止中のI項を開始時からの実角度で固定する。
+				// 飽和で積分を抑えても、戻すべき向きは失わない。
+				const float heading_to_sum = 1000.0f / (float)ctr_deltaT_ms;
+				vehicle->Vehicle_controller.omega_ctrl.I_target = vehicle->ideal.radian.get() * heading_to_sum;
+				vehicle->Vehicle_controller.omega_ctrl.I_output = vehicle->ego.radian.get() * heading_to_sum;
 			}
 			vehicle->sp_feedback.set(vehicle->Vehicle_controller.speed_ctrl.Control(vehicle->ideal.velo.get()		,feedback_velo	, (float)ctr_deltaT_ms));
 			vehicle->om_feedback.set(vehicle->Vehicle_controller.omega_ctrl.Control(vehicle->ideal.rad_velo.get() 	,vehicle->ego.rad_velo.get(), (float)ctr_deltaT_ms));
+			if (suction_heading_hold) {
+				// 停止用の強い角度保持は±0.5Vまで。飽和周期の積分は戻す。
+				vehicle->om_feedback.set(vehicle->Vehicle_controller.omega_ctrl.Anti_windup_1(
+					vehicle->om_feedback.get(), SUCTION_OM_FB_LIMIT_V));
+			}
 
 			//feedforward controll
 			vehicle->sp_feedforward.set(sp_FF_control);

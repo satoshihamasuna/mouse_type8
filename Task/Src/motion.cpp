@@ -902,7 +902,7 @@ void Motion::SetIdeal_suction_start		( )
 		vehicle->ideal.turn_slip_theta.set(0.0f);
 
 		vehicle->ego.length.set(0.0f);
-		vehicle->ego.radian.set(0.0f);
+		// 開始時の向きへの偏差を保持し、No_run待機でも補正を継続する。
 		vehicle->ego.turn_slip_theta.set(0.0f);
 
 		vehicle->ideal.x_point.set(0.0f);
@@ -910,7 +910,7 @@ void Motion::SetIdeal_suction_start		( )
 		vehicle->reset_turn_position_for_log();
 		vehicle->ego.x_point.set(0.0f);
 		vehicle->Vehicle_controller.speed_ctrl.I_param_reset();
-		vehicle->Vehicle_controller.omega_ctrl.I_param_reset();
+		// 角速度PIの積分は開始時からの角度偏差。ここでは消さない。
 		//Init_Motion_stop_brake(200);
 		motion_exeStatus_set(complete);
 		motion_control_set(NOP_STATE);

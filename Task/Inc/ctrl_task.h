@@ -230,7 +230,7 @@ class Motion
 
 
 		void Init_Motion_fix_wall		(float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
-		void Init_Motion_suction_start	(float suction_voltage,float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
+		void Init_Motion_suction_start	(float suction_voltage,float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &om_gain_suction_start,const t_ff_gain *ff_gain = &ff_gain_default);
 		void Init_Motion_stop_brake		(float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
 		void Init_Motion_enkaigei		(float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default);
 
@@ -285,7 +285,7 @@ class Motion
 			return execute_Motion();
 		}
 
-		inline t_exeStatus exe_Motion_suction_start	(float suction_voltage,float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &basic_om_gain,const t_ff_gain *ff_gain = &ff_gain_default)
+		inline t_exeStatus exe_Motion_suction_start	(float suction_voltage,float set_time,const t_pid_gain *sp_gain = &basic_sp_gain,const t_pid_gain *om_gain = &om_gain_suction_start,const t_ff_gain *ff_gain = &ff_gain_default)
 		{
 			Init_Motion_suction_start		(suction_voltage,set_time,sp_gain,om_gain,ff_gain);
 			return execute_Motion();

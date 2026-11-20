@@ -1,5 +1,5 @@
 #include "Subsys/Inc/make_path.h"
-// 実装を同じ翻訳単位へ読み込み、内部の候補生成も実校正表と照合する。
+// 実装を同じ翻訳単位へ読み込み、内部の候補生成も保存済みの移行前候補と照合する。
 #include "Subsys/Src/calcRunTime.cpp"
 #include <cassert>
 #include <cmath>
@@ -99,13 +99,13 @@ static void current()
 	time.run_config_set(&run_config_plain500);
 	assert(time.speed_profiles_valid());
 	auto p = time.calc_end_straight_max_velo(20.0f,.5f,.5f);
-	assert(close(p.param->max_velo,.5f) && p.sp_gain == st_param_500.sp_gain);
+	assert(close(p.param->max_velo,.5f) && p.sp_gain == &debug_straight_500.control->sp_gain);
 	assert(close(p.param->acc,6.0f) && close(p.param->deceleration(),6.0f));
 	p = time.calc_end_straight_max_velo(30.0f,.5f,.5f);
-	assert(close(p.param->max_velo,.6f) && p.om_gain == st_param_600.om_gain);
+	assert(close(p.param->max_velo,.6f) && p.om_gain == &straight_gain_low.om_gain);
 	p = time.calc_end_straight_max_velo(90.0f,.5f,.5f);
-	assert(close(p.param->max_velo,.7f) && p.sp_gain == st_param_700.sp_gain);
-	assert(p.ff_gain == st_param_700.ff_gain);
+	assert(close(p.param->max_velo,.7f) && p.sp_gain == &debug_straight_700.control->sp_gain);
+	assert(p.ff_gain == debug_straight_700.control->ff_gain);
 	assert(close(time.straight_base_velo().param->max_velo,.5f));
 	assert(close(time.diagonal_base_velo().param->max_velo,.5f));
 }
@@ -199,25 +199,30 @@ static void invalid()
 	assert(time.straight_time_set(90,.5f,-.1f) == 65535);
 	assert(time.calc_end_straight_max_velo(90,-.2f,.5f).param == nullptr);
 	assert(time.calc_end_straight_max_velo(90,.5f,.8f).param == nullptr);
-	auto config = run_config_plain500; config.straight_mode_size=0; time.run_config_set(&config);
+	auto config = run_config_plain500; config.straight_control=nullptr; time.run_config_set(&config);
 	assert(!time.speed_profiles_valid());
 }
 
-static void legacy()
+static void missing_profiles()
 {
-	calcRunTime time; time.run_config_set(&run_config_plain500);
-	assert(close(time.calc_end_straight_max_velo(45,.5f,.5f).param->max_velo,.6f));
-	auto config = configured(nullptr,nullptr); time.run_config_set(&config);
-	assert(time.calc_end_straight_max_velo(45,.5f,.5f).param == &param_500);
-	assert(time.calc_end_diagonal_max_velo(45,.5f,.5f).param == &param_500);
-	assert(time.calc_end_straight_max_velo(90).param == &param_700);
-	assert(run_config_plain700.straight_speed != nullptr);
-	assert(run_config_suction1200_v1.straight_speed != nullptr);
+	calcRunTime time;
+	assert(time.speed_profiles_valid()); // 既定値も新形式の300 mm/s。
+	for(int missing = 0; missing < 5; ++missing)
+	{
+		auto config = run_config_plain500;
+		if(missing == 0) config.straight_speed = nullptr;
+		if(missing == 1) config.diagonal_speed = nullptr;
+		if(missing == 2) config.straight_control = nullptr;
+		if(missing == 3) config.diagonal_control = nullptr;
+		time.run_config_set(missing == 4 ? nullptr : &config);
+		assert(!time.speed_profiles_valid());
+		assert(time.calc_end_straight_max_velo(90).param == nullptr);
+		assert(time.calc_end_diagonal_max_velo(90).param == nullptr);
+		assert(time.straight_time_set(90) == 65535 && time.diagonal_time_set(90) == 65535);
+	}
 	time.run_config_set(&run_config_plain500);
-	time.st_param_set(st_mode_1000_v1,7);
-	assert(time.calc_end_straight_max_velo(10000).param == &param_2000);
-	time.di_param_set(di_mode_1000_v1,7);
-	assert(time.calc_end_diagonal_max_velo(10000).param == &param_2000);
+	assert(time.speed_profiles_valid());
+	assert(close(time.calc_end_straight_max_velo(45,.5f,.5f).param->max_velo,.6f));
 }
 
 static void lifetime()
@@ -241,12 +246,12 @@ static void dispatch()
 	assert(!motion.stopped && close(motion.motion_plan.end_velo.get(),.5f));
 	assert(close(motion.motion_plan.accel.get(),4) && close(motion.motion_plan.deccel.get(),-2));
 	assert(close(motion.motion_plan.max_velo.get(),.6f));
-	assert(motion.last_sp == st_param_600.sp_gain && motion.last_om == st_param_600.om_gain);
-	assert(motion.last_ff == st_param_600.ff_gain);
+	assert(motion.last_sp == &straight_gain_low.sp_gain && motion.last_om == &straight_gain_low.om_gain);
+	assert(motion.last_ff == straight_gain_low.ff_gain);
 	run.diagonal(&motion,&config,1);
 	assert(!motion.stopped && close(motion.motion_plan.end_velo.get(),.5f));
 	assert(close(motion.motion_plan.deccel.get(),-3));
-	assert(motion.last_sp == st_param_600.sp_gain && motion.last_om == st_param_600.om_gain);
+	assert(motion.last_sp == &straight_gain_low.sp_gain && motion.last_om == &straight_gain_low.om_gain);
 	run.straight(&motion,&config,0);
 	assert(close(motion.motion_plan.end_velo.get(),0));
 	straight.max=.55f; // baseより小さい設定は走行呼出しへ渡さない。
@@ -254,15 +259,40 @@ static void dispatch()
 	assert(motion.stopped);
 }
 
+struct ExpectedControlBand
+{
+	float min_speed;
+	t_pid_gain sp_gain;
+	t_pid_gain om_gain;
+	const t_ff_gain *ff_gain;
+};
+
 struct ModeProfileCase
 {
 	const t_speed_profile *profile;
-	const t_straight_param *const *original;
+	const t_velo_param *expected;
 	unsigned size;
+	const t_control_profile *control;
+	const ExpectedControlBand *expected_bands;
+	unsigned band_count;
 };
+
+static void check_control_gain(const ModeProfileCase &mode,float speed)
+{
+	const auto *expected = &mode.expected_bands[0];
+	for(unsigned i = 1; i < mode.band_count; ++i)
+		if(mode.expected_bands[i].min_speed <= speed + .00001f) expected = &mode.expected_bands[i];
+	const auto *gain = speed_control_gain(speed,mode.control);
+	assert(gain && gain->ff_gain == expected->ff_gain);
+	assert(close(gain->sp_gain.Kp,expected->sp_gain.Kp) && close(gain->sp_gain.Ki,expected->sp_gain.Ki));
+	assert(close(gain->sp_gain.Kd,expected->sp_gain.Kd));
+	assert(close(gain->om_gain.Kp,expected->om_gain.Kp) && close(gain->om_gain.Ki,expected->om_gain.Ki));
+	assert(close(gain->om_gain.Kd,expected->om_gain.Kd));
+}
 
 static void all_profiles()
 {
+#include "mode_profile_expected.inc"
 	const ModeProfileCase modes[] = {
 #include "mode_profile_cases.inc"
 	};
@@ -273,16 +303,22 @@ static void all_profiles()
 		for(unsigned i = 0; i < mode.size; ++i)
 		{
 			const auto candidate = speed_candidate(*mode.profile,(uint16_t)i);
-			const auto *expected = mode.original[i];
-			assert(close(candidate.max_velo,expected->param->max_velo));
-			assert(close(candidate.acc,expected->param->acc));
-			assert(close(candidate.deceleration(),expected->param->deceleration()));
-			const auto *band = speed_control_band(candidate.max_velo,mode.original,(uint16_t)mode.size);
-			assert(band->sp_gain == expected->sp_gain && band->om_gain == expected->om_gain);
-			assert(band->ff_gain == expected->ff_gain);
+			const auto &expected = mode.expected[i];
+			assert(close(candidate.max_velo,expected.max_velo));
+			assert(close(candidate.acc,expected.acc));
+			assert(close(candidate.deceleration(),expected.deceleration()));
+			check_control_gain(mode,candidate.max_velo);
 			++total;
 		}
 		assert(speed_candidate(*mode.profile,(uint16_t)mode.size).max_velo == 0.0f);
+		for(unsigned i = 0; i < mode.band_count; ++i)
+		{
+			check_control_gain(mode,mode.expected_bands[i].min_speed-.0001f);
+			check_control_gain(mode,mode.expected_bands[i].min_speed);
+			check_control_gain(mode,mode.expected_bands[i].min_speed+.0001f);
+		}
+		check_control_gain(mode,.01f);
+		check_control_gain(mode,6.0f);
 	}
 	assert(total == 354);
 	for(const auto *config : run_config_table)
@@ -290,8 +326,8 @@ static void all_profiles()
 		assert(config->straight_speed && config->diagonal_speed);
 		calcRunTime time; time.run_config_set(config);
 		assert(time.speed_profiles_valid());
-		assert(close(time.straight_base_velo().param->max_velo,config->straight_mode[0]->param->max_velo));
-		assert(close(time.diagonal_base_velo().param->max_velo,config->diagonal_mode[0]->param->max_velo));
+		assert(close(time.straight_base_velo().param->max_velo,config->straight_speed->base));
+		assert(close(time.diagonal_base_velo().param->max_velo,config->diagonal_speed->base));
 		const float lengths[] = {45,90,180,720};
 		for(int axis = 0; axis < 2; ++axis)
 		{
@@ -377,10 +413,10 @@ static void high_speed_dispatch()
 	run.suction(&motion,&run_config_suction1200_v0,1,false);
 	assert(close(motion.motion_plan.accel.get(),12) && close(motion.motion_plan.deccel.get(),-12));
 	assert(close(motion.motion_plan.end_velo.get(),1.2f));
-	assert(motion.last_sp == st_param_1500.sp_gain);
+	assert(motion.last_sp == &speed_control_gain(1.5f,&straight_control_1200_v0)->sp_gain);
 	run.suction(&motion,&run_config_suction1200_v0,1,true);
 	assert(close(motion.motion_plan.accel.get(),12) && close(motion.motion_plan.deccel.get(),-12));
-	assert(motion.last_sp == st_param_1400.sp_gain);
+	assert(motion.last_sp == &speed_control_gain(1.4f,&straight_control_1200_v0)->sp_gain);
 	run.run_config_set(&run_config_acc1600_v1);
 	motion.data.ideal.velo.set(1.6f);
 	run.variable(&motion,&run_config_acc1600_v1,1,1.8f,false);
@@ -392,6 +428,132 @@ static void high_speed_dispatch()
 	assert(close(motion.motion_plan.end_velo.get(),0));
 }
 
+static void high_control()
+{
+	// 旧速度別定義を使わず、機体別に採用した固定値と照合する。
+#if defined(MOUSE_A)
+	const float expected_sp_kp = 2.0f;
+#else
+	const float expected_sp_kp = 4.0f;
+#endif
+	const auto &gain = straight_control_high;
+	assert(gain.ff_gain == &ff_gain_default);
+	assert(close(gain.sp_gain.Kp,expected_sp_kp) && close(gain.sp_gain.Ki,.05f) && close(gain.sp_gain.Kd,0));
+	assert(close(gain.om_gain.Kp,.2f) && close(gain.om_gain.Ki,.01f) && close(gain.om_gain.Kd,0));
+	const auto *below = speed_control_gain(2.199f,&straight_control_1600_v1);
+	assert(below == debug_straight_2000.control);
+	// 旧ゲイン境界・旧3200専用D項をまたぎ、直進/斜めとも共通組を実モーションへ渡す。
+	const float speeds[] = {2.2f,2.99f,3.0f,3.2f,3.4f,4.6f,5.0f};
+	for(float speed : speeds)
+	{
+		t_speed_profile profile = {speed,20,20,0,speed};
+		auto config = run_config_suction1600_v1;
+		config.straight_speed = &profile;
+		config.diagonal_speed = &profile;
+		calcRunTime time; time.run_config_set(&config);
+		assert(time.speed_profiles_valid());
+		assert(time.straight_base_velo().sp_gain == &gain.sp_gain);
+		assert(time.diagonal_base_velo().om_gain == &gain.om_gain);
+		Motion motion;
+		for(int diagonal = 0; diagonal < 2; ++diagonal)
+		{
+			const auto p = diagonal ? time.calc_end_diagonal_max_velo(1000,speed,speed)
+					: time.calc_end_straight_max_velo(1000,speed,speed);
+			assert(p.param && close(p.param->max_velo,speed));
+			assert(p.sp_gain == &straight_control_high.sp_gain && p.om_gain == &straight_control_high.om_gain);
+			assert(p.ff_gain == straight_control_high.ff_gain);
+			if(diagonal) motion.exe_Motion_diagonal(1000,p.param->acc,speed,speed,p.sp_gain,p.om_gain,p.ff_gain);
+			else motion.exe_Motion_straight(1000,p.param->acc,speed,speed,p.sp_gain,p.om_gain,p.ff_gain);
+			assert(motion.last_sp == &straight_control_high.sp_gain && motion.last_om == &straight_control_high.om_gain);
+			assert(motion.last_ff == straight_control_high.ff_gain);
+		}
+	}
+}
+
+static void invalid_controls()
+{
+	const float nan = std::numeric_limits<float>::quiet_NaN();
+	const float inf = std::numeric_limits<float>::infinity();
+	const t_control_gain no_ff = {{1,0,0},{1,0,0},nullptr};
+	for(int bad = 0; bad < 11; ++bad)
+	{
+		t_control_band bands[] = {{.5f,&straight_gain_low},{.7f,debug_straight_700.control}};
+		auto profile = make_control_profile(bands);
+		if(bad == 0) profile.bands = nullptr;
+		if(bad == 1) profile.count = 0;
+		if(bad == 2) profile.count = 257;
+		if(bad == 3) bands[0].min_speed = 0;
+		if(bad == 4) bands[0].min_speed = -.1f;
+		if(bad == 5) bands[0].min_speed = nan;
+		if(bad == 6) bands[0].min_speed = inf;
+		if(bad == 7) bands[1].min_speed = .5f;
+		if(bad == 8) bands[1].min_speed = .4f;
+		if(bad == 9) bands[1].gain = nullptr;
+		if(bad == 10) bands[1].gain = &no_ff;
+		auto config = run_config_plain500;
+		config.straight_control = &profile;
+		calcRunTime time; time.run_config_set(&config);
+		assert(!time.speed_profiles_valid());
+		assert(speed_control_gain(.6f,&profile) == nullptr);
+		assert(time.calc_end_straight_max_velo(90).param == nullptr);
+		assert(time.straight_base_velo().param == nullptr);
+		assert(time.straight_time_set(90) == 65535);
+	}
+	// 新しい組のPID・FFを一緒に変更し、直進だけへ反映できる。
+	const t_ff_gain ff = {1,2,3,4,5,6,7};
+	const t_control_gain gain = {{6,7,8},{9,10,11},&ff};
+	const t_control_band bands[] = {{.5f,&gain}};
+	const auto profile = make_control_profile(bands);
+	auto config = run_config_plain500;
+	config.straight_control = &profile;
+	calcRunTime time; time.run_config_set(&config);
+	assert(time.speed_profiles_valid());
+	const auto straight = time.calc_end_straight_max_velo(90,.5f,.5f);
+	const auto diagonal = time.calc_end_diagonal_max_velo(90,.5f,.5f);
+	assert(straight.sp_gain == &gain.sp_gain && straight.om_gain == &gain.om_gain && straight.ff_gain == &ff);
+	assert(diagonal.sp_gain == &debug_straight_700.control->sp_gain);
+	assert(diagonal.ff_gain == debug_straight_700.control->ff_gain);
+}
+
+static void standalone()
+{
+#if defined(MOUSE_A)
+	const float search_speed = .37f, search_kp = 2, high_kp = 2;
+	const t_pid_gain debug_sp[] = {{2,.02f,0},{2,.02f,0}};
+	const t_pid_gain debug_om[] = {{.1f,.005f,0},{.1f,.01f,0}};
+	const t_ff_gain *low_ff = &ff_gain_straight_non_suction;
+#else
+	const float search_speed = .37f, search_kp = 1.2f, high_kp = 4;
+	const t_pid_gain debug_sp[] = {{1.2f,.02f,0},{1.5f,.05f,0}};
+	const t_pid_gain debug_om[] = {{.1f,.01f,0},{.1f,.005f,0}};
+	const t_ff_gain *low_ff = &ff_gain_default;
+#endif
+	const t_motion_profile *search[] = {&search_straight,&search_straight_slow};
+	for(int i = 0; i < 2; ++i)
+	{
+		const auto p = search[i]->parameter();
+		assert(p.param == &search[i]->velocity && close(p.param->max_velo,i ? .32f : search_speed));
+		assert(close(p.param->acc,4) && close(p.param->deceleration(),4));
+		assert(close(p.sp_gain->Kp,search_kp) && close(p.sp_gain->Ki,.02f) && close(p.sp_gain->Kd,0));
+		assert(close(p.om_gain->Kp,.1f) && close(p.om_gain->Ki,.005f) && close(p.om_gain->Kd,0));
+		assert(p.ff_gain == low_ff);
+	}
+	const t_motion_profile *debug[] = {&debug_straight_500,&debug_straight_700,
+		&debug_straight_1600,&debug_straight_1800,&debug_straight_2000};
+	const float speeds[] = {.5f,.7f,1.6f,1.8f,2.0f}, rates[] = {6,6,20,30,30};
+	for(int i = 0; i < 5; ++i)
+	{
+		const auto p = debug[i]->parameter();
+		assert(p.param == &debug[i]->velocity && close(p.param->max_velo,speeds[i]));
+		assert(close(p.param->acc,rates[i]) && close(p.param->deceleration(),rates[i]));
+		assert(close(p.sp_gain->Kp,i < 2 ? debug_sp[i].Kp : high_kp));
+		assert(close(p.sp_gain->Ki,i < 2 ? debug_sp[i].Ki : .05f) && close(p.sp_gain->Kd,0));
+		assert(close(p.om_gain->Kp,i < 2 ? debug_om[i].Kp : .2f));
+		assert(close(p.om_gain->Ki,i < 2 ? debug_om[i].Ki : .01f) && close(p.om_gain->Kd,0));
+		assert(p.ff_gain == (i < 2 ? low_ff : &ff_gain_default));
+	}
+}
+
 int main(int argc,char **argv)
 {
 	assert(argc == 2);
@@ -401,12 +563,15 @@ int main(int argc,char **argv)
 	else if(!std::strcmp(argv[1],"braking")) braking();
 	else if(!std::strcmp(argv[1],"short")) short_sections();
 	else if(!std::strcmp(argv[1],"invalid")) invalid();
-	else if(!std::strcmp(argv[1],"legacy")) legacy();
+	else if(!std::strcmp(argv[1],"missing-profiles")) missing_profiles();
 	else if(!std::strcmp(argv[1],"lifetime")) lifetime();
 	else if(!std::strcmp(argv[1],"dispatch")) dispatch();
 	else if(!std::strcmp(argv[1],"all-profiles")) all_profiles();
 	else if(!std::strcmp(argv[1],"segmented-physics")) segmented_physics();
 	else if(!std::strcmp(argv[1],"invalid-ranges")) invalid_ranges();
 	else if(!std::strcmp(argv[1],"high-speed-dispatch")) high_speed_dispatch();
+	else if(!std::strcmp(argv[1],"high-control")) high_control();
+	else if(!std::strcmp(argv[1],"invalid-controls")) invalid_controls();
+	else if(!std::strcmp(argv[1],"standalone")) standalone();
 	else return 2;
 }

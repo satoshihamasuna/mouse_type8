@@ -31,6 +31,13 @@ class SearchTurnParamsTests(unittest.TestCase):
         header = (ROOT/'Task/Inc/ctrl_task.h').read_text(encoding='utf-8')
         declaration = re.search(r'void Init_Motion_search_turn[^\n]+;', header).group(0)
         wrapper = function(header, 'inline t_exeStatus exe_Motion_search_turn')
+        search_source = function((ROOT/'System/Src/myshell.cpp').read_text(encoding='utf-8'),
+                                 'static const t_param *shell_debug_search_source')
+        search_header = (ROOT/'Subsys/Inc/search_class.h').read_text(encoding='utf-8')
+        begin = search_header.index('#if defined(MOUSE_A)')
+        end = search_header.index('#endif', begin) + len('#endif')
+        search_defaults = search_header[begin:end]
+        search_reset = function(search_header, 'void search_param_init()')
         source = r'''
 #include <cassert>
 #include <cmath>
@@ -84,7 +91,8 @@ public:
     void run_time_limit_ms_reset(){}
     void error_counter_reset(){}
     t_exeStatus execute_Motion(){return complete;}
-''' + declaration + '\n' + wrapper + '\n};\n' + implementation + r'''
+''' + declaration + '\n' + wrapper + '\n};\n' + implementation + '\n' + search_source + (
+    '\nclass SearchDefaults {\npublic:\n' + search_defaults + '\n' + search_reset + '\n};\n') + r'''
 static bool near(float a,float b){return std::fabs(a-b)<.00001f;}
 static void gains(Motion& motion,const t_pid_gain* sp,const t_pid_gain* om) {
     assert(motion.straight_motion_param.sp_gain==sp);
@@ -103,11 +111,41 @@ static void legacy(const t_param& p) {
     gains(motion,&basic_sp_gain,&basic_om_gain);
 }
 int main() {
+    SearchDefaults search;
+    for(int reset=0;reset<2;++reset) {
+        assert(near(search.search_st_param.param->max_velo,.37f));
+        assert(near(search.param_L90_search.param->velo,.37f));
+        assert(near(search.param_R90_search.param->velo,.37f));
+        assert(search.param_L90_search.param==param_L90_search_370.param);
+        assert(search.param_R90_search.param==param_R90_search_370.param);
+        assert(search.param_L90_search.ff_gain==param_L90_search_370.ff_gain);
+        assert(search.param_R90_search.ff_gain==param_R90_search_370.ff_gain);
+        search.search_st_param=search_straight_slow.parameter();
+        search.param_L90_search=param_L90_search_320;
+        search.param_R90_search=param_R90_search_320;
+        assert(near(search.search_st_param.param->max_velo,.32f));
+        search.search_param_init(); // A new search restores normal speed after slow mode.
+    }
     legacy(param_L90_search_280);legacy(param_R90_search_280);
     legacy(param_L90_search_300);legacy(param_R90_search_300);
     legacy(param_L90_search_320);legacy(param_R90_search_320);
-#ifdef MOUSE_A
     legacy(param_L90_search_350);legacy(param_R90_search_350);
+    const int speeds[]={280,300,320,350,370};
+    const t_param* left[]={&param_L90_search_280,&param_L90_search_300,
+        &param_L90_search_320,&param_L90_search_350,&param_L90_search_370};
+    const t_param* right[]={&param_R90_search_280,&param_R90_search_300,
+        &param_R90_search_320,&param_R90_search_350,&param_R90_search_370};
+    for(int i=0;i<5;++i) {
+        assert(shell_debug_search_source(False,speeds[i])==left[i]);
+        assert(shell_debug_search_source(True,speeds[i])==right[i]);
+        assert(near(left[i]->param->velo,speeds[i]/1000.f));
+        assert(near(right[i]->param->velo,speeds[i]/1000.f));
+    }
+    assert(shell_debug_search_source(False,360)==nullptr);
+    assert(shell_debug_search_source(True,360)==nullptr);
+#ifdef MOUSE_A
+    assert(shell_debug_search_source(False,400)==&param_L90_search_400);
+    assert(shell_debug_search_source(True,400)==&param_R90_search_400);
     legacy(param_L90_search_400);legacy(param_R90_search_400);
     assert(near(sp_gain_search_turn.Kp,2));
     const t_param* profiles[]={&param_L90_search_370,&param_R90_search_370};
@@ -139,6 +177,57 @@ int main() {
     }
 #else
     assert(near(sp_gain_search_turn.Kp,1.2f));
+    assert(near(sp_gain_search_turn.Ki,.02f) && near(sp_gain_search_turn.Kd,0));
+    assert(near(om_gain_search_turn.Kp,.1f) && near(om_gain_search_turn.Ki,.0015f));
+    assert(near(om_gain_search_turn.Kd,0));
+    assert(shell_debug_search_source(False,400)==nullptr);
+    assert(shell_debug_search_source(True,400)==nullptr);
+    const t_param* initial_profiles[]={&param_L90_search_350,&param_R90_search_350};
+    for(const auto* profile:initial_profiles) {
+        const bool left=profile->param->turn_dir==Turn_L;
+        assert(profile->param->turn_dir==Turn_L || profile->param->turn_dir==Turn_R);
+        assert(near(profile->param->r_min,left?26.f:-26.f));
+        assert(near(profile->param->Lstart,9.46f) && near(profile->param->Lend,11.16f));
+        assert(near(profile->param->degree,left?90.f:-90.f));
+        assert(near(profile->param->degree_correction,0));
+        assert(profile->sp_gain==&sp_gain_search_turn && profile->om_gain==&om_gain_search_turn);
+        assert(profile->ff_gain==&ff_gain_default);
+        legacy(*profile);
+    }
+    const t_param* profiles[]={&param_L90_search_370,&param_R90_search_370};
+    for(const auto* profile:profiles) {
+        const bool left=profile->param->turn_dir==Turn_L;
+        assert(near(profile->param->r_min,left?26.f:-26.f));
+        assert(near(profile->param->Lstart,left?7.3f:8.6f));
+        assert(near(profile->param->Lend,left?11.5f:10.4f));
+        assert(near(profile->param->degree,left?90.f:-90.f));
+        assert(near(profile->param->degree_correction,left?0.f:-1.f));
+        assert(profile->sp_gain==&sp_gain_search_turn_370 && profile->om_gain==&om_gain_search_turn);
+        assert(near(profile->sp_gain->Kp,5) && near(profile->sp_gain->Ki,.02f));
+        assert(near(profile->sp_gain->Kd,0));
+        assert(profile->ff_gain==(left?&ff_gain_search_turn_L_370:&ff_gain_search_turn_R_370));
+        const auto* ff=profile->ff_gain;
+        assert(std::fabs(ff->om_accel-.000690f)<1e-9f);
+        assert(std::fabs(ff->om_decel-.000555f)<1e-9f);
+        assert(near(ff->sp_velo,ff_gain_default.sp_velo) && near(ff->sp_accel,ff_gain_default.sp_accel));
+        assert(near(ff->sp_bias,ff_gain_default.sp_bias) && near(ff->om_velo,ff_gain_default.om_velo));
+        assert(near(ff->om_bias,ff_gain_default.om_bias));
+        assert(near(ff->om_jerk,0) && near(ff->sp_turn_accel_mag,0) && near(ff->sp_turn_velo_sq,0));
+        t_param copied=*profile;
+        Motion motion;
+        motion.Init_Motion_search_turn(&copied);
+        gains(motion,profile->sp_gain,profile->om_gain);
+        assert(motion.turn_motion_param.ff_gain==profile->ff_gain);
+        assert(motion.exe_Motion_search_turn(&copied)==complete);
+        gains(motion,profile->sp_gain,profile->om_gain);
+        const t_pid_gain custom_sp={3,.03f,0},custom_om={.2f,.006f,0};
+        motion.Init_Motion_search_turn(&copied,&custom_sp,&custom_om);
+        gains(motion,&custom_sp,&custom_om);
+        motion.Init_Motion_search_turn(&copied,&custom_sp);
+        gains(motion,&custom_sp,profile->om_gain);
+        motion.Init_Motion_search_turn(&copied,nullptr,&custom_om);
+        gains(motion,profile->sp_gain,&custom_om);
+    }
 #endif
     Motion motion;
     const t_pid_gain explicit_sp={3,.03f,0},explicit_om={.3f,.007f,0};

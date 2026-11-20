@@ -542,13 +542,13 @@ t_position Search::run_accelerated_goal_search(	t_position start_pos,t_position 
 				{
 					if(return_search_time() >= (5*60*1000))
 					{
-						search_st_param = st_param_320;
+						search_st_param = search_straight_slow.parameter();
 						param_L90_search = param_L90_search_320;
 						param_R90_search = param_R90_search_320;
 					}
 					else if(return_search_time() >= (3*60*1000))
 					{
-						search_st_param = st_param_320;
+						search_st_param = search_straight_slow.parameter();
 						param_L90_search = param_L90_search_320;
 						param_R90_search = param_R90_search_320;
 					}
@@ -563,13 +563,13 @@ t_position Search::run_accelerated_goal_search(	t_position start_pos,t_position 
 				{
 					if(return_search_time() >= (5*60*1000))
 					{
-						search_st_param = st_param_320;
+						search_st_param = search_straight_slow.parameter();
 						param_L90_search = param_L90_search_320;
 						param_R90_search = param_R90_search_320;
 					}
 					else if(return_search_time() >= (3*60*1000))
 					{
-						search_st_param = st_param_320;
+						search_st_param = search_straight_slow.parameter();
 						param_L90_search = param_L90_search_320;
 						param_R90_search = param_R90_search_320;
 					}

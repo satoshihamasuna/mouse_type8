@@ -80,50 +80,48 @@ static t_velo_param speed_candidate(const t_speed_profile &profile,uint16_t inde
 	return {};
 }
 
-static const t_straight_param *speed_control_band(float speed,
-		const t_straight_param *const *mode,uint16_t size)
+static bool control_profile_valid(const t_control_profile *profile)
 {
-	if(mode == nullptr || size == 0) return nullptr;
-	const t_straight_param *selected = mode[0];
-	for(uint16_t i = 1; i < size; ++i)
-	{
-		if(mode[i]->param->max_velo > speed + 0.00001f) break;
-		selected = mode[i];
-	}
-	return selected;
-}
-
-static bool speed_control_bands_valid(const t_straight_param *const *mode,uint16_t size)
-{
-	if(mode == nullptr || size == 0) return false;
+	if(profile == nullptr || profile->bands == nullptr || profile->count == 0 || profile->count > 256) return false;
 	float previous = 0.0f;
-	for(uint16_t i = 0; i < size; ++i)
+	for(uint16_t i = 0; i < profile->count; ++i)
 	{
-		if(mode[i] == nullptr || mode[i]->param == nullptr || mode[i]->sp_gain == nullptr ||
-		   mode[i]->om_gain == nullptr || mode[i]->ff_gain == nullptr) return false;
-		const float speed = mode[i]->param->max_velo;
-		if(!std::isfinite(speed) || speed <= 0.0f || speed < previous) return false;
-		previous = speed;
+		const auto &band = profile->bands[i];
+		if(!std::isfinite(band.min_speed) || band.min_speed <= previous ||
+		   band.gain == nullptr || band.gain->ff_gain == nullptr) return false;
+		previous = band.min_speed;
 	}
 	return true;
+}
+
+static const t_control_gain *speed_control_gain(float speed,const t_control_profile *profile)
+{
+	if(!std::isfinite(speed) || !control_profile_valid(profile)) return nullptr;
+	const t_control_gain *selected = profile->bands[0].gain;
+	for(uint16_t i = 1; i < profile->count; ++i)
+	{
+		if(profile->bands[i].min_speed > speed + 0.00001f) break;
+		selected = profile->bands[i].gain;
+	}
+	return selected;
 }
 
 struct ProfileSection
 {
 	bool valid = false;
 	t_velo_param velocity{};
-	const t_straight_param *control = nullptr;
+	const t_control_gain *control = nullptr;
 	float time_ms = 0.0f;
 };
 
 // 経路の時間見積りと実走行の両方から使用する。
 // 選択には従来の10 mm余裕を残し、時間は実際の全長と入口/出口速度で計算する。
 static ProfileSection plan_profile_section(float length_mm,float start,float end,
-		const t_speed_profile &profile,const t_straight_param *const *mode,uint16_t size)
+		const t_speed_profile &profile,const t_control_profile *control_profile)
 {
 	ProfileSection result;
 	const uint16_t count = speed_candidate_count(profile);
-	if(count == 0 || !speed_control_bands_valid(mode,size) || !std::isfinite(length_mm) ||
+	if(count == 0 || !control_profile_valid(control_profile) || !std::isfinite(length_mm) ||
 	   !std::isfinite(start) || !std::isfinite(end) || length_mm <= 0.0f ||
 	   start < 0.0f || end < 0.0f || start > profile.max || end > profile.max) return result;
 	const float length = length_mm / 1000.0f;
@@ -169,9 +167,8 @@ static ProfileSection plan_profile_section(float length_mm,float start,float end
 	result.time_ms = ((cap - start) / accel + cruise_length / cap + (cap - end) / decel) * 1000.0f;
 	if(!std::isfinite(result.time_ms)) return result;
 	result.velocity = {cap, accel, decel};
-	// 速度帯は下側の校正値を選び、最上位の帯はそれ以上へ延長する。
-	// maxの引上げは新しい速度帯の実機校正を意味しない。
-	result.control = speed_control_band(cap, mode, size);
+	// PID/FFは速度候補と独立した新形式の速度帯から選ぶ。
+	result.control = speed_control_gain(cap,control_profile);
 	result.valid = result.control != nullptr;
 	return result;
 }
@@ -180,40 +177,34 @@ static t_straight_param store_profile_section(const ProfileSection &section,t_ve
 {
 	if(!section.valid) return {};
 	storage = section.velocity;
-	return {&storage, section.control->sp_gain, section.control->om_gain, section.control->ff_gain};
+	return make_straight_param(&storage,*section.control);
 }
 
 static t_straight_param base_speed_parameter(const t_speed_profile *profile,
-		const t_straight_param *const *mode,uint16_t size,t_velo_param &storage)
+		const t_control_profile *control_profile,t_velo_param &storage)
 {
-	if(mode == nullptr || size == 0) return {};
-	if(profile != nullptr && speed_candidate_count(*profile) != 0)
-	{
-		const auto *control = speed_control_band(profile->base, mode, size);
-		if(control == nullptr) return {};
-		storage = {profile->base, profile->accel, profile->decel};
-		return {&storage, control->sp_gain, control->om_gain, control->ff_gain};
-	}
-	// プロファイル未指定の既存モードは従来の既定FFも維持する。
-	return {mode[0]->param, mode[0]->sp_gain, mode[0]->om_gain};
+	if(profile == nullptr || speed_candidate_count(*profile) == 0) return {};
+	const auto *control = speed_control_gain(profile->base,control_profile);
+	if(control == nullptr) return {};
+	storage = {profile->base,profile->accel,profile->decel};
+	return make_straight_param(&storage,*control);
 }
 
 t_straight_param calcRunTime::straight_base_velo()
 {
-	return base_speed_parameter(st_speed_profile,st_set_mode,st_mode_size,st_base_velocity);
+	return base_speed_parameter(st_speed_profile,st_control_profile,st_base_velocity);
 }
 
 t_straight_param calcRunTime::diagonal_base_velo()
 {
-	return base_speed_parameter(di_speed_profile,di_set_mode,di_mode_size,di_base_velocity);
+	return base_speed_parameter(di_speed_profile,di_control_profile,di_base_velocity);
 }
 
 bool calcRunTime::speed_profiles_valid() const
 {
-	return (st_speed_profile == nullptr || (speed_candidate_count(*st_speed_profile) != 0 &&
-			speed_control_bands_valid(st_set_mode,st_mode_size)))
-		&& (di_speed_profile == nullptr || (speed_candidate_count(*di_speed_profile) != 0 &&
-				speed_control_bands_valid(di_set_mode,di_mode_size)));
+	return st_speed_profile != nullptr && di_speed_profile != nullptr
+		&& speed_candidate_count(*st_speed_profile) != 0 && speed_candidate_count(*di_speed_profile) != 0
+		&& control_profile_valid(st_control_profile) && control_profile_valid(di_control_profile);
 }
 
 void calcRunTime::turn_time_set(const t_param *const *mode)
@@ -387,95 +378,21 @@ uint16_t calcRunTime::straight_time_set(float length)
 	return straight_time_set(length,base_velo,base_velo);
 }
 
-static uint16_t section_time_set(float length,float start_velo,float end_velo,
-		const t_straight_param *const *mode,uint16_t mode_size,t_bool round_up)
-{
-	if(length <= 0.0f || start_velo < 0.0f || end_velo < 0.0f || mode_size == 0)
-		return 65535;
-
-	float run_length = length - OFF_SET_LENGTH;
-	if(run_length < 0.0f) run_length = 0.0f;
-	for(int i = mode_size - 1; i >= 0; i--)
-	{
-		float max_velo = mode[i]->param->max_velo;
-		float accel = mode[i]->param->acc;
-		if(accel <= 0.0f || max_velo <= 0.0f ||
-		   start_velo > max_velo || end_velo > max_velo) continue;
-
-		float minimum_length = std::fabs(end_velo * end_velo - start_velo * start_velo)
-				/ (2.0f * accel) * 1000.0f;
-		if(run_length + 0.001f < minimum_length) continue;
-
-		float peak_sq = (start_velo * start_velo + end_velo * end_velo) * 0.5f
-				+ accel * run_length / 1000.0f;
-		float peak_velo = std::sqrt(peak_sq);
-		if(peak_velo > max_velo) peak_velo = max_velo;
-
-		float acc_length = (peak_velo * peak_velo - start_velo * start_velo)
-				/ (2.0f * accel) * 1000.0f;
-		float deacc_length = (peak_velo * peak_velo - end_velo * end_velo)
-				/ (2.0f * accel) * 1000.0f;
-		float cruise_length = run_length - acc_length - deacc_length;
-		if(cruise_length < 0.0f) cruise_length = 0.0f;
-
-		float total_time = OFF_SET_LENGTH / mode[0]->param->max_velo
-				+ (peak_velo - start_velo) / accel * 1000.0f
-				+ cruise_length / peak_velo
-				+ (peak_velo - end_velo) / accel * 1000.0f;
-		if(total_time >= 65535.0f) return 65535;
-		return round_up == True ? (uint16_t)std::ceil(total_time)
-				: (uint16_t)(total_time + 0.5f);
-	}
-	return 65535;
-}
-
 uint16_t calcRunTime::straight_time_set(float length,float start_velo,float end_velo)
 {
-	if(st_speed_profile != nullptr)
-	{
-		const auto section = plan_profile_section(length,start_velo,end_velo,*st_speed_profile,st_set_mode,st_mode_size);
-		if(!section.valid || section.time_ms >= 65535.0f) return 65535;
-		return (uint16_t)(section.time_ms + 0.5f);
-	}
-	return section_time_set(length,start_velo,end_velo,st_set_mode,st_mode_size,False);
+	if(!speed_profiles_valid()) return 65535;
+	const auto section = plan_profile_section(length,start_velo,end_velo,*st_speed_profile,st_control_profile);
+	if(!section.valid || section.time_ms >= 65535.0f) return 65535;
+	return (uint16_t)(section.time_ms + 0.5f);
 }
 
 t_straight_param calcRunTime::calc_end_straight_max_velo(float length,float start_velo,float end_velo)
 {
-	if(st_speed_profile != nullptr)
-	{
-		if(start_velo == -1.0f) start_velo = st_speed_profile->base;
-		if(end_velo == -1.0f) end_velo = 0.0f;
-		return store_profile_section(plan_profile_section(length,start_velo,end_velo,
-				*st_speed_profile,st_set_mode,st_mode_size),st_section_velocity);
-	}
-	t_straight_param return_param;
-
-	//uint16_t time = 65535;
-	start_velo 	= st_set_mode[0]->param->max_velo;
-	end_velo 	= 0.0;
-	return_param.param = st_set_mode[0]->param;
-	return_param.sp_gain		  = st_set_mode[0]->sp_gain;
-	return_param.om_gain		  = st_set_mode[0]->om_gain;
-	//float acc_time = 0.0;	float deacc_time = 0.0;
-	float acc_length = 0.0; float deacc_length = 0.0;
-	for(int i = st_mode_size-1; i >= 0;i--){
-		float max_velo	= st_set_mode[i]->param->max_velo;
-		float accel		= st_set_mode[i]->param->acc;
-        acc_length		= ((max_velo*1000.0)*(max_velo*1000.0)-(start_velo*1000.0)*(start_velo*1000.0))/(2*accel*1000.0);
-        deacc_length    = ((max_velo*1000.0)*(max_velo*1000.0)-(end_velo*1000.0)*(end_velo*1000.0))/(2*accel*1000.0);
-        if(length-OFF_SET_LENGTH-(acc_length+deacc_length) >= 0.0)
-        {
-        	return_param.param 			  =	st_set_mode[i]->param;
-        	return_param.sp_gain		  = st_set_mode[i]->sp_gain;
-        	return_param.om_gain		  = st_set_mode[i]->om_gain;
-        	//acc_time = (max_velo - start_velo)/accel * 1000.0;
-        	//deacc_time = (max_velo - end_velo)/accel * 1000.0;
-        	//time = (uint16_t)OFF_SET_LENGTH/mode[0]->param->max_velo+(uint16_t)((length-OFF_SET_LENGTH-(acc_length+deacc_length))/max_velo) + (uint16_t)acc_time + (uint16_t)deacc_time;
-        	break;
-        }
-	}
-	return return_param;
+	if(!speed_profiles_valid()) return {};
+	if(start_velo == -1.0f) start_velo = st_speed_profile->base;
+	if(end_velo == -1.0f) end_velo = 0.0f;
+	return store_profile_section(plan_profile_section(length,start_velo,end_velo,
+			*st_speed_profile,st_control_profile),st_section_velocity);
 }
 
 uint16_t calcRunTime::diagonal_time_set(float length)
@@ -487,13 +404,10 @@ uint16_t calcRunTime::diagonal_time_set(float length)
 
 uint16_t calcRunTime::diagonal_time_set(float length,float start_velo,float end_velo)
 {
-	if(di_speed_profile != nullptr)
-	{
-		const auto section = plan_profile_section(length,start_velo,end_velo,*di_speed_profile,di_set_mode,di_mode_size);
-		if(!section.valid || section.time_ms >= 65535.0f) return 65535;
-		return (uint16_t)std::ceil(section.time_ms);
-	}
-	return section_time_set(length,start_velo,end_velo,di_set_mode,di_mode_size,True);
+	if(!speed_profiles_valid()) return 65535;
+	const auto section = plan_profile_section(length,start_velo,end_velo,*di_speed_profile,di_control_profile);
+	if(!section.valid || section.time_ms >= 65535.0f) return 65535;
+	return (uint16_t)std::ceil(section.time_ms);
 }
 
 float calcRunTime::return_turn_entry_velo(t_run_pattern run_pt) const
@@ -518,60 +432,18 @@ float calcRunTime::return_turn_exit_velo(t_run_pattern run_pt) const
 
 t_straight_param calcRunTime::calc_end_diagonal_max_velo(float length,float start_velo,float end_velo)
 {
-	if(di_speed_profile != nullptr)
-	{
-		if(start_velo == -1.0f) start_velo = di_speed_profile->base;
-		if(end_velo == -1.0f) end_velo = 0.0f;
-		return store_profile_section(plan_profile_section(length,start_velo,end_velo,
-				*di_speed_profile,di_set_mode,di_mode_size),di_section_velocity);
-	}
-	t_straight_param return_param;
-
-	//uint16_t time = 65535;
-	start_velo 	= di_set_mode[0]->param->max_velo;
-	end_velo 	= 0.0;
-	return_param.param = di_set_mode[0]->param;
-	return_param.sp_gain		  = di_set_mode[0]->sp_gain;
-	return_param.om_gain		  = di_set_mode[0]->om_gain;
-	//float acc_time = 0.0;	float deacc_time = 0.0;
-	float acc_length = 0.0; float deacc_length = 0.0;
-	for(int i = di_mode_size-1; i >= 0;i--){
-		float max_velo	= di_set_mode[i]->param->max_velo;
-		float accel		= di_set_mode[i]->param->acc;
-        acc_length		= ((max_velo*1000.0)*(max_velo*1000.0)-(start_velo*1000.0)*(start_velo*1000.0))/(2*accel*1000.0);
-        deacc_length    = ((max_velo*1000.0)*(max_velo*1000.0)-(end_velo*1000.0)*(end_velo*1000.0))/(2*accel*1000.0);
-        if(length-OFF_SET_LENGTH-(acc_length+deacc_length) >= 0.0)
-        {
-        	return_param.param 			  =	di_set_mode[i]->param;
-        	return_param.sp_gain		  = di_set_mode[i]->sp_gain;
-        	return_param.om_gain		  = di_set_mode[i]->om_gain;
-        	//acc_time = (max_velo - start_velo)/accel * 1000.0;
-        	//deacc_time = (max_velo - end_velo)/accel * 1000.0;
-        	//time = (uint16_t)OFF_SET_LENGTH/mode[0]->param->max_velo+(uint16_t)((length-OFF_SET_LENGTH-(acc_length+deacc_length))/max_velo) + (uint16_t)acc_time + (uint16_t)deacc_time;
-        	break;
-        }
-	}
-	return return_param;
-}
-
-void calcRunTime::st_param_set(const t_straight_param *const *mode,uint16_t mode_size)
-{
-	st_set_mode = mode;
-	st_mode_size = mode_size;
-	st_speed_profile = nullptr;
-}
-void calcRunTime::di_param_set(const t_straight_param *const *mode,uint16_t mode_size)
-{
-	di_set_mode = mode;
-	di_mode_size = mode_size;
-	di_speed_profile = nullptr;
+	if(!speed_profiles_valid()) return {};
+	if(start_velo == -1.0f) start_velo = di_speed_profile->base;
+	if(end_velo == -1.0f) end_velo = 0.0f;
+	return store_profile_section(plan_profile_section(length,start_velo,end_velo,
+			*di_speed_profile,di_control_profile),di_section_velocity);
 }
 
 void calcRunTime::run_config_set(const t_run_config *config)
 {
-	st_param_set(config->straight_mode, config->straight_mode_size);
-	di_param_set(config->diagonal_mode, config->diagonal_mode_size);
-	st_speed_profile = config->straight_speed;
-	di_speed_profile = config->diagonal_speed;
-	turn_time_set(config->turn_mode, config->turn_mode_size);
+	st_control_profile = config == nullptr ? nullptr : config->straight_control;
+	di_control_profile = config == nullptr ? nullptr : config->diagonal_control;
+	st_speed_profile = config == nullptr ? nullptr : config->straight_speed;
+	di_speed_profile = config == nullptr ? nullptr : config->diagonal_speed;
+	if(config != nullptr) turn_time_set(config->turn_mode,config->turn_mode_size);
 }

@@ -77,11 +77,10 @@ class calcRunTime
 		float turn_out45_velo;
 		float turn_out135_velo;
 		float turn_V90_velo;
-		const t_straight_param *const *st_set_mode;
-		const t_straight_param *const *di_set_mode;
-		uint16_t st_mode_size = 1;uint16_t di_mode_size = 1;
-		const t_speed_profile *st_speed_profile = nullptr;
-		const t_speed_profile *di_speed_profile = nullptr;
+		const t_control_profile *st_control_profile = &straight_control_300_v0;
+		const t_control_profile *di_control_profile = &diagonal_control_300_v0;
+		const t_speed_profile *st_speed_profile = &straight_speed_300_v0;
+		const t_speed_profile *di_speed_profile = &diagonal_speed_300_v0;
 		// 生成した値はベース用と区間用で分け、参照中の値を上書きしない。
 		t_velo_param st_base_velocity{};
 		t_velo_param di_base_velocity{};
@@ -90,8 +89,6 @@ class calcRunTime
 	public:
 		void turn_time_set(const t_param *const *mode);
 		void turn_time_set(const t_param *const*const *mode  ,uint16_t mode_size);
-		void st_param_set(const t_straight_param *const *mode,uint16_t mode_size);
-		void di_param_set(const t_straight_param *const *mode,uint16_t mode_size);
 		void run_config_set(const t_run_config *config);
 		uint16_t return_turn_time(t_run_pattern run_pt);
 		uint16_t straight_time_set(float length);
@@ -121,10 +118,6 @@ class calcRunTime
 			turn_out45_velo	= 0.0f;
 			turn_out135_velo	= 0.0f;
 			turn_V90_velo		= 0.0f;
-			st_set_mode = st_mode_300_v0;
-			di_set_mode = di_mode_300_v0;
-			st_mode_size = 1;
-			di_mode_size = 1;
 
 		}
 };

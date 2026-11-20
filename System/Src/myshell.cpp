@@ -1852,9 +1852,9 @@ static const t_param *shell_debug_search_source(t_bool right, int preset_speed)
 	case 280: return right ? &param_R90_search_280 : &param_L90_search_280;
 	case 300: return right ? &param_R90_search_300 : &param_L90_search_300;
 	case 320: return right ? &param_R90_search_320 : &param_L90_search_320;
-#if defined(MOUSE_A)
 	case 350: return right ? &param_R90_search_350 : &param_L90_search_350;
 	case 370: return right ? &param_R90_search_370 : &param_L90_search_370;
+#if defined(MOUSE_A)
 	case 400: return right ? &param_R90_search_400 : &param_L90_search_400;
 #endif
 	default: return NULL;

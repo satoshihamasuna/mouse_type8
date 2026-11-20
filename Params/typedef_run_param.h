@@ -32,6 +32,31 @@ typedef struct{
 
 extern const t_ff_gain ff_gain_default;
 
+// 速度PID・角速度PID・FFをひとまとまりで指定する。
+typedef struct{
+	t_pid_gain sp_gain;
+	t_pid_gain om_gain;
+	t_ff_gain const* ff_gain = &ff_gain_default;
+}t_control_gain;
+
+// 速度の下限[m/s]と、そこから使うPID・FFの組。先頭より低い速度は先頭の組を使う。
+typedef struct{
+	float min_speed;
+	t_control_gain const* gain;
+}t_control_band;
+
+typedef struct{
+	t_control_band const* bands;
+	uint16_t count;
+}t_control_profile;
+
+template<unsigned N>
+constexpr t_control_profile make_control_profile(const t_control_band (&bands)[N])
+{
+	static_assert(N > 0 && N <= 256, "control bands must contain 1..256 entries");
+	return {bands,(uint16_t)N};
+}
+
 typedef struct{
 	float velo;
 	float r_min;
@@ -101,6 +126,19 @@ typedef struct{
 	t_pid_gain const* om_gain;
 	t_ff_gain const* ff_gain = &ff_gain_default;
 }t_straight_param;
+
+// 既存のモーションAPIへ共通ゲインの参照を渡す。
+constexpr t_straight_param make_straight_param(const t_velo_param *param,const t_control_gain &gain)
+{
+	return {param,&gain.sp_gain,&gain.om_gain,gain.ff_gain};
+}
+
+// 探索・単体走行用の固定速度条件。PID・FFは最短走行と同じ新形式の組を参照する。
+typedef struct{
+	t_velo_param velocity;
+	t_control_gain const* control;
+	constexpr t_straight_param parameter() const { return make_straight_param(&velocity,*control); }
+}t_motion_profile;
 
 
 

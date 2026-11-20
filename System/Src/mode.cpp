@@ -141,17 +141,24 @@ namespace Mode
 					enable = 0;
 					break;
 				case ENABLE|0x02:
-					Mode::Debug(&st_param_500,mode_500,0);
-					Mode::Debug(&st_param_700,mode_700,200);
+				{
+					const auto debug500 = debug_straight_500.parameter();
+					const auto debug700 = debug_straight_700.parameter();
+					const auto debug1600 = debug_straight_1600.parameter();
+					const auto debug1800 = debug_straight_1800.parameter();
+					const auto debug2000 = debug_straight_2000.parameter();
+					Mode::Debug(&debug500,mode_500,0);
+					Mode::Debug(&debug700,mode_700,200);
 					//Mode::Debug(&st_param_1200,mode_1200,400);
 				    //Mode::Debug(&st_param_1400_acc2G,mode_1400,500);
 					//Mode::Debug(&st_param_1500_acc2G,mode_1500,500);
-					Mode::Debug(&st_param_1600_acc2G,mode_1600,650);
-					Mode::Debug(&st_param_1800_acc3G,mode_1800,650);
-					Mode::Debug(&st_param_2000_acc3G,mode_2000,700);
+					Mode::Debug(&debug1600,mode_1600,650);
+					Mode::Debug(&debug1800,mode_1800,650);
+					Mode::Debug(&debug2000,mode_2000,700);
 					Communicate_RxStartContinuous();
 					enable = 0;
 					break;
+				}
 				case ENABLE|0x03:
 					Myshell_Initialize();
 					Myshell_Execute();
