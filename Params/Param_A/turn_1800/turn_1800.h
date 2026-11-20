@@ -60,14 +60,9 @@ extern const t_pid_gain om_gain_turn180_1800;
 /*20260725_*/
 //const static t_turn_param_table slalom_L180_1800_table = {1.80f, 48.0f,22.51,32.38, 180.0f,Turn_L};
 //const static t_turn_param_table slalom_R180_1800_table = {1.80f,-48.0f,22.51,32.38,-180.0f,Turn_R};
-#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
-// Pink LED interval (20260726 Lstart=Lend=0 videos, R median copied to L/R).
+// 2026-11-21採用の暫定値。左右の角度補正は鏡映し、旧マーカー長切替から独立。
 extern const t_turn_param_table slalom_L180_1800_table;
 extern const t_turn_param_table slalom_R180_1800_table;
-#else
-extern const t_turn_param_table slalom_L180_1800_table;
-extern const t_turn_param_table slalom_R180_1800_table;
-#endif
 extern const t_param param_L180_1800;
 extern const t_param param_R180_1800;
 //k = 300
@@ -107,14 +102,9 @@ extern const t_pid_gain sp_gain_turnOut45_1800;
 extern const t_pid_gain om_gain_turnOut45_1800;
 //const static t_turn_param_table slalom_outL45_1800_table = {1.80f, 55.0f,23.81,22.01, 45.0f,Turn_L};
 //const static t_turn_param_table slalom_outR45_1800_table = {1.80f,-55.0f,23.81,22.01,-45.0f,Turn_R};
-#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
-// Pink LED interval (20260725 Lstart=Lend=0 videos, R median copied to L/R).
+// 左右45度退出は撮影方式フラグによらず、turn_1800.cppの暫定採用値を使う。
 extern const t_turn_param_table slalom_outL45_1800_table;
 extern const t_turn_param_table slalom_outR45_1800_table;
-#else
-extern const t_turn_param_table slalom_outL45_1800_table;
-extern const t_turn_param_table slalom_outR45_1800_table;
-#endif
 extern const t_param param_outL45_1800;
 extern const t_param param_outR45_1800;
 
@@ -123,14 +113,9 @@ extern const t_pid_gain sp_gain_turnIn135_1800;
 extern const t_pid_gain om_gain_turnIn135_1800;//{0.7f, 0.7f, 0.0f};
 //const static t_turn_param_table slalom_inL135_1800_table = {1.80f, 43.0f,10.67,31.00, 135.0f,Turn_L};
 //const static t_turn_param_table slalom_inR135_1800_table = {1.80f,-43.0f,10.67,31.00,-135.0f,Turn_R};
-#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
-// Pink LED interval (20260725 Lstart=Lend=0 videos, R median copied to L/R).
+// 左右135度進入は撮影方式フラグによらず、turn_1800.cppの単体調整値を使う。
 extern const t_turn_param_table slalom_inL135_1800_table;
 extern const t_turn_param_table slalom_inR135_1800_table;
-#else
-extern const t_turn_param_table slalom_inL135_1800_table;
-extern const t_turn_param_table slalom_inR135_1800_table;
-#endif
 extern const t_param param_inL135_1800;
 extern const t_param param_inR135_1800;
 
@@ -139,14 +124,9 @@ extern const t_pid_gain sp_gain_turnOut135_1800;
 extern const t_pid_gain om_gain_turnOut135_1800;
 //const static t_turn_param_table slalom_outL135_1800_table = {1.80f, 41.0f,9.30,44.12, 135.0f,Turn_L};
 //const static t_turn_param_table slalom_outR135_1800_table = {1.80f,-41.0f,9.30,44.12,-135.0f,Turn_R};
-#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
-// Pink LED interval (20260725 Lstart=Lend=0 videos, R median copied to L/R).
+// 左右135度退出は撮影方式フラグによらず、turn_1800.cppの暫定採用値を使う。
 extern const t_turn_param_table slalom_outL135_1800_table;
 extern const t_turn_param_table slalom_outR135_1800_table;
-#else
-extern const t_turn_param_table slalom_outL135_1800_table;
-extern const t_turn_param_table slalom_outR135_1800_table;
-#endif
 extern const t_param param_outL135_1800;
 extern const t_param param_outR135_1800;
 
