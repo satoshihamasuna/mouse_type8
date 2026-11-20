@@ -1,5 +1,10 @@
 # 解析ツール
 
+単体撮影の停止評価は、`pixel_camera_tuning_report.py`が同じ試行の連続`telemetry.csv`を参照し、直進指令に続く`run_brake`が終わってから0.2〜0.6秒の画像を確認する。短い`motion.csv`だけでは200 ms以上の停止記録が切れていたり、指令終了後もブレーキが動作している場合があるため。旧試行で連続CSVがない場合は従来の入力へ戻る。観測点数・静止時間・画像散らばり・ログの速度/角速度・軌跡RMSEの条件は緩めない。元の解析結果を保持し、再評価は別出力先へ保存する。
+
+周期ログの現行形式は`L8S5` / 保存magic `0xA55D`です。旧`ideal.turn_x/y`の2枠は採用姿勢・標準偏差のrad値で、無効時はNaNになります。
+`log_compare.py`は旧理想軌跡列がない場合も`ego.turn_x/y`の実測軌跡を表示します。[姿勢ログの仕様](../ble/README.md#採用姿勢の2項目)を参照してください。
+
 ## ファーム内ターンEKFを保存ログで因果的に再生する
 
 `turn_pose_firmware_replay.py`は実際のC++実装と機体Aのパラメータをホストでコンパイルし、
@@ -157,7 +162,10 @@ OpenCV（aruco入り）・NumPyが必要です。カメラ・BLE・機体へは�
 python tools/analysis/maze_video_pose.py --trial PATH_TO_TRIAL_JSON --reference PATH_TO_9X9_REFERENCE_JSON --cell-mm 90 --stride 4 --output tools/logs/POSITION_NEW
 ```
 
-壁を変更した走行は、`--wall-map PATH_TO_VERIFIED_WALL_MAP_JSON`で走行時の物理壁配置を指定します。
+標準では今回の動画の最大16フレームをそれぞれArUcoで登録し、黒い床上の赤・白の壁候補を検出します。登録JSONに残る過去の壁配置は自動適用しません。
+同じ盤面・ArUco配置でも、壁配置は動画ごとに独立して検出します。過去の壁・開口で今回の未確認辺を補完しません。GUIの手動壁配置も1回分だけで、次の試行へは引き継ぎません。
+180辺ごとの観測数と壁・開口・未確認の判断を`wall_map_used.json`へ保存します。遮蔽や反射は未確認になり得るため、HTMLと元動画で照合してください。候補を本体の地図へ書き戻す処理はありません。
+確認済みの配置を使う場合は、`--wall-map PATH_TO_VERIFIED_WALL_MAP_JSON`で走行時の物理壁配置を指定します。
 ArUco座標登録は`--reference`を使い、表示する壁180辺だけを`--wall-map`から選びます。
 HTMLの上部に壁配置の版・入力を表示し、`analysis.json`の`wall_map`へSHA256を記録します。
 旧動画へ現在の壁配置を一律に使わず、元動画の壁と照合してください。
@@ -165,6 +173,10 @@ HTMLの上部に壁配置の版・入力を表示し、`analysis.json`の`wall_m
 姿勢の飛びを同期の調整で隠さず、元フレームでマーカーの位置を確認して除外します。
 
 出力先は未作成のフォルダーを指定します。240fpsの速報は`--stride 4`、詳細は`--stride 1`です。
+録画付きGUIは高速走行の短い動作を落とさないよう、解析間隔を既定1にします。間隔2・4も選択できます。
+9×9の色検出は既存の一意な組を優先し、組が見つからない場合だけ小さい・淡い目印を再検出します。曖昧な組と盤面登録の欠測は補完しません。
+`--marker-detection PATH_TO_BODY_JSON`で機体別の`marker_detection`、公称間隔・許容間隔を指定できます。`mouse`・前後色は実機設定と照合します。この指定から調整盤の高さや座標登録は流用しません。
+GUIでは「色検出・壁配置の詳細」から同じJSONを選べます。録画時に選んだ設定は試行内へコピーします。
 動画の元フレーム番号・実PTSと、CSVの実`time_ms`を使います。行番号を1 msへ変換しません。
 前後マーカーの色は、走行時の設定JSONの`firmware.mouse`から自動選択します。機体Aは前＝赤・後＝黄、機体Bは前＝黄・後＝赤です。
 機体名がA/Bと確認できない場合は位置解析を止めます。保存済み試行の再解析も、その試行の機体設定を使います。
@@ -765,6 +777,8 @@ Lstart/Lendの採用値を求める場合は、上記のゼロ設定・対応タ
 | `odometry_compare.py` | オドメトリ方式を比較 |
 
 `turn_ff_report.py --project-header`には引き続き`Params/Param_A/turn_500/turn_500.h`などのヘッダーを指定できます。
+FFレポートの区間長は実機と同じ`degree + correction`から見積もります。`correction`がない旧設定は0として扱います。
+該当する区間がない場合は、予想長と観測長を表示して終了します。入力ログの1 ms周期と角度補正を確認してください。
 共有定義へ移行したヘッダーでは、同じフォルダの同じ名前の`.cpp`を読みます（例：`turn_500/turn_500.h`→`turn_500/turn_500.cpp`）。値の調整先もこの`.cpp`です。
 以前の一括定義版は、同じ機体の`run_param_A.cpp` / `run_param_B.cpp`内の該当区間を読みます。
 従来の値を含むヘッダーも読めます。読み分けは`python -m unittest discover -s tools/tests -p test_turn_ff_profiles.py -v`で確認します。

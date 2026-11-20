@@ -72,7 +72,7 @@ cube-cmake --build --preset Debug-MouseB
 
 - 距離の mm / m、角度の deg / rad、速度・加速度の単位、左右の符号、時間刻みを呼び出し元まで確認してください。制御処理には 1 ms を前提とする積分があります。
 - 制御割り込みへ待機、長時間の通信・ログ出力、動的メモリ確保などを新たに追加する際は、周期への影響を検討してください。
-- 直進壁制御は `Task/Src/zirconia_wall_control.cpp`、その接続は `Task/Src/ir_sens_task.cpp`、設定は `Params/zirconia_wall_param.h` を参照してください。壁切れ検出、迷路用壁判定、斜め制御との役割の違いを保ってください。
+- 直進壁制御は `Task/Src/straight_wall_control.cpp`、その接続は `Task/Src/ir_sens_task.cpp`、設定は `Params/wall_param_A.h` / `wall_param_B.h` を参照してください。壁切れ検出、迷路用壁判定、斜め制御との役割の違いを保ってください。
 - シェルやログ形式を変更する場合は、`System/Src/myshell.cpp`、`Module/Src/log_data.cpp` と対応する Python 側の送受信・解析を併せて確認してください。CSV の列順・単位、バイナリ形式、整数スケーリングの互換性を考慮してください。
 - 調整値や解析結果を更新するときは、対象機体、入力ログ、実行条件、単位、判断根拠を残してください。
 

@@ -127,6 +127,11 @@ BLE の専用シェルは `tools/ble/mouse_ble_shell.py`、既存 GUI 用の接�
 
 ## myshell コマンド
 
+探索ターンは`debug search_turn right|left preset 速度`で機体別の初期値を読み込みます。
+対応速度はAが280 / 300 / 320 / 350 / 370 / 400 mm/s、Bが280 / 300 / 320 / 350 / 370 mm/sです。
+例: `debug search_turn right preset 350`、`debug search_turn left preset 370`。プリセット読込みでは走行しません。
+Bの350はBの320から速度のみ変更した未調整の初期値です。370は2026-11-21のB左右各3本の入口相対単体候補を反映しています。条件と値は[採用根拠](turn_analysis/20261121_B_search370_adoption/README.md)を参照してください。通常探索の既定速度は370 mm/s、時間経過時の低速切替は320 mm/sです。
+
 | Command | 説明 |
 | --- | --- |
 | `help` | コマンド一覧を表示します。 |
@@ -155,8 +160,9 @@ BLE の専用シェルは `tools/ble/mouse_ble_shell.py`、既存 GUI 用の接�
 | `pose show` | 動作ローカル座標、全体座標、変換原点、座標系番号と有効性を表示します。走行中も参照できます。 |
 | `pose reset [x_mm y_mm yaw_deg]` | 停止中に全体の開始位置・方向を設定します。省略時は(0,0,0)。次の走行にも使い、Flashには保存しません。 |
 | `wall_edge show` | 壁切れ縦位置補正の試験モード、アーム条件、探索基準位置と適用範囲を表示します。 |
+| `wall_detect show` | 停止中に最新の壁切れ検出を表示します。単体ターン・探索ターン・turnpatternとBLE探索/最短で自動記録。`phase:before/after`の区間集計は未検出も残し、ターン前の`expected_side`（曲がる側）と`expected_seen`で確認できます。詳細は[検出ログ](ble/README.md#ターン前後の壁切れ検出wall_detect-schema-1)を参照してください。 |
 | `wall_edge legacy\|shadow\|control` | 停止中に壁切れ試験を切り替えます。起動時legacy。Shadowは縦位置へ適用せず、Controlは90 mm探索直進と直進ターン入口だけ適用します。 |
-| `wall_edge shadow` / `wall_edge control` の柱候補 | 両モードで直進独立柱と斜め極小を検出します。Aの90 mm探索直進・最短の直進入口は両control時に独立柱の縦補正を実適用します。`pillar_active`は検出、`pillar_apply/pillar_entry_apply`は適用設定です。斜め極小はShadowです。 |
+| `wall_edge legacy` / `shadow` / `control` の柱候補 | 全モードで直進独立柱と斜め極小を検出します。LegacyはA/Bの柱極値ペアを横位置補正に採用し、Aの90 mm探索直進・最短の直進入口では縦位置も最大半量・±4 mmで直接補正します。両control時はAの独立柱をEKF観測にします。`pillar_active`は検出、`pillar_pair_apply`はLegacyの横位置採用、`pillar_apply/pillar_entry_apply`は縦位置の適用設定です。Bと斜め極小の未校正の縦位置は直接補正しません。 |
 | `wall_ekf legacy\|shadow\|control` | 停止中に直進・斜め壁制御の推定・制御モードを変更します。走行は開始しません。 |
 | `search replay reset\|keep plain\|acc start_x start_y dir goal_x goal_y goal_size goal\|full\|full_prune first\|second mask max_steps` | `Search`と同じ壁観測・マップ更新順で、モーションだけをno-opにして逐次再生します。 |
 | `log mode0` | ログヘッダ出力を有効にします。 |
@@ -171,7 +177,7 @@ Openを離れた観測区間は最大32 mmで期限切れにし、連続壁の�
 再びOpenを12 mm確認すると次の観測区間へ移り、停止・無効値・後退・IRモード変更で履歴を破棄します。同じIRモードの直進→ターン入口では履歴を保持します。
 設定は`Params/wall_param_A.h` / `wall_param_B.h`の`straight_feature_history_param`です。
 32 mmは2026-11-17の機体A探索で見つかった約26 mm幅の近い柱からの試験値で、機体Bの実機確認は未実施です。
-起動時の`legacy`と、追加柱のShadow記録・品質判定・LEDの意味は維持します。補正の本適用前に録画付きの再確認が必要です。
+起動時は`legacy`です。Legacyでも追加柱を検出・採用し、Shadow記録・品質判定・LEDの意味は維持します。実機の補正精度・閉ループ動作は録画付き評価が未実施です。
 
 ## ローカル・全体座標
 
@@ -204,7 +210,10 @@ pose reset 45 45 90
 周期CSV・バイナリの列は増やしていないため、この座標は`pose show`またはC++の`vehicle->pose.snapshot()`で参照します。
 旧ログの`ego.turn_x/y`列は`vehicle->pose.log_position()`の左/前成分です。独立した位置積分は持たず、ログ用原点だけを従来のゼロ化箇所で更新します。
 ログ用原点の変更は`pose show`の全体位置・動作ローカル位置を変えません。`ego.turn_x/y`はエンコーダと採用した推定補正を反映する値になり、従来の速度積分値と数値が変わる場合があります。
-更新処理がなかった`ideal.turn_x/y`列は0を維持します。列名・列順・mm単位と保存/配信バイナリ形式は変更しません。
+旧`ideal.turn_x/y`列は`estimate.heading_rad` / `estimate.sigma_heading_rad`へ置き換えました。
+`wall_ekf control`時の引継ぎに採用する姿勢・標準偏差をradで記録し、無効時は両方NaNです。斜めは`wall_edge control`も必要です。
+旋回中は入口軸、出口では論理角を引いた新しい経路軸での姿勢になります。全体のyawや旧`ego.radian`とは原点が異なります。
+55項目・転送サイズを保ち、識別子を`L8S5` / `0xA55D`へ更新しています。[参照元と無効条件](ble/README.md#採用姿勢の2項目)も確認してください。
 
 ## ターン自己位置EKF
 
@@ -318,7 +327,7 @@ wall_ekf legacy
 
 | モード | 動作 |
 | --- | --- |
-| `legacy` | 従来のZirconia制御を使用し、EKFを停止します。 |
+| `legacy` | 従来の直進壁制御を使用し、EKFを停止します。 |
 | `shadow` | 起動時の既定値。従来制御を保ち、EKFと候補の制御出力を並行計算します。 |
 | `control` | EKFの横偏差・姿勢と信頼度を、壁の採用判定・直進側壁制御へ使用します。 |
 
@@ -384,7 +393,7 @@ CSVの列数・バイナリ形式は維持します。`control_ir`は使用し�
 ### 斜め区間への適用
 
 `wall_ekf`は斜め直線にも適用します。`legacy/shadow`の斜め制御とCSVの意味は従来どおりです。
-`control`は`Task/Inc/zirconia_wall_control.h`の32 mm接近モデルを使い、採用可能なEKF偏差だけを従来の斜め制御則の横偏差入力へ渡します。
+`control`は`Task/Inc/straight_wall_control.h`の32 mm接近モデルを使い、採用可能なEKF偏差だけを従来の斜め制御則の横偏差入力へ渡します。
 未確認・不採用時は従来のIR/オドメトリ入力、速度依存ゲイン、軌道制動を維持します。柱がない区間で従来の補正を0へ置き換えません。
 片側前センサが近い場合は柱候補を残し、両前センサ66 mm以下の場合は近接観測を除外します。
 柱のない区間を中心位置0の観測にせず、断続的な柱から姿勢の確信度を上げません。
@@ -402,8 +411,8 @@ BLE最短走行の終了時には`SHORTEST_WALL_STATS`で斜め対象周期・EK
 
 ## IRセンサ表示
 
-赤外LEDは走行中と手かざし開始待機中のみ発光します。`irsens`／`ir_sensor`やInterfaceの表示だけでは点灯しません。
-通常のシェル待機・停止中および点灯直後の2 ADC周期はIR差分値を0にするため、そのときの換算距離は反射光の測定値ではありません。
+赤外LEDは走行中・手かざし開始待機中に加え、停止中の`irsens`／`ir_sensor`と`interface ir`／`interface photo`の取得中だけ発光します。測定コマンドはモータ制御を有効化せず、点灯後2回のADC完了を待ってから取得し、終了後に測定用の発光要求を解除します。
+通常のシェル待機中・測定外および点灯直後の2 ADC周期はIR差分値を0にするため、そのときの換算距離は反射光の測定値ではありません。
 電池電圧のADC取得は消灯中も継続します。
 
 マウスをshellモードにして、GUIのコマンド入力欄またはシリアルターミナルから送信します。
@@ -426,6 +435,16 @@ irsens 20 100
 各行の `value_fl/fr/sl/sr` は発光ON−OFFのADC差分、`distance_fl/fr/sl/sr_mm` は換算距離です。
 平均値は表示した全標本について小数点以下3桁で出力します。距離は各標本の換算距離を平均します。
 FLは前左、FRは前右、SLは左、SRは右です。連続取得中の値を読み取ります。
+
+校正には`IRSENS_AVG`の`value_*`と、別途実測した壁までの距離を対応付けます。`distance_*_mm`は現在の機体別校正表による換算値です。発光ON/OFFそれぞれのADCを見る場合は`interface ir 100 20`を使います（平均値は出力しません）。
+
+| 応答 | 意味 |
+| --- | --- |
+| `IRSENS_ERROR busy` / `PHOTO_ERROR busy` | モータ制御・実行状態・手かざし待機・他の測定が使用中。現在の発光状態を変更せず拒否 |
+| `IRSENS_ERROR adc_timeout` / `PHOTO_ERROR adc_timeout` | 点灯後50 ms以内にADCが準備できず終了。測定用の発光要求は解除済み |
+| `IRSENS_ERROR adc_not_ready` / `PHOTO_ERROR adc_not_ready` | 取得中にADCが無効化され中断。測定用の発光要求を解除し、平均値・正常終了行を出力しない |
+
+BLEからの機体Bへの呼出しは[専用シェルのIR測定例](ble/README.md#停止中のir測定と平均値)を参照してください。
 
 ## Search診断
 
@@ -653,7 +672,7 @@ END
 通常フレームは以下です。
 
 ```c
-uint16_t magic;       // 0xA55C
+uint16_t magic;       // 0xA55D
 uint16_t index;
 half_float data[49];  // 動作/制御出力0～34、IRQ35～38、壁距離/壁制御39～48
 int16_t adc[4];       // 左/右/前左/前右のLED点灯ADC−消灯ADC
@@ -667,7 +686,7 @@ uint16_t motion_pattern;
 速度・姿勢、位置・滑り、モーター・制御出力、IRQ時間、壁距離・壁制御、ADC整数、範囲状態・走行パターンの順にまとめました。
 ADCをhalfへ変換しないため、2049や負値もそのまま保存できます。通常フレーム長は114 byteのままです。
 更新後のメイン・debug・turnpattern GUIは`log mode0`を指定し、HEADERの列数・列名・並びから新形式と旧55/51項目を区別します。
-新形式のmagicは`0xA55C`、旧形式は`0xA55A`/`0xA55B`です。機体とPC受信ツールを両方更新してください。
+新形式のmagicは`0xA55D`、旧形式は`0xA55A`/`0xA55B`/`0xA55C`です。機体とPC受信ツールを両方更新してください。
 `Serial_binary.py` もHEADERから選択するため、取得前に `log mode0` にしてください。
 計測範囲と前回値の扱いは [割り込み時間のログ](ble/README.md#割り込み時間をログで確認する) を参照してください。
 

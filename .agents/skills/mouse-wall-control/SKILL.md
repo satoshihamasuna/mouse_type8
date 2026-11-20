@@ -11,9 +11,9 @@ description: "mouse_type8 の直進側壁制御、IR センサの採用判定、
 
 | 対象 | 読むファイル |
 | --- | --- |
-| 制御則・信頼度・phase | [zirconia_wall_control.cpp](../../../Task/Src/zirconia_wall_control.cpp)、[入出力型](../../../Task/Inc/zirconia_wall_control.h) |
+| 制御則・信頼度・phase | [straight_wall_control.cpp](../../../Task/Src/straight_wall_control.cpp)、[入出力型](../../../Task/Inc/straight_wall_control.h) |
 | ADC 平均・距離校正・機体状態との接続 | [ir_sens_task.cpp](../../../Task/Src/ir_sens_task.cpp)、[sensing_task.h](../../../Task/Inc/sensing_task.h) |
-| 閾値・ゲイン・出力上限 | [zirconia_wall_param.h](../../../Params/zirconia_wall_param.h) |
+| 閾値・ゲイン・出力上限 | [wall_param.h](../../../Params/wall_param.h)、`wall_param_A.h` / `wall_param_B.h` |
 | 新規直進・モード切替・ターン後の復帰 | `Task/Src/init_motion.cpp`、`init_motion2.cpp`、`motion.cpp`、`turn_motion.cpp` |
 | 回帰ケースと実装ハーネス | [test_side_wall_stability.py](../../../tools/tests/test_side_wall_stability.py)、[side_wall_stability_harness.cpp](../../../tools/tests/side_wall_stability_harness.cpp) |
 
@@ -21,7 +21,7 @@ description: "mouse_type8 の直進側壁制御、IR センサの採用判定、
 
 ## 接続時に維持する関係
 
-- type8 の `ego.x_point` は左正の mm、Zirconia の横偏差は右正の m。入力は `-x_point / 1000`、推定位置への同期は `-raw_error_m * 1000`。
+- type8 の `ego.x_point` は左正の mm、直進壁制御の横偏差は右正の m。入力は `-x_point / 1000`、推定位置への同期は `-raw_error_m * 1000`。
 - `delta_tms` は ms、制御器の `dt_s` は s。姿勢は rad、角速度は rad/s、角加速度は rad/s²。
 - 直進壁制御は区間専用のジャイロ積分 `straight_heading_rad` を使う。壁切れ処理による `ego.radian` のリセットへ再結合しない。
 - `output.omega_radps` と `alpha_radps2` は直進の目標へ代入する。前周期の目標角速度へ補正を加えると二重積分になる。
@@ -53,4 +53,4 @@ python -m unittest discover -s tools/tests -p test_side_wall_stability.py -v
 
 - 直進中の `control_ir` は左正の横偏差 mm、`control_ir_dot` は左向き正の区間姿勢 rad。斜め中は従来の意味。
 - 詳細は `straight_wall_output` の phase、採用マスク、transition、飽和状態で確認する。マスクは 1=左、2=右、3=両側。
-- `Params/zirconia_wall_param.h` の値は移植元由来の初期値。ホストテスト成功を機体 A / B の実機調整済みという意味にしない。
+- `Params/wall_param_A.h` / `wall_param_B.h` の値は移植元由来の初期値。ホストテスト成功を機体 A / B の実機調整済みという意味にしない。

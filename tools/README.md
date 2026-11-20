@@ -3,7 +3,7 @@
 シリアルログの取得、迷路表示、ログ解析などに使用するPythonツールです。
 
 壁制御改善用の保存データは、通常の波形CSV、補正イベントCSV、走行・撮影設定へ分けています。
-周期ログはPIDゲイン6列をADC4本・範囲状態・走行パターンへ置き換え、55項目の`L8S4`へ更新しました。
+周期ログは55項目の`L8S5`です。ADC4本・範囲状態・走行パターンに加え、旧理想軌跡の空き2枠に採用姿勢と標準偏差（rad、無効時NaN）を記録します。旧`L8S1`～`L8S4`も形式別の列名で読みます。
 採否・生ADC・距離範囲状態・動画時刻の仕様は [壁診断ログ](ble/README.md#壁制御を改善するためのログwall_diag-schema-1) を参照してください。
 
 探索の動画とBLEログを一緒に保存し、手かざし準備完了をGUI表示する場合は
@@ -54,6 +54,7 @@ pip install pyserial pandas numpy matplotlib scipy
 BLEとカメラの接続を保持し、GUIの設定照合→RECORDING_READY後の単体1回→停止確認後1秒以上で録画終了（既定上限20秒）→速報表示→全フレーム詳細検証をまとめて行います。
 変更のない設定は再送せず、設置・停止・手離し確認は毎回必要です。起動だけでは接続も走行もしません。
 画面を操作せずに同じ手順を行う場合は`pixel_camera_tuning_cli.py`を使います。BLE接続を保持し、設定の読取り・変更・単体撮影・状態照会をコマンドから実行できます。[CLIの手順](pixel_camera_README.md#画面操作なしのcli調整)を参照してください。
+Codexからは`pixel_camera_tuning_mcp.py`で、静止位置の照合から1回走行、設定・動画・ログの保存までを一つの要求にできます。[MCPの登録と手順](pixel_camera_README.md#codexからmcpで調整する)を参照してください。
 
 `tools/Start_Pixel_Camera.cmd`でカメラGUIを起動できます。`py -3.11 tools/pixel_camera_capture.py record --seconds 30`では、実際の録画開始を確認してからTYPE8を動かし、撮影情報と動画検査結果を取得できます。
 カメラとBLE中継の既定ポートが重なるため、同時使用時はBLE中継・BLE GUIの両方へ`--port 8766`を指定します。
