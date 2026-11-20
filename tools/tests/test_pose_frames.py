@@ -69,7 +69,8 @@ inline void FAN_Motor_SetDuty(int) {}
             exe = directory / ('pose-' + mouse + ('.exe' if os.name == 'nt' else ''))
             result = subprocess.run(compiler + ['-std=c++14', '-O0', '-Wall', '-Wextra', '-fno-exceptions', '-fno-rtti',
                 '-DMOUSE_' + mouse, '-I', str(directory), '-I', str(ROOT),
-                str(ROOT / 'tools/tests/pose_frames_harness.cpp'), '-o', str(exe)],
+                str(ROOT / 'tools/tests/pose_frames_harness.cpp'),
+                str(ROOT / 'Component/Src/half_float.cpp'), str(ROOT / 'Component/codegen/rtwhalf.cpp'), '-o', str(exe)],
                 capture_output=True, text=True, errors='replace', env=environment, timeout=240)
             if result.returncode:
                 raise AssertionError(result.stdout + result.stderr)

@@ -1,6 +1,7 @@
 """新旧保存ログの型と、実GUI受信経路のADC整数精度を検証する。実機接続なし。"""
 import csv
 import io
+import math
 from pathlib import Path
 import struct
 import sys
@@ -26,13 +27,19 @@ def labels_v4():
     return labels
 
 
+def labels_v5():
+    labels = labels_v4()
+    labels[13], labels[15] = 'estimate.heading_rad', 'estimate.sigma_heading_rad'
+    return labels
+
+
 def packet_v3(magic=0xA55B):
     return struct.pack('<HH49e4h2H', magic, 123, *[i/4 for i in range(49)], -32768, -7, 2049, 32767, 2209, 7)
 
 
 class SavedLogTests(unittest.TestCase):
     def test_saved_adc_and_packed_words_are_exact_and_size_stays_114(self):
-        for labels,expected in ((labels_v3(),0xA55B),(labels_v4(),0xA55C)):
+        for labels,expected in ((labels_v3(),0xA55B),(labels_v4(),0xA55C),(labels_v5(),0xA55D)):
             frame=saved_log_frame(labels)
             self.assertEqual(frame.size,114)
             self.assertEqual(saved_log_magic(labels),expected)
@@ -52,12 +59,25 @@ class SavedLogTests(unittest.TestCase):
         with self.assertRaises(ValueError): decode_saved_values(labels_v3(), [0]*54)
         with self.assertRaises(ValueError): saved_log_magic(None)
 
+    def test_heading_valid_zero_and_invalid_nan_are_distinct_in_saved_v5(self):
+        labels = labels_v5()
+        values = [0.0]*49 + [-32768, -7, 2049, 32767, 2209, 7]
+        values[12], values[14] = 0.0, 0.0078125
+        for invalid in (False, True):
+            if invalid: values[12] = values[14] = float('nan')
+            wire = struct.pack('<HH49e4h2H', 0xA55D, 1, *values)
+            _, _, *words = saved_log_frame(labels).unpack(wire)
+            decoded = decode_saved_values(labels, words)
+            if invalid: self.assertTrue(math.isnan(decoded[12]) and math.isnan(decoded[14]))
+            else: self.assertEqual((decoded[12], decoded[14]), (0.0, 0.0078125))
+            self.assertEqual(decoded[49:], values[49:])
+
     def test_main_gui_saves_new_and_old_frames_using_header_selected_types(self):
         import myshell_gui as gui
-        for version in (2,3,4):
+        for version in (2,3,4,5):
             with tempfile.TemporaryDirectory() as directory:
-                labels=labels_v4() if version==4 else labels_v3() if version==3 else ['cnt']+['field'+str(i) for i in range(55)]
-                start=packet_v3(0xA55C if version==4 else 0xA55B) if version>=3 else struct.pack('<HH55e',0xA55A,123,*[i/4 for i in range(55)])
+                labels=labels_v5() if version==5 else labels_v4() if version==4 else labels_v3() if version==3 else ['cnt']+['field'+str(i) for i in range(55)]
+                start=packet_v3(0xA55D if version==5 else 0xA55C if version==4 else 0xA55B) if version>=3 else struct.pack('<HH55e',0xA55A,123,*[i/4 for i in range(55)])
                 data = io.BytesIO(start+packet_v3(0xFFFF))
                 lines = iter(['START','HEADER,'+','.join(labels),'BINARY'])
                 commands=[]

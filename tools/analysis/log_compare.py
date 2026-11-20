@@ -231,12 +231,12 @@ def plot_comparisons(frame, source_name, period_ms=LOG_PERIOD_MS, settings=None,
         measured_pose = integrate_pose(frame["ego.velo"], frame["ego.rad_velo"], period_ms, measured_heading)
 
     trajectory_axis = axes[6]
-    trajectory_columns = ("ideal.turn_x", "ideal.turn_y", "ego.turn_x", "ego.turn_y")
     if target_pose is not None:
         trajectory_axis.plot(target_pose[0], target_pose[1], label="target (integrated v/omega)", linewidth=2.0)
         trajectory_axis.plot(measured_pose[0], measured_pose[1], label="measured (integrated v/omega)", linewidth=1.5)
-        if all(column in frame for column in trajectory_columns):
+        if all(column in frame for column in ("ideal.turn_x", "ideal.turn_y")):
             trajectory_axis.plot(frame["ideal.turn_x"], frame["ideal.turn_y"], "--", label="target (logged position)", alpha=0.6)
+        if all(column in frame for column in ("ego.turn_x", "ego.turn_y")):
             trajectory_axis.plot(frame["ego.turn_x"], frame["ego.turn_y"], "--", label="measured (logged position)", alpha=0.6)
         trajectory_axis.scatter(0.0, 0.0, marker="o", label="integration start")
         trajectory_axis.set_title("Position trajectory from velocity / angular velocity")

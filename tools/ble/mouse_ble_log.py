@@ -33,7 +33,7 @@ LEGACY_LOG_LABELS = (
 V3_LOG_LABELS = (*LEGACY_LOG_LABELS[:45], *LEGACY_LOG_LABELS[51:],
                  'sen_l.value', 'sen_r.value', 'sen_fl.value', 'sen_fr.value',
                  'ir.range_states', 'motion.pattern')
-LOG_LABELS = (
+V4_LOG_LABELS = (
     'ideal.velo',
     'ego.velo',
     'ideal.accel',
@@ -90,10 +90,14 @@ LOG_LABELS = (
     'ir.range_states',
     'motion.pattern',
 )
-MAGIC = b'L8S4'
+LOG_LABELS = (*V4_LOG_LABELS[:12], 'estimate.heading_rad', V4_LOG_LABELS[13],
+              'estimate.sigma_heading_rad', *V4_LOG_LABELS[15:])
+MAGIC = b'L8S5'
 FRAME = struct.Struct('<4sIIH49e4h3H')
-FRAMES = {b'L8S1': struct.Struct('<4sIIH51eH'), b'L8S2': struct.Struct('<4sIIH55eH'), b'L8S3': FRAME, MAGIC: FRAME}
-FRAME_LABELS = {b'L8S1': LEGACY_LOG_LABELS[:51], b'L8S2': LEGACY_LOG_LABELS, b'L8S3': V3_LOG_LABELS, MAGIC: LOG_LABELS}
+FRAMES = {b'L8S1': struct.Struct('<4sIIH51eH'), b'L8S2': struct.Struct('<4sIIH55eH'),
+          b'L8S3': FRAME, b'L8S4': FRAME, MAGIC: FRAME}
+FRAME_LABELS = {b'L8S1': LEGACY_LOG_LABELS[:51], b'L8S2': LEGACY_LOG_LABELS,
+                b'L8S3': V3_LOG_LABELS, b'L8S4': V4_LOG_LABELS, MAGIC: LOG_LABELS}
 CSV_HEADER = ('cnt', *LOG_LABELS, 'sequence', 'time_ms', 'period_ms', 'lost_frames')
 
 

@@ -11,6 +11,32 @@
 #include <math.h>
 #include "Peripheral/Inc/peripheral.h"
 
+MotionHeading::Prior Motion::HeadingForLog()
+{
+	const PoseFrames::StateLock lock;
+	if (motion_is_enable_get()!=True || motion_exeStatus_get()==error
+		|| ir_sens->WallEkfMode_Get()!=IrSensTask::WallEkfMode::Control) return {};
+	if (motion_control_get()==STRAIGHT_STATE && ir_sens->CanContinueStraightWallPose())
+		return {ir_sens->StraightHeadingForTurn(),ir_sens->StraightHeadingVarianceForTurn(),true};
+	if (motion_control_get()==DIAGONAL_STATE) {
+		float heading=0,variance=0;
+		if (ir_sens->DiagonalHeadingForTurn(heading,variance)) return {heading,variance,true};
+	}
+	if (motion_control_get()==SLATURN_STATE) {
+		const bool search=motion_pattern_get()==Search_slalom_R || motion_pattern_get()==Search_slalom_L;
+		const auto propagated=search ? search_turn_heading.current() : shortest_turn_heading.current();
+		if (!propagated.usable()) return {};
+		// The accepted EKF marginal replaces the same gyro-based prediction.
+		// Match the exit handoff's disagreement gate without fusing it again.
+		const auto posterior=ir_sens->TurnHeadingPosterior();
+		if (!search && posterior.usable()
+			&& fabsf(posterior.heading_rad-propagated.heading_rad)<=wall_ekf_param.heading_disagreement_limit_rad)
+			return posterior;
+		return propagated;
+	}
+	return {};
+}
+
 
 float get_turn_table_value(float time_period_ms,float time_ms)
 {

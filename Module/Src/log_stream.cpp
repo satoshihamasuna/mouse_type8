@@ -132,7 +132,7 @@ void LogStream::enqueue_sample(const half_float *sample, uint32_t now_ms)
 	if(pending_count == QUEUE_SIZE) return;
 	PendingFrame &slot = pending[pending_write];
 	uint8_t *frame = slot.bytes;
-	memcpy(frame, "L8S4", 4);
+	memcpy(frame, "L8S5", 4);
 	put32(frame + 4, index); // Count attempts, including whole-frame drops.
 	put32(frame + 8, now_ms);
 	put16(frame + 12, period_ms);

@@ -185,6 +185,7 @@ class Motion
 			motion_exeStatus=status;
 		}
 		t_exeStatus 		 motion_execute();
+		MotionHeading::Prior HeadingForLog();
 
 		inline	void 		motion_enable_set()										{ 	is_motion_enable = True; Sensor_SetMotionActive(1U); }
 		inline	void 		motion_disable_set()									{ 	is_motion_enable = False; Sensor_SetMotionActive(0U); }

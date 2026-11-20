@@ -2,6 +2,7 @@
 import binascii
 import csv
 import io
+import math
 import os
 from pathlib import Path
 import re
@@ -21,13 +22,13 @@ def values_v4():
     return tuple(i / 4 for i in range(49)) + (-32768, -7, 2049, 32767, 2209, 7)
 
 
-def frame(sequence=0, time_ms=100, period_ms=20, *, legacy=False, v2=False):
+def frame(sequence=0, time_ms=100, period_ms=20, *, legacy=False, v2=False, protocol=log.MAGIC):
     if legacy or v2:
         count = 51 if legacy else 55
         payload = struct.pack('<4sIIH{}e'.format(count), b'L8S1' if legacy else b'L8S2',
                               sequence, time_ms, period_ms, *[i / 4 for i in range(count)])
     else:
-        payload = struct.pack('<4sIIH49e4h2H', b'L8S4', sequence, time_ms, period_ms, *values_v4())
+        payload = struct.pack('<4sIIH49e4h2H', protocol, sequence, time_ms, period_ms, *values_v4())
     return payload + struct.pack('<H', binascii.crc_hqx(payload, 0xffff))
 
 
@@ -119,7 +120,7 @@ class DecoderTests(unittest.TestCase):
                          ['-32768','-7','2049','32767'])
         self.assertEqual(new['ir.range_states'], '2209')
         self.assertEqual(new['irq.total_us'], '8.75')
-        self.assertEqual(log.StreamDecoder().feed(frame())[0].protocol, b'L8S4')
+        self.assertEqual(log.StreamDecoder().feed(frame())[0].protocol, b'L8S5')
         capture = log.CsvCapture(io.StringIO()); capture.feed(frame(v2=True))
         with self.assertRaisesRegex(RuntimeError, 'format changed'): capture.feed(frame(1,120))
 
@@ -156,6 +157,34 @@ class DecoderTests(unittest.TestCase):
         source = (ROOT / 'Module' / 'Src' / 'log_data.cpp').read_text(encoding='utf-8')
         labels = source.split('static const char *labels[(LOG_DATA_NUM+1)] = {')[1].split('};')[0]
         self.assertEqual(tuple(re.findall(r'"([^"]+)"', labels)), ('cnt', *log.LOG_LABELS))
+
+    def test_v5_heading_slots_nan_and_previous_v4_labels_are_distinct(self):
+        old_output, new_output = io.StringIO(), io.StringIO()
+        log.CsvCapture(old_output).feed(frame(protocol=b'L8S4'))
+        values = list(values_v4())
+        values[12], values[14] = 0.03125, 0.0078125
+        sample = log.Sample(0, 100, 5, tuple(values))
+        capture = log.CsvCapture(new_output)
+        wire = log.encode_sample(sample)
+        for offset in range(0, len(wire), 7): capture.feed(wire[offset:offset+7])
+        values[12] = values[14] = float('nan')
+        capture.feed(log.encode_sample(log.Sample(1, 105, 5, tuple(values))))
+        old = next(csv.DictReader(io.StringIO(old_output.getvalue())))
+        new, invalid = list(csv.DictReader(io.StringIO(new_output.getvalue())))
+        self.assertEqual(len(new), 60)
+        self.assertEqual(new['estimate.heading_rad'], '0.03125')
+        self.assertEqual(new['estimate.sigma_heading_rad'], '0.0078125')
+        self.assertTrue(math.isnan(float(invalid['estimate.heading_rad'])))
+        self.assertTrue(math.isnan(float(invalid['estimate.sigma_heading_rad'])))
+        self.assertEqual(old['ideal.turn_x'], '3.0')
+        self.assertNotIn('estimate.heading_rad', old)
+        self.assertNotIn('ideal.turn_x', new)
+        for name in ('ego.turn_x', 'ego.turn_y', 'sen_l.value', 'Battery'):
+            self.assertEqual(old[name], new[name])
+        self.assertEqual(log.FRAMES[b'L8S4'].size, log.FRAMES[b'L8S5'].size)
+        previous = log.CsvCapture(io.StringIO())
+        previous.feed(frame(protocol=b'L8S4'))
+        with self.assertRaisesRegex(RuntimeError, 'format changed'): previous.feed(frame(1, 105))
 
     def test_control_period_limits_and_checksum(self):
         for period in (0, 2, 1001):

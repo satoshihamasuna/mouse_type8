@@ -1,5 +1,6 @@
 #include "Module/Inc/vehicle.h"
 #include "Task/Inc/turn_pose_ekf.h"
+#include "Component/Inc/half_float.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,10 +26,12 @@ public:
     Vehicle storage;
     Vehicle *vehicle=&storage;
     bool busy=false; t_exeStatus status=complete;
+    MotionHeading::Prior log_heading;
     static CtrlTask_type8 &getInstance() { static CtrlTask_type8 ctrl; return ctrl; }
     bool is_control_enable() const { return busy; }
     t_exeStatus motion_exeStatus_get() const { return status; }
     Vehicle *return_vehicleObj() { return vehicle; }
+    MotionHeading::Prior HeadingForLog() { return log_heading; }
 };
 #include "pose_shell.inc"
 
@@ -232,13 +235,23 @@ static void log_view() {
         float sample[22]={};
         auto float_to_half=[](float value) { return value; };
 #include "pose_log.inc"
-        assert(sample[12]==0 && sample[14]==0); // Historical ideal position slots remain reserved zero.
+        const float logged_heading=half_to_float(::float_to_half(sample[12]));
+        const float logged_sigma=half_to_float(::float_to_half(sample[14]));
+        if(heading.usable()) {
+            assert(close(logged_heading,heading.heading_rad,.00001f));
+            assert(close(logged_sigma,sqrtf(heading.variance_rad2),.00001f));
+        } else assert(isnan(logged_heading) && isnan(logged_sigma));
         same({sample[15],sample[13],0},{frames.log_position().x_mm,frames.log_position().y_mm,0});
         return Pose{sample[15],sample[13],0};
     };
     const auto expected=relative(log_origin,frames.snapshot().world);
     same(read_log(),{expected.x_mm,expected.y_mm,0});
     assert(close(read_log().y_mm,10*sinf(.3f)) && close(read_log().x_mm,10*cosf(.3f)));
+    CtrlTask_type8::getInstance().log_heading={.03125f,.00006103515625f,true};read_log();
+    CtrlTask_type8::getInstance().log_heading={0,.00006103515625f,true};read_log();
+    CtrlTask_type8::getInstance().log_heading={NAN,.0001f,true};read_log();
+    CtrlTask_type8::getInstance().log_heading={.03f,-.0001f,true};read_log();
+    CtrlTask_type8::getInstance().log_heading={};
     const auto before=frames.snapshot();
     frames.set_phase(DIAGONAL_STATE); // The control frame changes independently of the log reference.
     same(frames.snapshot().world,before.world);same(read_log(),{expected.x_mm,expected.y_mm,0});

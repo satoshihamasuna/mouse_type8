@@ -9,6 +9,7 @@
 
 #include "Module/Inc/log_data.h"
 #include "Module/Inc/log_stream.h"
+#include <math.h>
 #include "Module/Inc/interrupt_timing.h"
 #include "Peripheral/Inc/communicate.h"
 #include "stdio.h"
@@ -139,9 +140,9 @@ void LogData::indicate_data()
         "ego.length",
         "ideal.x_point",
         "ego.x_point",
-        "ideal.turn_x",
+        "estimate.heading_rad",
         "ego.turn_x",
-        "ideal.turn_y",
+        "estimate.sigma_heading_rad",
         "ego.turn_y",
         "ideal.turn_slip_theta",
         "ego.turn_slip_theta",
@@ -325,14 +326,15 @@ void LogData::logging()
 
 		// 位置・滑り
 		const auto turn_position = Vehicle_type8::getInstance().pose.log_position();
+		const auto heading = CtrlTask_type8::getInstance().HeadingForLog();
 		sample[8] = float_to_half(Vehicle_type8::getInstance().ideal.length.get());
 		sample[9] = float_to_half(Vehicle_type8::getInstance().ego.length.get());
 		sample[10] = float_to_half(Vehicle_type8::getInstance().ideal.x_point.get());
 		sample[11] = float_to_half(Vehicle_type8::getInstance().ego.x_point.get());
-		// 旧列順・左/前の符号を維持。未実装だったideal位置列は予約値0。
-		sample[12] = float_to_half(0.0f);
+		// 空き2枠を採用姿勢と標準偏差 [rad] に使用。無効値は両方NaN。
+		sample[12] = float_to_half(heading.usable() ? heading.heading_rad : NAN);
 		sample[13] = float_to_half(turn_position.y_mm);
-		sample[14] = float_to_half(0.0f);
+		sample[14] = float_to_half(heading.usable() ? sqrtf(heading.variance_rad2) : NAN);
 		sample[15] = float_to_half(turn_position.x_mm);
 		sample[16] = float_to_half(Vehicle_type8::getInstance().ideal.turn_slip_theta.get());
 		sample[17] = float_to_half(Vehicle_type8::getInstance().ego.turn_slip_theta.get());

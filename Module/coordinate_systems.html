@@ -114,7 +114,7 @@ e = −sin φ · (X − Oₓ) + cos φ · (Y − Oᵧ)
         </tbody></table></div>
         <p><code>reference_yaw_rad</code> は次の経路軸にも使う方向です。旋回中は <code>origin.yaw_rad</code> が入口の軸を保ち、旋回完了時に <code>complete_turn()</code> が経路方向を更新し、続く <code>set_phase()</code> が新しい軸を取り込みます。</p>
         <div class="split"><div class="card"><h3>右90°に補正 +1.5°を加えた例</h3><p>論理角は −90°、実際の旋回が −88.5°なら、出口の姿勢偏差は <b>+1.5°</b>。<code>complete_turn(-π/2)</code> は経路方向だけを変え、機体の姿勢を論理角へ丸めません。</p></div><div class="card"><h3>滑り角は姿勢の重複ではない</h3><p>機体が同じ方向を向いていても、横滑りがあれば速度の向きは変わります。βは滑りモデルに必要な状態です。未使用の保存変数 <code>turn_slip_dot</code> は削除済みです。</p></div></div>
-        <p class="small" style="margin-top:15px">各EKFの姿勢原点と、旧制御値 <code>ego.radian</code> の原点も区別します。<code>ego.radian</code> は区間や補正処理でゼロ化されるため、全体の θ を表す値として読み替えません。壁制御内部の Zirconia には右正・m単位の偏差があり、IRタスクで左正・mmとの符号・単位変換を行います。</p>
+        <p class="small" style="margin-top:15px">各EKFの姿勢原点と、旧制御値 <code>ego.radian</code> の原点も区別します。<code>ego.radian</code> は区間や補正処理でゼロ化されるため、全体の θ を表す値として読み替えません。壁制御内部には右正・m単位の偏差があり、IRタスクで左正・mmとの符号・単位変換を行います。</p>
         <p class="small">滑り係数 K は吸引I/Oから代入せず、<code>Vehicle::turn_slip_k_m_s2()</code> で実測・目標の計算に共通の基本値を参照します。機体Aは以前の推定値（非吸引41.28055、吸引254.90725 m/s²）、未校正Bは従来値（75 / 250 m/s²）です。直前のファン出力が0か正かで切り替え、係数の保存変数は持ちません。EKFの適用条件は別に確認します。</p>
         <p class="source">実装：<a href="../Task/Src/turn_motion.cpp">turn_motion.cpp</a>、<a href="../Params/turn_pose_param.h">turn_pose_param.h</a>、<a href="../Task/Inc/search_turn_heading.h">search_turn_heading.h</a>、<a href="../Task/Src/ir_sens_task.cpp">ir_sens_task.cpp</a></p>
       </section>
@@ -162,11 +162,13 @@ e = −sin φ · (X − Oₓ) + cos φ · (Y − Oᵧ)
           <tr><td><code>pose.log_position()</code></td><td>従来のゼロ化箇所で設定するログ用原点から見た位置。</td><td><code>x_mm = 前</code>、<code>y_mm = 左</code></td></tr>
           <tr><td><code>ego.turn_x</code> 列</td><td>ログ用原点に対する左位置 [mm]。</td><td><code>log_position().y_mm</code></td></tr>
           <tr><td><code>ego.turn_y</code> 列</td><td>ログ用原点に対する前位置 [mm]。</td><td><code>log_position().x_mm</code></td></tr>
-          <tr><td><code>ideal.turn_x/y</code> 列</td><td>更新処理がなかった旧理想位置の互換列。</td><td>予約値 <code>0</code> を出力。</td></tr>
+          <tr><td><code>estimate.heading_rad</code> 列</td><td>旧ideal.turn_x枠。引継ぎに採用する区間姿勢 [rad]。</td><td>無効時NaN。旋回中は入口軸、出口後は新しい経路軸。</td></tr>
+          <tr><td><code>estimate.sigma_heading_rad</code> 列</td><td>旧ideal.turn_y枠。同じ推定の標準偏差 [rad]。</td><td>分散の平方根。無効時NaN。</td></tr>
         </tbody></table></div>
         <div class="callout warm"><p><b>ログの x は左、Poseのローカル x は前。</b>列名が似ていても成分の対応は逆です。また、ログ用原点は <code>origin</code> と独立なので、<code>ego.turn_x/y</code> を <code>snapshot().local</code> と直接比較しません。</p></div>
         <p><code>reset_turn_position_for_log()</code> はログ用原点の位置を現在の全体位置に置き、軸角を <code>wrap(world.yaw_rad − ego.radian)</code> にします。これは旧センサ姿勢の原点を考慮した変換です。全体位置・動作ローカル・予測回数は変更しません。</p>
-        <p>列名・順序・単位・保存/配信バイナリ形式は従来どおりです。値の生成元は単一のposeへ移り、エンコーダと採用したEKF・壁補正を反映します。過去の速度による独立積分とは数値が変わる場合があります。</p>
+        <p><code>ego.turn_x/y</code> は列位置とmm単位を維持します。空き2枠の姿勢・標準偏差を区別するため、55項目を保って配信を <code>L8S5</code>、保存magicを <code>0xA55D</code> へ更新しました。更新後のPCツールは旧形式も読みます。位置の生成元は単一のposeで、過去の速度による独立積分とは数値が変わる場合があります。</p>
+        <p class="small">姿勢ログは <code>wall_ekf control</code>（斜めは <code>wall_edge control</code> も必要）で記録します。ターンEKF不採用時は接続用ジャイロ予測を使い、有効な引継ぎ姿勢がない場合は両方NaNです。全体共分散の記録ではありません。詳細は <a href="../tools/ble/README.md#採用姿勢の2項目">採用姿勢の2項目</a> を参照してください。</p>
         <p class="small">全体位置と現在の動作ローカル全項目を周期CSVに追加したわけではありません。これらの参照先は <code>pose show</code> とsnapshot APIです。</p>
         <p class="source">実装：<a href="Inc/vehicle.h">reset_turn_position_for_log()</a>、<a href="Inc/pose_frames.h">reset_log_origin() / log_position()</a>、<a href="Src/log_data.cpp">LogData::logging()</a></p>
       </section>

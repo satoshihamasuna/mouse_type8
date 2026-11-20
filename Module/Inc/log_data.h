@@ -13,8 +13,9 @@
 #include "Component/Inc/singleton.h"
 #include "Module/Inc/log_buffer.h"
 
-// L8S4 / saved magic A55C: 49 binary16 values, 4 signed ADC words,
+// L8S5 / saved magic A55D: 49 binary16 values, 4 signed ADC words,
 // packed IR range states and motion pattern. Total size stays 55 words.
+// Former ideal.turn_x/y slots now carry heading/sigma [rad], NaN if invalid.
 // LogBuffer copies words verbatim; the integer trailer is never binary16.
 namespace LogLayout {
 constexpr uint16_t HALF_FIELDS = 49;
@@ -42,7 +43,7 @@ inline void set_ir_fields(half_float *words, const int16_t *adc, uint16_t ranges
 #define LOG_DATA_NUM  LogLayout::FIELD_COUNT
 #define LOG_DATA_PRIOD 1
 
-#define LOG_MAGIC 0xA55C
+#define LOG_MAGIC 0xA55D
 #define LOG_MAGIC_END 0xFFFF
 
 class LogData:public Singleton<LogData>
@@ -90,6 +91,6 @@ typedef struct __attribute__((packed))
     uint16_t motion_pattern;
 } log_frame_t;
 
-static_assert(sizeof(log_frame_t) == 4 + LOG_DATA_NUM * 2, "Saved log layout must match L8S4 words");
+static_assert(sizeof(log_frame_t) == 4 + LOG_DATA_NUM * 2, "Saved log layout must match L8S5 words");
 
 #endif /* CPP_INC_LOG_DATA_H_ */

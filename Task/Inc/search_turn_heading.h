@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include "Params/wall_param.h"
+#include "Task/Inc/motion_heading.h"
 
 // New-corridor heading = incoming heading + measured yaw - logical turn angle.
 // Motion owns this accumulator; IR disable and ego.radian resets cannot erase it.
@@ -34,6 +35,8 @@ public:
             && fabsf(residual_rad()) <= search_turn_guard_param.exit_residual_limit_rad;
     }
     float residual_rad() const { return heading_rad_ - logical_turn_rad_; }
+    // During a turn the yaw is relative to its entry axis, not the exit axis.
+    MotionHeading::Prior current() const { return {heading_rad_,variance_rad2_,valid_}; }
     float variance_rad2() const { return variance_rad2_; }
 };
 #endif
