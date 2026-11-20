@@ -127,10 +127,12 @@ def analyze_group(group: list[tuple[Path, dict]], output: Path) -> dict:
     ff = settings["feedforward"]
     params = settings["parameters"]
     omega_max = abs(float(params["velo"]) / (float(params["r_min"]) / 1000.0))
-    profile_ms = abs(math.radians(float(params["degree"])) /
+    motion_degree = float(params["degree"]) + float(params.get("correction", 0.0))
+    profile_ms = abs(math.radians(motion_degree) /
                      (ACCEL_INTEGRAL * omega_max) * 1000.0)
     expected_segment_ms = math.ceil(profile_ms) + 2
     rows, samples = [], []
+    observed_lengths = []
     traces: dict[str, list[np.ndarray]] = {name: [] for name in (
         "ideal", "ego", "ff_velo", "ff_accel", "ff_bias", "ff_jerk",
         "pid", "applied", "ego_alpha", "post_omega", "post_voltage",
@@ -154,7 +156,9 @@ def analyze_group(group: list[tuple[Path, dict]], output: Path) -> dict:
         battery = frame["Battery"].to_numpy(float)
 
         segment_tolerance_ms = max(3, math.ceil(expected_segment_ms * 0.06))
-        segments = [segment for segment in turn_segments(ideal)
+        candidates = turn_segments(ideal)
+        observed_lengths.extend(int(end - start + 1) for start, end in candidates)
+        segments = [segment for segment in candidates
                     if abs((segment[1] - segment[0] + 1) - expected_segment_ms)
                     <= segment_tolerance_ms]
         for number, (start, end) in enumerate(segments, 1):
@@ -216,6 +220,12 @@ def analyze_group(group: list[tuple[Path, dict]], output: Path) -> dict:
                 traces["post_omega"].append(post_omega_trace)
                 traces["post_voltage"].append(post_voltage_trace)
 
+    if not rows:
+        raise ValueError(
+            f"No turn segment matched expected {expected_segment_ms} ms "
+            f"(+/-{segment_tolerance_ms} ms); observed {observed_lengths}. "
+            "Check degree + correction and the 1 ms log period."
+        )
     metrics = pd.DataFrame(rows)
     # Reject only gross turn-level faults from aggregate identification/reporting.
     def robust_ceiling(column: str) -> float:
