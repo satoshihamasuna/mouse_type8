@@ -1,0 +1,61 @@
+[1/33] Building CXX object CMakeFiles/mouse_type8.dir/Module/Src/flash.cpp.obj
+[2/33] Building CXX object CMakeFiles/mouse_type8.dir/Module/Src/interrupt.cpp.obj
+[3/33] Building CXX object CMakeFiles/mouse_type8.dir/Module/Src/log_data.cpp.obj
+[4/33] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/adachi.cpp.obj
+[5/33] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/calcRunTime.cpp.obj
+[6/33] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/make_path.cpp.obj
+[7/33] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/make_map.cpp.obj
+[8/33] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/make_path_expand.cpp.obj
+[9/33] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/virtual_wall.cpp.obj
+[10/33] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/wall_class.cpp.obj
+[11/33] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/search.cpp.obj
+[12/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/debug.cpp.obj
+[13/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/debug2.cpp.obj
+[14/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/debug3.cpp.obj
+[15/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/demo.cpp.obj
+[16/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/demo2.cpp.obj
+[17/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/demo_util.cpp.obj
+[18/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/mode.cpp.obj
+[19/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/interface_check.cpp.obj
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/System/Src/interface_check.cpp: In function 'void Mode::Interface_Check()':
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/System/Src/interface_check.cpp:249:83: warning: format '%ld' expects argument of type 'long int', but argument 2 has type 'int' [-Wformat=]
+  249 |                                                                         printf("%ld,",ADC4_get_value(i));
+      |                                                                                 ~~^   ~~~~~~~~~~~~~~~~~
+      |                                                                                   |                 |
+      |                                                                                   long int          int
+      |                                                                                 %d
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/System/Src/interface_check.cpp:251:75: warning: format '%ld' expects argument of type 'long int', but argument 2 has type 'int' [-Wformat=]
+  251 |                                                                 printf("%ld\n",Fan_Motor_Current_avg());
+      |                                                                         ~~^    ~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                           |                         |
+      |                                                                           long int                  int
+      |                                                                         %d
+[20/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/system_util.cpp.obj
+[21/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/search_time_select.cpp.obj
+[22/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/myshell.cpp.obj
+[23/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/wall_histry_check.cpp.obj
+[24/33] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/ctrl_task.cpp.obj
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/ctrl_task.cpp: In member function 'void CtrlTask::motion_control()':
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/ctrl_task.cpp:259:31: warning: variable 'sp_antiwindup' set but not used [-Wunused-but-set-variable]
+  259 |                         float sp_antiwindup = vehicle->sp_feedback.get();
+      |                               ^~~~~~~~~~~~~
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/ctrl_task.cpp:260:31: warning: variable 'om_antiwindup' set but not used [-Wunused-but-set-variable]
+  260 |                         float om_antiwindup = vehicle->om_feedback.get();
+      |                               ^~~~~~~~~~~~~
+[25/33] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/init_motion.cpp.obj
+[26/33] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/init_motion2.cpp.obj
+[27/33] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/ir_sens_task.cpp.obj
+[28/33] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/motion.cpp.obj
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/motion.cpp: In member function 'void Motion::Adjust_wall_corner()':
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/motion.cpp:177:37: warning: unused variable 'diff_time_ms' [-Wunused-variable]
+  177 |                                 int diff_time_ms = (ir_sens->r_corner_time - ir_sens->l_corner_time);
+      |                                     ^~~~~~~~~~~~
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/motion.cpp: In member function 'void Motion::SetIdeal_search_straight()':
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/motion.cpp:312:37: warning: unused variable 'diff_time_ms' [-Wunused-variable]
+  312 |                                 int diff_time_ms = (ir_sens->r_corner_time - ir_sens->l_corner_time);
+      |                                     ^~~~~~~~~~~~
+[29/33] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/turn_motion.cpp.obj
+[30/33] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_1600/turn_1600.cpp.obj
+[31/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/explore.cpp.obj
+[32/33] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/shortest_run.cpp.obj
+[33/33] Linking CXX executable mouse_type8.elf

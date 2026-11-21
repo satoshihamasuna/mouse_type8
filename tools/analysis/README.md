@@ -722,7 +722,7 @@ long180だけは始終方向が平行で連立方程式からLstart/Lendを一�
 高さ・位置を撮影ごとに確定したコピーへ展開し、`body_geometry_used.json`と`metrics.json`に、その動画のパスと一緒に保存します。
 車軸中心のオフセットがなければ、`metrics.json`の`body_geometry.center_kind`は`marker_midpoint`です。
 指定した設定は`body_geometry_used.json`にも保存します。互換性のためCSV列名は前マーカーが`blue_x_mm`等、後マーカーが`yellow_x_mm`等のままです。列名を実際の色と読み替えないでください。
-機体Bの前黄・後赤は`--front-color yellow --rear-color red`で指定できます。
+機体Bの前緑・後赤は`--front-color green --rear-color red`で指定できます。
 `pixel_camera_relative_pose.py`は機体JSONの`front_colour`・`rear_colour`を使い、追跡キャッシュも前後両方の色を照合します。
 `nominal_marker_span_mm`と`marker_span_limits_mm`は前後の組の選択に使います。尺度の補正には使いません。
 小さい目印では色別`marker_detection`に`minimum_area_px`と`opening_kernel_size`（0または3）を指定できます。

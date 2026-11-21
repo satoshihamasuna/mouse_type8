@@ -1,0 +1,6 @@
+test_all_exported_parameters_share_addresses_between_translation_units (test_run_param_linkage.RunParamLinkageTests) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 4.873s
+
+OK

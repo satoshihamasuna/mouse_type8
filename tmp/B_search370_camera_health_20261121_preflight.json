@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-11-20T19:13:52.943130+00:00",
+  "passed": false,
+  "failure_reasons": [
+    "ADB_DEVICES_FAILED: 11-21 04:13:53.322 52768 15232 F adb.exe : adb_utils.cpp:315 Cannot mkdir '\\.android': Permission denied"
+  ],
+  "battery": null,
+  "device_serial": null,
+  "min_level_percent": 20,
+  "min_level_policy": "min_levelは可変の運用上の充電余裕であり、機種の物理的な撮影性能・電池寿命の保証値ではない。",
+  "read_only": true,
+  "app_started": false,
+  "recording_started": false,
+  "phone_settings_changed": false,
+  "robot_commands_sent": 0,
+  "adb": "C:\\Users\\sato1\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe"
+}

@@ -1,0 +1,65 @@
+[1/37] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/calcRunTime.cpp.obj
+[2/37] Building CXX object CMakeFiles/mouse_type8.dir/Module/Src/log_data.cpp.obj
+[3/37] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/make_path.cpp.obj
+[4/37] Building CXX object CMakeFiles/mouse_type8.dir/Module/Src/interrupt.cpp.obj
+[5/37] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/search.cpp.obj
+[6/37] Building CXX object CMakeFiles/mouse_type8.dir/Subsys/Src/make_path_expand.cpp.obj
+[7/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/debug.cpp.obj
+[8/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/debug2.cpp.obj
+[9/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/demo2.cpp.obj
+[10/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/demo_util.cpp.obj
+[11/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/debug3.cpp.obj
+[12/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/demo.cpp.obj
+[13/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/mode.cpp.obj
+[14/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/interface_check.cpp.obj
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/System/Src/interface_check.cpp: In function 'void Mode::Interface_Check()':
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/System/Src/interface_check.cpp:249:83: warning: format '%ld' expects argument of type 'long int', but argument 2 has type 'int' [-Wformat=]
+  249 |                                                                         printf("%ld,",ADC4_get_value(i));
+      |                                                                                 ~~^   ~~~~~~~~~~~~~~~~~
+      |                                                                                   |                 |
+      |                                                                                   long int          int
+      |                                                                                 %d
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/System/Src/interface_check.cpp:251:75: warning: format '%ld' expects argument of type 'long int', but argument 2 has type 'int' [-Wformat=]
+  251 |                                                                 printf("%ld\n",Fan_Motor_Current_avg());
+      |                                                                         ~~^    ~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                           |                         |
+      |                                                                           long int                  int
+      |                                                                         %d
+[15/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/search_time_select.cpp.obj
+[16/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/myshell.cpp.obj
+[17/37] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/ctrl_task.cpp.obj
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/ctrl_task.cpp: In member function 'void CtrlTask::motion_control()':
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/ctrl_task.cpp:259:31: warning: variable 'sp_antiwindup' set but not used [-Wunused-but-set-variable]
+  259 |                         float sp_antiwindup = vehicle->sp_feedback.get();
+      |                               ^~~~~~~~~~~~~
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/ctrl_task.cpp:260:31: warning: variable 'om_antiwindup' set but not used [-Wunused-but-set-variable]
+  260 |                         float om_antiwindup = vehicle->om_feedback.get();
+      |                               ^~~~~~~~~~~~~
+[18/37] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/init_motion.cpp.obj
+[19/37] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/init_motion2.cpp.obj
+[20/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/wall_histry_check.cpp.obj
+[21/37] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/motion.cpp.obj
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/motion.cpp: In member function 'void Motion::Adjust_wall_corner()':
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/motion.cpp:174:37: warning: unused variable 'diff_time_ms' [-Wunused-variable]
+  174 |                                 int diff_time_ms = (ir_sens->r_corner_time - ir_sens->l_corner_time);
+      |                                     ^~~~~~~~~~~~
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/motion.cpp: In member function 'void Motion::SetIdeal_search_straight()':
+C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/Task/Src/motion.cpp:309:37: warning: unused variable 'diff_time_ms' [-Wunused-variable]
+  309 |                                 int diff_time_ms = (ir_sens->r_corner_time - ir_sens->l_corner_time);
+      |                                     ^~~~~~~~~~~~
+[22/37] Building CXX object CMakeFiles/mouse_type8.dir/Task/Src/turn_motion.cpp.obj
+[23/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/shortest_run.cpp.obj
+[24/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/run_param_B.cpp.obj
+[25/37] Building CXX object CMakeFiles/mouse_type8.dir/System/Src/explore.cpp.obj
+[26/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_search/turn_search.cpp.obj
+[27/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_300/turn_300.cpp.obj
+[28/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_500/turn_500.cpp.obj
+[29/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_700/turn_700.cpp.obj
+[30/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_1000/turn_1000.cpp.obj
+[31/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_1200/turn_1200.cpp.obj
+[32/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_1400/turn_1400.cpp.obj
+[33/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_1500/turn_1500.cpp.obj
+[34/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_1600/turn_1600.cpp.obj
+[35/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_1800/turn_1800.cpp.obj
+[36/37] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_2000/turn_2000.cpp.obj
+[37/37] Linking CXX executable mouse_type8.elf

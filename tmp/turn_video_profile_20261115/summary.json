@@ -1,0 +1,166 @@
+{
+  "scope": "PC-side saved-video analysis latency only; no device connection",
+  "historical_trial": "B_inR135_r32p3_Lstart43p5_resume03",
+  "historical_seconds": {
+    "capture_and_readback_and_transfer": 24.215406,
+    "quick_analysis": 46.127,
+    "full_analysis": 112.564,
+    "capture_complete_to_job_done": 159.902139
+  },
+  "limitations": [
+    "Historical pipeline timings include process launch and report generation; read_video_pose benchmarks measure extraction only.",
+    "One sequential run per configuration, under varying background CPU and memory load; not a guaranteed speedup.",
+    "No new capture, motion, firmware build, parameter update or device connection."
+  ],
+  "host_tests": {
+    "test_video_marker_pose": 25,
+    "test_pixel_camera_relative_pose": 5
+  },
+  "benchmarks": {
+    "default16": {
+      "trial": "tools\\logs\\pixel_camera\\tuning_cli_B_inR135_r32p3_Lstart43p5_resume03_20261115_prepared\\run_B_inR135_r32p3_Lstart43p5_resume03\\trial.json",
+      "video": "D:\\TYPE8_Camera\\recordings\\remote\\20261115_022921_240fps_c221b11f.mp4",
+      "window": [
+        7.164764000001014,
+        7.664764000001014
+      ],
+      "frames": 120,
+      "wall_seconds": 36.69018249999499,
+      "process_cpu_seconds": 134.21875,
+      "average_cpu_cores": 3.6581652326209695,
+      "frames_per_second": 3.270629684112811,
+      "opencv_threads": 16,
+      "logical_cpus": 16,
+      "detection_rate": 1.0,
+      "cpu_total_percent_mean": 39.70287769784173,
+      "peak_rss_mib": 217.0859375,
+      "minimum_available_ram_mib": 1464.34765625,
+      "source_sha256": {
+        "tools/analysis/video_marker_pose.py": "15a700be39168d249ff3f61abd36bab385bc6f4aff4c3dc61d091d901b4bd6fd",
+        "tools/pixel_camera_reference.py": "a2f6fedaddae1d62f26cd2c8432df104070ead99791642d2adc6466165d392b0",
+        "tools/analysis/pixel_camera_accuracy.py": "84fa01d7ff2dded57f9ec1d697f0b0a03a74c755eec14cf2d594cd0f8fb70e6e"
+      }
+    },
+    "threads1_before": {
+      "trial": "tools\\logs\\pixel_camera\\tuning_cli_B_inR135_r32p3_Lstart43p5_resume03_20261115_prepared\\run_B_inR135_r32p3_Lstart43p5_resume03\\trial.json",
+      "video": "D:\\TYPE8_Camera\\recordings\\remote\\20261115_022921_240fps_c221b11f.mp4",
+      "window": [
+        7.164764000001014,
+        7.664764000001014
+      ],
+      "frames": 120,
+      "wall_seconds": 31.235248299999512,
+      "process_cpu_seconds": 67.9375,
+      "average_cpu_cores": 2.175026730938491,
+      "frames_per_second": 3.8418135449879514,
+      "opencv_threads": 1,
+      "logical_cpus": 16,
+      "detection_rate": 1.0,
+      "cpu_total_percent_mean": 21.53983050847458,
+      "peak_rss_mib": 201.125,
+      "minimum_available_ram_mib": 1602.40234375,
+      "source_sha256": {
+        "tools/analysis/video_marker_pose.py": "15a700be39168d249ff3f61abd36bab385bc6f4aff4c3dc61d091d901b4bd6fd",
+        "tools/pixel_camera_reference.py": "a2f6fedaddae1d62f26cd2c8432df104070ead99791642d2adc6466165d392b0",
+        "tools/analysis/pixel_camera_accuracy.py": "84fa01d7ff2dded57f9ec1d697f0b0a03a74c755eec14cf2d594cd0f8fb70e6e"
+      }
+    },
+    "before_unprofiled120": {
+      "trial": "tools\\logs\\pixel_camera\\tuning_cli_B_inR135_r32p3_Lstart43p5_resume03_20261115_prepared\\run_B_inR135_r32p3_Lstart43p5_resume03\\trial.json",
+      "video": "D:\\TYPE8_Camera\\recordings\\remote\\20261115_022921_240fps_c221b11f.mp4",
+      "window": [
+        7.164764000001014,
+        7.664764000001014
+      ],
+      "frames": 120,
+      "wall_seconds": 28.317895500003942,
+      "process_cpu_seconds": 126.109375,
+      "average_cpu_cores": 4.453345588480699,
+      "frames_per_second": 4.237603037979404,
+      "opencv_threads": 16,
+      "logical_cpus": 16,
+      "detection_rate": 1.0,
+      "cpu_total_percent_mean": 45.11851851851852,
+      "peak_rss_mib": 215.76171875,
+      "minimum_available_ram_mib": 1647.90625,
+      "source_sha256": {
+        "tools/analysis/video_marker_pose.py": "c98e9f417b7b8fc091a6ff872bb1dfd5214f95cf623980d76e68984a537892b8",
+        "tools/pixel_camera_reference.py": "a2f6fedaddae1d62f26cd2c8432df104070ead99791642d2adc6466165d392b0",
+        "tools/analysis/pixel_camera_accuracy.py": "84fa01d7ff2dded57f9ec1d697f0b0a03a74c755eec14cf2d594cd0f8fb70e6e"
+      },
+      "baseline_source": "tmp\\turn_video_profile_20261115\\video_marker_pose_before.py",
+      "cprofile_enabled": false
+    },
+    "after_unprofiled120_checked": {
+      "trial": "tools\\logs\\pixel_camera\\tuning_cli_B_inR135_r32p3_Lstart43p5_resume03_20261115_prepared\\run_B_inR135_r32p3_Lstart43p5_resume03\\trial.json",
+      "video": "D:\\TYPE8_Camera\\recordings\\remote\\20261115_022921_240fps_c221b11f.mp4",
+      "window": [
+        7.164764000001014,
+        7.664764000001014
+      ],
+      "frames": 120,
+      "wall_seconds": 25.55416269999114,
+      "process_cpu_seconds": 118.390625,
+      "average_cpu_cores": 4.632929139174693,
+      "frames_per_second": 4.695908115198844,
+      "opencv_threads": 16,
+      "logical_cpus": 16,
+      "detection_rate": 1.0,
+      "cpu_total_percent_mean": 54.73163265306123,
+      "peak_rss_mib": 214.2890625,
+      "minimum_available_ram_mib": 1470.19140625,
+      "source_sha256": {
+        "tools/analysis/video_marker_pose.py": "c98e9f417b7b8fc091a6ff872bb1dfd5214f95cf623980d76e68984a537892b8",
+        "tools/pixel_camera_reference.py": "a2f6fedaddae1d62f26cd2c8432df104070ead99791642d2adc6466165d392b0",
+        "tools/analysis/pixel_camera_accuracy.py": "84fa01d7ff2dded57f9ec1d697f0b0a03a74c755eec14cf2d594cd0f8fb70e6e"
+      },
+      "baseline_source": null,
+      "cprofile_enabled": false,
+      "comparison": {
+        "path": "tmp\\turn_video_profile_20261115\\before_unprofiled120\\pose.csv",
+        "all_columns_match": true,
+        "rtol": 1e-12,
+        "atol": 1e-09,
+        "rows": 120,
+        "columns": 23
+      }
+    },
+    "after_full705": {
+      "trial": "tools\\logs\\pixel_camera\\tuning_cli_B_inR135_r32p3_Lstart43p5_resume03_20261115_prepared\\run_B_inR135_r32p3_Lstart43p5_resume03\\trial.json",
+      "video": "D:\\TYPE8_Camera\\recordings\\remote\\20261115_022921_240fps_c221b11f.mp4",
+      "window": [
+        7.164764000001014,
+        10.104764000001014
+      ],
+      "frames": 705,
+      "wall_seconds": 77.09482359999674,
+      "process_cpu_seconds": 454.3125,
+      "average_cpu_cores": 5.892905370108651,
+      "frames_per_second": 9.144582827737734,
+      "opencv_threads": 16,
+      "logical_cpus": 16,
+      "detection_rate": 0.9914893617021276,
+      "cpu_total_percent_mean": 48.95510204081632,
+      "peak_rss_mib": 224.15625,
+      "minimum_available_ram_mib": 1688.31640625,
+      "source_sha256": {
+        "tools/analysis/video_marker_pose.py": "c98e9f417b7b8fc091a6ff872bb1dfd5214f95cf623980d76e68984a537892b8",
+        "tools/pixel_camera_reference.py": "a2f6fedaddae1d62f26cd2c8432df104070ead99791642d2adc6466165d392b0",
+        "tools/analysis/pixel_camera_accuracy.py": "84fa01d7ff2dded57f9ec1d697f0b0a03a74c755eec14cf2d594cd0f8fb70e6e"
+      },
+      "baseline_source": null,
+      "cprofile_enabled": false,
+      "comparison": {
+        "path": "tools\\logs\\pixel_camera\\tuning_cli_B_inR135_r32p3_Lstart43p5_resume03_20261115_prepared\\run_B_inR135_r32p3_Lstart43p5_resume03\\full\\apparent_floor_marker_pose.csv",
+        "all_columns_match": true,
+        "rtol": 1e-12,
+        "atol": 1e-09,
+        "rows": 705,
+        "columns": 23
+      }
+    }
+  },
+  "matched_120_frame_reduction_percent": 9.759668757914653,
+  "baseline_source_sha256": "15a700be39168d249ff3f61abd36bab385bc6f4aff4c3dc61d091d901b4bd6fd",
+  "result": "705 frames and all 23 pose output columns match saved baseline (rtol=1e-12, atol=1e-9); 30 host tests passed"
+}

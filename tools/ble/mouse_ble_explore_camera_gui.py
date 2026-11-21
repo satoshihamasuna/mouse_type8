@@ -55,7 +55,7 @@ class ExploreCameraApp(ExploreApp):
         self.analysis_stride = tk.IntVar(value=1)
         analysis = ttk.LabelFrame(root, text='保存後の位置解析（機体・カメラへ指令は送りません）', padding=6)
         analysis.pack(fill='x', before=first)
-        ttk.Checkbutton(analysis, text='前後マーカーを自動追跡（A: 前赤・後黄 / B: 前黄・後赤）', variable=self.analysis_enabled).grid(row=0,column=0,sticky='w')
+        ttk.Checkbutton(analysis, text='前後マーカーを自動追跡（A: 前赤・後黄 / B: 前緑・後赤）', variable=self.analysis_enabled).grid(row=0,column=0,sticky='w')
         ttk.Label(analysis,text='1マス mm（空欄＝セル単位）').grid(row=0,column=1)
         ttk.Entry(analysis,textvariable=self.cell_mm,width=8).grid(row=0,column=2)
         ttk.Label(analysis,text='9×9盤面基準JSON').grid(row=1,column=0,sticky='w')

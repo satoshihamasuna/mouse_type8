@@ -1,0 +1,2 @@
+[1/2] Building CXX object CMakeFiles/mouse_type8.dir/Params/Param_B/turn_1600/turn_1600.cpp.obj
+[2/2] Linking CXX executable mouse_type8.elf

@@ -1,0 +1,30 @@
+         14562430 function calls (14552010 primitive calls) in 31.234 seconds
+
+   Ordered by: cumulative time
+   List reduced from 909 to 22 due to restriction <22>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.491    0.491   31.234   31.234 video_marker_pose.py:304(read_video_pose)
+     5520   10.199    0.002   10.199    0.002 {method 'read' of 'cv2.VideoCapture' objects}
+      120    0.001    0.000    8.668    0.072 video_marker_pose.py:94(marker_registration)
+      120    0.001    0.000    8.228    0.069 pixel_camera_reference.py:335(detect_board_reference)
+      120    1.718    0.014    8.166    0.068 video_marker_pose.py:200(select_marker_pair)
+      120    0.088    0.001    8.162    0.068 pixel_camera_reference.py:195(refine_board_grid)
+      120    0.694    0.006    7.924    0.066 pixel_camera_accuracy.py:72(find_grid_checkpoints)
+      242    0.513    0.002    7.490    0.031 video_marker_pose.py:278(iter_video_frames)
+    11474    1.731    0.000    6.010    0.001 pixel_camera_accuracy.py:27(line_near_grid_point)
+        1    0.239    0.239    4.812    4.812 video_marker_pose.py:146(detect_led_interval)
+      121    0.000    0.000    4.058    0.034 video_marker_pose.py:478(<genexpr>)
+   429361    1.165    0.000    2.506    0.000 shape_base.py:218(vstack)
+      240    0.353    0.001    2.369    0.010 video_marker_pose.py:37(colour_components)
+    20504    0.072    0.000    1.906    0.000 _function_base_impl.py:3815(_ureduce)
+   429119    0.774    0.000    1.832    0.000 video_marker_pose.py:121(transform_points)
+   444801    0.862    0.000    1.756    0.000 _linalg.py:2598(norm)
+    11595    0.058    0.000    1.717    0.000 _function_base_impl.py:4052(percentile)
+      360    1.645    0.005    1.645    0.005 {connectedComponentsWithStats}
+    11595    0.020    0.000    1.565    0.000 _function_base_impl.py:4500(_quantile_unchecked)
+    11595    0.022    0.000    1.428    0.000 _function_base_impl.py:4639(_quantile_ureduce_func)
+    11595    0.202    0.000    1.386    0.000 _function_base_impl.py:4714(_quantile)
+   429361    0.932    0.000    1.174    0.000 shape_base.py:78(atleast_2d)
+
+

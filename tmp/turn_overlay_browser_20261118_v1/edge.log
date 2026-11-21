@@ -1,0 +1,19 @@
+[45716:12972:1118/113153.741:ERROR:components\os_crypt\async\browser\os_crypt_win.cc:63] Failed to encrypt: 指定されたファイルが見つかりません。 (0x2)
+[45716:42684:1118/113153.813:ERROR:chrome\installer\util\google_update_settings_win.cc:544] Failed opening key Software\Microsoft\EdgeUpdate\ClientStateMedium\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} to set usagestats; result: 5
+[45716:42684:1118/113153.815:ERROR:chrome\installer\util\google_update_settings_win.cc:587] Failed opening key Software\Microsoft\EdgeUpdate\ClientStateMedium\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} to set urlstats; result: 5
+[45716:12728:1118/113159.465:ERROR:components\password_manager\core\browser\password_store\login_database_async_helper.cc:230] Encryption is not available.
+[45716:30244:1118/113159.465:ERROR:components\password_manager\core\browser\password_store\login_database_async_helper.cc:230] Encryption is not available.
+[45716:56232:1118/113159.658:ERROR:chrome\installer\util\google_update_settings_win.cc:544] Failed opening key Software\Microsoft\EdgeUpdate\ClientStateMedium\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} to set usagestats; result: 5
+[45716:12972:1118/113159.658:ERROR:chrome\browser\ui\edge_window_tab_manager\api\wtm_interface_impl.cc:472] Failed to open registry key
+[45716:12972:1118/113159.662:ERROR:content\browser\gpu\gpu_process_host.cc:1097] GPU process exited unexpectedly: exit_code=-1073741790
+[45716:56232:1118/113159.662:ERROR:components\viz\host\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory "C:\Users\sato1\Documents\git\mouse_type8_VScode\mouse_type8\tmp\turn_overlay_browser_20261118_v1\profile\GPUPersistentCache\DawnGraphiteCache\23IMHJGI2WIIJ3PDLCHAHUJAGHTLTEBB", error: 0: プロセスはファイルにアクセスできません。別のプロセスが使用中です。 (0x20)
+[45716:12972:1118/113159.818:ERROR:content\browser\gpu\gpu_process_host.cc:1097] GPU process exited unexpectedly: exit_code=-1073741790
+[45716:35832:1118/113159.820:ERROR:components\viz\host\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory "C:\Users\sato1\Documents\git\mouse_type8_VScode\mouse_type8\tmp\turn_overlay_browser_20261118_v1\profile\GPUPersistentCache\DawnGraphiteCache\23IMHJGI2WIIJ3PDLCHAHUJAGHTLTEBB", error: 0: プロセスはファイルにアクセスできません。別のプロセスが使用中です。 (0x20)
+[45716:12972:1118/113159.857:ERROR:content\browser\gpu\gpu_process_host.cc:1097] GPU process exited unexpectedly: exit_code=-1073741790
+[45716:12972:1118/113159.878:ERROR:content\browser\gpu\gpu_process_host.cc:1097] GPU process exited unexpectedly: exit_code=-1073741790
+[45716:56232:1118/113159.880:ERROR:components\viz\host\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory "C:\Users\sato1\Documents\git\mouse_type8_VScode\mouse_type8\tmp\turn_overlay_browser_20261118_v1\profile\GPUPersistentCache\DawnGraphiteCache\23IMHJGI2WIIJ3PDLCHAHUJAGHTLTEBB", error: 0: プロセスはファイルにアクセスできません。別のプロセスが使用中です。 (0x20)
+[45716:52576:1118/113159.890:ERROR:services\device\public\cpp\geolocation\system_geolocation_source_win.cc:124] Failed to create IAppCapability: アクセスが拒否されました。 (0x80070005)
+[45716:12972:1118/113159.899:ERROR:content\browser\gpu\gpu_process_host.cc:1097] GPU process exited unexpectedly: exit_code=-1073741790
+[45716:16572:1118/113159.925:ERROR:components\viz\host\persistent_cache_sandboxed_file_factory.cc:153] Failed to open persistent cache files in directory "C:\Users\sato1\Documents\git\mouse_type8_VScode\mouse_type8\tmp\turn_overlay_browser_20261118_v1\profile\GPUPersistentCache\DawnGraphiteCache\23IMHJGI2WIIJ3PDLCHAHUJAGHTLTEBB", error: 0: プロセスはファイルにアクセスできません。別のプロセスが使用中です。 (0x20)
+[45716:12972:1118/113159.928:ERROR:content\browser\gpu\gpu_process_host.cc:1097] GPU process exited unexpectedly: exit_code=-1073741790
+[45716:12972:1118/113159.928:FATAL:content\browser\gpu\gpu_data_manager_impl_private.cc:404] GPU process isn't usable. Goodbye.

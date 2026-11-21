@@ -1,0 +1,1 @@
+{"mouse": "A", "status": "VALID_SINGLE_TRIAL_REVIEW", "endpoint_error_right_mm": -0.22207136542724015, "endpoint_error_forward_mm": 0.33295148008187425, "exit_travel_error_deg": 0.15423736261104182}

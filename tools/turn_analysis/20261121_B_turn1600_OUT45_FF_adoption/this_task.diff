@@ -1,0 +1,33 @@
+--- before/Params/Param_B/turn_1600/turn_1600.cpp
++++ Params/Param_B/turn_1600/turn_1600.cpp
+@@ -87,6 +87,8 @@
+ const t_param param_inL45_1600 = {&slalom_inL45_1600_table,&sp_gain_turnIn45_1600,&om_gain_turnIn45_1600,&ff_gain_turnIn45_1600};
+ const t_param param_inR45_1600 = {&slalom_inR45_1600_table,&sp_gain_turnIn45_1600,&om_gain_turnIn45_1600,&ff_gain_turnIn45_1600};
+ 
++// 2026-11-21 ユーザー指定で、左右out45もin45採用FF（角加減速0.000750）を共有。
++// 形状・PIDは維持。出口での実走は未確認。根拠: tools/turn_analysis/20261121_B_turn1600_OUT45_FF_adoption/README.md
+ //k = 250
+ const t_pid_gain sp_gain_turnOut45_1600 = {4.0,0.05,0.0};
+ const t_pid_gain om_gain_turnOut45_1600 = {0.20f,0.01f,0.0f};
+@@ -96,8 +98,8 @@
+ const t_turn_param_table slalom_outL45_1600_table = {1.60f, 60.0f,21.80f,16.50f, 45.0f,Turn_L,-0.30f};
+ // const t_turn_param_table slalom_outR45_1600_table = {1.60f,-60.0f,21.06,20.07,-45.0f,Turn_R,1.5f};
+ const t_turn_param_table slalom_outR45_1600_table = {1.60f,-60.0f,21.80f,16.50f,-45.0f,Turn_R,0.30f};
+-const t_param param_outL45_1600 = {&slalom_outL45_1600_table,&sp_gain_turnOut45_1600,&om_gain_turnOut45_1600};
+-const t_param param_outR45_1600 = {&slalom_outR45_1600_table,&sp_gain_turnOut45_1600,&om_gain_turnOut45_1600};
++const t_param param_outL45_1600 = {&slalom_outL45_1600_table,&sp_gain_turnOut45_1600,&om_gain_turnOut45_1600,&ff_gain_turnIn45_1600};
++const t_param param_outR45_1600 = {&slalom_outR45_1600_table,&sp_gain_turnOut45_1600,&om_gain_turnOut45_1600,&ff_gain_turnIn45_1600};
+ 
+ // 2026-11-20 B右135度入口・1600 mm/s・吸引duty650の単体3本を反映。Lstart/Lend = 10.5/17.2 mm。
+ // 補正は右+0.40度、左はユーザー指定の鏡像-0.40度（左の実走・連続接続は未確認）。
+--- before/README.md
++++ README.md
+@@ -265,6 +265,8 @@
+ 
+ in45専用の角速度PIDを0.20/0.005/0、角加速・角減速FFをともに0.000750とし、左右の`param_inR45_1600` / `param_inL45_1600`から参照します。速度PIDは4.0/0.05/0、ほかのFFは機体Bの取得設定を使います。
+ 
++同日の追加依頼で、対応する左右out45もin45と同じFF一式を参照するようにしました。out45の形状値とPIDは維持しています。出口での実走は未確認です。[出口FFの反映・検証](tools/turn_analysis/20261121_B_turn1600_OUT45_FF_adoption/README.md)。
++
+ 右単体は1600 mm/s・吸引duty650の同設定2本を入口相対のマーカー中点で評価し、出口角45.666～46.354度、平均Lend残差は右＋1.002 mm・前−1.653 mmでした。平均角度約＋1度の残差を含む暫定値で、充電後の再現性・左・連続接続・更新ファーム書き込み後の実走は未確認です。[採用値・入力・検証結果](tools/turn_analysis/20261121_B_turn1600_IN45_adoption/README.md)に記録しています。
+ 
+ ### 最短走行開始時の予備加速

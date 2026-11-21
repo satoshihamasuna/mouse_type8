@@ -4,11 +4,20 @@
 #include "Params/Param_A/run_param_A.h"
 
 // 2026-11-18: 新形式のPID・FF。速度候補/加減速度から独立させ、同じ組を共有する。
-// 2026-11-18 機体A: 2200 mm/s以上は速度PID・角速度PID・FFを1組に統一。
+// 機体A: 吸引直進の高速ゲインと、斜め・非吸引の従来ゲインを分ける。
 // 速度・加減速度は先頭のt_speed_profileから生成し、以下の旧速度別定義は使用しない。
 constexpr t_control_gain straight_control_high = {
 	{2.0f,0.05f,0.0f},
-	{0.2f,0.01f,0.0f},
+	// 2026-11-21 機体A・吸引550相当の直進1.6/2.2/3.0m/s試走で使用。
+	// tools/logs/A_suction_straight_yaw_20261121_075558_090372 の記録を参照。
+	{0.15f,0.001f,0.0f},
+	&ff_gain_default
+};
+
+// 非吸引の高速候補と斜め走行は、今回の直進調整前の値を保持する。
+constexpr t_control_gain straight_control_high_legacy = {
+	{2.0f,0.05f,0.0f},
+	{0.1f,0.001f,0.0f},
 	&ff_gain_default
 };
 
@@ -56,7 +65,7 @@ constexpr t_control_gain straight_gain_1500 = {
 
 constexpr t_control_band control_bands_straight_300_v0[] = {
 	{0.3f,&straight_gain_low},
-	{2.2f,&straight_control_high},
+	{2.2f,&straight_control_high_legacy},
 };
 
 const t_control_profile straight_control_300_v0 = make_control_profile(control_bands_straight_300_v0);
@@ -64,19 +73,19 @@ const t_control_profile straight_control_300_v1 = make_control_profile(control_b
 constexpr t_control_band control_bands_straight_plain500[] = {
 	{0.5f,&straight_gain_low},
 	{0.7f,&straight_gain_700},
-	{2.2f,&straight_control_high},
+	{2.2f,&straight_control_high_legacy},
 };
 
 const t_control_profile straight_control_plain500 = make_control_profile(control_bands_straight_plain500);
 constexpr t_control_band control_bands_straight_700_v0[] = {
 	{0.7f,&straight_gain_700},
-	{2.2f,&straight_control_high},
+	{2.2f,&straight_control_high_legacy},
 };
 
 const t_control_profile straight_control_700_v0 = make_control_profile(control_bands_straight_700_v0);
 constexpr t_control_band control_bands_straight_1000_v0[] = {
 	{1.0f,&straight_gain_1000},
-	{2.2f,&straight_control_high},
+	{2.2f,&straight_control_high_legacy},
 };
 
 const t_control_profile straight_control_1000_v0 = make_control_profile(control_bands_straight_1000_v0);
@@ -86,7 +95,7 @@ constexpr t_control_band control_bands_straight_1000_v1[] = {
 	{1.2f,&straight_gain_1200},
 	{1.4f,&straight_gain_1400},
 	{1.5f,&straight_gain_1500},
-	{2.0f,&straight_control_high},
+	{2.0f,&straight_control_high_legacy},
 };
 
 const t_control_profile straight_control_1000_v1 = make_control_profile(control_bands_straight_1000_v1);
@@ -140,27 +149,57 @@ constexpr t_control_band control_bands_straight_2000_v1[] = {
 };
 
 const t_control_profile straight_control_2000_v1 = make_control_profile(control_bands_straight_2000_v1);
+
+constexpr t_control_band control_bands_diagonal_1200_v0[] = {
+	{1.2f,&straight_gain_1200},
+	{1.4f,&straight_gain_1400},
+	{1.5f,&straight_gain_1500},
+	{2.2f,&straight_control_high_legacy},
+};
+constexpr t_control_band control_bands_diagonal_1200_v1[] = {
+	{1.2f,&straight_gain_1200},
+	{1.4f,&straight_gain_1400},
+	{1.5f,&straight_gain_1500},
+	{1.6f,&straight_control_high_legacy},
+};
+constexpr t_control_band control_bands_diagonal_1400_v0[] = {
+	{1.4f,&straight_gain_1400},
+	{1.6f,&straight_control_high_legacy},
+};
+constexpr t_control_band control_bands_diagonal_1500_v0[] = {
+	{1.5f,&straight_gain_1500},
+	{1.6f,&straight_control_high_legacy},
+};
+constexpr t_control_band control_bands_diagonal_1600_v1[] = {
+	{1.6f,&straight_control_high_legacy},
+};
+constexpr t_control_band control_bands_diagonal_1800_v1[] = {
+	{1.8f,&straight_control_high_legacy},
+};
+constexpr t_control_band control_bands_diagonal_2000_v1[] = {
+	{2.0f,&straight_control_high_legacy},
+};
 const t_control_profile diagonal_control_300_v0 = make_control_profile(control_bands_straight_300_v0);
 const t_control_profile diagonal_control_300_v1 = make_control_profile(control_bands_straight_300_v0);
 const t_control_profile diagonal_control_plain500 = make_control_profile(control_bands_straight_plain500);
 const t_control_profile diagonal_control_700_v0 = make_control_profile(control_bands_straight_700_v0);
 const t_control_profile diagonal_control_1000_v0 = make_control_profile(control_bands_straight_1000_v0);
 const t_control_profile diagonal_control_1000_v1 = make_control_profile(control_bands_straight_1000_v1);
-const t_control_profile diagonal_control_1200_v0 = make_control_profile(control_bands_straight_1200_v0);
-const t_control_profile diagonal_control_1200_v1 = make_control_profile(control_bands_straight_1200_v1);
-const t_control_profile diagonal_control_1400_v0 = make_control_profile(control_bands_straight_1400_v0);
-const t_control_profile diagonal_control_1400_v1 = make_control_profile(control_bands_straight_1400_v0);
-const t_control_profile diagonal_control_1400_v2 = make_control_profile(control_bands_straight_1400_v0);
-const t_control_profile diagonal_control_1500_v0 = make_control_profile(control_bands_straight_1500_v0);
-const t_control_profile diagonal_control_1500_v1 = make_control_profile(control_bands_straight_1500_v0);
-const t_control_profile diagonal_control_1500_v2 = make_control_profile(control_bands_straight_1500_v0);
-const t_control_profile diagonal_control_1600_v1 = make_control_profile(control_bands_straight_1600_v1);
-const t_control_profile diagonal_control_1600_v2 = make_control_profile(control_bands_straight_1600_v1);
-const t_control_profile diagonal_control_1800_v1 = make_control_profile(control_bands_straight_1800_v1);
-const t_control_profile diagonal_control_2000_v1 = make_control_profile(control_bands_straight_2000_v1);
+const t_control_profile diagonal_control_1200_v0 = make_control_profile(control_bands_diagonal_1200_v0);
+const t_control_profile diagonal_control_1200_v1 = make_control_profile(control_bands_diagonal_1200_v1);
+const t_control_profile diagonal_control_1400_v0 = make_control_profile(control_bands_diagonal_1400_v0);
+const t_control_profile diagonal_control_1400_v1 = make_control_profile(control_bands_diagonal_1400_v0);
+const t_control_profile diagonal_control_1400_v2 = make_control_profile(control_bands_diagonal_1400_v0);
+const t_control_profile diagonal_control_1500_v0 = make_control_profile(control_bands_diagonal_1500_v0);
+const t_control_profile diagonal_control_1500_v1 = make_control_profile(control_bands_diagonal_1500_v0);
+const t_control_profile diagonal_control_1500_v2 = make_control_profile(control_bands_diagonal_1500_v0);
+const t_control_profile diagonal_control_1600_v1 = make_control_profile(control_bands_diagonal_1600_v1);
+const t_control_profile diagonal_control_1600_v2 = make_control_profile(control_bands_diagonal_1600_v1);
+const t_control_profile diagonal_control_1800_v1 = make_control_profile(control_bands_diagonal_1800_v1);
+const t_control_profile diagonal_control_2000_v1 = make_control_profile(control_bands_diagonal_2000_v1);
 
 // 探索・デバッグの固定速度条件。単位は速度m/s、加速度m/s^2。
-constexpr t_motion_profile search_straight = {{0.37f,4.0f},&straight_gain_low};
+constexpr t_motion_profile search_straight = {{0.32f,4.0f},&straight_gain_low};
 constexpr t_motion_profile search_straight_slow = {{0.32f,4.0f},&straight_gain_low};
 constexpr t_motion_profile debug_straight_500 = {{0.5f,6.0f},&straight_gain_low};
 constexpr t_motion_profile debug_straight_700 = {{0.7f,6.0f},&straight_gain_700};

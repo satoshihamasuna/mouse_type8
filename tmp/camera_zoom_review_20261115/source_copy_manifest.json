@@ -1,0 +1,391 @@
+{
+  "source": "C:\\Users\\sato1\\Documents\\git\\Debug_camera",
+  "working_copy_includes_dirty_and_untracked": true,
+  "source_not_modified": true,
+  "files": [
+    {
+      "path": "app/src/main/java/com/example/myapplication/probe/ContinuousFocusLock.kt",
+      "sha256": "e0f167fbc9e733d53044e3a6b474bb07f52ca6def49aa76d7617f91547350cf4"
+    },
+    {
+      "path": "app/src/test/java/com/example/myapplication/probe/ContinuousFocusLockTest.kt",
+      "sha256": "995e53a27dd185561bf9a0c664f7c8fdc1caaa21d0965d49f1c2f29621b20b95"
+    },
+    {
+      "path": ".gitattributes",
+      "sha256": "1f14377443567063a2f3554319b026ce12f2081492707e3061d9cba8558d04f2"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "9eebba613b6d0d32e8ad483bb1caa72e96466eddc9e84502a0c3b6d1034409aa"
+    },
+    {
+      "path": "README.md",
+      "sha256": "98258c2f8d11c1291c8e70b01482a75da5d0cb3a50421e53d682499aa95fc420"
+    },
+    {
+      "path": "Start_Pixel_Camera.cmd",
+      "sha256": "fd73ff28ad3cfe754711d79f80f2542aabe00d48a0f90d7cec605826c5a3991c"
+    },
+    {
+      "path": "Start_Video_Review.cmd",
+      "sha256": "7509d5f5a7cf33f9a3426698d0e44c88f1904fe5c2e625d217d2e9808a67bb35"
+    },
+    {
+      "path": "app/.gitignore",
+      "sha256": "5c3174b74edc6f2b9e0743594b8bd3c7f31e4f4405758cc9872b3fe1de1d28b4"
+    },
+    {
+      "path": "app/build.gradle.kts",
+      "sha256": "48916acf5b629963114cf4cc00e45550b1347af80c18e27744247c719399bae9"
+    },
+    {
+      "path": "app/src/androidTest/java/com/example/myapplication/ExampleInstrumentedTest.kt",
+      "sha256": "1122041ffdc1030bbd0be90235660df6510082cbe12947153a310d32799da8bc"
+    },
+    {
+      "path": "app/src/main/AndroidManifest.xml",
+      "sha256": "9f968fd887af04235e13e1b76cc1fc4d49a4eb778181a743f577ccbcceb9e4a2"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/MainActivity.kt",
+      "sha256": "74375db24ee0af37e2d035467c61e895bc58bc5cefe1bf4f7ab54bd287607d19"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/probe/AvcEncoder.kt",
+      "sha256": "04fab9419988ad1c5a54693b4adc89ecf77c5cf8e194c4bbbb227c0a2c56b4a1"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/probe/CameraController.kt",
+      "sha256": "e421e94e6d4610a16d4f57016dd4235c50b5302507e9b04b03fb9f9c9bb7a690"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/probe/DeviceCapabilityManager.kt",
+      "sha256": "324e51f45b2915f9f2f751068ee888dc3b7db4871db2fbb252d5ecb964294f1b"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/probe/ExposureCompensation.kt",
+      "sha256": "cea3a6098521b6e4b8b1294389016f9e2952baafc1042306c07d0d07b78275f5"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/probe/ProbeStorage.kt",
+      "sha256": "786d3940d0ee3a69705a53cb9793f375dd3f0873cebf098032334c14643d3b85"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/probe/ProbeViewModel.kt",
+      "sha256": "e8740ff9dc1314b063427ed56a2e14210b53f06ec1ea0d6f7fb801890337d2ce"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/probe/RecordingWindow.kt",
+      "sha256": "d7195ed557d6ec42e4e02ba3bb90723fea3b9c8a3d6d329cd07d4855f6a18083"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/probe/TimingAnalysis.kt",
+      "sha256": "5683829f81b04c76172acb568565a2e4802830d5ebaac8594a6857922245e6e3"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/remote/FileTransferManager.kt",
+      "sha256": "59840b1b6fda8f08666b5382a3dfcb7d9e54ad4485101ab4406c0c5b5b403b0d"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/remote/NetworkClient.kt",
+      "sha256": "765ad61ff694227414de62c770f1eac048168df8a229ba6bfafcb5b8674ec1fa"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/remote/RecordingService.kt",
+      "sha256": "0605a2a5ff181169ed7773a25d849f60d73d57cacfc19d60018d6ecccbbb7e8f"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/remote/RemoteState.kt",
+      "sha256": "67f3f7d586120f973e3d1da1de6ec77d7e32ed69491745c5003c9b9c4941c1f8"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/remote/StorageManager.kt",
+      "sha256": "63bafed6211cd552335196ecf30a601ab1a87a882b059bfdf696a478843a52eb"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/ui/theme/Color.kt",
+      "sha256": "4d29d9355774b790df5112242a10c80a2e8befc24a15d431d4456377ec146cea"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/ui/theme/Theme.kt",
+      "sha256": "b3186bd60f8f36135a17ec9cdb78c536c5d0e878878d0e4e1a8f9bc682a0b25a"
+    },
+    {
+      "path": "app/src/main/java/com/example/myapplication/ui/theme/Type.kt",
+      "sha256": "7c84f13aac9d70e7b1b36dedabaf91b15ee2c1915ac9dd6d7dc1d5a67fbf6fd0"
+    },
+    {
+      "path": "app/src/main/keepRules/rules.keep",
+      "sha256": "cd9f36ade2d8604e1b7cf24eff5b171f9c0816c0aa013ba7eb55be4fe2e1dac7"
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_launcher_background.xml",
+      "sha256": "ed423c73a6f40a4d2909f0901e60527b3a807cd59e1b5593bcaae1808b1c6321"
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_launcher_foreground.xml",
+      "sha256": "01d1a6a6c1234eb7fe270d097eb283d72b9c95ae5118886f1b6573aad280f1f7"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi/ic_launcher.xml",
+      "sha256": "88f7653499ef524126ea5018a99baf9cc3269e7e584d6205dfdd76db39f39cc0"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi/ic_launcher_round.xml",
+      "sha256": "88f7653499ef524126ea5018a99baf9cc3269e7e584d6205dfdd76db39f39cc0"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher.webp",
+      "sha256": "dd00996198640ed28fbc09cdcd7a3807cf8707f3eb255b659634da3ca6a6ff01"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher_round.webp",
+      "sha256": "1ed73f5341a69d3b41c7e02e126803f50cc8c3284adf4bbb737f0c93577aef07"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher.webp",
+      "sha256": "846219e6f72fe9a6c104ca8919cbee36a101e7d2ff8da9da67b689a5888f060d"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher_round.webp",
+      "sha256": "4e2c58b91de01130e6479e00cbbaaf6e77cd961dd2c8e303cf13cd077fa92632"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher.webp",
+      "sha256": "398340dad816fc9a6338cb151a8cf1e45b926f9bfb70628b24c4bd2523cc94d4"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp",
+      "sha256": "91b490aef86574901137f0a252272e1f1add99c1ad709e0696ed68929b88d261"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher.webp",
+      "sha256": "58ae87fa0c5b5d1562d27fd648d2c061553fe20e3ed570bde588162d01ea7a27"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp",
+      "sha256": "3009fad079f5772f30ecd767f98924367fbe0f81c30048d672d4fda2d5ca7d12"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "sha256": "f98fef5bc3bfe5b65692c40ad1cbae2bec4faf9f1b249c397626740db71b62d8"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp",
+      "sha256": "5faf033745c8c882c43bb1b372d4e4a5890caec63d9892a2e756c954108b85dc"
+    },
+    {
+      "path": "app/src/main/res/values/colors.xml",
+      "sha256": "b5626527d503417f0d8e5b1e08f338de7b31173bf0e122815f03e64932adbd88"
+    },
+    {
+      "path": "app/src/main/res/values/strings.xml",
+      "sha256": "7c36c40baa9544703458f9558cc6f1c77206019d9eaea4ddd5c15b677b163e8e"
+    },
+    {
+      "path": "app/src/main/res/values/themes.xml",
+      "sha256": "e7da25bef4929044796beabbc86093f0f7687867f935066a6b5972daa3889603"
+    },
+    {
+      "path": "app/src/main/res/xml/backup_rules.xml",
+      "sha256": "6cf1a27e6807b1d24e41d3fbe7ddc1bfe1f42226027964f6eaf477d71b43b283"
+    },
+    {
+      "path": "app/src/main/res/xml/data_extraction_rules.xml",
+      "sha256": "cb1fc47ab4a984530ed60e0e6ee638929c3038290e7e7e0b4b03a3a30fbe7381"
+    },
+    {
+      "path": "app/src/main/res/xml/network_security_config.xml",
+      "sha256": "70846138bd8381ea3d92ace39ecc7c990d30f14cd95dcd23f5d492fc4636e1d4"
+    },
+    {
+      "path": "app/src/test/java/com/example/myapplication/ExampleUnitTest.kt",
+      "sha256": "2aee0ee7720f585e05c82b4711b64b8b7d191406054a3042515c00e37487992e"
+    },
+    {
+      "path": "app/src/test/java/com/example/myapplication/RecordingWindowTest.kt",
+      "sha256": "53b2b8e1663232fbd4b464654ee67fd20c2d5ea2bb1e9fde3dee679e88a88a05"
+    },
+    {
+      "path": "app/src/test/java/com/example/myapplication/RemoteSafetyTest.kt",
+      "sha256": "978bda93e5ed488ff0c1b020a344adf48206d6099cdf53282a691aa62bcc6378"
+    },
+    {
+      "path": "app/src/test/java/com/example/myapplication/TimingAnalysisTest.kt",
+      "sha256": "7cdaa1e331c17b45fc7302253ff6a835baf78ba7afc9157a4bec38e9a3381b43"
+    },
+    {
+      "path": "app/src/test/java/com/example/myapplication/probe/ExposureCompensationTest.kt",
+      "sha256": "8af715e2303565b7164d60b2222f0a4677c9e8f37383ce62b58c06a0c0dab3de"
+    },
+    {
+      "path": "build.gradle.kts",
+      "sha256": "be7dbfa1841b18b020f744e203b995d3dac5709c2a6b8e310fbcfaed0364919a"
+    },
+    {
+      "path": "docs/DEVICE_TEST_20261108.md",
+      "sha256": "37a11a640e5c9a2158cedc3fb4658ec60213b5ed017ddd534b0016dfd02df271"
+    },
+    {
+      "path": "docs/ROADMAP.md",
+      "sha256": "f0be2e9fc90d8761160b7523d32e3e4af9efdb7fdd4442373d7a4df156e65867"
+    },
+    {
+      "path": "docs/USB_REMOTE.md",
+      "sha256": "336da3b41071b53eb579c94e57264750f9c78586d726fb04f78fe32343f9fe23"
+    },
+    {
+      "path": "docs/USB_TEST_20261108.md",
+      "sha256": "5ad1ae24195561a70719a6517892be8eae4f8892f082817eb84d781a6951c44d"
+    },
+    {
+      "path": "examples/continuous_recording.py",
+      "sha256": "a26695cce8400550bdfc3439b1762babfe6983991ff84ee7fd142187992a31c5"
+    },
+    {
+      "path": "examples/manual_stop.py",
+      "sha256": "a7cfe661d6b19a3e5edfe119b2b0a5ffa887dfa6e02ea2bcbba3c97d53e1a7c1"
+    },
+    {
+      "path": "examples/record_10s.py",
+      "sha256": "ed6eade61b17486e8264f1a83c74fc89d4db3342ab6c2ef7123703d91dc61dfa"
+    },
+    {
+      "path": "gradle.properties",
+      "sha256": "cf774135f23cd1e6c054168ce772e24140800347f95b29819744c96f97e4ef26"
+    },
+    {
+      "path": "gradle/gradle-daemon-jvm.properties",
+      "sha256": "6c13aa5ba36690ccfbbb25a8807d01d98c15833e446d7ae82ddc726472cb8ef7"
+    },
+    {
+      "path": "gradle/libs.versions.toml",
+      "sha256": "60cbe0d8a6ec1506b808e781b67364c9c9d3f1d3bfa436b4174055ac05c4a18e"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.jar",
+      "sha256": "76805e32c009c0cf0dd5d206bddc9fb22ea42e84db904b764f3047de095493f3"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "sha256": "258093c8e8107be8549231c547e286ae2234ae026bc72ac77c969e417fcbc9ad"
+    },
+    {
+      "path": "gradlew",
+      "sha256": "3238afb2aed5cb16eb7d6718077e7138059108f007b54179e9cc157c5a6e0e89"
+    },
+    {
+      "path": "gradlew.bat",
+      "sha256": "1d297e00bd21de3ace22b4d7f2de1f9dfa858883d66bbf7c1ccbecccec8f4f3b"
+    },
+    {
+      "path": "gui/main.py",
+      "sha256": "794ba4a43211fad27d49ff82865f68a547aa6e6dc6864a662ff6fa9179d92810"
+    },
+    {
+      "path": "integrations/type8/Start_Pixel_Camera.cmd",
+      "sha256": "4571e7945484746e378a23adf6ae6838966f7eb9563d0a5b8a910c0496543176"
+    },
+    {
+      "path": "integrations/type8/pixel_camera_README.md",
+      "sha256": "8ac9ece3cd5f92d1e6be068be93704f68479955c0cb1c945cf62828ddee29738"
+    },
+    {
+      "path": "integrations/type8/pixel_camera_capture.py",
+      "sha256": "69e3446ba44524b6002d754ddf8b51add48318cbf82687ebaf428ad61c65fc3c"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "1f952c9845b53c55377dba93cca854d244e5e141a8d2c0fd09db718ed717a9b6"
+    },
+    {
+      "path": "python/pixel_camera/__init__.py",
+      "sha256": "8161a55a287594b620e17fdb49efb970b8fb5e7e5f57f5a73f6d4d9d41f85a56"
+    },
+    {
+      "path": "python/pixel_camera/client.py",
+      "sha256": "19e28c5297ab24178182edcef26c40b4f0746157c4b375ee57ad09e8a3d1a7e0"
+    },
+    {
+      "path": "python/pixel_camera/gui.py",
+      "sha256": "eb400ba3c1e86bb7fb81df8c881c80bbf038c3a3f13a4a2b22ba240a547294d4"
+    },
+    {
+      "path": "python/pixel_camera/models.py",
+      "sha256": "7696212ec0438e54cb5e954902d89f8c976cd019c694d6d2d18a5507c0c6bad6"
+    },
+    {
+      "path": "python/pixel_camera/review.py",
+      "sha256": "3559547f74f6800adef55d0f8eb48e24acbba1cf80212a655430b3d71760f6a1"
+    },
+    {
+      "path": "python/pixel_camera/review_media.py",
+      "sha256": "367305ab145eba56d9b59c47eacab1ab1f99e2366e9d0a2a4e5b9494a5d43d15"
+    },
+    {
+      "path": "python/pixel_camera/runtime.py",
+      "sha256": "2cd424c448f75108f155c9992074955cdd604cf619a1351237f138c1f71c23a6"
+    },
+    {
+      "path": "python/pixel_camera/server.py",
+      "sha256": "9204a86d5f6fa26efbc39f58c9772dc5835911272ea127dca57b4d45892a1095"
+    },
+    {
+      "path": "python/pixel_camera/stability.py",
+      "sha256": "c77b427313d0cbd2b2422371c5a9743cf1f1ce061d19f73e798d2434e6f2cc98"
+    },
+    {
+      "path": "python/pixel_camera/transfer.py",
+      "sha256": "1d450b21dfbdb1e5b766a9c24410fe3799d2f5dcbabe3545cb5b53e04ce741b4"
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "ba4dd2f8cefe5a999dcd7a394a4503c424138ac5bd357893dcf7fd1e7e3c465c"
+    },
+    {
+      "path": "settings.gradle.kts",
+      "sha256": "90daff74eda09c73f2c54a912d61dc266858a39f33daf469675de1c8cd09aca7"
+    },
+    {
+      "path": "tests/test_client.py",
+      "sha256": "61df551fe75caad56a183e0237a55010d8d9ded78dfc48fc77eb39239fc1dd9e"
+    },
+    {
+      "path": "tests/test_remote.py",
+      "sha256": "91ba3568bb8053c88c7d30ff6b1968b60f6ac55eea7649d52ae76de8f07406f1"
+    },
+    {
+      "path": "tests/test_review.py",
+      "sha256": "a7d28a84fd076d6069531451f0a0ad5ce1b8727293b61c14fffa4c9c8328da22"
+    },
+    {
+      "path": "tests/test_stability.py",
+      "sha256": "4a7e286e43c42771fce22c8c96c580039b1a3e39022d82d7344efb3c5f9c4a77"
+    },
+    {
+      "path": "tests/test_type8_capture.py",
+      "sha256": "ca4b275afa52f68570f5d3cd24868ab46ccc29153c0c84d605fdda1a0f46a387"
+    },
+    {
+      "path": "tools/decode_with_opencv.py",
+      "sha256": "33bd64fa0ff78424fd7c732676ccd584725f878cedbaf43c7b18068bfcc67fa2"
+    },
+    {
+      "path": "tools/pull_probe.py",
+      "sha256": "7c75cf5d95a4ebf519a808d83763cd2ecf32c3e3757b8bacc5a5479c4c005289"
+    },
+    {
+      "path": "tools/remote_smoke.py",
+      "sha256": "9e732f5ed64a592652752fc10c31f6a6e7d892ba4d5b84cbb620e463cf0f6da9"
+    },
+    {
+      "path": "tools/tests/test_verification.py",
+      "sha256": "0f69d386abb620b5e08b3b8d47822d4a8b5221176815f6bd46d2f3c994b93f99"
+    },
+    {
+      "path": "tools/verify_recording.py",
+      "sha256": "98d38a36eefd467b6a377d31272d26bfd34c83fbc844b941644e01f9b2b05a80"
+    }
+  ]
+}

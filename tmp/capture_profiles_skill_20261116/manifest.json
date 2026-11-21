@@ -1,0 +1,26 @@
+[
+  {
+    "target": ".agents/skills/mouse-turn-tuning/SKILL.md",
+    "staged": "proposal_0.bin",
+    "original_sha256": "15fca06762e9e98bca6ac53e383f259411f28c80147d8af7304cf0c5cc030211",
+    "proposed_sha256": "e9cdcc02b915e09a975adb2197ec8ac02006342f04bc00b63c63f116a59bb6d3"
+  },
+  {
+    "target": ".agents/skills/mouse-turn-tuning/references/gui-workflow.md",
+    "staged": "proposal_1.bin",
+    "original_sha256": "af07ccd676e75b249655e8314107a7c8dded900b35c75a837676d6d082b3d514",
+    "proposed_sha256": "4e170195016612fcf7f45732073fc6a35244b51b48e1bf8b70127f6cda80dbf0"
+  },
+  {
+    "target": ".agents/skills/mouse-log-analysis/SKILL.md",
+    "staged": "proposal_2.bin",
+    "original_sha256": "0780fdebc29670f62037b0993274d075d34494991d22d2026b3c559d8424553d",
+    "proposed_sha256": "18d5b54ee07251dcf04ff263b5b0c82139a3eb0c8ae4c84df60016b332685467"
+  },
+  {
+    "target": ".agents/skills/mouse-turn-tuning/references/capture-profiles.md",
+    "staged": "proposal_3.bin",
+    "original_sha256": null,
+    "proposed_sha256": "e43c2591d50d5e3807f0daadb0812cdcf1f279fe75d55b888b3822d11448ee82"
+  }
+]

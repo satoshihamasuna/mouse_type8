@@ -1,0 +1,57 @@
+--- before/Params/Param_A/turn_1800/turn_1800.cpp
++++ after/Params/Param_A/turn_1800/turn_1800.cpp
+@@ -161,14 +161,13 @@
+ const t_pid_gain om_gain_turnOut135_1800 = {0.1,0.002,0.0};
+ //const static t_turn_param_table slalom_outL135_1800_table = {1.80f, 41.0f,9.30,44.12, 135.0f,Turn_L};
+ //const static t_turn_param_table slalom_outR135_1800_table = {1.80f,-41.0f,9.30,44.12,-135.0f,Turn_R};
+-#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
+-// Pink LED interval (20260725 Lstart=Lend=0 videos, R median copied to L/R).
+-const t_turn_param_table slalom_outL135_1800_table = {1.80f, 41.0f,8.60,45.97, 135.0f,Turn_L};
+-const t_turn_param_table slalom_outR135_1800_table = {1.80f,-41.0f,8.60,45.97,-135.0f,Turn_R};
+-#else
+-const t_turn_param_table slalom_outL135_1800_table = {1.80f, 41.0f,15.61,46.65, 135.0f,Turn_L};
+-const t_turn_param_table slalom_outR135_1800_table = {1.80f,-41.0f,15.61,46.65,-135.0f,Turn_R};
+-#endif
++// 2026-11-21: 機体A・1800 mm/s・吸引650の右135度退出の実測候補を依頼により暫定反映。
++// 根拠: tools/turn_analysis/20261121_A_turn1800_OUT135_adoption/README.md
++// 右は完全記録1本。充電後の再現性は未確認。左は依頼による鏡映で実走未確認。
++// 論理角±135度を維持し、物理指令角のみを±132.9度へ補正する。
++// 旧マーカー長切替から独立し、方向別PID・FFは既存の参照を維持する。
++const t_turn_param_table slalom_outL135_1800_table = {1.80f, 41.0f,0.0f,35.2f, 135.0f,Turn_L,-2.1f};
++const t_turn_param_table slalom_outR135_1800_table = {1.80f,-41.0f,0.0f,35.2f,-135.0f,Turn_R, 2.1f};
+ const t_param param_outL135_1800 = {&slalom_outL135_1800_table,&sp_gain_turnOut135_1800,&om_gain_turnOut135_1800,&ff_gain_out135_L_1800};
+ const t_param param_outR135_1800 = {&slalom_outR135_1800_table,&sp_gain_turnOut135_1800,&om_gain_turnOut135_1800,&ff_gain_out135_R_1800};
+ 
+--- before/Params/Param_A/turn_1800/turn_1800.h
++++ after/Params/Param_A/turn_1800/turn_1800.h
+@@ -129,14 +129,9 @@
+ extern const t_pid_gain om_gain_turnOut135_1800;
+ //const static t_turn_param_table slalom_outL135_1800_table = {1.80f, 41.0f,9.30,44.12, 135.0f,Turn_L};
+ //const static t_turn_param_table slalom_outR135_1800_table = {1.80f,-41.0f,9.30,44.12,-135.0f,Turn_R};
+-#if PARAM_A_USE_PINK_LED_TURN_LENGTHS
+-// Pink LED interval (20260725 Lstart=Lend=0 videos, R median copied to L/R).
++// 左右135度退出は撮影方式フラグによらず、turn_1800.cppの暫定採用値を使う。
+ extern const t_turn_param_table slalom_outL135_1800_table;
+ extern const t_turn_param_table slalom_outR135_1800_table;
+-#else
+-extern const t_turn_param_table slalom_outL135_1800_table;
+-extern const t_turn_param_table slalom_outR135_1800_table;
+-#endif
+ extern const t_param param_outL135_1800;
+ extern const t_param param_outR135_1800;
+ 
+--- before/README.md
++++ after/README.md
+@@ -223,6 +223,12 @@
+ 
+ 機体A・吸引duty 650の右単体走行3本で、入口方向基準の出口方向は134.82～135.51度でした。動画と1 msログがそろった2本の出口位置差は約0.40～1.25 mmです。通信切断・電源再投入で1 msログを失った1本は、動画の方向確認だけに使用し、位置差の統計へ含めていません。[候補設定](tools/logs/pixel_camera/turn1800_A_inr135_20261120_v1/Ls2p5_Le26_c2p4_review_v1/candidate.settings.json)・[測定比較](tools/logs/pixel_camera/turn1800_A_inr135_20261120_v1/Ls2p5_Le26_c2p4_review_v1/review.json)に根拠を保存しています。左は依頼による鏡映で実走未確認です。盤面固定の絶対精度、連続・最短接続、書き込み後の動作は未確認です。
+ 
++### 機体A・turn1800の左右135度退出への暫定値反映
++
++2026-11-21のユーザー指定で、右135度退出の実測候補を左右へ暫定反映しました。速度1800 mm/s、半径は右−41 mm・左＋41 mm、Lstart 0 mm・Lend 35.2 mm、角度補正は右＋2.1度・左−2.1度です。論理角は左右±135度を維持し、物理指令角は右−132.9度・左＋132.9度になります。形状値は`PARAM_A_USE_PINK_LED_TURN_LENGTHS`によらず使用し、左右それぞれの既存PID・FFを保持します。
++
++根拠は機体A・吸引duty650の右単体1本で、入口方向に対する出口方向134.96度、相対マーカー中点のLend位置残差は右方向−1.29 mm・前方向＋1.81 mm（距離2.22 mm）です。保持1 msログと動画を取得できた試行ですが、走行中の最低電圧は6.543 Vで、充電後の再現性・左単体・連続／最短接続は未確認です。確定調整済みとはせず、[採用根拠と検証記録](tools/turn_analysis/20261121_A_turn1800_OUT135_adoption/README.md)に暫定状態を記録しています。今回の反映に実機書き込みは含みません。
++
+ ### 機体B・turn1600への形状テーブル転用
+ 
+ 2026-11-20のユーザー指定で、`Params/Param_B/turn_1600/turn_1600.cpp`の

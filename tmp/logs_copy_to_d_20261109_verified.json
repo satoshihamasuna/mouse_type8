@@ -1,0 +1,14 @@
+{
+  "status": "copied_and_sha256_verified",
+  "verified_at_utc": "2026-11-09T01:41:21.963749+00:00",
+  "source": "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs",
+  "destination": "D:\\mouse_type8_data\\logs",
+  "files": 4668,
+  "directories": 279,
+  "bytes": 4289561138,
+  "source_unchanged_during_verification": true,
+  "destination_unchanged_during_verification": true,
+  "source_is_ordinary_directory": true,
+  "manifest": "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tmp\\logs_copy_to_d_20261109_sha256.json",
+  "user_decision": "Copy only; keep the original logs directory and running GUIs."
+}

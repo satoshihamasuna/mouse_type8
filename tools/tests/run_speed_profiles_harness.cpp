@@ -92,6 +92,18 @@ static t_run_config configured(const t_speed_profile *straight,const t_speed_pro
 
 static void current()
 {
+	const uint16_t expected_suction[] = {
+		0,0,0,600,600,650,600,650,650,650,700,700,800,700,700,700,800
+	};
+	static_assert(sizeof(expected_suction)/sizeof(expected_suction[0]) == run_config_count,
+		"all run profiles must have an expected suction value");
+	for(uint16_t i = 0; i < run_config_count; ++i)
+	{
+		assert(run_config_table[i]->suction == expected_suction[i]);
+		assert(find_run_config(run_config_table[i]->key) == run_config_table[i]);
+	}
+	assert(!std::strcmp(run_config_suction1400_v1_600.display_name,"Suction 1400 V1 / 600"));
+	assert(!std::strcmp(run_config_suction1400_v1_650.display_name,"Suction 1400 V1 / 650"));
 	assert(run_config_plain500.straight_speed == &straight_speed_plain500);
 	assert(run_config_plain500.diagonal_speed == &diagonal_speed_plain500);
 	assert(&straight_speed_plain500 != &diagonal_speed_plain500);
@@ -433,16 +445,26 @@ static void high_control()
 	// 旧速度別定義を使わず、機体別に採用した固定値と照合する。
 #if defined(MOUSE_A)
 	const float expected_sp_kp = 2.0f;
+	const float expected_om_kp = .15f, expected_om_ki = .001f;
 #else
 	const float expected_sp_kp = 4.0f;
+	const float expected_om_kp = .2f, expected_om_ki = .01f;
 #endif
 	const auto &gain = straight_control_high;
 	assert(gain.ff_gain == &ff_gain_default);
 	assert(close(gain.sp_gain.Kp,expected_sp_kp) && close(gain.sp_gain.Ki,.05f) && close(gain.sp_gain.Kd,0));
-	assert(close(gain.om_gain.Kp,.2f) && close(gain.om_gain.Ki,.01f) && close(gain.om_gain.Kd,0));
+	assert(close(gain.om_gain.Kp,expected_om_kp) && close(gain.om_gain.Ki,expected_om_ki) && close(gain.om_gain.Kd,0));
+	const auto *diagonal_gain = speed_control_gain(3.0f,&diagonal_control_1600_v1);
+#if defined(MOUSE_A)
+	assert(close(diagonal_gain->om_gain.Kp,.1f) && close(diagonal_gain->om_gain.Ki,.001f));
+	const auto *plain_gain = speed_control_gain(3.0f,&straight_control_plain500);
+	assert(close(plain_gain->om_gain.Kp,.1f) && close(plain_gain->om_gain.Ki,.001f));
+#else
+	assert(diagonal_gain == &gain);
+#endif
 	const auto *below = speed_control_gain(2.199f,&straight_control_1600_v1);
 	assert(below == debug_straight_2000.control);
-	// 旧ゲイン境界・旧3200専用D項をまたぎ、直進/斜めとも共通組を実モーションへ渡す。
+	// 高速直進の採用値と斜めの保持値を、実モーションへ渡す。
 	const float speeds[] = {2.2f,2.99f,3.0f,3.2f,3.4f,4.6f,5.0f};
 	for(float speed : speeds)
 	{
@@ -453,19 +475,20 @@ static void high_control()
 		calcRunTime time; time.run_config_set(&config);
 		assert(time.speed_profiles_valid());
 		assert(time.straight_base_velo().sp_gain == &gain.sp_gain);
-		assert(time.diagonal_base_velo().om_gain == &gain.om_gain);
+		assert(time.diagonal_base_velo().om_gain == &diagonal_gain->om_gain);
 		Motion motion;
 		for(int diagonal = 0; diagonal < 2; ++diagonal)
 		{
+			const auto *expected = diagonal ? diagonal_gain : &gain;
 			const auto p = diagonal ? time.calc_end_diagonal_max_velo(1000,speed,speed)
 					: time.calc_end_straight_max_velo(1000,speed,speed);
 			assert(p.param && close(p.param->max_velo,speed));
-			assert(p.sp_gain == &straight_control_high.sp_gain && p.om_gain == &straight_control_high.om_gain);
-			assert(p.ff_gain == straight_control_high.ff_gain);
+			assert(p.sp_gain == &expected->sp_gain && p.om_gain == &expected->om_gain);
+			assert(p.ff_gain == expected->ff_gain);
 			if(diagonal) motion.exe_Motion_diagonal(1000,p.param->acc,speed,speed,p.sp_gain,p.om_gain,p.ff_gain);
 			else motion.exe_Motion_straight(1000,p.param->acc,speed,speed,p.sp_gain,p.om_gain,p.ff_gain);
-			assert(motion.last_sp == &straight_control_high.sp_gain && motion.last_om == &straight_control_high.om_gain);
-			assert(motion.last_ff == straight_control_high.ff_gain);
+			assert(motion.last_sp == &expected->sp_gain && motion.last_om == &expected->om_gain);
+			assert(motion.last_ff == expected->ff_gain);
 		}
 	}
 }
@@ -518,12 +541,14 @@ static void invalid_controls()
 static void standalone()
 {
 #if defined(MOUSE_A)
-	const float search_speed = .37f, search_kp = 2, high_kp = 2;
+	const float search_speed = .32f, search_kp = 2, high_kp = 2;
+	const float high_om_kp = .15f, high_om_ki = .001f;
 	const t_pid_gain debug_sp[] = {{2,.02f,0},{2,.02f,0}};
 	const t_pid_gain debug_om[] = {{.1f,.005f,0},{.1f,.01f,0}};
 	const t_ff_gain *low_ff = &ff_gain_straight_non_suction;
 #else
-	const float search_speed = .37f, search_kp = 1.2f, high_kp = 4;
+	const float search_speed = .32f, search_kp = 1.2f, high_kp = 4;
+	const float high_om_kp = .2f, high_om_ki = .01f;
 	const t_pid_gain debug_sp[] = {{1.2f,.02f,0},{1.5f,.05f,0}};
 	const t_pid_gain debug_om[] = {{.1f,.01f,0},{.1f,.005f,0}};
 	const t_ff_gain *low_ff = &ff_gain_default;
@@ -548,8 +573,8 @@ static void standalone()
 		assert(close(p.param->acc,rates[i]) && close(p.param->deceleration(),rates[i]));
 		assert(close(p.sp_gain->Kp,i < 2 ? debug_sp[i].Kp : high_kp));
 		assert(close(p.sp_gain->Ki,i < 2 ? debug_sp[i].Ki : .05f) && close(p.sp_gain->Kd,0));
-		assert(close(p.om_gain->Kp,i < 2 ? debug_om[i].Kp : .2f));
-		assert(close(p.om_gain->Ki,i < 2 ? debug_om[i].Ki : .01f) && close(p.om_gain->Kd,0));
+		assert(close(p.om_gain->Kp,i < 2 ? debug_om[i].Kp : high_om_kp));
+		assert(close(p.om_gain->Ki,i < 2 ? debug_om[i].Ki : high_om_ki) && close(p.om_gain->Kd,0));
 		assert(p.ff_gain == (i < 2 ? low_ff : &ff_gain_default));
 	}
 }

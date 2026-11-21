@@ -1,0 +1,7 @@
+{
+  "state": "INSTALLED_SUCCESSFULLY",
+  "at": "2026-11-15T02:37:20.818158+00:00",
+  "apk_sha256": "74e0c791caba1c8eb1adf63eb17de5e744f50e5cfddd0b66ebbdc0339c97b7ea",
+  "method": "adb install -r; application data retained",
+  "robot_commands_sent": 0
+}

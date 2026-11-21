@@ -1,0 +1,20 @@
+[
+  {
+    "path": ".agents/skills/mouse-turn-tuning/SKILL.md",
+    "before_sha256": "25da7122e71ba368185aee9e8b15a1d0a4fec566f418371100f5e28ed8f8dbba",
+    "after_sha256": "a9272cd6a4c768e53dcf80978682d70ab4d70c59bf24645716c0bab9f2c741ed",
+    "draft": "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tmp\\skill_evaluation_frames_20261115\\.agents\\skills\\mouse-turn-tuning\\SKILL.md"
+  },
+  {
+    "path": ".agents/skills/mouse-log-analysis/SKILL.md",
+    "before_sha256": "e04f2914c68bcd1fe638c8b15a74dca4028dfe5d0207a1a507f8a0281d364cf9",
+    "after_sha256": "0780fdebc29670f62037b0993274d075d34494991d22d2026b3c559d8424553d",
+    "draft": "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tmp\\skill_evaluation_frames_20261115\\.agents\\skills\\mouse-log-analysis\\SKILL.md"
+  },
+  {
+    "path": ".agents/skills/mouse-turn-tuning/references/turn500-workflow.md",
+    "before_sha256": "3575d6b0b6d6c5a5b7e89afb8df9bc3456529a8f839b8302796b7fcd54005785",
+    "after_sha256": "76e1c46549a65ab87c0116248581ffa2918cec806fd9b71efabb3263bac42d72",
+    "draft": "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tmp\\skill_evaluation_frames_20261115\\.agents\\skills\\mouse-turn-tuning\\references\\turn500-workflow.md"
+  }
+]

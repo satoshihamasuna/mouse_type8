@@ -137,7 +137,8 @@ def registration(frame, aruco, reference, search_matrix=None):
 
 
 def components(hsv, colour, matrix, detection=None):
-    defaults = dict(hue_ranges=[[0, 11], [169, 179]] if colour == 'red' else [[22, 39]],
+    hue_ranges = dict(red=[[0, 11], [169, 179]], yellow=[[22, 39]], green=[[40, 85]])
+    defaults = dict(hue_ranges=hue_ranges[colour],
                     minimum_saturation=60, minimum_value=65)
     mask, minimum_area = colour_mask(hsv, colour, detection, defaults=defaults)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -202,7 +203,7 @@ def marker_colours(mouse):
     if mouse == 'A':
         return 'red', 'yellow'
     if mouse == 'B':
-        return 'yellow', 'red'
+        return 'green', 'red'
     raise ValueError('マーカーの前後を選ぶには、実機設定JSONのfirmware.mouseにAまたはBが必要です')
 
 
@@ -258,6 +259,7 @@ def track(video, reference, stride=4, cell_mm=90., progress=True, mouse='A', det
                     # Keep an already unambiguous standard pair. Only missing
                     # pairs get a second observation with small/pale disk settings.
                     small = dict(red=dict(minimum_area_px=3,minimum_saturation=35,hue_ranges=[[0,11],[160,179]]),
+                                 green=dict(minimum_area_px=3,hue_ranges=[[40,85]]),
                                  yellow=dict(minimum_area_px=3,hue_ranges=[[22,45]]))
                     pair, reason = select_pair(components(hsv,front_colour,matrix,small),components(hsv,rear_colour,matrix,small),
                         previous,None if last_good is None else pts-last_good,

@@ -1,0 +1,125 @@
+﻿{
+  "stages": [
+    {
+      "stage": "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\lengths_Ls6_Le27p9_c1p9_01",
+      "request_id": "B_OUTR135_1600_Ls6_Le27p9_c1p9_green_20261120_001",
+      "state": "VALIDATED_NOT_EXECUTED",
+      "operator_ready": false,
+      "turn_count": 1,
+      "preserved": [
+        "pid",
+        "feedforward",
+        "suction"
+      ],
+      "placement": {
+        "x_mm": 180.0,
+        "y_mm": 45.0,
+        "heading_deg": 45.0,
+        "position_tolerance_mm": 5.0,
+        "heading_tolerance_deg": 2.0
+      },
+      "post_diagonal_accel_m_s2": null,
+      "post_straight_accel_m_s2": 20.0,
+      "geometry_changes": {
+        "lstart": 6.0,
+        "lend": 27.9
+      },
+      "source_hashes": {
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\config.json": "2ece5a70da0a53f5f15f7b41cd094f28b7aa7feeed22885c5848cae16c1b3d1d",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\static_pose_after_settle.py": "bc67ecac2334ab2053daa6617ed5717f8b3f3d2ee4cfab3160a70a28a9c8927a",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\coarse_placement_check.py": "c1a0b690ec4fccafa6ea329661d6cc1a80094b94e8eba2a43b5ad14068ce49f7",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\run_recorded_once.py": "c813ea9f22b25640af29034aef7eae377bce66490c71343593a7c33f5361db4d",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\placement_plan.json": "a873b2384b6e58510efd0a753c10f6783b30c9f5301986af047cc50920f1fac5",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\analysis\\pixel_camera_static_pose.py": "53cd057e6fca3239be0acb95d0dd5be4577679c54f4daace0405cf027d8cfec6",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\local_execution\\run_B_OUTR135_1600_baseline_green_20261120_003\\saved_1ms.settings.json": "74332d339a3e3e986acf90b300ac8eaa849cac686559b69770f63e56d48281f4",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\local_execution\\run_B_OUTR135_1600_baseline_green_20261120_003\\rear_red_s30_reanalysis_v1\\midpoint_raw_wheel_clock_v1\\midpoint_review.json": "2e019a8324504b6ff190afff13c77113636527f2da7a72fe5284baa1d9885824"
+      },
+      "basis": [
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\local_execution\\run_B_OUTR135_1600_baseline_green_20261120_003\\rear_red_s30_reanalysis_v1\\midpoint_raw_wheel_clock_v1\\midpoint_review.json"
+      ],
+      "source_unchanged": true,
+      "no_execution_job_or_transport": true
+    },
+    {
+      "stage": "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\lengths_Ls6_Le27p9_c1p9_02",
+      "request_id": "B_OUTR135_1600_Ls6_Le27p9_c1p9_green_20261120_002",
+      "state": "VALIDATED_NOT_EXECUTED",
+      "operator_ready": false,
+      "turn_count": 1,
+      "preserved": [
+        "pid",
+        "feedforward",
+        "suction"
+      ],
+      "placement": {
+        "x_mm": 180.0,
+        "y_mm": 45.0,
+        "heading_deg": 45.0,
+        "position_tolerance_mm": 5.0,
+        "heading_tolerance_deg": 2.0
+      },
+      "post_diagonal_accel_m_s2": null,
+      "post_straight_accel_m_s2": 20.0,
+      "geometry_changes": {
+        "lstart": 6.0,
+        "lend": 27.9
+      },
+      "source_hashes": {
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\config.json": "2ece5a70da0a53f5f15f7b41cd094f28b7aa7feeed22885c5848cae16c1b3d1d",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\static_pose_after_settle.py": "bc67ecac2334ab2053daa6617ed5717f8b3f3d2ee4cfab3160a70a28a9c8927a",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\coarse_placement_check.py": "c1a0b690ec4fccafa6ea329661d6cc1a80094b94e8eba2a43b5ad14068ce49f7",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\run_recorded_once.py": "c813ea9f22b25640af29034aef7eae377bce66490c71343593a7c33f5361db4d",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\placement_plan.json": "a873b2384b6e58510efd0a753c10f6783b30c9f5301986af047cc50920f1fac5",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\analysis\\pixel_camera_static_pose.py": "53cd057e6fca3239be0acb95d0dd5be4577679c54f4daace0405cf027d8cfec6",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\local_execution\\run_B_OUTR135_1600_baseline_green_20261120_003\\saved_1ms.settings.json": "74332d339a3e3e986acf90b300ac8eaa849cac686559b69770f63e56d48281f4",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\local_execution\\run_B_OUTR135_1600_baseline_green_20261120_003\\rear_red_s30_reanalysis_v1\\midpoint_raw_wheel_clock_v1\\midpoint_review.json": "2e019a8324504b6ff190afff13c77113636527f2da7a72fe5284baa1d9885824"
+      },
+      "basis": [
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\local_execution\\run_B_OUTR135_1600_baseline_green_20261120_003\\rear_red_s30_reanalysis_v1\\midpoint_raw_wheel_clock_v1\\midpoint_review.json"
+      ],
+      "source_unchanged": true,
+      "no_execution_job_or_transport": true
+    },
+    {
+      "stage": "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\lengths_Ls6_Le27p9_c1p9_03",
+      "request_id": "B_OUTR135_1600_Ls6_Le27p9_c1p9_green_20261120_003",
+      "state": "VALIDATED_NOT_EXECUTED",
+      "operator_ready": false,
+      "turn_count": 1,
+      "preserved": [
+        "pid",
+        "feedforward",
+        "suction"
+      ],
+      "placement": {
+        "x_mm": 180.0,
+        "y_mm": 45.0,
+        "heading_deg": 45.0,
+        "position_tolerance_mm": 5.0,
+        "heading_tolerance_deg": 2.0
+      },
+      "post_diagonal_accel_m_s2": null,
+      "post_straight_accel_m_s2": 20.0,
+      "geometry_changes": {
+        "lstart": 6.0,
+        "lend": 27.9
+      },
+      "source_hashes": {
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\config.json": "2ece5a70da0a53f5f15f7b41cd094f28b7aa7feeed22885c5848cae16c1b3d1d",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\static_pose_after_settle.py": "bc67ecac2334ab2053daa6617ed5717f8b3f3d2ee4cfab3160a70a28a9c8927a",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\coarse_placement_check.py": "c1a0b690ec4fccafa6ea329661d6cc1a80094b94e8eba2a43b5ad14068ce49f7",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\run_recorded_once.py": "c813ea9f22b25640af29034aef7eae377bce66490c71343593a7c33f5361db4d",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\placement_plan.json": "a873b2384b6e58510efd0a753c10f6783b30c9f5301986af047cc50920f1fac5",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\analysis\\pixel_camera_static_pose.py": "53cd057e6fca3239be0acb95d0dd5be4577679c54f4daace0405cf027d8cfec6",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\local_execution\\run_B_OUTR135_1600_baseline_green_20261120_003\\saved_1ms.settings.json": "74332d339a3e3e986acf90b300ac8eaa849cac686559b69770f63e56d48281f4",
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\local_execution\\run_B_OUTR135_1600_baseline_green_20261120_003\\rear_red_s30_reanalysis_v1\\midpoint_raw_wheel_clock_v1\\midpoint_review.json": "2e019a8324504b6ff190afff13c77113636527f2da7a72fe5284baa1d9885824"
+      },
+      "basis": [
+        "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs\\pixel_camera\\turn1600_B_outr135_20261120_v1\\baseline01\\local_execution\\run_B_OUTR135_1600_baseline_green_20261120_003\\rear_red_s30_reanalysis_v1\\midpoint_raw_wheel_clock_v1\\midpoint_review.json"
+      ],
+      "source_unchanged": true,
+      "no_execution_job_or_transport": true
+    }
+  ],
+  "physical_execution": false
+}

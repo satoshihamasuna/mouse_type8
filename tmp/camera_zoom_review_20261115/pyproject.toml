@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pixel-camera"
+version = "0.2.0"
+description = "USB camera control and verified MP4 transfer for Pixel Camera Probe"
+requires-python = ">=3.11"
+dependencies = ["aiohttp>=3.13,<4"]
+
+[project.optional-dependencies]
+gui = ["PySide6>=6.8,<7", "av>=16.0.1,<17"]
+qa = ["av>=16.0.1,<17"]
+
+[project.scripts]
+pixel-camera-server = "pixel_camera.server:main"
+pixel-camera-gui = "pixel_camera.gui:main"
+pixel-camera-stability = "pixel_camera.stability:main"
+pixel-camera-review = "pixel_camera.review:main"
+
+[tool.setuptools]
+package-dir = {"" = "python"}
+
+[tool.setuptools.packages.find]
+where = ["python"]

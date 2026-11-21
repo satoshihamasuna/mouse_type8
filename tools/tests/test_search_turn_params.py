@@ -113,18 +113,18 @@ static void legacy(const t_param& p) {
 int main() {
     SearchDefaults search;
     for(int reset=0;reset<2;++reset) {
-        assert(near(search.search_st_param.param->max_velo,.37f));
-        assert(near(search.param_L90_search.param->velo,.37f));
-        assert(near(search.param_R90_search.param->velo,.37f));
-        assert(search.param_L90_search.param==param_L90_search_370.param);
-        assert(search.param_R90_search.param==param_R90_search_370.param);
-        assert(search.param_L90_search.ff_gain==param_L90_search_370.ff_gain);
-        assert(search.param_R90_search.ff_gain==param_R90_search_370.ff_gain);
-        search.search_st_param=search_straight_slow.parameter();
-        search.param_L90_search=param_L90_search_320;
-        search.param_R90_search=param_R90_search_320;
         assert(near(search.search_st_param.param->max_velo,.32f));
-        search.search_param_init(); // A new search restores normal speed after slow mode.
+        assert(near(search.param_L90_search.param->velo,.32f));
+        assert(near(search.param_R90_search.param->velo,.32f));
+        assert(search.param_L90_search.param==param_L90_search_320.param);
+        assert(search.param_R90_search.param==param_R90_search_320.param);
+        assert(search.param_L90_search.ff_gain==param_L90_search_320.ff_gain);
+        assert(search.param_R90_search.ff_gain==param_R90_search_320.ff_gain);
+        search.search_st_param=debug_straight_500.parameter();
+        search.param_L90_search=param_L90_search_370;
+        search.param_R90_search=param_R90_search_370;
+        assert(near(search.search_st_param.param->max_velo,.5f));
+        search.search_param_init(); // A new search restores the 320 mm/s default after a different preset.
     }
     legacy(param_L90_search_280);legacy(param_R90_search_280);
     legacy(param_L90_search_300);legacy(param_R90_search_300);

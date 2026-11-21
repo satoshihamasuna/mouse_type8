@@ -1,0 +1,92 @@
+"""指定済み走行の保存ログを、実機へ接続せず明示入力で評価する。"""
+from pathlib import Path
+import json
+import sys
+import hashlib
+
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'tools/analysis'))
+from turn_ff_report import analyze_group
+
+RUN = (ROOT / sys.argv[1]).resolve()
+OUT = ROOT / 'tools/logs/pixel_camera/turn1800_A_outr45_20261120_v1/fixed_lengths_cplus0p1_Ls19p5_Le18p8_20261121_01/tracking_1ms_review_v1'
+if OUT.exists():
+    raise RuntimeError('既存の評価を上書きしません')
+settings = json.loads((RUN / 'saved_1ms.settings.json').read_text(encoding='utf-8'))
+trial = json.loads((RUN / 'trial.json').read_text(encoding='utf-8'))
+if settings.get('mouse') != 'A' or settings.get('motion_name') != 'out_r45' or settings.get('preset_speed_mm_s') != 1800 or settings['log']['period_ms'] != 1:
+    raise ValueError('機体・motion・公称周期が今回の測定と一致しません')
+retained = pd.read_csv(RUN / 'saved_1ms.csv')
+stream = pd.read_csv(RUN / 'telemetry.csv')
+signature = ['ideal.velo', 'ego.velo', 'ideal.rad_velo', 'ego.rad_velo', 'V_r', 'V_l']
+matches = retained.merge(stream[['time_ms'] + signature], on=signature, how='inner')
+if len(matches) < 12 or matches.cnt.max() - matches.cnt.min() < len(retained) * .7:
+    raise ValueError('保存ログとMCU時刻の対応が不足しています')
+assert matches.cnt.is_unique
+period_ms, origin_ms = np.polyfit(matches.cnt, matches.time_ms, 1)
+assert .95 < period_ms < 1.05
+timing_error = matches.time_ms - (period_ms * matches.cnt + origin_ms)
+metrics = analyze_group([(RUN / 'saved_1ms.csv', settings)], OUT)
+matches.to_csv(OUT / 'retained_live_matches.csv', index=False)
+index0 = int(metrics['metrics_mean']['start'])
+index1 = int(metrics['metrics_mean']['end'])
+core = np.arange(index0, index1 + 1)
+direction = 1 if settings['parameters']['degree'] > 0 else -1
+gyro = direction * retained['ego.rad_velo'].to_numpy()
+target = direction * retained['ideal.rad_velo'].to_numpy()
+pulse_velocity = (retained['Encoder_GetProperty_Right().sp_pulse'] - retained['Encoder_GetProperty_Left().sp_pulse']) * (15.02 * np.pi / 172) / 2
+result = dict(mouse='A', motion='out_r45', preset_mm_s=settings["preset_speed_mm_s"],
+    correction_deg=settings['parameters']['correction'],
+    target_profile_degree=settings['parameters']['degree'] + settings['parameters']['correction'],
+    execution_write_attempted=trial['execution_write_attempted'], execution_resend_count=trial['execution_resend_count'],
+    source_trial=str(RUN / 'trial.json'), source_csv=str(RUN / 'saved_1ms.csv'),
+    source_settings=str(RUN / 'saved_1ms.settings.json'), nominal_period_ms=1,
+    measured_period_ms=float(period_ms), matched_stream_rows=len(matches),
+    measured_period_fit_rmse_ms=float(np.sqrt(np.mean(timing_error ** 2))),
+    irq_period_mean_us=float(retained['irq.period_us'].mean()), sample_count=len(retained),
+    cnt_contiguous=bool(np.array_equal(retained.cnt, np.arange(len(retained)))),
+    nominal_1ms_tracking_metrics=metrics['metrics_mean'],
+    gyro_turn_profile_measured_time_deg=float(np.sum(gyro[core]) * period_ms / 1000 * 180 / np.pi),
+    gyro_through_lend_measured_time_deg=float(np.sum(gyro[index0:]) * period_ms / 1000 * 180 / np.pi),
+    target_profile_integral_nominal_time_deg=float(np.sum(target[core]) * .001 * 180 / np.pi),
+    fused_turn_speed_nominal_mean_mm_s=float(retained['ego.velo'].iloc[core].mean() * 1000),
+    pulse_speed_measured_time_mean_mm_s=float(pulse_velocity.iloc[core].mean() * 1000 / period_ms),
+    battery_min_v=float(retained.Battery.min()), saved_log_status=trial['saved_log'],
+    parameter_adoption_allowed=False,
+    limitations=['実時間角度はMCU時刻との一致から求めた周期によるジャイロ積分。独立外部時計による校正ではない。',
+        '保存ログはLendまで。最終停止と相対軌道は動画および連続CSVで別途評価する。',
+        '単発比較。制御周期・固定速度のモデルからFF係数を独立に同定したとは扱わない。'],
+    source_sha256={name: hashlib.sha256((RUN / name).read_bytes()).hexdigest() for name in ['saved_1ms.csv', 'saved_1ms.settings.json', 'telemetry.csv', 'trial.json']})
+threshold = target[core].max()/2
+up = np.flatnonzero((target[:-1] < threshold) & (target[1:] >= threshold))
+down = np.flatnonzero((target[:-1] >= threshold) & (target[1:] < threshold))
+ego_up = np.flatnonzero((gyro[:-1] < threshold) & (gyro[1:] >= threshold))
+ego_down = np.flatnonzero((gyro[:-1] >= threshold) & (gyro[1:] < threshold))
+def crossing(values, rows):
+    selected = rows[(rows >= index0-2) & (rows <= index1+10)]
+    if len(selected) != 1:
+        return None
+    k = selected[0]
+    return float(k+(threshold-values[k])/(values[k+1]-values[k]))
+tu,td,gu,gd = crossing(target,up),crossing(target,down),crossing(gyro,ego_up),crossing(gyro,ego_down)
+delays = dict(rise_half_height_samples=None if tu is None or gu is None else gu-tu,
+    fall_half_height_samples=None if td is None or gd is None else gd-td,
+    note='Peak argmax difference is affected by a flat target top. Half-height and shape shift include previous-IRQ DMA/sensor delay plus physical response; not an independent latency calibration.')
+shifts = [(float(k),float(np.sqrt(np.mean((target[core]-np.interp(core+k,np.arange(len(gyro)),gyro))**2))))
+          for k in np.linspace(-3,8,111)]
+best = min(shifts,key=lambda item:item[1])
+delays.update(best_shape_shift_samples=best[0],best_shifted_rmse_rad_s=best[1])
+result['angular_response_diagnostic'] = delays
+sat = (retained.V_r.abs() >= retained.Battery) | (retained.V_l.abs() >= retained.Battery)
+sat_rows = retained.loc[sat,['cnt','motion.pattern','ideal.rad_velo','ego.rad_velo','sp_feedforward','sp_feedback',
+    'om_feedforward','om_feedback','V_r','V_l','Battery']]
+sat_rows.to_csv(OUT/'saturated_samples.csv',index=False)
+result['saturated_rows_all_retained'] = len(sat_rows)
+result['source_script_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+(OUT / 'verification.json').write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + '\n', encoding='utf-8')
+print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False), flush=True)

@@ -1,0 +1,30 @@
+{
+  "destination": "C:\\Users\\sato1\\Documents\\git\\Debug_camera",
+  "files": [
+    {
+      "path": "python/pixel_camera/client.py",
+      "before_sha256": "19e28c5297ab24178182edcef26c40b4f0746157c4b375ee57ad09e8a3d1a7e0",
+      "after_sha256": "aca4611eea39de9d9d82f547af7506f939b9ddf726f478d296c0632619588753"
+    },
+    {
+      "path": "python/pixel_camera/gui.py",
+      "before_sha256": "eb400ba3c1e86bb7fb81df8c881c80bbf038c3a3f13a4a2b22ba240a547294d4",
+      "after_sha256": "97cc5b976cc5f90983bb3d7ec240e23bb8fd426f3f285b1a450a415fd9b0aba1"
+    },
+    {
+      "path": "tests/test_client.py",
+      "before_sha256": "61df551fe75caad56a183e0237a55010d8d9ded78dfc48fc77eb39239fc1dd9e",
+      "after_sha256": "6bee675c563a650a2f9c9f0273ee01671aebd1db2ae829cb46f215fa5f36addd"
+    },
+    {
+      "path": "tests/test_gui_startup.py",
+      "before_sha256": null,
+      "after_sha256": "94bfe6407e5d89b108151ae969a903def75cbfeb4846e3ef17e0eb2d4a300e3e"
+    },
+    {
+      "path": "docs/USB_REMOTE.md",
+      "before_sha256": "336da3b41071b53eb579c94e57264750f9c78586d726fb04f78fe32343f9fe23",
+      "after_sha256": "e31a2da3520f4848ae1f64d68ad45c4f66662e797e62360cec3df0523c6a435a"
+    }
+  ]
+}

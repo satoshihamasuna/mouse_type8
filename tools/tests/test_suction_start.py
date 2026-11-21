@@ -37,7 +37,7 @@ class SuctionStartTest(unittest.TestCase):
             peripheral.parent.mkdir(parents=True)
             peripheral.write_text('''#pragma once
 #include <stdint.h>
-struct t_encoder { float wheel_speed; };
+struct t_encoder { float wheel_speed; int sp_pulse; };
 extern t_encoder test_right, test_left;
 extern int test_fan_duty;
 inline t_encoder Encoder_GetProperty_Right() { return test_right; }
@@ -72,6 +72,12 @@ class IrSensTask_type8 : public IrSensTask, public Singleton<IrSensTask_type8> {
                 source = (ROOT / filename).read_text(encoding="utf-8")
                 functions.append(function_source(source, signature))
             irq = (ROOT / "Module/Src/interrupt.cpp").read_text(encoding="utf-8")
+            begin = irq.index("\tfloat acc_mean")
+            end = irq.index("\tfloat rad_velo", begin)
+            functions.append("static void step_measured_velocity(float acc_sum, float x_acc_sum, float z_acc_sum)\n{\n"
+                             "    const auto Renc = Encoder_GetProperty_Right();\n"
+                             "    const auto Lenc = Encoder_GetProperty_Left();\n"
+                             + irq[begin:end] + "\n}")
             begin = irq.index("\tfloat set_velo = velo;")
             last = "Vehicle_type8::getInstance().ego.turn_slip_theta.set(slip_theta);"
             end = irq.index(last, begin) + len(last)

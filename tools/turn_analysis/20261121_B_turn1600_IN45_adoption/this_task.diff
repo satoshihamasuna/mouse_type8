@@ -1,0 +1,64 @@
+--- before/Params/Param_B/turn_1600/turn_1600.cpp
++++ Params/Param_B/turn_1600/turn_1600.cpp
+@@ -63,17 +63,29 @@
+ const t_param param_LV90_1600 = {&slalom_LV90_1600_table,&sp_gain_turnV90_1600,&om_gain_turnV90_1600};
+ const t_param param_RV90_1600 = {&slalom_RV90_1600_table,&sp_gain_turnV90_1600,&om_gain_turnV90_1600};
+ 
++// 2026-11-21 B右45度進入の暫定採用値。1600 mm/s・吸引duty650、同設定2本の相対評価。
++// Lstart/Lend = 7.8/34.5 mm、右補正-1.2度。左はユーザー指定の鏡映+1.2度（実走未確認）。
++// 角速度Ki = 0.005、角加減速FF = 0.000750をin45専用で反映。
++// 根拠・残差・未確認事項: tools/turn_analysis/20261121_B_turn1600_IN45_adoption/README.md
+ //k = 250
+ const t_pid_gain sp_gain_turnIn45_1600 = {4.0,0.05,0.0};
+-const t_pid_gain om_gain_turnIn45_1600 = {0.20f,0.01f,0.0f};
++// const t_pid_gain om_gain_turnIn45_1600 = {0.20f,0.01f,0.0f};
++const t_pid_gain om_gain_turnIn45_1600 = {0.20f,0.005f,0.0f};
++const t_ff_gain ff_gain_turnIn45_1600 = {
++	0.661202f,0.052929f,0.0f,
++	0.009256f,0.000750f,0.000750f,0.0f,
++	0.0f,0.0f,0.0f
++};
+ //const static t_turn_param_table slalom_inL45_1600_table = {1.60f, 53.0f,9.84,41.94, 45.0f,Turn_L};
+ //const static t_turn_param_table slalom_inR45_1600_table = {1.60f,-53.0f,9.84,41.94,-45.0f,Turn_R};
+ // const t_turn_param_table slalom_inL45_1600_table = {1.60f, 55.0f,7.52,39.62, 45.0f,Turn_L,-1.5f};
+-const t_turn_param_table slalom_inL45_1600_table = {1.60f, 55.0f,5.80f,39.86f, 45.0f,Turn_L, 0.90f};
++// const t_turn_param_table slalom_inL45_1600_table = {1.60f, 55.0f,5.80f,39.86f, 45.0f,Turn_L, 0.90f};
++const t_turn_param_table slalom_inL45_1600_table = {1.60f, 55.0f,7.8f,34.5f, 45.0f,Turn_L, 1.2f};
+ // const t_turn_param_table slalom_inR45_1600_table = {1.60f,-55.0f,7.52,39.62,-45.0f,Turn_R,1.5f};
+-const t_turn_param_table slalom_inR45_1600_table = {1.60f,-55.0f,5.80f,39.86f,-45.0f,Turn_R,-0.90f};
+-const t_param param_inL45_1600 = {&slalom_inL45_1600_table,&sp_gain_turnIn45_1600,&om_gain_turnIn45_1600};
+-const t_param param_inR45_1600 = {&slalom_inR45_1600_table,&sp_gain_turnIn45_1600,&om_gain_turnIn45_1600};
++// const t_turn_param_table slalom_inR45_1600_table = {1.60f,-55.0f,5.80f,39.86f,-45.0f,Turn_R,-0.90f};
++const t_turn_param_table slalom_inR45_1600_table = {1.60f,-55.0f,7.8f,34.5f,-45.0f,Turn_R,-1.2f};
++const t_param param_inL45_1600 = {&slalom_inL45_1600_table,&sp_gain_turnIn45_1600,&om_gain_turnIn45_1600,&ff_gain_turnIn45_1600};
++const t_param param_inR45_1600 = {&slalom_inR45_1600_table,&sp_gain_turnIn45_1600,&om_gain_turnIn45_1600,&ff_gain_turnIn45_1600};
+ 
+ //k = 250
+ const t_pid_gain sp_gain_turnOut45_1600 = {4.0,0.05,0.0};
+--- before/Params/Param_B/turn_1600/turn_1600.h
++++ Params/Param_B/turn_1600/turn_1600.h
+@@ -44,6 +44,7 @@
+ //k = 250
+ extern const t_pid_gain sp_gain_turnIn45_1600;
+ extern const t_pid_gain om_gain_turnIn45_1600;
++extern const t_ff_gain ff_gain_turnIn45_1600;
+ //const static t_turn_param_table slalom_inL45_1600_table = {1.60f, 53.0f,9.84,41.94, 45.0f,Turn_L};
+ //const static t_turn_param_table slalom_inR45_1600_table = {1.60f,-53.0f,9.84,41.94,-45.0f,Turn_R};
+ extern const t_turn_param_table slalom_inL45_1600_table;
+--- before/README.md
++++ README.md
+@@ -259,6 +259,14 @@
+ 各動画の入口直線と走行前マーカー中点を基準に比較しています。左はユーザー指定の鏡像展開で実走未確認です。
+ 更新ファームの書き込み後の確認・連続接続は未実施です。[反映根拠と検証](tools/turn_analysis/20261120_B_turn1600_R180_adoption/README.md)。
+ 
++### 機体B・turn1600の左右45度進入への暫定値反映
++
++2026-11-21のユーザー依頼で、右in45の暫定採用値を左右へ反映しました。速度1.60 m/s、半径は右−55 mm・左＋55 mm、Lstart 7.8 mm・Lend 34.5 mm、角度補正は右−1.2度・左＋1.2度です。論理角は右−45度・左＋45度を維持します。左は依頼による鏡映で実走未確認です。
++
++in45専用の角速度PIDを0.20/0.005/0、角加速・角減速FFをともに0.000750とし、左右の`param_inR45_1600` / `param_inL45_1600`から参照します。速度PIDは4.0/0.05/0、ほかのFFは機体Bの取得設定を使います。
++
++右単体は1600 mm/s・吸引duty650の同設定2本を入口相対のマーカー中点で評価し、出口角45.666～46.354度、平均Lend残差は右＋1.002 mm・前−1.653 mmでした。平均角度約＋1度の残差を含む暫定値で、充電後の再現性・左・連続接続・更新ファーム書き込み後の実走は未確認です。[採用値・入力・検証結果](tools/turn_analysis/20261121_B_turn1600_IN45_adoption/README.md)に記録しています。
++
+ ### 最短走行開始時の予備加速
+ 
+ 最短の通常・吸引・可変ターン走行では、13.1 mmの予備区間を先頭の直線またはターン前直進へ含めます。

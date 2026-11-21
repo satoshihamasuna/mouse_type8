@@ -66,12 +66,12 @@ class Search
 
 #if defined(MOUSE_A)
 		t_straight_param search_st_param = search_straight.parameter();
-		t_param param_L90_search = param_L90_search_370;
-		t_param param_R90_search = param_R90_search_370;
+		t_param param_L90_search = param_L90_search_320;
+		t_param param_R90_search = param_R90_search_320;
 #else
 		t_straight_param search_st_param = search_straight.parameter();
-		t_param param_L90_search = param_L90_search_370;
-		t_param param_R90_search = param_R90_search_370;
+		t_param param_L90_search = param_L90_search_320;
+		t_param param_R90_search = param_R90_search_320;
 #endif
 
 	public:
@@ -167,12 +167,12 @@ class Search
 		{
 #if defined(MOUSE_A)
 			search_st_param = search_straight.parameter();
-			param_L90_search = param_L90_search_370;
-			param_R90_search = param_R90_search_370;
+			param_L90_search = param_L90_search_320;
+			param_R90_search = param_R90_search_320;
 #else
 			search_st_param = search_straight.parameter();
-			param_L90_search = param_L90_search_370;
-			param_R90_search = param_R90_search_370;
+			param_L90_search = param_L90_search_320;
+			param_R90_search = param_R90_search_320;
 #endif
 		}
 

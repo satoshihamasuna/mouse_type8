@@ -130,7 +130,7 @@ BLE の専用シェルは `tools/ble/mouse_ble_shell.py`、既存 GUI 用の接�
 探索ターンは`debug search_turn right|left preset 速度`で機体別の初期値を読み込みます。
 対応速度はAが280 / 300 / 320 / 350 / 370 / 400 mm/s、Bが280 / 300 / 320 / 350 / 370 mm/sです。
 例: `debug search_turn right preset 350`、`debug search_turn left preset 370`。プリセット読込みでは走行しません。
-Bの350はBの320から速度のみ変更した未調整の初期値です。370は2026-11-21のB左右各3本の入口相対単体候補を反映しています。条件と値は[採用根拠](turn_analysis/20261121_B_search370_adoption/README.md)を参照してください。通常探索の既定速度は370 mm/s、時間経過時の低速切替は320 mm/sです。
+Bの350はBの320から速度のみ変更した未調整の初期値です。370は2026-11-21のB左右各3本の入口相対単体候補を反映しています。条件と値は[採用根拠](turn_analysis/20261121_B_search370_adoption/README.md)を参照してください。A/Bとも通常探索の直進・ターンの既定速度は320 mm/sです。時間経過時の低速設定も320 mm/sです。
 
 | Command | 説明 |
 | --- | --- |

@@ -737,6 +737,32 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
 
 
 class GuiTests(unittest.TestCase):
+    def test_mouse_a_b_selection_clears_previous_address_and_connects_by_selected_name(self):
+        from unittest.mock import Mock, patch
+        root=gui.tk.Tk();root.withdraw()
+        try:
+            factory=Mock()
+            app=gui.ExploreApp(root,session_factory=factory)
+            self.assertIn('HY0020-MOUSE-A',app.name_entry['values'])
+            self.assertIn('HY0020-MOUSE-B',app.name_entry['values'])
+            self.assertIn('HY0020-MOUSE',app.name_entry['values'])
+            with patch.object(gui.threading,'Thread') as thread:
+                for name in ('HY0020-MOUSE-A','HY0020-MOUSE-B'):
+                    app.worker=None
+                    app.name.set(name)
+                    app.address.set('previous-device-address')
+                    app.select_device()
+                    self.assertEqual(app.address.get(),'')
+                    app.connect()
+                    self.assertEqual(factory.call_args.kwargs['name'],name)
+                    self.assertIsNone(factory.call_args.kwargs['address'])
+                self.assertEqual(thread.return_value.start.call_count,2)
+            app.handle_event('state','connecting')
+            self.assertEqual(str(app.name_entry['state']),'disabled')
+            app.handle_event('state','disconnected')
+            self.assertEqual(str(app.name_entry['state']),'normal')
+        finally:root.destroy()
+
     def test_adc_fields_are_visible_and_old_gain_columns_do_not_break_the_gui(self):
         root=gui.tk.Tk();root.withdraw()
         try:

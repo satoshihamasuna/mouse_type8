@@ -169,7 +169,7 @@ class DebugGui(tk.Tk):
         self.turn_type = tk.StringVar(value="long_r90")
         self.direction = tk.StringVar(value="right")
         self.turn_preset_speed = tk.IntVar(value=700)
-        self.search_turn_preset_speed = tk.IntVar(value=370)
+        self.search_turn_preset_speed = tk.IntVar(value=320)
         self.turn_count = tk.IntVar(value=1)
         self.pre_accel = tk.DoubleVar(value=6.5)
         self.suction_enable = tk.BooleanVar(value=False)

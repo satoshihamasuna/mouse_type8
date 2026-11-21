@@ -1,0 +1,10 @@
+{
+  "type8_tests": 124,
+  "camera_tests": 48,
+  "skipped": 0,
+  "hardware_recording_tested": false,
+  "hardware_1600_run_tested": false,
+  "validation_mouse": "A",
+  "validation_profile": "plain500",
+  "validation_stride": 4
+}

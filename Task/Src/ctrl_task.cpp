@@ -207,9 +207,8 @@ void CtrlTask::motion_control()
 
 			//feedback controll
 			float feedback_velo = vehicle->ego.velo.get();
-			// During fan spin-up, acceleration vibration must not be interpreted
-			// as wheel motion. Keep encoder-only feedback through the completed
-			// startup's No_run gap; moving motions resume the normal estimate.
+			// 吸引立上げと直後の待機では、振動を車輪移動と見なさない。
+			// 停止保持中はエンコーダのみ、走行中は通常の加速度補正付き速度を使う。
 			const bool suction_heading_hold = vehicle->suction_flag_get() == True
 				&& (motion_pattern_get() == Suction_start
 					|| (motion_pattern_get() == No_run && motion_control_get() == NOP_STATE));

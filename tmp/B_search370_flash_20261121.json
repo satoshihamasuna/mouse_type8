@@ -1,0 +1,12 @@
+﻿{
+    "mouse":  "B",
+    "elf":  "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\build\\Debug-MouseB\\mouse_type8.elf",
+    "sha256":  "19bafd39a5a284a731880a5b2c39583da484babe81ba2b26f50378bc7e58cd11",
+    "programmer_exit_code":  0,
+    "verification_requested":  true,
+    "reset_requested":  true,
+    "operator_swd_ready_confirmed":  true,
+    "hy0020_ready":  false,
+    "ble_connection_started":  false,
+    "motion_commands_sent":  0
+}

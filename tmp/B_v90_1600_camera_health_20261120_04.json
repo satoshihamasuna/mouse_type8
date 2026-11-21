@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-11-20T12:20:32.828742+00:00",
+  "passed": true,
+  "failure_reasons": [],
+  "battery": {
+    "level": 96,
+    "scale": 100,
+    "level_percent": 96.0,
+    "status": 2,
+    "status_name": "charging",
+    "plugged": 2,
+    "power_sources": [
+      "usb"
+    ],
+    "voltage_mv": 4382,
+    "temperature_deci_c": 298,
+    "temperature_c": 29.8,
+    "present": true
+  },
+  "device_serial": "14221JECB09804",
+  "min_level_percent": 20,
+  "min_level_policy": "min_levelは可変の運用上の充電余裕であり、機種の物理的な撮影性能・電池寿命の保証値ではない。",
+  "read_only": true,
+  "app_started": false,
+  "recording_started": false,
+  "phone_settings_changed": false,
+  "robot_commands_sent": 0,
+  "adb": "C:\\Users\\sato1\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe",
+  "devices": [
+    {
+      "serial": "14221JECB09804",
+      "state": "device"
+    }
+  ]
+}

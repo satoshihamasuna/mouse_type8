@@ -37,6 +37,42 @@ public:
     using Motion::updateTurnKinematics;
 };
 
+static void velocity_fuses_encoder_and_acceleration()
+{
+    Vehicle &vehicle = Vehicle_type8::getInstance();
+    const float speeds[] = {0.0f, 0.5f, -0.5f, 3.0f};
+    const float accelerations[] = {-20.0f, 0.0f, 20.0f};
+    // 吸引ON/OFFのどちらも、従来の加速度補正を使用する。
+    const bool suction_states[] = {false, true, false, true};
+    for (bool suction : suction_states) {
+        vehicle.suction_flag_set(suction ? True : False);
+        for (float speed : speeds) {
+            test_right.wheel_speed = speed;
+            test_left.wheel_speed = -speed;
+            test_right.sp_pulse = 4;
+            test_left.sp_pulse = -2;
+            for (float accel : accelerations) {
+                vehicle.ego.length.set(10.0f);
+                step_measured_velocity(accel * ACC_BUFF_SIZE, 0.0f, 2.0f * ACC_BUFF_SIZE);
+                const float expected = speed + 0.5f * accel * ACC_BUFF_SIZE / 1000.0f;
+                check(std::fabs(vehicle.ego.velo.get() - expected) < 1e-6f,
+                    "velocity did not preserve acceleration compensation");
+                check(vehicle.ego.accel.get() == accel && vehicle.ego.z_accel.get() == 2.0f,
+                    "velocity selection changed the recorded accelerometer values");
+                check(std::fabs(vehicle.ego.length.get() - (10.0f + 3.0f * MMPP)) < 1e-5f,
+                    "velocity selection changed signed encoder distance integration");
+            }
+        }
+    }
+    // その場旋回の左右速度は並進速度へ混入しない。
+    test_right.wheel_speed = test_left.wheel_speed = 0.6f;
+    step_measured_velocity(0.0f, 0.0f, 0.0f);
+    check(vehicle.ego.velo.get() == 0.0f,
+        "encoder velocity used incorrect left/right signs");
+    vehicle.suctionStop();
+    test_right = {}; test_left = {};
+}
+
 static void slip_model_follows_output()
 {
     Vehicle simulated;
@@ -131,7 +167,7 @@ static void stationary_noise(const t_run_config *config, float noise)
             "left/right stationary braking signs are incorrect");
     }
 
-    // 次の直進では従来の走行速度推定と吸引FFへ戻る。
+    // 次の直進では加速度補正付きの速度推定と吸引FFへ戻る。
     control.motion_pattern_set(Straight);
     control.motion_control_set(STRAIGHT_STATE);
     vehicle.Vehicle_controller.speed_ctrl.I_param_reset();
@@ -323,6 +359,7 @@ static void startup_gains_and_feedback_limit()
 
 int main()
 {
+    velocity_fuses_encoder_and_acceleration();
     slip_model_follows_output();
     measured_and_ideal_slip_defaults();
     for (const auto *config : run_config_table) {

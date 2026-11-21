@@ -157,8 +157,8 @@ const t_control_profile diagonal_control_1800_v1 = make_control_profile(control_
 const t_control_profile diagonal_control_2000_v1 = make_control_profile(control_bands_straight_2000_v1);
 
 // 探索・デバッグの固定速度条件。単位は速度m/s、加速度m/s^2。
-// 2026-11-21 機体Bの通常探索を370 mm/sへ変更。低速探索は320 mm/sを保持。
-constexpr t_motion_profile search_straight = {{0.37f,4.0f},&straight_gain_low};
+// 2026-11-21 ユーザー指定により通常探索の直進・ターンを320 mm/sに設定。
+constexpr t_motion_profile search_straight = {{0.32f,4.0f},&straight_gain_low};
 constexpr t_motion_profile search_straight_slow = {{0.32f,4.0f},&straight_gain_low};
 constexpr t_motion_profile debug_straight_500 = {{0.5f,6.0f},&straight_gain_500};
 constexpr t_motion_profile debug_straight_700 = {{0.7f,6.0f},&straight_gain_700};

@@ -1,0 +1,5 @@
+# Keep the Gradle Unix launcher executable after a checkout on any OS.
+* text=auto
+/gradlew text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf

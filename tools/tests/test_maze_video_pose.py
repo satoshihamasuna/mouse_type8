@@ -67,10 +67,10 @@ class TrackingTests(unittest.TestCase):
         return dict(cell=np.array(point,dtype=float),pixel=np.array(point,dtype=float),area=20,circularity=.8)
 
     @staticmethod
-    def marker_frame():
+    def marker_frame(mouse='A'):
         image,reference,_=RegistrationTests().reference()
         cv2.circle(image,(370,300),5,(0,0,255),-1)
-        cv2.circle(image,(425,300),5,(0,255,255),-1)
+        cv2.circle(image,(425,300),5,(0,255,0) if mouse == 'B' else (0,255,255),-1)
         reference.update(schema=1,rows=9,columns=9,axes='board TL origin, x right, y down')
         return image,reference
 
@@ -83,10 +83,10 @@ class TrackingTests(unittest.TestCase):
         capture.get.side_effect=lambda key:16 if key == cv2.CAP_PROP_FRAME_COUNT else 1000.
         return capture
 
-    def test_mouse_b_uses_yellow_front_and_red_rear_without_moving_the_midpoint(self):
-        image,reference=self.marker_frame()
+    def test_mouse_b_uses_green_front_and_red_rear_without_moving_the_midpoint(self):
         rows={}
         for mouse in ('A','B'):
+            image,reference=self.marker_frame(mouse)
             with patch.object(pose.cv2,'VideoCapture',return_value=self.capture(image)):
                 rows[mouse]=pose.track('synthetic.mp4',reference,progress=False,mouse=mouse)[0]
             self.assertTrue(rows[mouse]['pose_valid'],rows[mouse])
@@ -104,6 +104,22 @@ class TrackingTests(unittest.TestCase):
                     pose.track('synthetic.mp4',{},mouse=mouse)
                 capture.assert_not_called()
 
+    def test_mouse_b_does_not_use_a_yellow_front_marker(self):
+        image,reference=self.marker_frame('A')
+        with patch.object(pose.cv2,'VideoCapture',return_value=self.capture(image)):
+            row=pose.track('synthetic.mp4',reference,progress=False,mouse='B')[0]
+        self.assertFalse(row['pose_valid'])
+        self.assertEqual(row['reason'],'no_pair')
+
+    def test_small_green_front_marker_uses_the_fallback(self):
+        image,reference=self.marker_frame('B')
+        cv2.rectangle(image,(415,290),(435,310),(255,255,255),-1)
+        cv2.circle(image,(425,300),1,(0,255,0),-1)
+        with patch.object(pose.cv2,'VideoCapture',return_value=self.capture(image)):
+            row=pose.track('synthetic.mp4',reference,progress=False,mouse='B')[0]
+        self.assertTrue(row['pose_valid'],row)
+        self.assertEqual(row['detection_mode'],'small_marker_fallback')
+
     def test_tiny_pale_red_marker_is_kept_without_accepting_a_long_wall(self):
         hsv=np.zeros((720,1000,3),np.uint8)
         cv2.circle(hsv,(370,300),1,(165,45,100),-1)
@@ -115,9 +131,9 @@ class TrackingTests(unittest.TestCase):
         np.testing.assert_allclose(found[0]['pixel'],[370,300])
 
     def test_custom_hue_and_small_marker_profile_is_checked_against_saved_mouse(self):
-        image,reference=self.marker_frame()
-        profile=dict(mouse='B',front_colour='yellow',rear_colour='red',
-            marker_detection=dict(yellow=dict(hue_ranges=[[22,45]],minimum_area_px=3)))
+        image,reference=self.marker_frame('B')
+        profile=dict(mouse='B',front_colour='green',rear_colour='red',
+            marker_detection=dict(green=dict(hue_ranges=[[40,85]],minimum_area_px=3)))
         with patch.object(pose.cv2,'VideoCapture',return_value=self.capture(image)):
             row=pose.track('synthetic.mp4',reference,mouse='B',detection_profile=profile,progress=False)[0]
         self.assertTrue(row['pose_valid'])
@@ -296,8 +312,9 @@ class WallReviewTests(unittest.TestCase):
             trial=dict(run_settings=str(root/'run.json'),ble_directory=str(root),video_file=str(root/'video.mp4'),
                 position_analysis=dict(front_colour='red',rear_colour='yellow'))
             pose.json_save(root/'trial.json',trial)
-            for mouse,front,rear,front_x in (('A','red','yellow',370),('B','yellow','red',425)):
+            for mouse,front,rear,front_x in (('A','red','yellow',370),('B','green','red',425)):
                 with self.subTest(mouse=mouse):
+                    image,reference=TrackingTests.marker_frame(mouse)
                     pose.json_save(root/'run.json',dict(firmware=dict(mouse=mouse),
                         telemetry_start=dict(time_ms=100),telemetry_end=dict(time_ms=110)))
                     output=root/mouse

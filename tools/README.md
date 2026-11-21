@@ -247,7 +247,7 @@ debug search_turn right|left set velo r_min Lstart Lend degree sp_kp sp_ki sp_kd
 ```
 
 `pivot_turn` の角度は度、角加速度と角速度はそれぞれrad/s²、rad/sで指定します。
-`search_turn` の実行時は、探索スラロームの前後に45 mmの直進加速・減速区間が入ります。
+`search_turn` のGUI初期プリセットは320 mm/sです。実行時は、探索スラロームの前後に45 mmの直進加速・減速区間が入ります。
 `turn_count` は1～100で指定します。前加速と後減速はそれぞれ1回だけ実行し、その間で探索ターンを指定回数繰り返します。
 右旋回の角度・角加速度・角速度・旋回半径は負、左旋回は正で指定します。
 

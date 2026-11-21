@@ -1,0 +1,16 @@
+﻿{
+    "source":  "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs",
+    "destination":  "D:\\mouse_type8_data\\logs",
+    "backup":  "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tools\\logs_before_d_migration_20261109_103456",
+    "started_at":  "2026-11-09T10:34:56.1404938+09:00",
+    "status":  "aborted",
+    "manifest":  "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tmp\\logs_migration_20261109_103456_sha256.json",
+    "copy_log":  "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tmp\\logs_migration_20261109_103456_robocopy.log",
+    "files":  4663,
+    "directories":  278,
+    "bytes":  4289416202,
+    "destination_filesystem":  "NTFS",
+    "destination_free_before":  1742344237056,
+    "robocopy_exit_code":  1,
+    "error":  "Source and destination content differs: pixel_camera\\tuning_ui_check_20261109_101523\\gui_final.stderr.txt"
+}

@@ -1,0 +1,19 @@
+{
+  "state": "BUILT_AND_HOST_VERIFIED_NOT_INSTALLED",
+  "apk": "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tmp\\camera_zoom_review_20261115\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+  "apk_sha256": "74e0c791caba1c8eb1adf63eb17de5e744f50e5cfddd0b66ebbdc0339c97b7ea",
+  "existing_apk_backup": "C:\\Users\\sato1\\Documents\\git\\mouse_type8_VScode\\mouse_type8\\tmp\\camera_zoom_review_20261115\\installed_camera_before_zoom.apk",
+  "existing_apk_sha256": "0f39104dc38245ce406330fa22e42e24804cb20637f121110f3d924353be8301",
+  "unit_tests": {
+    "tests": 32,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint_issue_counts": {
+    "Warning": 19
+  },
+  "original_camera_working_tree_modified": false,
+  "mouse_firmware_modified": false,
+  "hardware_zoom_verified": false
+}

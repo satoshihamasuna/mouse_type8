@@ -1,0 +1,4 @@
+-- Building for MOUSE_B
+-- Configuring done (0.2s)
+-- Generating done (0.2s)
+-- Build files have been written to: C:/Users/sato1/Documents/git/mouse_type8_VScode/mouse_type8/build/Debug-MouseB

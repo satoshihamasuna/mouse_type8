@@ -1,0 +1,30 @@
+         14562527 function calls (14552107 primitive calls) in 36.690 seconds
+
+   Ordered by: cumulative time
+   List reduced from 914 to 22 due to restriction <22>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    1.117    1.117   36.689   36.689 video_marker_pose.py:304(read_video_pose)
+     5520   11.231    0.002   11.231    0.002 {method 'read' of 'cv2.VideoCapture' objects}
+      120    2.334    0.019   10.740    0.089 video_marker_pose.py:200(select_marker_pair)
+      120    0.001    0.000   10.524    0.088 video_marker_pose.py:94(marker_registration)
+      120    0.001    0.000   10.042    0.084 pixel_camera_reference.py:335(detect_board_reference)
+      120    0.100    0.001    9.952    0.083 pixel_camera_reference.py:195(refine_board_grid)
+      120    0.772    0.006    9.643    0.080 pixel_camera_accuracy.py:72(find_grid_checkpoints)
+      242    0.627    0.003    8.055    0.033 video_marker_pose.py:278(iter_video_frames)
+    11474    2.120    0.000    7.968    0.001 pixel_camera_accuracy.py:27(line_near_grid_point)
+        1    0.236    0.236    4.256    4.256 video_marker_pose.py:146(detect_led_interval)
+      121    0.000    0.000    3.678    0.030 video_marker_pose.py:478(<genexpr>)
+   429361    1.571    0.000    3.268    0.000 shape_base.py:218(vstack)
+    20504    0.093    0.000    2.603    0.000 _function_base_impl.py:3815(_ureduce)
+    11595    0.093    0.000    2.456    0.000 _function_base_impl.py:4052(percentile)
+   429119    0.972    0.000    2.427    0.000 video_marker_pose.py:121(transform_points)
+   444801    1.104    0.000    2.246    0.000 _linalg.py:2598(norm)
+    11595    0.028    0.000    2.219    0.000 _function_base_impl.py:4500(_quantile_unchecked)
+    11595    0.030    0.000    2.026    0.000 _function_base_impl.py:4639(_quantile_ureduce_func)
+    11595    0.305    0.000    1.967    0.000 _function_base_impl.py:4714(_quantile)
+      240    0.465    0.002    1.699    0.007 video_marker_pose.py:37(colour_components)
+   429361    1.194    0.000    1.498    0.000 shape_base.py:78(atleast_2d)
+   458547    1.175    0.000    1.175    0.000 {perspectiveTransform}
+
+

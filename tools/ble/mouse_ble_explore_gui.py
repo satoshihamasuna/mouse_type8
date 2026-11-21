@@ -22,6 +22,7 @@ STATE_LABELS = {
     'running': '経路計算・走行中', 'stopping': '走行停止を要求中',
 }
 RUN_STATES = ('starting', 'waiting_sensor', 'running', 'stopping')
+BLE_DEVICE_NAMES = ('HY0020-MOUSE-A', 'HY0020-MOUSE-B', 'HY0020-MOUSE')
 WALL_EKF_CHOICES = {
     '従来制御（legacy）': 'legacy',
     'EKF制御（control）': 'control',
@@ -80,8 +81,9 @@ class ExploreApp:
         link = ttk.LabelFrame(panel, text='BLE接続', padding=10)
         link.pack(fill='x', pady=(10, 8))
         ttk.Label(link, text='デバイス名').grid(row=0, column=0, sticky='w')
-        self.name_entry = ttk.Entry(link, textvariable=self.name, width=20)
+        self.name_entry = ttk.Combobox(link, textvariable=self.name, values=BLE_DEVICE_NAMES, width=20)
         self.name_entry.grid(row=0, column=1, padx=(6, 14))
+        self.name_entry.bind('<<ComboboxSelected>>', self.select_device)
         ttk.Label(link, text='アドレス（任意）').grid(row=0, column=2)
         self.address_entry = ttk.Entry(link, textvariable=self.address, width=22)
         self.address_entry.grid(row=0, column=3, padx=(6, 14))
@@ -185,6 +187,10 @@ class ExploreApp:
         directory = filedialog.askdirectory(initialdir=self.output.get())
         if directory:
             self.output.set(directory)
+
+    def select_device(self, event=None):
+        # アドレスはデバイス名より優先されるため、別機体へ持ち越さない。
+        self.address.set('')
 
     def connect(self):
         if self.worker and self.worker.is_alive():
