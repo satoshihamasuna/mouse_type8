@@ -41,8 +41,8 @@
 #define MAZE_SIZE_Y  32
 #define MAZE_SIZE  1024
 
-#define MAZE_GOAL_X  7
-#define MAZE_GOAL_Y  7
+#define MAZE_GOAL_X  9
+#define MAZE_GOAL_Y  9
 #define MAZE_GOAL_SIZE  2
 #define MAP_MAX_VALUE 1024
 
