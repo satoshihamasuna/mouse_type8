@@ -47,6 +47,8 @@ class CameraOnlyPreparationTests(unittest.TestCase):
         self.factory=Mock(return_value=self.camera)
         self.addCleanup(patch.stopall)
         patch('pixel_camera_capture.camera_workspace',return_value=self.root).start()
+        patch('pixel_camera_environment.initialize_camera_environment').start()
+        patch('pixel_camera_environment.camera_client_options',return_value={}).start()
         patch.object(tuning,'check_analysis_environment').start()
         patch.dict(sys.modules,{'av':Mock(),'serial':Mock(),
             'pixel_camera':Mock(PixelCameraClient=self.factory)}).start()
@@ -71,6 +73,28 @@ class CameraOnlyPreparationTests(unittest.TestCase):
         self.spawn.assert_not_called()
         self.assertFalse(self.session.folder.exists())
 
+    def test_record_only_preparation_skips_pose_analysis_dependencies(self):
+        tuning.check_analysis_environment.side_effect = RuntimeError('pose packages unavailable')
+        self.session.prepare_camera(video_analysis=False)
+        tuning.check_analysis_environment.assert_not_called()
+        self.camera.get_status.assert_called_once()
+        self.spawn.assert_not_called()
+
+    def test_stopped_camera_server_has_actionable_message_without_starting_ble(self):
+        class ConnectionFailed(RuntimeError):
+            code='CONNECTION_FAILED'
+        self.camera.get_status.side_effect=ConnectionFailed('WinError 10061')
+        with self.assertRaisesRegex(RuntimeError,'PC側のPixelカメラサーバー（8765番）'):
+            self.session.prepare_camera(video_analysis=False)
+        self.spawn.assert_not_called()
+        self.assertIsNone(self.session.gateway)
+
+    def test_phone_disconnection_is_distinct_from_a_stopped_server(self):
+        self.camera.get_status.return_value=dict(connected=False)
+        with self.assertRaisesRegex(RuntimeError,'スマホの「PC接続を開始」'):
+            self.session.prepare_camera(video_analysis=False)
+        self.spawn.assert_not_called()
+
     def test_invalid_stream_period_never_checks_camera_or_starts_ble(self):
         for period in (2,1001,10.5,True):
             with self.subTest(period=period), self.assertRaises(ValueError):
@@ -91,6 +115,33 @@ class CameraOnlyPreparationTests(unittest.TestCase):
             session.prepare('test-address')
         self.assertEqual(self.spawn.call_args.args[0][-2:],['--capture-period-ms','10'])
         self.assertIs(session.connection,connection.return_value)
+
+    def test_selected_mouse_name_and_address_reach_gateway_without_camera(self):
+        def spawn(command, **kwargs):
+            kwargs['stdout'].write(b'Ready: socket://127.0.0.1:8766\n')
+            kwargs['stdout'].flush()
+            return Mock(poll=Mock(return_value=None))
+        self.spawn.side_effect = spawn
+        with patch.object(self.session, 'prepare_camera') as camera, \
+                patch('serial.serial_for_url'), patch.object(tuning, 'last_health', return_value=dict(rows=1)):
+            self.session.prepare('E1:7F:86:21:84:73', device_name='HY0020-MOUSE-B', record_video=False)
+        command = self.spawn.call_args.args[0]
+        self.assertEqual(command[command.index('--name')+1], 'HY0020-MOUSE-B')
+        self.assertEqual(command[command.index('--address')+1], 'E1:7F:86:21:84:73')
+        camera.assert_not_called()
+
+    def test_gateway_failure_displays_target_and_original_error_and_closes(self):
+        def spawn(command, **kwargs):
+            kwargs['stderr'].write(b'RuntimeError: Mouse bridge not found\n')
+            kwargs['stderr'].flush()
+            return Mock(poll=Mock(return_value=1))
+        self.spawn.side_effect = spawn
+        with patch.object(self.session, 'close') as close, self.assertRaises(RuntimeError) as error:
+            self.session.prepare('E1:7F:86:21:84:73', device_name='HY0020-MOUSE-B', record_video=False)
+        self.assertIn('HY0020-MOUSE-B', str(error.exception))
+        self.assertIn('E1:7F:86:21:84:73', str(error.exception))
+        self.assertIn('Mouse bridge not found', str(error.exception))
+        close.assert_called_once()
 
 
 if __name__=='__main__':unittest.main()

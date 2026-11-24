@@ -225,7 +225,7 @@ async def close_local_writer(writer):
 async def run_link(args, recorder=None):
     from bleak import BleakClient, BleakScanner
 
-    print('Searching for {}...'.format(args.name), flush=True)
+    print('Searching for {}{}...'.format(args.name, ' ({})'.format(args.address) if args.address else ''), flush=True)
     if args.address:
         device = await BleakScanner.find_device_by_address(args.address, timeout=15)
     else:

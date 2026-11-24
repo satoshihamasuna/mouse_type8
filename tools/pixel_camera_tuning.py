@@ -13,7 +13,7 @@ import sys
 import threading
 import time
 
-from pixel_camera_turn_capture import (CAMERA_MOTIONS, SEARCH_TURNS, MotionOnce, Shell, read_rows, save_motion_slice,
+from pixel_camera_turn_capture import (CAMERA_MOTIONS, SEARCH_TURNS, MotionOnce, GuiMotionOnce, Shell, read_rows, save_motion_slice,
     utc_now, validate_recording, validate_settings, write_json, debug_motion_prefix,
     device_motion_name, camera_capability_supported, settings_done_marker, save_retained_log)
 from pixel_camera_profiles import load_camera_profile, validate_camera_settings
@@ -128,15 +128,99 @@ def settings_set_command(settings):
                                    settings['suction']['duty'], settings['turn_count'])
 
 
-def analyze_trial(folder, stride):
+def analyze_trial(folder, stride, *, mode='compare'):
     """保存済み試行だけを解析し、GUI・CLIの同じ品質条件を適用する。"""
     folder = Path(folder)
     if stride not in (1, 4):
         raise ValueError('frame stride must be1 or4')
+    if mode not in ('compare', 'position_only', 'position_learned', 'rectify_only'):
+        raise ValueError('unknown video analysis mode')
+    script = 'pixel_camera_position.py' if mode in ('position_only', 'position_learned') else 'pixel_camera_tuning_report.py'
+    if mode == 'rectify_only':
+        script = 'pixel_camera_rectify.py'
+    detector_args = ['--detector', 'auto'] if mode == 'position_learned' else []
     with (folder/('quick.stdout.txt' if stride == 4 else 'full.stdout.txt')).open('x', encoding='utf-8') as output:
-        return subprocess.call([str(analysis_python()), str(Path(__file__).parent/'analysis/pixel_camera_tuning_report.py'),
-            '--trial', str(folder/'trial.json'), '--stride', str(stride)], stdout=output, stderr=subprocess.STDOUT,
+        return subprocess.call([str(analysis_python()), str(Path(__file__).parent/'analysis'/script),
+            '--trial', str(folder/'trial.json'), '--stride', str(stride), *detector_args], stdout=output, stderr=subprocess.STDOUT,
             env=dict(os.environ, PYTHONUTF8='1'), creationflags=hidden_process())
+
+
+def check_log_environment():
+    check = subprocess.run([str(analysis_python()), '-c', 'import numpy,pandas,matplotlib'],
+        capture_output=True, timeout=20, creationflags=hidden_process())
+    if check.returncode:
+        raise RuntimeError('ログ画像にはNumPy・pandas・Matplotlibが必要です。TYPE8_ANALYSIS_PYTHONを確認してください')
+
+
+def render_trial_log(folder):
+    folder = Path(folder)
+    with (folder/'log_plot.stdout.txt').open('x', encoding='utf-8') as output:
+        result = subprocess.run([str(analysis_python()), str(Path(__file__).with_name('turn_tuning_log.py')),
+            str(folder/'trial.json')], stdout=output, stderr=subprocess.STDOUT, timeout=90,
+            env=dict(os.environ, PYTHONUTF8='1', MPLBACKEND='Agg'), creationflags=hidden_process())
+    if result.returncode:
+        raise RuntimeError('ログ画像の作成に失敗しました。log_plot.stdout.txtを確認してください。CSVは保存済みです')
+    return folder/'log.png'
+
+
+def verify_and_apply_settings(shell, expected, set_command, parse, event, folder):
+    """設定だけを反映して読み返す。実行許可・走行要求は送らない。"""
+    turn, preset = expected['motion_name'], expected['preset_speed_mm_s']
+    validate_settings(expected, turn, preset)
+    if (expected.get('mouse') not in ('A', 'B') or setting_differences(expected, expected)
+            or not set_command.startswith(debug_motion_prefix(turn)+' set ')
+            or any(c in set_command for c in '\r\n')):
+        raise ValueError('設定値または設定コマンドが不正です')
+    folder = Path(folder)
+
+    def show():
+        command = debug_motion_prefix(turn)+' show'
+        line = shell.query(command, lambda line: line.startswith('DEBUG_TURN_PARAM_X1000 '+device_motion_name(turn)+' '))
+        result = parse(line, turn, command) or {}
+        validate_settings(result, turn, preset)
+        result.update(mouse=expected['mouse'], mouse_identity_source='user_supplied')
+        return result
+
+    settings = show()
+    count = 0
+    if setting_differences(settings, expected):
+        write_json(folder/'before.settings.json', settings)
+        event('settings_write_attempt', command=set_command)
+        shell.send(set_command)
+        shell.wait_line(lambda line: line == settings_done_marker(turn), timeout=8)
+        settings = show()
+        write_json(folder/'telemetry.settings.json', settings)
+        differences = setting_differences(settings, expected, quantized=True)
+        if differences:
+            raise RuntimeError('設定の読み返しが一致しません: '+', '.join(differences))
+        count = 1
+    write_json(folder/'telemetry.settings.json', settings)
+    event('settings_verified', settings=settings, write_count=count)
+    return settings, count
+
+
+def apply_connected_settings(session, expected, set_command, char_delay, folder, parse,
+                             progress=lambda *args: None, shell_type=Shell):
+    if not session.alive() or not session.connection.is_open:
+        raise RuntimeError('BLE接続を準備してください')
+    if not math.isfinite(char_delay) or char_delay < 0:
+        raise ValueError('文字送信間隔が不正です')
+    folder = Path(folder)
+    folder.mkdir(parents=True, exist_ok=False)
+    write_json(folder/'requested.settings.json', expected)
+    with (folder/'events.jsonl').open('x', encoding='utf-8') as events, (folder/'pc.shell.bin').open('xb') as output:
+        def event(name, **fields):
+            events.write(json.dumps(dict(at=utc_now(), event=name, **fields))+'\n')
+            events.flush()
+            progress(name, fields)
+        shell = shell_type(session.connection, output, event, char_delay=char_delay)
+        shell.send('shell')
+        time.sleep(.5)
+        shell.check_battery()
+        settings, count = verify_and_apply_settings(shell, expected, set_command, parse, event, folder)
+    write_json(folder/'result.json', dict(state='SETTINGS_VERIFIED', settings_write_count=count,
+        execution_write_attempted=False, settings_json='telemetry.settings.json'))
+    return settings
 
 
 @dataclass(frozen=True)
@@ -151,16 +235,19 @@ class TrialRequest:
     operator_ready: bool = False
     camera_settings: dict = field(default_factory=lambda: load_camera_profile('tuning'))
     detection_mode: str = 'profile'
+    record_video: bool = True
+    log_period_ms: int = 1
+    video_analysis: bool = True
+    rectify_only: bool = False
 
     def validate(self):
-        validate_camera_settings(self.camera_settings)
+        if type(self.record_video) is not bool or type(self.video_analysis) is not bool or type(self.rectify_only) is not bool or type(self.log_period_ms) is not int or not 1 <= self.log_period_ms <= 100:
+            raise ValueError('録画ON/OFFと本体ログ周期1～100 msを指定してください')
         if not self.operator_ready:
             raise ValueError('設置・停止・手離しを毎回確認してください')
         validate_settings(self.expected, self.expected['motion_name'], self.expected['preset_speed_mm_s'])
-        if self.expected.get('mouse') not in ('A', 'B') or self.seconds not in (20, 30):
-            raise ValueError('機体A/Bと録画上限20秒または30秒を指定してください')
-        if not math.isfinite(self.height_mm) or not 20 < self.height_mm < 5000:
-            raise ValueError('今回のカメラ高さをmmで指定してください')
+        if self.expected.get('mouse') not in ('A', 'B'):
+            raise ValueError('機体A/Bを指定してください')
         if not math.isfinite(self.char_delay) or self.char_delay < 0:
             raise ValueError('文字送信間隔が不正です')
         if not self.set_command.startswith(debug_motion_prefix(self.expected['motion_name'])+' set '):
@@ -169,6 +256,19 @@ class TrialRequest:
             raise ValueError('複数コマンドは指定できません')
         if setting_differences(self.expected, self.expected):
             raise ValueError('設定に欠落・非有限値があります')
+        if not self.record_video:
+            return
+        if self.seconds not in (20, 30):
+            raise ValueError('録画上限20秒または30秒を指定してください')
+        validate_camera_settings(self.camera_settings)
+        if not self.video_analysis:
+            return
+        if self.rectify_only:
+            from pixel_camera_reference import load_marker_reference
+            load_marker_reference(self.reference)
+            return
+        if not math.isfinite(self.height_mm) or not 20 < self.height_mm < 5000:
+            raise ValueError('今回のカメラ高さをmmで指定してください')
         reference = json.loads(self.reference.read_text(encoding='utf-8'))
         from pixel_camera_detection import load_detection_geometry
         geometry = load_detection_geometry(self.geometry,self.detection_mode)
@@ -290,33 +390,44 @@ class LiveSession:
         self.stream_period_ms = validate_stream_period_ms(stream_period_ms)
         self.gateway = self.connection = self.camera = None
 
-    def prepare_camera(self, progress=lambda message: None):
+    def prepare_camera(self, progress=lambda message: None, *, video_analysis=True):
         """Pixelだけを確認する。BLE中継・連続CSVは開始しない。"""
-        from pixel_camera_capture import camera_workspace
-        workspace = camera_workspace()
-        sys.path.insert(0, str(workspace/'python'))
+        from pixel_camera_environment import initialize_camera_environment, camera_client_options
+        initialize_camera_environment(self.project, required=True)
         try:
             import av  # 録画やsetより先に依存を確認する。
         except ImportError as error:
             raise RuntimeError('カメラ用環境が必要です。Start_Pixel_Tuning.cmdから開いてください') from error
         from pixel_camera import PixelCameraClient
-        progress('画像解析環境を確認しています…')
-        check_analysis_environment()
+        if video_analysis:
+            progress('画像解析環境を確認しています…')
+            check_analysis_environment()
         progress('Pixelの接続・待機状態を確認しています…')
         if self.camera is None:
-            self.camera = PixelCameraClient(connection='wifi', port=8765, auto_start=False)
-        status = self.camera.get_status()
-        if not status.get('connected') or status.get('device', {}).get('phase') != 'IDLE':
-            raise RuntimeError('Pixel CameraをPCへ接続し、録画・転送の終了を待ってください')
+            self.camera = PixelCameraClient(connection='wifi', port=8765, auto_start=False,
+                **camera_client_options(self.project))
+        try:
+            status = self.camera.get_status()
+        except Exception as error:
+            if getattr(error, 'code', None) == 'CONNECTION_FAILED':
+                raise RuntimeError('PC側のPixelカメラサーバー（8765番）に接続できません。カメラサーバーを起動し、スマホの「PC接続を開始」で接続してください') from error
+            raise
+        if not status.get('connected'):
+            raise RuntimeError('Pixelが未接続です。スマホの「PC接続を開始」を押し、PC側で接続済みになったことを確認してください')
+        if status.get('device', {}).get('phase') != 'IDLE':
+            raise RuntimeError('Pixelの録画・転送の終了を待ってください')
         return self
 
-    def prepare(self, address, port=8766, progress=lambda message: None):
+    def prepare(self, address, port=8766, progress=lambda message: None, *, record_video=True, device_name=None, video_analysis=True):
         import serial
-        self.prepare_camera(progress)
+        if record_video:
+            self.prepare_camera(progress, video_analysis=video_analysis)
         self.folder.mkdir(parents=True, exist_ok=False)
         command = [sys.executable, str(self.project/'tools/ble/mouse_ble_gateway.py'),
                    '--port', str(port), '--address', address,
                    '--capture-output', str(self.folder/'telemetry.csv'), '--capture-period-ms', str(self.stream_period_ms)]
+        if device_name:
+            command[2:2] = ['--name', device_name]
         try:
             progress('BLEへ接続しています…')
             with (self.folder/'gateway.stdout.txt').open('xb') as out, (self.folder/'gateway.stderr.txt').open('xb') as err:
@@ -325,7 +436,9 @@ class LiveSession:
             deadline = time.monotonic()+35
             while f'Ready: socket://127.0.0.1:{port}' not in (self.folder/'gateway.stdout.txt').read_text(encoding='utf-8', errors='replace'):
                 if not self.alive() or time.monotonic() > deadline:
-                    raise RuntimeError('BLE中継を準備できません。他のBLEツールを切断し、gateway.stderr.txtを確認してください')
+                    error_text = (self.folder/'gateway.stderr.txt').read_text(encoding='utf-8', errors='replace').strip()
+                    detail = error_text.splitlines()[-1] if error_text else '応答待ちがタイムアウトしました'
+                    raise RuntimeError(f'BLE接続に失敗しました（{device_name or address} / {address}）: {detail}。保存先: {self.folder}')
                 time.sleep(.1)
             self.connection = serial.serial_for_url(f'socket://127.0.0.1:{port}', timeout=.2, write_timeout=3)
             progress('連続CSVの受信を確認しています…')
@@ -361,9 +474,10 @@ class LiveSession:
 def capture_connected(session, request, folder, parse, progress=lambda *args: None,
                       record=None, shell_type=Shell, tail_type=CsvTail):
     """呼出し側はGUI通信ロックを保持する。既存接続を閉じず、実行は既存MotionOnceだけ。"""
-    from pixel_camera_capture import record_trial
     request.validate()
-    record = record or record_trial
+    if request.record_video:
+        from pixel_camera_capture import record_trial
+        record = record or record_trial
     if not session.alive() or not session.connection.is_open:
         raise RuntimeError('撮影用の接続を準備し直してください')
     stream_period = validate_stream_period_ms(getattr(session, 'stream_period_ms', 5))
@@ -375,15 +489,27 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
         mouse_identity_source='user_supplied', motion=turn, preset=preset, turn_count=1,
         suction_enabled=None, suction_duty=None, requested_suction=dict(expected['suction']),
         settings_mode='gui_apply_then_show', stream_period_ms=stream_period,
-        camera_height_mm=request.height_mm, height_source='approximate_for_capture',
-        camera_fixed_confirmed=True, execution_resend_count=0, physical_240fps_verified=False,
+        record_video=request.record_video, saved_log_period_ms=request.log_period_ms,
+        video_analysis_requested=bool(request.record_video and request.video_analysis),
+        camera_height_mm=request.height_mm if request.record_video and request.video_analysis and not request.rectify_only else None,
+        height_source='approximate_for_capture' if request.record_video and request.video_analysis and not request.rectify_only else None,
+        rectification_only=bool(request.record_video and request.rectify_only),
+        camera_fixed_confirmed=request.record_video, execution_resend_count=0, physical_240fps_verified=False,
         parameter_adoption_allowed=False, type8_log_csv=str(folder/'telemetry.csv'),
         recording_stop_mode='motion_end_plus_postroll', recording_limit_seconds=request.seconds,
         recording_postroll_seconds=1.0,
         capture_profile='tuning', camera_settings=request.camera_settings,
         type8_settings_json=str(folder/'telemetry.settings.json'), live_session=str(session.folder),
-        quick_report=str(folder/'quick/summary.json'), full_report=str(folder/'full/summary.json'))
-    for source, name in ((request.reference, 'marker_reference_used.json'), (request.geometry, 'body_geometry_used.json')):
+        quick_report=str(folder/'quick/summary.json') if request.record_video and request.video_analysis else None,
+        full_report=str(folder/'full/summary.json') if request.record_video and request.video_analysis else None)
+    if request.record_video and request.rectify_only:
+        value['analysis_mode'] = 'rectify_only'
+    snapshots = []
+    if request.record_video and request.video_analysis:
+        snapshots.append((request.reference,'marker_reference_used.json'))
+        if not request.rectify_only:
+            snapshots.append((request.geometry,'body_geometry_used.json'))
+    for source, name in snapshots:
         snapshot = json.loads(source.read_text(encoding='utf-8'))
         if name=='body_geometry_used.json':
             from pixel_camera_detection import load_detection_geometry, freeze_geometry_detection
@@ -402,9 +528,10 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
                 value['video_motion_start_estimate_s'] = clock[0]+time.monotonic()-clock[1]
             progress(name, fields)
         try:
-            status = session.camera.get_status()
-            if not status.get('connected') or status.get('device', {}).get('phase') != 'IDLE':
-                raise RuntimeError('Pixelが接続済み・待機中ではありません')
+            if request.record_video:
+                status = session.camera.get_status()
+                if not status.get('connected') or status.get('device', {}).get('phase') != 'IDLE':
+                    raise RuntimeError('Pixelが接続済み・待機中ではありません')
             health = last_health(session.folder/'telemetry.health.jsonl')
             if health.get('period_ms', 5) != stream_period:
                 raise RuntimeError('連続ログの周期が接続設定と一致しません')
@@ -416,34 +543,19 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
             shell.send('shell')
             time.sleep(.5)
             shell.check_battery()
-            capability = shell.query('debug camera show', lambda line: line.startswith('DEBUG_CAMERA_CAP '))
-            if not camera_capability_supported(capability, turn):
-                raise RuntimeError('撮影専用の一回許可に対応するファームウェアが必要です')
-            def show():
-                command = debug_motion_prefix(turn)+' show'
-                line = shell.query(command, lambda line: line.startswith('DEBUG_TURN_PARAM_X1000 '+device_motion_name(turn)+' '))
-                result = parse(line, turn, command) or {}
-                validate_settings(result, turn, preset)
-                result.update(mouse=mouse, mouse_identity_source='user_supplied')
-                return result
-            settings = show()
-            if setting_differences(settings, expected):
-                write_json(folder/'before.settings.json', settings)
-                settings = None  # 途中送信の結果が不明なら、変更前値を実行時設定としない。
-                event('settings_write_attempt', command=request.set_command)
-                shell.send(request.set_command)
-                shell.wait_line(lambda line: line == settings_done_marker(turn), timeout=8)
-                settings = show()
-                write_json(folder/'telemetry.settings.json', settings)
-                differences = setting_differences(settings, expected, quantized=True)
-                if differences:
-                    raise RuntimeError('設定の読み返しが一致しません: '+', '.join(differences))
-                value['settings_write_count'] = 1
-            else:
-                value['settings_write_count'] = 0
-            write_json(folder/'telemetry.settings.json', settings)
+            channel = 'camera' if request.record_video else 'gui'
+            capability = shell.query(f'debug {channel} show', lambda line: line.startswith(f'DEBUG_{channel.upper()}_CAP '))
+            if not camera_capability_supported(capability.replace('DEBUG_GUI_CAP', 'DEBUG_CAMERA_CAP', 1), turn):
+                raise RuntimeError('GUIボタンによる一回実行に対応するファームウェアが必要です')
+            capabilities = dict(part.split(':', 1) for part in capability.split()[1:])
+            if 'saved_log_max_period_ms' in capabilities:
+                shell.query(f'debug gui period {request.log_period_ms}',
+                    lambda line: line == f'DEBUG_GUI_PERIOD period_ms:{request.log_period_ms}')
+            elif request.log_period_ms != 1:
+                raise RuntimeError('本体ログ周期の変更には更新済みファームウェアが必要です')
+            settings, value['settings_write_count'] = verify_and_apply_settings(
+                shell, expected, request.set_command, parse, event, folder)
             value.update(suction_enabled=settings['suction']['enabled'], suction_duty=settings['suction']['duty'])
-            event('settings_verified', settings=settings, write_count=value['settings_write_count'])
             deadline = time.monotonic()+3
             while not tail.snapshot():
                 if not session.alive() or time.monotonic() > deadline:
@@ -463,10 +575,11 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
                 if not samples or any(not math.isfinite(float(samples[-1][key])) or abs(float(samples[-1][key])) > .01
                                       for key in ('ideal.velo','ideal.rad_velo')):
                     raise RuntimeError('他の動作指令を検出したため走行を開始しません')
-                status = session.camera.get_status()
-                validate_recording(status, session.camera.last_recording_id, session.camera.client_id, request.seconds)
-                clock = (status['device']['elapsed_seconds'], time.monotonic())
-            motion = MotionOnce(shell, turn, event, recording_check)
+                if request.record_video:
+                    status = session.camera.get_status()
+                    validate_recording(status, session.camera.last_recording_id, session.camera.client_id, request.seconds)
+                    clock = (status['device']['elapsed_seconds'], time.monotonic())
+            motion = (MotionOnce if request.record_video else GuiMotionOnce)(shell, turn, event, recording_check)
             motion_log_start = max(0, len(tail.snapshot())-1)
             retained_error = None
             def retrieve_retained_log(phase):
@@ -481,7 +594,11 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
                     if tail is not None:
                         tail.close()
                         tail = None
-                    value['saved_log'] = save_retained_log(shell, folder, settings, capability, turn, event)
+                    options = {}
+                    if not request.record_video or request.log_period_ms != 1:
+                        options = dict(period_ms=request.log_period_ms,
+                            done_marker='DEBUG_CAMERA_RUN_DONE' if request.record_video else 'DEBUG_GUI_RUN_DONE')
+                    value['saved_log'] = save_retained_log(shell, folder, settings, capability, turn, event, **options)
                 except Exception as error:
                     value['saved_log'].update(status='failed', error=str(error))
                     retained_error = error
@@ -506,22 +623,33 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
                     # transfer. Even a dump failure must still finalize video.
                     retrieve_retained_log('after_confirmed_postroll_before_video_transfer')
                 return stop
-            event('recording_requested', seconds=request.seconds)
-            manifest, camera_value = record(session.camera, session.project, seconds=request.seconds,
-                mouse=mouse, label=folder.name, on_ready=motion, stop_policy=stop_policy,
-                camera_settings=request.camera_settings, capture_profile='tuning')
-            value.update(capture_json=str(manifest), camera_state=camera_value['state'],
-                         camera_configuration=camera_value.get('camera_configuration'),
-                         recording_stop=camera_value.get('recording_stop'),
-                         video_file=camera_value.get('video_file'), recording_id=camera_value.get('recording_id'))
-            if camera_value['state'] != 'PASSED' or not motion.start_confirmed:
-                raise RuntimeError('録画・転送・開始応答を確認できません。実行は再送しません')
-            event('recording_transferred', stop=camera_value.get('recording_stop'))
-            # Fixed-duration/fallback recording may not confirm postroll early.
-            retrieve_retained_log('after_video_transfer_fallback')
+            if request.record_video:
+                event('recording_requested', seconds=request.seconds)
+                manifest, camera_value = record(session.camera, session.project, seconds=request.seconds,
+                    mouse=mouse, label=folder.name, on_ready=motion, stop_policy=stop_policy,
+                    camera_settings=request.camera_settings, capture_profile='tuning')
+                value.update(capture_json=str(manifest), camera_state=camera_value['state'],
+                             camera_configuration=camera_value.get('camera_configuration'),
+                             recording_stop=camera_value.get('recording_stop'),
+                             video_file=camera_value.get('video_file'), recording_id=camera_value.get('recording_id'))
+                if camera_value['state'] != 'PASSED' or not motion.start_confirmed:
+                    raise RuntimeError('録画・転送・開始応答を確認できません。実行は再送しません')
+                event('recording_transferred', stop=camera_value.get('recording_stop'))
+                retrieve_retained_log('after_video_transfer_fallback')
+            else:
+                motion()
+                deadline = time.monotonic()+30
+                while not log_stop_evidence(tail.snapshot()[motion_log_start:])['confirmed']:
+                    if not session.alive() or time.monotonic()-tail.latest_at > .5 or time.monotonic() > deadline:
+                        raise RuntimeError('走行後の停止を確認できません。実行は再送しません')
+                    time.sleep(.05)
+                event('gui_motion_stop_confirmed')
+                retrieve_retained_log('after_confirmed_stop_without_video')
             if retained_error is not None:
                 raise retained_error
-            value['state'] = 'CAPTURED_REVIEW_REQUIRED'
+            if not request.record_video and value['saved_log'].get('status') != 'saved':
+                raise RuntimeError('本体ログを取得できません。ファームウェアを更新してください')
+            value['state'] = 'CAPTURED_REVIEW_REQUIRED' if request.record_video else 'LOGGED_REVIEW_REQUIRED'
         except Exception as error:
             value.update(state='FAILED', error=type(error).__name__+': '+str(error))
             if value.get('saved_log', {}).get('status') == 'receiving':
@@ -534,7 +662,9 @@ def capture_connected(session, request, folder, parse, progress=lambda *args: No
                     value.update(state='FAILED', error='CSV: '+str(error))
             value.update(ready_callback_invoked=bool(motion and motion.attempted),
                 execution_write_attempted=bool(motion and motion.execution_write_attempted),
-                camera_run_start_confirmed=bool(motion and motion.start_confirmed), trigger_mode='recording_only_without_hand')
+                camera_run_start_confirmed=bool(request.record_video and motion and motion.start_confirmed),
+                gui_run_start_confirmed=bool(not request.record_video and motion and motion.start_confirmed),
+                trigger_mode='recording_only_without_hand' if request.record_video else 'operator_button_without_hand')
     try:
         if settings is not None and (folder/'telemetry.csv').exists():
             quality = save_motion_slice(folder, settings, period_ms=stream_period)
@@ -601,7 +731,8 @@ def main():
     for variable in gui.values.values():
         variable.set('')  # 初回の実機読取り前に別プリセットの値を表示しない。
     gui._update_motion_fields()
-    gui.camera_panel.status.set('機体を選択し「撮影用接続を準備」から開始してください')
+    gui.camera_panel.record_video.set(True)
+    gui.camera_panel.status.set('機体を選択し「BLE接続を準備」から開始してください')
     if args.review_trial:
         gui.camera_panel.show_saved(args.review_trial)
     gui.mainloop()

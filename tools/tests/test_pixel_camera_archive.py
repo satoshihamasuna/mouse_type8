@@ -74,6 +74,35 @@ class ArchiveTests(unittest.TestCase):
         self.assertFalse(manifest['robot_commands_sent'])
         self.assertEqual(archive.archive_for_trial(self.trial),folder)
 
+    def test_record_only_bundle_has_video_and_logs_without_fictitious_analysis(self):
+        self.report.unlink()
+        (self.source/'full/summary.json').unlink()
+        (self.source/'full').rmdir()
+        trial=archive.read_json(self.trial)
+        trial.update(analysis_mode='record_only',video_analysis_requested=False,
+            video_analysis_status='SKIPPED_RECORD_ONLY',quick_report=None,full_report=None)
+        self.write(self.trial,trial)
+        folder=self.export()
+        derived=archive.read_json(folder/'trial.json')
+        self.assertIsNone(derived['quick_report']); self.assertIsNone(derived['full_report'])
+        self.assertTrue(os.path.samefile(self.video,folder/'video.mp4'))
+        self.assertTrue((folder/'motion.csv').is_file())
+        self.assertFalse((folder/'full').exists())
+        text=(folder/'README.md').read_text(encoding='utf-8')
+        self.assertIn('映像解析は実行していません',text)
+        self.assertNotIn('[全フレーム結果]',text)
+        self.assertEqual(archive.verify_archive(folder)['video_analysis_status'],'SKIPPED_RECORD_ONLY')
+        self.assertEqual(self.export(),folder)
+
+    def test_rectified_video_and_preview_are_included_in_the_bundle(self):
+        self.write(self.source/'full/summary.json',dict(analysis_mode='rectify_only',rectification_available=True))
+        (self.source/'full/rectified.mp4').write_bytes(b'rectified video fixture')
+        (self.source/'full/rectified_preview.png').write_bytes(b'preview fixture')
+        folder=self.export()
+        self.assertEqual((folder/'full/rectified.mp4').read_bytes(),b'rectified video fixture')
+        self.assertTrue((folder/'full/rectified_preview.png').is_file())
+        self.assertIn('[正対補正動画](full/rectified.mp4)',(folder/'README.md').read_text(encoding='utf-8'))
+
     def test_repeated_export_verifies_existing_files_without_replacing_them(self):
         folder=self.export()
         first=(folder/'manifest.json').read_bytes()
@@ -211,7 +240,8 @@ class GuiArchiveTests(unittest.TestCase):
             trial.write_text(json.dumps(dict(mouse='A',motion='long_l180',camera_height_mm=800,type8_settings_json=str(settings))))
             gui=SimpleNamespace(motion=Mock(),turn_type=Mock(),_update_motion_fields=Mock(),_queue_turn_params=Mock(),_load_defaults=Mock())
             table=Mock();table.insert.return_value='row'
-            panel=SimpleNamespace(gui=gui,mouse=Mock(),height=Mock(),rows={},table=table,select_result=Mock(),status=Mock())
+            panel=SimpleNamespace(gui=gui,mouse=Mock(),height=Mock(),record_video=Mock(),log_period=Mock(),
+                rows={},table=table,select_result=Mock(),status=Mock())
             PixelTuningPanel.show_saved(panel,trial)
             gui.motion.set.assert_called_once_with('turn')
             gui.turn_type.set.assert_called_once_with('long_l180')

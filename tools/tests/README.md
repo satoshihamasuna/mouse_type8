@@ -1,5 +1,25 @@
 # Pythonテスト
 
+BLE単体調整のボタン開始・録画OFF・可変周期・画像保存は次で検証します（実機接続なし）。
+
+```powershell
+python -m unittest discover -s tools/tests -p test_turn_tuning.py -v
+python -m unittest discover -s tools/tests -p test_log_period.py -v
+python -m unittest discover -s tools/tests -p test_camera_run_permit.py -v
+python -m unittest discover -s tools/tests -p test_pixel_camera_tuning.py -v
+python -m unittest discover -s tools/tests -p test_pixel_camera_turn_capture.py -v
+```
+
+画像にはNumPy・pandas・Matplotlib、GUIにはTk、本体側にはホストC++コンパイラが必要です。
+実LogDataのサンプリング部分・リング・バイナリ出力で1/2/5/100 ms、400件の折返し、時刻、1 msへの復帰を確認します。
+`test_turn_tuning.py`は機体切替による広告名・アドレスの更新、誤った機体の拒否、Connectからの中継準備も検証します。
+`test_camera_startup.py`で選択先の中継への転送と、元の接続エラーの表示・失敗時の終了処理を確認します。
+`python -m unittest discover -s tools/tests -p test_turn_tuning_workflow.py -v`で、設定送信だけでは走行しないこと、未送信・変更後・再接続後の開始拒否、取得→切断→ログ表示→自動映像解析→保存の順序、次試行での再確認、機体別目印設定を検証します。カメラ・機体には接続しません。
+
+`python -m unittest discover -s tools/tests -p test_pixel_camera_position.py -v`は、動画だけの盤面XY推定、カメラ移動後も同じ盤面座標になること、AR欠測を位置の補間で埋めないこと、ログ未使用・高さ未補正の出力と機体参照の不一致拒否を合成動画で検証します。
+
+`test_pixel_camera_reference.py`では古い探索ROIからのカメラ移動を再現し、全登録IDの実復号による検索範囲の更新、元の盤面座標の保持、重複ID・未読ID・格子品質不足の拒否も確認します。`test_pixel_camera_position.py`は事前検査失敗時に追跡を開始せず、理由を保存することも検証します。
+
 撮影後の停止評価は`python -m unittest discover -s tools/tests -p test_pixel_camera_tuning_report.py -v`で検証する。切り出した走行CSVに停止区間がない場合の連続CSV参照、ブレーキ中の移動とブレーキ終了後の静止の区別、別動作のブレーキの非流用、従来の入口相対座標・誤差保持を確認する。
 
 ターン前後の検出ログは`test_side_wall_stability.py`と`test_wall_diagnostics.py`、`test_ble_explore.py`で検証します。
@@ -584,6 +604,8 @@ MCPは[依存パッケージの導入](../pixel_camera_README.md#codexからmcp�
 元資料の不変性、動画ハードリンク、D側を参照する索引、SHA-256照合、再実行時の上書き禁止、別入力/改変/保存先異常の拒否、解析終了後だけの保存とGUIの結果フォルダー参照を検証します。機器へは接続しません。
 
 接続を保持する撮影タブは`python -m unittest discover -s tools/tests -p test_pixel_camera_tuning.py -v`で確認します。
+「録画のみ」は`test_turn_tuning_workflow.py`・`test_pixel_camera_tuning.py`・`test_camera_startup.py`・`test_pixel_camera_archive.py`で確認します。盤面・目印・高さが未入力でも録画とログ保存が進み、映像解析プロセスや詳細解析スレッドを起動せず、解析省略の記録と動画の一式保存を残すことを模擬します。通常の解析・録画OFF・実行の再送禁止も併せて確認し、実機録画とは区別します。
+「AR正対補正のみ」は`test_pixel_camera_rectify.py`で確認します。実復号AR 2個・欠測・カメラ移動・軸向き・可変PTS・間引き・全欠測を含む合成動画を実際に符号化／復号し、変換を使い回さず、枚数と再生時間を維持することを検証します。`test_turn_tuning_workflow.py`・`test_pixel_camera_tuning.py`・`test_pixel_camera_archive.py`では、前後目印と高さを要求しないGUI経路と、補正動画・画像の保存を確認します。PyAVとH.264エンコーダが必要です。
 用途別の録画設定は`python -m unittest discover -s tools/tests -p test_pixel_camera_profiles.py -v`で確認します。調整→9×9→調整でのEV・ズーム・ライト・AF固定の復元、旧測定根拠の保持、設定受付不一致時の拒否を検証します。
 `test_video_marker_pose.py`は格子補正OFFでも各フレームのArUco参照が必須であることを、マーカー欠落とカメラ移動を含む合成動画で検証します。`test_pixel_camera_relative_pose.py`は旧キャッシュの拒否と、色目印だけが読めるフレームを合格へ数えないことを確認します。
 実機へ接続せず、同じ接続で2回、変更なしのset省略、変更後のshow照合、録画準備中・所有者不一致・低電圧・古い通信状態での走行禁止、応答不明の実行再送禁止を模擬します。
@@ -613,6 +635,8 @@ python -m unittest discover -s tools/tests -p test_video_marker_pose.py -v
 静止評価区間の検査は`python -m unittest discover -s tools/tests -p test_pixel_camera_static_window.py -v`で確認します。窓外だけのPTS欠落と、窓内・境界の欠落、被覆不足、SHA不一致・復号不良を区別し、元のFAILED記録を変更しないことを検証します。
 可視格子の広がりによる補正点選択では、機体の遮蔽時も未使用検査点を12点以上残し、残差や入力順で検査点を学習側へ移さないこと、検査誤差や点数不足を拒否することを確認します。
 撮影へのGUI設定引継ぎは、RAM値の`show`照合だけを使い、プリセットでの上書きや実行再送をしないことを模擬検証します。
+
+機体外観学習は`test_body_appearance_model.py`、モデル選択・機体分離・ハッシュ固定は`test_pixel_camera_detection.py`、位置の観測と推定の分離は`test_pixel_camera_position.py`で検証します。CNNはCPU版PyTorchを導入したPythonから`test_body_keypoint_cnn.py`を実行し、合成機体で学習・別姿勢の推論・保存読込みを確認します。未導入によるスキップは検証済みとしません。これらは実動画での認識率や絶対位置精度の保証とは区別してください。
 
 ## 斜め柱の幾何と姿勢推定
 

@@ -62,18 +62,29 @@ def camera_capability_supported(line, motion):
             and (motion not in SEARCH_TURNS or fields.get("search_turn") == "1"))
 
 
-def save_retained_log(shell, folder, settings, capability, motion, event, timeout=30):
+def save_retained_log(shell, folder, settings, capability, motion, event, timeout=30,
+                      *, period_ms=1, done_marker="DEBUG_CAMERA_RUN_DONE"):
     """停止応答後に本体の1 msリングを読む。動画同期用の連続CSVとは分ける。"""
     from log_protocol import saved_log_frame, saved_log_magic, decode_saved_values
     fields = dict(part.split(":", 1) for part in capability.split()[1:])
     hold = "search_turn_log_hold" if motion in SEARCH_TURNS else "turn_log_hold"
-    if fields.get(hold) != "1" or fields.get("saved_log_period_ms") != "1" or fields.get("saved_log_capacity") != "400":
+    if type(period_ms) is not int or not 1 <= period_ms <= 100:
+        raise ValueError("本体ログ周期は1～100 msの整数で指定してください")
+    if fields.get(hold) != "1" or fields.get("saved_log_capacity") != "400" or (
+            period_ms == 1 and fields.get("saved_log_period_ms") != "1" and "saved_log_max_period_ms" not in fields):
         result = dict(status="unsupported", reason="Firmware does not advertise a retained 1 ms log")
         event("saved_log_unavailable", **result)
         return result
 
-    shell.wait_line(lambda line: line == "DEBUG_CAMERA_RUN_DONE", timeout=8)
-    event("saved_log_requested", period_ms=1)
+    shell.wait_line(lambda line: line == done_marker, timeout=8)
+    if "saved_log_max_period_ms" in fields:
+        actual = shell.query("debug gui show", lambda line: line.startswith("DEBUG_GUI_CAP "))
+        metadata = dict(part.split(":", 1) for part in actual.split()[1:])
+        if metadata.get("saved_log_period_ms") != str(period_ms):
+            raise RuntimeError("本体保存ログの実際の記録周期が要求値と一致しません")
+    elif period_ms != 1:
+        raise RuntimeError("記録周期の変更には更新済みファームウェアが必要です")
+    event("saved_log_requested", period_ms=period_ms)
     shell.connection.reset_input_buffer()
     shell.send("log mode0")
     shell.send("disp log_bin")
@@ -99,7 +110,7 @@ def save_retained_log(shell, folder, settings, capability, motion, event, timeou
         return data
 
     folder = Path(folder)
-    path = folder / "saved_1ms.csv"
+    path = folder / f"saved_{period_ms}ms.csv"
     count = 0
     with path.open("x", newline="", encoding="utf-8") as stream:
         writer = csv.writer(stream)
@@ -108,15 +119,15 @@ def save_retained_log(shell, folder, settings, capability, motion, event, timeou
             actual_magic, index, *words = frame.unpack(read_exact(frame.size))
             if actual_magic == 0xFFFF:
                 break
-            if actual_magic != magic or index != count or count >= 400:
+            if actual_magic != magic or index != count * period_ms or count >= 400:
                 raise RuntimeError("本体1 msログの形式・連番・件数が不正です")
             writer.writerow([index] + decode_saved_values(labels, words))
             count += 1
     shell.wait_line(lambda line: line == "END", timeout=8)
     if not count:
         raise RuntimeError("本体1 msログが空です")
-    result = dict(status="saved", csv=path.name, settings_json="saved_1ms.settings.json",
-        period_ms=1, frame_count=count, capacity=400, drop_count=0,
+    result = dict(status="saved", csv=path.name, settings_json=f"saved_{period_ms}ms.settings.json",
+        period_ms=period_ms, frame_count=count, capacity=400, drop_count=0,
         timebase="cnt: elapsed ms from oldest retained sample; no absolute MCU time",
         coverage="latest samples through turn Lend; post-run deceleration excluded")
     sidecar = dict(settings, log=dict(result, columns=labels))
@@ -225,6 +236,27 @@ class MotionOnce:
         print("CAMERA_MOTION_STARTED: 撮影専用の単体ターンを1回開始しました", flush=True)
 
 
+class GuiMotionOnce(MotionOnce):
+    """操作者のボタンによる一回実行。録画用の許可とは独立する。"""
+    def __call__(self):
+        if self.attempted:
+            raise RuntimeError("実行手順は既に開始済みです。自動再送しません")
+        self.attempted = True
+        self.recording_check()
+        self.shell.check_battery()
+        self.shell.send(f"debug gui arm {self.token}")
+        self.shell.wait_line(lambda line: line == f"DEBUG_GUI_ARMED token:{self.token}", timeout=5)
+        self.event("gui_permit_confirmed", token=self.token)
+        self.recording_check()
+        self.execution_write_attempted = True
+        command = f"{self.command_prefix} exe_gui {self.token}"
+        self.event("execution_write_attempt", command=command)
+        self.shell.send(command)
+        self.shell.wait_line(lambda line: line == f"DEBUG_GUI_RUN_START token:{self.token}", timeout=5)
+        self.start_confirmed = True
+        self.event("gui_motion_start_confirmed")
+
+
 class Shell:
     def __init__(self, connection, output, event, char_delay=0.08):
         self.connection, self.output, self.event = connection, output, event
@@ -247,7 +279,7 @@ class Shell:
             self.output.write(raw)
             self.output.flush()
             line = raw.decode("utf-8", errors="replace").replace("\x00", "").strip()
-            if line.startswith("DEBUG_CAMERA_ERROR"):
+            if line.startswith(("DEBUG_CAMERA_ERROR", "DEBUG_GUI_ERROR", "DEBUG_TURN_ERROR", "DEBUG_SEARCH_ERROR")):
                 raise RuntimeError(line)
             if predicate(line):
                 return line

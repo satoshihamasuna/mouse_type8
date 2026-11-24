@@ -5,10 +5,26 @@
 
 ## セットアップ
 
+### 配置後のGUIボタン開始と本体ログ周期
+
+`tools/Start_Turn_Tuning.cmd`で既存GUIを起動します。録画OFFではPixelなしでBLE接続し、
+「配置完了・1回走行開始」から単体1回を実行できます。[操作と保存先](turn_tuning_README.md)を参照してください。
+
+| コマンド | 動作 |
+| --- | --- |
+| `debug gui show` | GUI専用実行・最大周期・保存済みログの実際の周期を照会 |
+| `debug gui period N` | 次のGUI／撮影ターンの本体ログ周期を1～100 msで指定 |
+| `debug gui arm TOKEN` | ボタン開始用の使い切り許可を15秒間発行 |
+| `debug turn TYPE exe_gui TOKEN` | 手かざしなしの単体1回。完了は`DEBUG_GUI_RUN_DONE` |
+| `debug search_turn right\|left exe_gui TOKEN` | 探索ターンの同じボタン開始経路 |
+
+GUI用と撮影用の許可は別です。周期は実行開始時に消費し、次回の既定を1 msへ戻します。
+本体ログ400件は設定周期のまま読み出せ、`cnt`は経過msです。周期の受付だけでは走行しません。
+
 ### Pixel録画中だけ使う撮影専用ターン
 
 通常の`debug turn type exe`は従来どおり前センサへの手かざしを待ちます。
-Pixel撮影と連動する`tools/pixel_camera_turn_capture.py --execute`と、既存debug GUIの「Pixel撮影・結果」タブは、録画ID・所有者・RECORDING状態を照合してから、
+Pixel撮影と連動する`tools/pixel_camera_turn_capture.py --execute`と、既存debug GUIの「ターン調整・ログ・録画」タブの録画ONは、録画ID・所有者・RECORDING状態を照合してから、
 次の撮影専用経路で手かざしなしの単体1回を実行します。詳しくは[Pixelカメラ撮影](pixel_camera_README.md)を参照してください。
 
 | コマンド | 動作 |
@@ -25,7 +41,7 @@ Pixel撮影と連動する`tools/pixel_camera_turn_capture.py --execute`と、�
 撮影GUI・CLIは、`saved_log_period_ms:1 saved_log_capacity:400`も確認できた場合に、`DEBUG_CAMERA_RUN_DONE`の後で`saved_1ms.csv`と同名設定JSONを自動保存します。動画同期用の5 ms連続CSVとは別ファイルです。
 この撮影専用経路はカメラ側の録画状態を確認するPC入口と一緒に使い、動画を撮らない通常操作には使いません。
 失敗や応答なしで実行コマンドを自動再送しません。
-撮影タブは`tools/Start_Pixel_Tuning.cmd`から開けます。接続を保持してGUI値の反映・照合を行い、「撮影して1回走行」で記録と結果をまとめて保存します。
+撮影タブは`tools/Start_Pixel_Tuning.cmd`から開けます。接続を保持してGUI値の反映・照合を行い、「配置完了・1回走行開始」で記録と結果をまとめて保存します。
 以前のCLIへGUIのRAM調整値を渡す場合は、`Apply`と`Show device values`で確認後に切断し、
 撮影スクリプトの`--use-device-settings --expected-settings`で実機値を照合して引き継ぎます。
 `Apply and execute`では撮影準備を確認しません。詳細は上記のPixel撮影手順を参照してください。

@@ -169,15 +169,22 @@ def archive_trial(trial_path, root=None):
                 type8_settings_json=str(target / 'motion.settings.json'), capture_json=str(target / 'capture.json'),
                 quick_report=str(target / 'quick/summary.json'), full_report=str(target / 'full/summary.json'),
                 archive_source_trial_json=str(target / 'source_trial.json'))
+            record_only = trial.get('analysis_mode') == 'record_only'
+            if record_only:
+                derived.update(quick_report=None, full_report=None)
             create_json(stage / 'trial.json', derived)
             register('trial.json', storage='derived_index')
             settings = read_json(settings_path)
             summary_path = stage / 'full/summary.json'
             summary = read_json(summary_path) if summary_path.exists() else {}
+            analysis_text = ('映像解析は実行していません（録画のみ）。\n- [撮影記録](capture.json)\n\n' if record_only else
+                '- [全フレーム結果](full/summary.json)\n- [撮影記録](capture.json)\n\n')
+            if summary.get('analysis_mode') == 'rectify_only' and summary.get('rectification_available'):
+                analysis_text += '- [正対補正動画](full/rectified.mp4)\n- [正対補正画像](full/rectified_preview.png)\n\n'
             text = ('# TYPE8 撮影記録\n\n'
                 f"機体{trial['mouse']} / {trial['motion']} / {trial['preset']} mm/s / {recording_id}\n\n"
                 '- [動画](video.mp4)\n- [走行CSV](motion.csv)\n- [実機設定](motion.settings.json)\n'
-                '- [全フレーム結果](full/summary.json)\n- [撮影記録](capture.json)\n\n'
+                f'{analysis_text}'
                 'trial.jsonはこの保存先を参照する索引です。source_trial.jsonと解析結果は元資料を保持しています。\n'
                 '解析JSON内の元の絶対パスと入力ハッシュは書き換えていません。manifest.jsonのsourceから対応を確認できます。\n'
                 '動画は元MP4と同じ実体を参照するハードリンクで、追加の動画容量を消費しません。\n')
@@ -188,6 +195,7 @@ def archive_trial(trial_path, root=None):
                 source_trial=str(trial_path), source_trial_sha256=file_hash(trial_path),
                 mouse=trial['mouse'], motion=trial['motion'], preset=trial['preset'],
                 parameters=settings.get('parameters', {}), camera_state=trial.get('camera_state'),
+                analysis_mode=trial.get('analysis_mode'), video_analysis_status=trial.get('video_analysis_status'),
                 detailed_stop_confirmed=summary.get('auto_stop_confirmed'),
                 endpoint_forward_mm=summary.get('endpoint_forward_mm'), endpoint_right_mm=summary.get('endpoint_right_mm'),
                 files=files, robot_commands_sent=False, source_files_deleted=False,

@@ -129,6 +129,42 @@ class ConnectedTrialTests(unittest.TestCase):
         self.assertTrue((self.root/'run/motion.csv').exists())
         self.assertTrue(value['type8_log_csv'].endswith('motion.csv'))
 
+    def test_record_only_captures_once_without_analysis_profiles_or_height(self):
+        self.request = replace(self.request, video_analysis=False, height_mm=float('nan'),
+            reference=self.root/'missing-reference.json', geometry=self.root/'missing-geometry.json')
+        value = self.capture()
+        self.assertEqual(value['state'],'CAPTURED_REVIEW_REQUIRED')
+        self.assertEqual(self.record_count,1)
+        self.assertEqual(sum(' exe_camera ' in command for command in self.sent),1)
+        self.assertFalse(value['video_analysis_requested'])
+        self.assertIsNone(value['camera_height_mm'])
+        self.assertIsNone(value['quick_report']); self.assertIsNone(value['full_report'])
+        self.assertFalse((self.root/'run/marker_reference_used.json').exists())
+        self.assertFalse((self.root/'run/body_geometry_used.json').exists())
+        self.assertTrue((self.root/'run/motion.csv').exists())
+        self.assertIn('camera_configuration',value)
+        with self.assertRaises(ValueError): replace(self.request,operator_ready=False).validate()
+        with self.assertRaises(ValueError): replace(self.request,seconds=0).validate()
+        with self.assertRaises(ValueError): replace(self.request,camera_settings={'zoom_ratio':0}).validate()
+
+    def test_rectification_only_keeps_reference_without_loading_body_settings(self):
+        from test_pixel_camera_rectify import board_and_reference
+        _,reference=board_and_reference()
+        self.reference.write_text(json.dumps(reference),encoding='utf-8')
+        self.request=replace(self.request,rectify_only=True,height_mm=float('nan'),
+            geometry=self.root/'missing-body-model.json')
+        result=self.capture()
+        self.assertEqual(result['state'],'CAPTURED_REVIEW_REQUIRED')
+        self.assertTrue(result['video_analysis_requested'])
+        self.assertEqual(result['analysis_mode'],'rectify_only')
+        self.assertIsNone(result['camera_height_mm'])
+        self.assertTrue((self.root/'run/marker_reference_used.json').is_file())
+        self.assertFalse((self.root/'run/body_geometry_used.json').exists())
+        self.assertEqual(self.record_count,1)
+        self.assertEqual(sum(' exe_camera ' in command for command in self.sent),1)
+        with self.assertRaises(FileNotFoundError):
+            replace(self.request,reference=self.root/'missing-reference.json').validate()
+
     def test_trial_metadata_survives_reference_and_geometry_snapshots(self):
         geometry = json.loads(self.geometry.read_text(encoding='utf-8'))
         geometry.update(motion='profile_only', preset=999, execution_resend_count=99)
@@ -163,6 +199,16 @@ class ConnectedTrialTests(unittest.TestCase):
         self.assertEqual(sidecar['log']['period_ms'],10)
         self.assertEqual(value['saved_log']['period_ms'],1)
         self.assertEqual(sum(' exe_camera ' in command for command in self.sent),1)
+
+    def test_recording_also_applies_requested_five_ms_retained_log_period(self):
+        self.request = replace(self.request, log_period_ms=5)
+        self.capability += ' saved_log_max_period_ms:100'
+        with patch.object(tuning, 'save_retained_log', return_value=dict(status='saved', period_ms=5)) as saved:
+            value = self.capture('recording_five_ms')
+        self.assertEqual(value['state'], 'CAPTURED_REVIEW_REQUIRED')
+        self.assertIn('debug gui period 5', self.sent)
+        self.assertEqual(saved.call_args.kwargs, dict(period_ms=5, done_marker='DEBUG_CAMERA_RUN_DONE'))
+        self.assertEqual(sum(' exe_camera ' in command for command in self.sent), 1)
 
     def test_stream_period_readback_mismatch_never_records_or_executes(self):
         self.session.stream_period_ms=10
@@ -452,6 +498,45 @@ class ConnectedTrialTests(unittest.TestCase):
 
 
 class GuiProfileTests(unittest.TestCase):
+    def test_button_uses_edited_parameters_without_video_and_consumes_confirmation(self):
+        from myshell_debug import DebugGui
+        import pixel_camera_tuning_panel as panel
+        gui = DebugGui()
+        gui.withdraw()
+        try:
+            control = gui.camera_panel
+            control.mouse.set('A'); control.record_video.set(False); control.log_period.set(5)
+            gui.motion.set('turn'); gui.turn_type.set('long_r180'); gui.turn_preset_speed.set(500)
+            value = settings()
+            mapping = dict(distance='velo', acc='r_min', max_velo='lstart', end_velo='lend',
+                           degree='degree', degree_correction='correction')
+            for name, key in mapping.items(): gui.values[name].set(value['parameters'][key])
+            gui.pre_accel.set(value['parameters']['pre_accel'])
+            for group in ('pid', 'feedforward'):
+                for name, number in value[group].items(): gui.values[name].set(number)
+            gui.values['end_velo'].set(17.25)
+            control.ready.set(True)
+            gui.ser = SimpleNamespace(is_open=True)
+            control.session = SimpleNamespace(connection=gui.ser, folder=Path('unused-test-session'))
+            with patch.object(control, '_launch', return_value=True) as launch, \
+                    patch.object(panel, 'capture_connected', return_value=dict(state='LOGGED_REVIEW_REQUIRED')) as capture:
+                control.run()
+                self.assertFalse(control.ready.get())
+                launch.assert_called_once()
+                launch.call_args.args[0]()
+                request = capture.call_args.args[1]
+                self.assertFalse(request.record_video)
+                self.assertEqual(request.log_period_ms, 5)
+                self.assertEqual(request.expected['parameters']['lend'], 17.25)
+                self.assertIn('17.25', request.set_command)
+                gui._camera_busy = True
+                control.run()
+                launch.assert_called_once()
+        finally:
+            gui.ser = None
+            gui.camera_panel.session = None
+            gui.destroy()
+
     def test_tuning_controls_are_independent_and_opening_does_not_prepare_devices(self):
         import tkinter as tk
         from tkinter import ttk
@@ -467,6 +552,11 @@ class GuiProfileTests(unittest.TestCase):
                 self.assertEqual(controls.selected_camera_settings(), settings)
                 controls.capture_zoom.set(1.4)
                 self.assertEqual(controls.selected_camera_settings()['zoom_ratio'], 1.4)
+                controls.record_video.set(False)
+                controls.log_period.set(5)
+                self.assertFalse(controls.record_video.get())
+                self.assertEqual(controls.log_period.get(), 5)
+                self.assertIsInstance(controls.preview, tk.Canvas)
         finally:
             root.destroy()
 
