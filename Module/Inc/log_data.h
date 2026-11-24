@@ -56,7 +56,8 @@ class LogData:public Singleton<LogData>
 		uint8_t mode = 0;
 		void indicate_data();
 		void indicate_data_binary();
-		void reset_log();
+		void reset_log(uint16_t period_ms = LOG_DATA_PRIOD);
+		uint16_t period_ms() const { return saved_period_ms; }
 		void init_log()
 		{
 			log_enable = False;
@@ -79,6 +80,7 @@ class LogData:public Singleton<LogData>
 	private:
 		LogBuffer<LOG_DATA_SIZE, LOG_DATA_NUM> buffer;
 		uint16_t log_tick = 0;
+		uint16_t saved_period_ms = LOG_DATA_PRIOD;
 };
 
 typedef struct __attribute__((packed))

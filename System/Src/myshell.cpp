@@ -1458,11 +1458,53 @@ static t_bool shell_parse_float(const char *text, float *value)
 }
 
 static CameraRunPermit shell_camera_run_permit;
+static CameraRunPermit shell_gui_run_permit;
+static uint16_t shell_gui_log_period_ms = LOG_DATA_PRIOD;
+
+static int shell_debug_gui_command(int argc, char **argv)
+{
+	if (argc == 3 && ntlibc_strcmp(argv[2], "show") == 0) {
+		printf("DEBUG_GUI_CAP protocol:1 ttl_ms:%lu search_turn:1 search_turn_log_hold:1 turn_log_hold:1 saved_log_max_period_ms:100 saved_log_period_ms:%u saved_log_capacity:%u\r\n",
+			(unsigned long)CameraRunPermit::ttl_ms, (unsigned)LogData::getInstance().period_ms(), (unsigned)LOG_DATA_SIZE);
+		return 0;
+	}
+	uint32_t token = 0;
+	if (argc == 4 && ntlibc_strcmp(argv[2], "period") == 0 && CameraRunPermit::parse_token(argv[3], &token) && token <= 100) {
+		shell_gui_log_period_ms = (uint16_t)token;
+		printf("DEBUG_GUI_PERIOD period_ms:%u\r\n", (unsigned)shell_gui_log_period_ms);
+		return 0;
+	}
+	if (argc == 4 && ntlibc_strcmp(argv[2], "arm") == 0 && CameraRunPermit::parse_token(argv[3], &token)) {
+		shell_gui_run_permit.arm(token, HAL_GetTick());
+		printf("DEBUG_GUI_ARMED token:%lu\r\n", (unsigned long)token);
+		return 0;
+	}
+	shell_gui_run_permit.clear();
+	printf("DEBUG_GUI_ERROR arguments\r\n");
+	return -1;
+}
+
+static bool shell_debug_gui_begin(int argc, char **argv, int turn_count)
+{
+	uint32_t token = 0;
+	if (argc != 5 || !CameraRunPermit::parse_token(argv[4], &token) || turn_count != 1 ||
+		!shell_gui_run_permit.consume(token, HAL_GetTick())) {
+		shell_gui_run_permit.clear();
+		printf("DEBUG_GUI_ERROR permit\r\n");
+		return false;
+	}
+	if (Battery_IsVoltageError(Battery_GetAverageVoltage())) {
+		printf("DEBUG_GUI_ERROR battery\r\n");
+		return false;
+	}
+	printf("DEBUG_GUI_RUN_START token:%lu\r\n", (unsigned long)token);
+	return true;
+}
 
 static int shell_debug_camera_command(int argc, char **argv)
 {
 	if (argc == 3 && ntlibc_strcmp(argv[2], "show") == 0) {
-		printf("DEBUG_CAMERA_CAP protocol:1 ttl_ms:%lu search_turn:1 search_turn_log_hold:1 turn_log_hold:1 saved_log_period_ms:%u saved_log_capacity:%u\r\n",
+		printf("DEBUG_CAMERA_CAP protocol:1 ttl_ms:%lu search_turn:1 search_turn_log_hold:1 turn_log_hold:1 saved_log_max_period_ms:100 saved_log_period_ms:%u saved_log_capacity:%u\r\n",
 			(unsigned long)CameraRunPermit::ttl_ms, (unsigned)LOG_DATA_PRIOD, (unsigned)LOG_DATA_SIZE);
 		return 0;
 	}
@@ -1806,13 +1848,17 @@ static int shell_debug_turn_command(int argc, char **argv)
 		return 0;
 	}
 	const bool camera_run = ntlibc_strcmp(argv[3], "exe_camera") == 0;
-	if (ntlibc_strcmp(argv[3], "exe") == 0 || camera_run) {
+	const bool gui_run = ntlibc_strcmp(argv[3], "exe_gui") == 0;
+	if (ntlibc_strcmp(argv[3], "exe") == 0 || camera_run || gui_run) {
 		Motion *motion = &CtrlTask_type8::getInstance();
 		IrSensTask *irsens = CtrlTask_type8::getInstance().return_irObj();
 		if (camera_run) {
 			if (!shell_debug_camera_begin(argc, argv, debug->turn_count)) return -1;
+		} else if (gui_run) {
+			if (!shell_debug_gui_begin(argc, argv, debug->turn_count)) return -1;
 		} else {
 			shell_camera_run_permit.clear();
+			shell_gui_run_permit.clear();
 			printf("DEBUG_WAIT_SENSOR\r\n");
 			shell_debug_wait_sensor(irsens);
 			for (int i = 0; i < 21; i++) {
@@ -1826,7 +1872,9 @@ static int shell_debug_turn_command(int argc, char **argv)
 		Indicate_LED(0x00);
 		motion->Motion_start();
 		shell_debug_suction_start(motion, debug->suction_enable, debug->suction_duty);
-		LogData::getInstance().reset_log();
+		const uint16_t log_period_ms = (camera_run || gui_run) ? shell_gui_log_period_ms : LOG_DATA_PRIOD;
+		shell_gui_log_period_ms = LOG_DATA_PRIOD;
+		LogData::getInstance().reset_log(log_period_ms);
 		LogData::getInstance().log_enable = True;
 		if (shell_debug_turn_pre_run(motion, pattern, debug->table.velo, debug->pre_accel) != True) {
 			printf("DEBUG_TURN_ERROR unsupported_pre_run:%d\r\n", pattern);
@@ -1888,6 +1936,7 @@ static int shell_debug_turn_command(int argc, char **argv)
 		Indicate_LED(0x03<<4);
 		HAL_Delay(500);
 		if (camera_run) printf("DEBUG_CAMERA_RUN_DONE\r\n");
+		if (gui_run) printf("DEBUG_GUI_RUN_DONE\r\n");
 		return 0;
 	}
 	printf("Unknown debug turn command found\r\n");
@@ -2044,13 +2093,17 @@ static int shell_debug_search_command(int argc, char **argv)
 		return 0;
 	}
 	const bool camera_run = ntlibc_strcmp(argv[3], "exe_camera") == 0;
-	if (ntlibc_strcmp(argv[3], "exe") == 0 || camera_run) {
+	const bool gui_run = ntlibc_strcmp(argv[3], "exe_gui") == 0;
+	if (ntlibc_strcmp(argv[3], "exe") == 0 || camera_run || gui_run) {
 		Motion *motion = &CtrlTask_type8::getInstance();
 		IrSensTask *irsens = CtrlTask_type8::getInstance().return_irObj();
 		if (camera_run) {
 			if (!shell_debug_camera_begin(argc, argv, debug->turn_count)) return -1;
+		} else if (gui_run) {
+			if (!shell_debug_gui_begin(argc, argv, debug->turn_count)) return -1;
 		} else {
 			shell_camera_run_permit.clear();
+			shell_gui_run_permit.clear();
 			printf("DEBUG_WAIT_SENSOR\r\n");
 			shell_debug_wait_sensor(irsens);
 		}
@@ -2058,7 +2111,9 @@ static int shell_debug_search_command(int argc, char **argv)
 		Indicate_LED(0x00);
 		motion->Motion_start();
 		shell_debug_suction_start(motion, debug->suction_enable, debug->suction_duty);
-		LogData::getInstance().reset_log();
+		const uint16_t log_period_ms = (camera_run || gui_run) ? shell_gui_log_period_ms : LOG_DATA_PRIOD;
+		shell_gui_log_period_ms = LOG_DATA_PRIOD;
+		LogData::getInstance().reset_log(log_period_ms);
 		LogData::getInstance().log_enable = True;
 		motion->exe_Motion_straight(45.0f,
 			shell_debug_accel_in_length(debug->table.velo, 45.0f, debug->pre_accel), debug->table.velo,
@@ -2067,7 +2122,7 @@ static int shell_debug_search_command(int argc, char **argv)
 		for (int i = 0; i < debug->turn_count; i++) {
 			motion->exe_Motion_search_turn(&debug->param, &debug->sp_gain, &debug->om_gain);
 		}
-		if (camera_run) {
+		if (camera_run || gui_run) {
 			// Keep the measured turn in the400-sample RAM ring. The final
 			// straight includes400ms braking before it returns to this shell.
 			LogData::getInstance().log_enable = False;
@@ -2080,6 +2135,7 @@ static int shell_debug_search_command(int argc, char **argv)
 		Indicate_LED(0x03<<4);
 		HAL_Delay(500);
 		if (camera_run) printf("DEBUG_CAMERA_RUN_DONE\r\n");
+		if (gui_run) printf("DEBUG_GUI_RUN_DONE\r\n");
 		return 0;
 	}
 	printf("Unknown debug search_turn command found\r\n"); return -1;
@@ -2261,9 +2317,11 @@ static int usrcmd_debug(int argc, char **argv)
 		printf("debug pivot_turn right|left show|reset|set|exe\r\n");
 		printf("debug search_turn right|left show|reset|preset speed|set|exe\r\n");
 		printf("debug camera show|arm token; debug turn type / search_turn right|left exe_camera token (recording only)\r\n");
+		printf("debug gui show|period 1..100|arm token; debug turn type / search_turn right|left exe_gui token (operator button)\r\n");
 		return 0;
 	}
 	if (ntlibc_strcmp(argv[1], "camera") == 0) return shell_debug_camera_command(argc, argv);
+	if (ntlibc_strcmp(argv[1], "gui") == 0) return shell_debug_gui_command(argc, argv);
 	if (ntlibc_strcmp(argv[1], "straight") == 0)
 	{
 		return shell_debug_command(argc, argv, "straight", &shell_debug_straight_param, False);

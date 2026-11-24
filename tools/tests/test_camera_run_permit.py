@@ -17,7 +17,7 @@ class CameraRunPermitTests(unittest.TestCase):
             self.skipTest('Host C++ compiler is required')
         text = (ROOT/'System/Src/myshell.cpp').read_text(encoding='utf-8')
         start = text.index('static int shell_debug_turn_command(')
-        start = text.index('if (ntlibc_strcmp(argv[3], "exe") == 0 || camera_run)', start)
+        start = text.index('if (ntlibc_strcmp(argv[3], "exe") == 0 || camera_run || gui_run)', start)
         opening = text.index('{', start)
         depth, end = 1, opening + 1
         while depth:
@@ -29,6 +29,9 @@ class CameraRunPermitTests(unittest.TestCase):
 #include <deque>
 #include <algorithm>
 #include <vector>
+#include <cstdint>
+constexpr unsigned LOG_DATA_PRIOD=1;
+static unsigned shell_gui_log_period_ms=1;
 constexpr bool True=true, False=false;
 enum Pattern { Long_turnR90,Long_turnL90,Long_turnR180,Long_turnL180,
     Turn_in_R45,Turn_in_L45,Turn_in_R135,Turn_in_L135,
@@ -42,7 +45,7 @@ struct IrSensTask{};
 struct LogData {
     bool log_enable=false;std::deque<int> samples;
     static LogData& getInstance(){static LogData log;return log;}
-    void reset_log(){samples.clear();}
+    void reset_log(unsigned=1){samples.clear();}
     void sample(int phase){if(log_enable){if(samples.size()==400)samples.pop_front();samples.push_back(phase);}}
 };
 struct Motion {
@@ -60,9 +63,11 @@ struct Motion {
 struct CtrlTask_type8{static Motion& getInstance(){static Motion motion;return motion;}};
 struct Permit{void clear(){}};
 static Permit shell_camera_run_permit;
+static Permit shell_gui_run_permit;
 static bool allow_camera=true;
 static int hand_waits=0;
 static bool shell_debug_camera_begin(int,char**,int){return allow_camera;}
+static bool shell_debug_gui_begin(int,char**,int){return allow_camera;}
 static void shell_debug_wait_sensor(IrSensTask*){++hand_waits;}
 static void shell_debug_suction_start(Motion*,bool,int){}
 static bool shell_debug_turn_pre_run(Motion* motion,Pattern,float,float){
@@ -73,7 +78,7 @@ static bool shell_debug_turn_post_run(Motion* motion,Pattern,float){
 }
 static void Indicate_LED(int){}
 static void HAL_Delay(int){}
-static int run(bool camera_run,Pattern pattern){int argc=5;char*argv[5]={};Debug*debug=&stored;
+static int run(bool camera_run,Pattern pattern,bool gui_run=false){int argc=5;char*argv[5]={};Debug*debug=&stored;
 ''' + text[opening + 1:end - 1] + r'''
     return -99;
 }
@@ -92,6 +97,12 @@ int main(){
     stored.turn_count=2;
     assert(run(false,Long_turnR90)==0);
     assert(std::count(log.samples.begin(),log.samples.end(),24)==400);
+    stored.turn_count=1;
+    for(int p=0;p<14;++p){
+        hand_waits=0;
+        assert(run(false,static_cast<Pattern>(p),true)==0 && hand_waits==0);
+        assert(log.samples.back()==24);
+    }
     motion.calls.clear();allow_camera=false;
     assert(run(true,Long_turnR90)==-1 && motion.calls.empty());
 }
@@ -117,7 +128,7 @@ int main(){
             self.skipTest('Host C++ compiler is required')
         text = (ROOT/'System/Src/myshell.cpp').read_text(encoding='utf-8')
         start = text.index('static int shell_debug_search_command(')
-        start = text.index('if (ntlibc_strcmp(argv[3], "exe") == 0 || camera_run)', start)
+        start = text.index('if (ntlibc_strcmp(argv[3], "exe") == 0 || camera_run || gui_run)', start)
         opening = text.index('{', start)
         depth, end = 1, opening + 1
         while depth:
@@ -130,6 +141,9 @@ int main(){
 #include <deque>
 #include <algorithm>
 #include <vector>
+#include <cstdint>
+constexpr unsigned LOG_DATA_PRIOD=1;
+static unsigned shell_gui_log_period_ms=1;
 constexpr bool True=true, False=false;
 struct Gain{};
 struct Param{};
@@ -146,7 +160,7 @@ struct IrSensTask{};
 struct LogData{
     bool log_enable=false; std::deque<int> samples;
     static LogData& getInstance(){static LogData log;return log;}
-    void reset_log(){samples.clear();}
+    void reset_log(unsigned=1){samples.clear();}
     void sample(int phase){
         if(!log_enable)return;
         if(samples.size()==400)samples.pop_front();
@@ -172,15 +186,17 @@ struct Motion{
 struct CtrlTask_type8{static Motion& getInstance(){static Motion motion;return motion;}};
 struct Permit{void clear(){}};
 static Permit shell_camera_run_permit;
+static Permit shell_gui_run_permit;
 static bool allow_camera=true;
 static int hand_waits=0;
 static bool shell_debug_camera_begin(int,char**,int){return allow_camera;}
+static bool shell_debug_gui_begin(int,char**,int){return allow_camera;}
 static void shell_debug_wait_sensor(IrSensTask*){++hand_waits;}
 static void shell_debug_suction_start(Motion*,bool,int){}
 static float shell_debug_accel_in_length(float,float,float acc){return acc;}
 static void Indicate_LED(int){}
 static void HAL_Delay(int){}
-static int run(bool camera_run){
+static int run(bool camera_run,bool gui_run=false){
     int argc=5;char *argv[5]={};Debug *debug=&stored;
 ''' + implementation + r'''
     return -99;
@@ -198,6 +214,9 @@ int main(){
     assert(std::count(log.samples.begin(),log.samples.end(),24)==215);
     assert(std::count(log.samples.begin(),log.samples.end(),25)==0);
     assert(!log.log_enable);
+    motion.calls.clear();hand_waits=0;
+    assert(run(false,true)==0 && hand_waits==0);
+    assert(std::count(log.samples.begin(),log.samples.end(),24)==215);
     motion.calls.clear();allow_camera=false;
     assert(run(true)==-1 && motion.calls.empty());
 }
@@ -273,6 +292,23 @@ int main(){
             self.assertEqual(result.returncode,0,result.stderr.decode(errors='replace'))
             result=subprocess.run([str(executable)],capture_output=True,timeout=10)
             self.assertEqual(result.returncode,0,result.stderr.decode(errors='replace'))
+
+    def test_real_shell_gui_entry_rejects_count_battery_and_repeated_tokens(self):
+        # 同じ境界条件をGUI専用の実装にも適用する。許可は別のオブジェクト。
+        original = Path.read_text
+        def gui_source(path, *args, **kwargs):
+            text = original(path, *args, **kwargs)
+            if path == ROOT/'System/Src/myshell.cpp':
+                start = text.index('static bool shell_debug_gui_begin(')
+                end = text.index('\nstatic int shell_debug_camera_command', start)
+                gui = text[start:end].replace('shell_debug_gui_begin', 'shell_debug_camera_begin').replace('shell_gui_run_permit', 'shell_camera_run_permit')
+                begin = text.index('static bool shell_debug_camera_begin(')
+                finish = text.index('\nstatic void shell_debug_wait_sensor', begin)
+                text = text[:begin] + gui + text[finish:]
+            return text
+        from unittest.mock import patch
+        with patch.object(Path, 'read_text', gui_source):
+            self.test_real_shell_camera_entry_rejects_count_battery_and_repeated_tokens()
 
     def test_one_shot_token_expiry_wrap_and_invalid_arguments(self):
         command = compiler_command()

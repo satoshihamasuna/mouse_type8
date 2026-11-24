@@ -193,12 +193,13 @@ void LogData::indicate_data()
         "motion.pattern",
     };
 
-void LogData::reset_log()
+void LogData::reset_log(uint16_t period_ms)
 {
 	const uint32_t primask = __get_PRIMASK();
 	__disable_irq();
 	buffer.reset();
 	log_tick = 0;
+	saved_period_ms = (period_ms >= 1 && period_ms <= 100) ? period_ms : LOG_DATA_PRIOD;
 	InterruptTiming::reset();
 	__set_PRIMASK(primask);
 }
@@ -232,7 +233,7 @@ void LogData::indicate_data()
     for(uint16_t i = 0; i < count; i++)
     {
         buffer.copy(i, sample);
-        printf("LOG,%u,", static_cast<unsigned>(i * LOG_DATA_PRIOD));
+        printf("LOG,%u,", static_cast<unsigned>(i * saved_period_ms));
 
         for(int j = 0; j < LOG_DATA_NUM; j++) {
             if(j < LogLayout::HALF_FIELDS) printf("%4.5lf", half_to_float(sample[j]));
@@ -278,7 +279,7 @@ void LogData::indicate_data_binary()
     {
         buffer.copy(i, sample);
     	frame.magic = LOG_MAGIC;
-        frame.index = i * LOG_DATA_PRIOD;
+        frame.index = i * saved_period_ms;
 
         // Same 16-bit words as the ring buffer; ADC counts keep every bit.
         memcpy(reinterpret_cast<uint8_t *>(&frame) + 4, sample, sizeof(sample));
@@ -386,7 +387,7 @@ void LogData::logging()
 		if(log_enable == True)
 		{
 			if(log_tick == 0) buffer.push(sample);
-			log_tick = (log_tick + 1) % LOG_DATA_PRIOD;
+			if (++log_tick >= saved_period_ms) log_tick = 0;
 		}
 		if(stream_due) LogStream::enqueue_sample(sample, now_ms);
 	}
