@@ -66,19 +66,13 @@ class RunSpeedProfileTests(unittest.TestCase):
         run = (ROOT/'Subsys/Src/make_path.cpp').read_text(encoding='utf-8')
         constant = next(line for line in run.splitlines() if line.startswith('static constexpr float RUN_START_LENGTH_MM'))
         (folder/'run_start_constants.inc').write_text(constant+'\n', encoding='utf-8')
-        begin = run.index('void Dijkstra::run_Dijkstra(')
-        for kind, case in (('straight', 'Straight'), ('diagonal', 'Diagonal')):
-            section = run.index('case '+case+':', begin)
-            start = run.index('section_end = ', section)
-            stop = run.index('\n\t\t\t\tbreak;', start)
-            (folder/('run_'+kind+'.inc')).write_text(run[start:stop], encoding='utf-8')
-        for method, label in (('run_Dijkstra_suction','suction'), ('run_Dijkstra_suction_acc','variable')):
-            begin = run.index('void Dijkstra::'+method+'(')
+        begin = run.index('void Dijkstra::run_Dijkstra_common(')
+        for label in ('', 'suction_', 'variable_'):
             for kind, case in (('straight','Straight'),('diagonal','Diagonal')):
                 section = run.index('case '+case+':',begin)
                 start = run.index('section_end = ',section)
                 stop = run.index('\n\t\t\t\tbreak;',start)
-                (folder/('run_'+label+'_'+kind+'.inc')).write_text(run[start:stop],encoding='utf-8')
+                (folder/('run_'+label+kind+'.inc')).write_text(run[start:stop],encoding='utf-8')
         cls.executables = {}
         for mouse in ('A', 'B'):
             cases, expected = [], []

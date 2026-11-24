@@ -85,6 +85,9 @@ public:
         run_config_set(config);
         const int tail = 1;
         uint8_t run_pt_buff[] = {Long_turnR90, static_cast<uint8_t>(first_pattern)};
+        const bool variable_turns = false;
+        uint8_t turn_select[] = {selected, selected};
+        const t_param *const *const *turn_modes = config->turn_mode;
         const t_param *const *turn_mode = config->turn_mode[selected];
         t_straight_param st_parameter{};
         int section_count = 1;
@@ -107,12 +110,14 @@ public:
         const int tail = 1;
         uint8_t run_pt_buff[] = {Long_turnR90, static_cast<uint8_t>(first_pattern)};
         uint8_t turn_select[] = {selected, selected};
-        const t_param *const *const *turn_mode = config->turn_mode;
+        const bool variable_turns = true;
+        const t_param *const *const *turn_modes = config->turn_mode;
+        const t_param *const *turn_mode = turn_modes[selected];
         t_straight_param st_parameter{};
         int section_count = 1;
         float section_end = 0.0f;
-        float end_velo = turn_mode[selected][Long_turnR90]->param->velo;
-        if (first_pattern != Straight) motion->turn_start_mm = 13.1f + turn_mode[selected][first_pattern]->param->Lstart;
+        float end_velo = turn_mode[Long_turnR90]->param->velo;
+        if (first_pattern != Straight) motion->turn_start_mm = 13.1f + turn_mode[first_pattern]->param->Lstart;
 #include "variable_setup.inc"
 #include "variable_first.inc"
     }

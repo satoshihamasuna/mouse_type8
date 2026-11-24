@@ -39,6 +39,8 @@ class RunDispatch:public calcRunTime
 public:
 	void straight(Motion *motion,const t_run_config *config,int i)
 	{
+		const bool variable_turns = false;
+		const float end_velo = 0.0f;
 		const t_param *const *turn_mode = config->turn_mode[0];
 		t_run_pattern run_pt_buff[] = {Long_turnR90};
 		int section_count = 1;
@@ -48,6 +50,8 @@ public:
 	}
 	void diagonal(Motion *motion,const t_run_config *config,int i)
 	{
+		const bool variable_turns = false;
+		const float end_velo = 0.0f;
 		const t_param *const *turn_mode = config->turn_mode[0];
 		t_run_pattern run_pt_buff[] = {Turn_out_R45};
 		int section_count = 1;
@@ -57,6 +61,8 @@ public:
 	}
 	void suction(Motion *motion,const t_run_config *config,int i,bool diagonal)
 	{
+		const bool variable_turns = false;
+		const float end_velo = 0.0f;
 		const t_param *const *turn_mode = config->turn_mode[config->turn_mode_size-1];
 		t_run_pattern run_pt_buff[] = {diagonal ? Turn_out_R45 : Long_turnR90};
 		int section_count = 1;
@@ -70,7 +76,9 @@ public:
 	}
 	void variable(Motion *motion,const t_run_config *config,int i,float end_velo,bool diagonal)
 	{
-		(void)config;
+		const bool variable_turns = true;
+		const t_param *const *turn_mode = config->turn_mode[0];
+		t_run_pattern run_pt_buff[] = {Long_turnR90};
 		int section_count = 1;
 		float section_end = 0.0f;
 		t_straight_param st_parameter{};

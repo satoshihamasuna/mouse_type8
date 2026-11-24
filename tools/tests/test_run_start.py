@@ -91,19 +91,16 @@ class IrSensTask_type8 : public IrSensTask, public Singleton<IrSensTask_type8> {
                 start = run.index("static constexpr float RUN_START_LENGTH_MM")
                 support = run[start:run.index("#define DIJKSTRA_MAX_TIME", start)]
             (work / "run_start_support.inc").write_text(support, encoding="utf-8")
-            for method, label in (("run_Dijkstra", "plain"), ("run_Dijkstra_suction", "suction"),
-                                  ("run_Dijkstra_suction_acc", "variable")):
-                source = function_source(run, "void Dijkstra::" + method + "(")
+            for label in ("plain", "suction", "variable"):
+                source = function_source(run, "void Dijkstra::run_Dijkstra_common(")
                 stop = source.index("\n\tuint16_t section_count")
-                start = source.rfind("\tlog_enable();", 0, stop)
+                start = source.index("\trun_start_position(motion);", 0, stop)
                 (work / (label + "_setup.inc")).write_text(source[start:stop], encoding="utf-8")
                 start = source.index("for(int i = tail")
                 end = source.index("\n\t\tswitch(run_pt_buff[i])", start)
-                # 可変ターンの次モーション速度選択は別の既存テストで検証する。
-                prefix = source[source.index("{", start) + 1:end] if label != "variable" else ""
+                prefix = source[source.index("{", start) + 1:end]
                 turn_cases = []
-                for pattern in ('Long_turnR90', 'Long_turnL90', 'Long_turnR180', 'Long_turnL180',
-                                'Turn_in_R45', 'Turn_in_L45', 'Turn_in_R135', 'Turn_in_L135'):
+                for pattern in ('Long_turnR90', 'Turn_in_R45'):
                     start = source.index('case ' + pattern + ':', end)
                     stop = source.index('\n\t\t\t\tbreak;', start) + len('\n\t\t\t\tbreak;')
                     turn_cases.append(source[start:stop])

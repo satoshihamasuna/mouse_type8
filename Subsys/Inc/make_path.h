@@ -159,6 +159,8 @@ class Dijkstra:public calcRunTime
 		t_element*  get_closure_inf(t_posDijkstra position);
 		uint8_t get_wall_inf(t_posDijkstra position);
 		t_bool use_priority_queue;
+		void run_Dijkstra_common(t_position start_pos,t_direction start_wallPos,t_position goal_pos,uint8_t goal_size,
+								 const t_run_config *config,Motion *motion,bool use_suction,uint8_t *turn_select);
 	public:
 		t_MapNodeWall closure[MAZE_SIZE_X][MAZE_SIZE_Y];
 		t_posDijkstra run_pos_buff[DIJKSTRA_PATH_MAX];

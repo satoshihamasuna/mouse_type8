@@ -174,6 +174,10 @@ Bの350の初期値・既定FFと、370の測定候補の前後長・論理角�
 python -m unittest discover -s tools/tests -p test_run_speed_profiles.py -v
 ```
 
+`run_Dijkstra`系の共通走行処理は、`python -m unittest discover -s tools/tests -p test_run_dijkstra.py -v`で確認します。
+実`make_path.cpp`の3つの入口・共通処理、実`calcRunTime.cpp`と機体別パラメータを使います。経路探索とMotion・ログ・吸引・待機の境界を模擬し、A/Bそれぞれ11シナリオを実行します。
+全17設定の混在経路、左右14種のターン、Long V90の結合と未設定時の非結合、先頭右ターンのテーブル選択、計画後の中止、不正速度設定、到達不能な出口速度、先頭・途中のモーションエラー、512動作の経路を確認します。指令引数と実行順序を出力しますが、モータやIRの応答・実機の制御周期は検証しません。
+
 開始時の予備加速は、`python -m unittest discover -s tools/tests -p test_run_start.py -v`で確認します。
 A/Bの全17走行設定について、先頭直線と設定済みの左右90/180度・45/135度進入ターンを実行します。
 実Dijkstraの起動・先頭モーション呼出し、実Motionの宣言・ラッパー・直進/ターン前直進処理・加速付きターン初期化を使い、待機ループだけを模擬1 ms割込みへ置き換えます。
