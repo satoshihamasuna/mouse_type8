@@ -9,7 +9,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pixel_camera_reference import (create_marker_reference, detect_board_reference, register_marker_reference,
-    rectify_board, fit_grid_reference, refine_marker_vertices, detect_registered_vertices, marker_corners_by_id)
+    rectify_board, fit_grid_reference, refine_marker_vertices, detect_registered_vertices, marker_corners_by_id,
+    relocate_marker_search)
 
 
 class ReferenceTests(unittest.TestCase):
@@ -131,6 +132,51 @@ class ReferenceTests(unittest.TestCase):
         profile=dict(self.profile,marker_search_rois_px={'11':[0,0,100,100]})
         with self.assertRaisesRegex(ValueError,'ROIs'):
             detect_registered_vertices(np.zeros((800,800,3),np.uint8),profile)
+
+    def shifted_search_board(self):
+        image=np.full((800,800,3),255,np.uint8)
+        dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        for marker_id,x,y in ((5,50,50),(7,500,50),(6,50,500),(4,500,500)):
+            image[y:y+50,x:x+50]=cv2.cvtColor(cv2.aruco.generateImageMarker(dictionary,marker_id,50),cv2.COLOR_GRAY2BGR)
+        corners,ids,_=cv2.aruco.ArucoDetector(dictionary).detectMarkers(image)
+        profile=create_marker_reference(dict(corners={'all':dict(ids=ids.ravel().tolist(),
+            corners_px=[quad.reshape(4,2).tolist() for quad in corners])},board_reference=dict(available=True,
+                points_px=dict(TL=[99,99],TR=[500,99],BR=[500,500],BL=[99,500]))),
+            image_size=(800,800),board_corner_ids=dict(TL=5,TR=7,BL=6,BR=4))
+        profile['marker_search_rois_px']={str(key):[x-10,y-10,x+60,y+60]
+            for key,x,y in ((5,50,50),(7,500,50),(6,50,500),(4,500,500))}
+        shifted=cv2.warpAffine(image,np.float32([[1,0,100],[0,1,80]]),(800,800),borderValue=(255,255,255))
+        return shifted,profile,dictionary
+
+    def test_search_relocation_recovers_camera_shift_without_changing_reference_geometry(self):
+        image,profile,_=self.shifted_search_board()
+        before={key:list(box) for key,box in profile['marker_search_rois_px'].items()}
+        self.assertFalse(detect_board_reference(image,detect_registered_vertices(image,profile),profile)['available'])
+        result=relocate_marker_search(image,profile)
+        self.assertTrue(result['available'],result)
+        self.assertEqual(result['profile']['reference_id'],profile['reference_id'])
+        self.assertEqual(result['profile']['image_to_board_mm'],profile['image_to_board_mm'])
+        self.assertEqual(result['profile']['board_points_px'],profile['board_points_px'])
+        self.assertEqual(profile['marker_search_rois_px'],before)
+        self.assertNotEqual(result['profile']['marker_search_rois_px'],before)
+        self.assertEqual(result['registration']['used_marker_ids'],[4,5,6,7])
+
+    def test_search_relocation_rejects_duplicate_registered_id_outside_the_old_rois(self):
+        image,profile,dictionary=self.shifted_search_board()
+        image[700:750,50:100]=cv2.cvtColor(cv2.aruco.generateImageMarker(dictionary,5,50),cv2.COLOR_GRAY2BGR)
+        result=relocate_marker_search(image,profile)
+        self.assertFalse(result['available'])
+        self.assertEqual(result['reason'],'ambiguous_full_frame_markers')
+        self.assertNotIn('profile',result)
+
+    def test_search_relocation_does_not_invent_missing_ids_or_relax_grid_validation(self):
+        image,profile,_=self.shifted_search_board()
+        image[580:630,150:200]=255
+        self.assertFalse(relocate_marker_search(image,profile)['available'])
+        image,profile,_=self.shifted_search_board()
+        profile['grid_refinement']=dict(enabled=True,pitch_mm=45,
+            training_grid_indices=[[x,y] for x in (1,3,5,7) for y in (1,3,5,7)])
+        self.assertFalse(relocate_marker_search(image,profile)['available'])
 
     def test_rectified_image_uses_the_recorded_projective_transform(self):
         reference = np.zeros((800, 800, 3), dtype=np.uint8)

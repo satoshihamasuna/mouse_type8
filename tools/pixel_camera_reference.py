@@ -7,6 +7,29 @@ import json
 CORNER_NAMES = ("TL", "TR", "BR", "BL")
 
 
+def load_marker_reference(path):
+    """補正に必要な登録基準を検査する。機体・前後色・高さは要求しない。"""
+    from pathlib import Path
+    import cv2
+    import numpy as np
+    profile = json.loads(Path(path).read_text(encoding='utf-8'))
+    try:
+        side = profile['board_side_mm']
+        matrix = np.asarray(profile['image_to_board_mm'],dtype=float)
+        quad = np.float32([profile['board_points_px'][name] for name in CORNER_NAMES])
+        markers = marker_corners_by_id({'reference':dict(ids=list(profile['markers_px']),
+            corners_px=list(profile['markers_px'].values()))})
+        if (profile.get('schema_version') != 1 or not profile.get('reference_id') or len(markers)<2
+                or isinstance(side,bool) or not np.isfinite(side) or side<=0
+                or matrix.shape!=(3,3) or not np.isfinite(matrix).all() or abs(np.linalg.det(matrix))<1e-12
+                or quad.shape!=(4,2) or not np.isfinite(quad).all()
+                or not cv2.isContourConvex(quad) or cv2.contourArea(quad)<=1000):
+            raise ValueError('invalid registered board')
+    except (KeyError,TypeError,ValueError,cv2.error) as error:
+        raise ValueError('盤面の登録参照JSONを確認してください: '+str(path)) from error
+    return profile
+
+
 def refine_marker_vertices(frame, markers):
     """復号済みの頂点を元画像で精密化する。新しいIDは作らない。"""
     import copy
@@ -81,6 +104,49 @@ def detect_registered_vertices(frame, profile):
     if profile.get("corner_refinement") == "subpix_original_win3":
         markers = refine_marker_vertices(frame, markers)
     return markers
+
+
+def relocate_marker_search(frame, profile):
+    """全登録IDを重複なく実復号し、盤面検証後に検索ROIだけを合わせ直す。"""
+    import copy
+    import cv2
+    import numpy as np
+    expected = set(map(int, profile['markers_px']))
+    if len(expected) < 3:
+        return dict(available=False, reason='search_recovery_requires_three_registered_ids')
+    corners, ids, _ = cv2.aruco.ArucoDetector(
+        cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)).detectMarkers(frame)
+    selected = [] if ids is None else [(int(key), quad.reshape(4, 2).tolist())
+        for key, quad in zip(ids.ravel(), corners) if int(key) in expected]
+    markers = {'full_frame_search_recovery': dict(ids=[key for key, _ in selected],
+        corners_px=[quad for _, quad in selected])}
+    try:
+        found = marker_corners_by_id(markers)
+    except ValueError as error:
+        return dict(available=False, reason='ambiguous_full_frame_markers', detail=str(error))
+    if set(found) != expected:
+        return dict(available=False, reason='all_registered_ids_required_for_search_recovery',
+            decoded_marker_ids=sorted(found))
+    if profile.get('corner_refinement') == 'subpix_original_win3':
+        markers = refine_marker_vertices(frame, markers)
+    registration = detect_board_reference(frame, markers, profile)
+    if not registration.get('available'):
+        return dict(available=False, reason=registration.get('reason'), registration=registration)
+    if any(registration['inlier_corners_by_id'].get(key, 0) < 3 for key in expected):
+        return dict(available=False, reason='insufficient_per_marker_support_for_search_recovery')
+    updated = copy.deepcopy(profile)
+    rois = {}
+    for key, quad in found.items():
+        lo = np.maximum(0, quad.min(axis=0)-25)
+        hi = np.minimum([frame.shape[1], frame.shape[0]], quad.max(axis=0)+25)
+        rois[str(key)] = [int(lo[0]), int(lo[1]), int(hi[0]), int(hi[1])]
+    updated['marker_search_rois_px'] = rois
+    # クロップ後も同じ盤面・格子品質条件を満たすことを確認する。
+    registration = detect_board_reference(frame, detect_registered_vertices(frame, updated), updated)
+    if not registration.get('available'):
+        return dict(available=False, reason=registration.get('reason'), registration=registration)
+    return dict(available=True, profile=updated, registration=registration,
+        decoded_marker_ids=sorted(found), method='unique_full_frame_ids_then_validated_search_rois')
 
 
 def fit_grid_reference(checkpoints, markers, image_size=(1280, 720), board_side_mm=360.0, source=None,

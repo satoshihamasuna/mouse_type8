@@ -19,7 +19,7 @@ def torch_runtime():
         try:
             import torch
         except ModuleNotFoundError:
-            location = ROOT/'.tools/vision_python311'
+            location = ROOT/'.tools'/f'vision_python{sys.version_info.major}{sys.version_info.minor}'
             if location.is_dir():
                 sys.path.insert(0,str(location))
             try:
@@ -114,7 +114,7 @@ class BodyKeypointCNN:
         return native[0],native[1],dict(cnn_visibility=visible.tolist(),cnn_spread_canonical_px=spread.tolist())
 
     @classmethod
-    def fit_from_frames(cls,samples,metadata,*,steps=400,seed=29,progress=None):
+    def fit_from_frames(cls,samples,metadata,*,steps=400,seed=29,progress=None,robust=False):
         """色ペアの擬似正解を拡張して学習。独立動画での精度検証とは区別する。"""
         from body_appearance_model import extract_canonical_patch
         if len(samples)<3 or not 1<=steps<=10000:
@@ -131,14 +131,21 @@ class BodyKeypointCNN:
             perturbed = true+rng.normal(0,2.8,size=(2,2)).astype(np.float32)
             patch,affine = extract_canonical_patch(frame,*perturbed)
             points = cv2.transform(true[None],affine)[0]
-            patch = np.clip(patch.astype(np.float32)*rng.uniform(.7,1.25)+rng.uniform(-12,12),0,255).astype(np.uint8)
+            if robust:
+                rotate=cv2.getRotationMatrix2D((32.,32.),float(rng.uniform(-40,40)),1.)
+                patch=cv2.warpAffine(patch,rotate,(64,64))
+                points=cv2.transform(points[None],rotate)[0]
+            patch = np.clip(patch.astype(np.float32)*rng.uniform(.15 if robust else .7,1.4 if robust else 1.25)+rng.uniform(-12,12),0,255).astype(np.uint8)
             if rng.random()<.4:
                 patch = cv2.GaussianBlur(patch,(3,3),float(rng.uniform(.3,1.0)))
             if rng.random()<.25:
-                kernel = np.zeros((5,5),np.float32)
-                kernel[2,:] = .2
-                if rng.random()<.5:
-                    kernel = kernel.T
+                size=9 if robust else 5
+                kernel = np.zeros((size,size),np.float32)
+                angle=float(rng.uniform(0,np.pi)) if robust else (0. if rng.random()<.5 else np.pi/2)
+                vector=np.array([np.cos(angle),np.sin(angle)])*(size-1)/2
+                center=np.array([size//2,size//2])
+                cv2.line(kernel,tuple(np.rint(center-vector).astype(int)),tuple(np.rint(center+vector).astype(int)),1.,1)
+                kernel/=kernel.sum()
                 patch = cv2.filter2D(patch,-1,kernel)
             visible = (rng.random(2)>.15).astype(np.float32)
             heat = []
@@ -160,7 +167,8 @@ class BodyKeypointCNN:
             selected = torch.randint(0,count,(16,))
             logits,presence = network(x[selected])
             point_loss = -(target[selected]*torch.nn.functional.log_softmax(logits.flatten(2),dim=-1)).sum(dim=-1)
-            point_loss = (point_loss*visible[selected]).sum()/visible[selected].sum().clamp_min(1)
+            point_weights=torch.ones_like(visible[selected]) if robust else visible[selected]
+            point_loss = (point_loss*point_weights).sum()/point_weights.sum().clamp_min(1)
             loss = point_loss+.3*torch.nn.functional.binary_cross_entropy_with_logits(presence,visible[selected])
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
@@ -172,28 +180,43 @@ class BodyKeypointCNN:
             augmented_samples=count,steps=steps,seed=seed,training_loss=loss_value,
             torch_version=str(torch.__version__),label_type='high_confidence_colour_pair_pseudo_labels',
             independent_accuracy_verified=False)
+        meta.update(robust_augmentation=robust,hidden_point_targets_supervised=robust)
         return cls(network,meta)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--trial',type=Path,nargs='+',required=True)
+    inputs=parser.add_mutually_exclusive_group(required=True)
+    inputs.add_argument('--trial',type=Path,nargs='+')
+    inputs.add_argument('--patches',type=Path,help='train_turn_appearance.pyの学習パッチフォルダー')
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--max-frames-per-trial',type=int,default=60)
     parser.add_argument('--steps',type=int,default=400)
+    parser.add_argument('--robust',action='store_true')
     args = parser.parse_args()
     from body_appearance_model import harvest_training_samples_from_trial
     samples,sources = [],[]
-    for path in args.trial:
-        found,meta = harvest_training_samples_from_trial(path,args.max_frames_per_trial)
-        samples.extend(found)
-        sources.append(meta)
-    identities = {(meta.get('mouse'),meta.get('front_colour'),meta.get('rear_colour')) for meta in sources}
-    if len(identities)!=1 or None in next(iter(identities)):
-        raise ValueError('機体と前後色が同じ試行だけを学習してください')
-    mouse,front,rear = next(iter(identities))
+    if args.patches:
+        from body_appearance_model import FRONT_CANON_XY,REAR_CANON_XY
+        saved=json.loads((args.patches/'training.json').read_text(encoding='utf-8'))
+        meta=saved['metadata']
+        sources=meta['sources']
+        for label in saved['labels']:
+            patch=cv2.imread(str(args.patches/label['patch']))
+            if patch is None or patch.shape!=(64,64,3):raise ValueError('学習パッチが不正です')
+            samples.append((patch,FRONT_CANON_XY,REAR_CANON_XY))
+        mouse,front,rear=meta['mouse'],meta['front_colour'],meta['rear_colour']
+    else:
+        for path in args.trial:
+            found,meta = harvest_training_samples_from_trial(path,args.max_frames_per_trial)
+            samples.extend(found)
+            sources.append(meta)
+        identities = {(meta.get('mouse'),meta.get('front_colour'),meta.get('rear_colour')) for meta in sources}
+        if len(identities)!=1 or None in next(iter(identities)):
+            raise ValueError('機体と前後色が同じ試行だけを学習してください')
+        mouse,front,rear = next(iter(identities))
     model = BodyKeypointCNN.fit_from_frames(samples,dict(mouse=mouse,front_colour=front,rear_colour=rear,sources=sources),
-        steps=args.steps,progress=lambda step,loss:print(f'train step {step}: loss={loss:.4f}',flush=True))
+        steps=args.steps,robust=args.robust,progress=lambda step,loss:print(f'train step {step}: loss={loss:.4f}',flush=True))
     model.save(args.output)
     print(json.dumps(dict(saved=str(args.output),metadata=model.metadata),ensure_ascii=False))
     return 0

@@ -49,7 +49,10 @@ def resolve_geometry_detection(geometry, mode='profile', *, registry_path=None):
     identity = (result.get('mouse'), result.get('front_colour'), result.get('rear_colour', 'yellow'))
     if identity[0] not in ('A','B') or not identity[1] or identity[1]==identity[2]:
         raise ValueError('検出モデルの自動選択には機体A/Bと異なる前後色が必要です')
-    registry_path = Path(registry_path or DEFAULT_REGISTRY)
+    registry_path = Path(registry_path or (DEFAULT_REGISTRY if DEFAULT_REGISTRY.is_file() else
+        ROOT/'tools/logs/pixel_camera/detector_models/registry.json'))
+    if not registry_path.is_file():
+        raise ValueError('学習モデルが未登録です。独立動画で検証したモデルのregistry.jsonを用意してください: '+str(registry_path))
     registry = json.loads(registry_path.read_text(encoding='utf-8'))
     if registry.get('schema_version')!=1:
         raise ValueError('検出モデル一覧の版が未対応です')
@@ -59,8 +62,8 @@ def resolve_geometry_detection(geometry, mode='profile', *, registry_path=None):
         raise ValueError(f'{key}の学習モデルがありません。モデル登録を確認してください')
     cfg = dict(enabled=True, model_file=str(project_path(entry['model_file']).resolve()),
         model_sha256=entry['model_sha256'], expected_mouse=identity[0],
-        require_colour_pair=True, auto_adapt=False)
-    for name in ('keypoint_model_file','keypoint_model_sha256','min_body_ncc'):
+        require_colour_pair=entry.get('require_colour_pair', True), fallback_only=entry.get('fallback_only', False), auto_adapt=False)
+    for name in ('keypoint_model_file','keypoint_model_sha256','min_body_ncc','center_margin_mm'):
         if name in entry:
             cfg[name] = str(project_path(entry[name]).resolve()) if name.endswith('_file') else entry[name]
     for file_key, hash_key in (('model_file','model_sha256'),('keypoint_model_file','keypoint_model_sha256')):

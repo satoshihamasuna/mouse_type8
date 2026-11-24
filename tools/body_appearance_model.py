@@ -277,7 +277,8 @@ class LearnedBodyKeypointModel:
                 vectors = vectors-vectors.mean(axis=1,keepdims=True)
                 norms = np.linalg.norm(vectors,axis=1)
                 normalized = np.divide(vectors,norms[:,None],out=np.zeros_like(vectors),where=norms[:,None]>=1e-3)
-                body += weight*(normalized@self.core_vecs[channel])
+                # 小さい候補行列の積でBLASの多数スレッドを起こさず、同じ全候補を評価する。
+                body += weight*np.einsum('ij,j->i',normalized,self.core_vecs[channel],optimize=False)
             contrast = np.std(features[:,:,:,0][:,BODY_CORE_MASK],axis=1)
             body *= np.minimum(1.,contrast/20.)
             front = features[:,FRONT_ROI_MASK,1:]
@@ -309,10 +310,17 @@ def detect_pair_with_body_model(
     require_colour_pair: bool = False,
     refine_standard: bool = False,
     keypoint_model=None,
+    center_margin_mm: float = 25.0,
 ) -> tuple[np.ndarray, np.ndarray, dict] | None:
     """機体外観モデル＋前後キーポイント局所精密化により (front_mm, rear_mm, info) を検出する。"""
     from video_marker_pose import colour_components, transform_points
     from pixel_camera_geometry import correct_body_markers
+    if not math.isfinite(center_margin_mm) or not 0 <= center_margin_mm <= 90:
+        raise ValueError('center margin must be within 0..90 mm')
+
+    def inside_board(center):
+        return (-center_margin_mm <= center[0] <= board_side_mm+center_margin_mm
+            and -center_margin_mm <= center[1] <= board_side_mm+center_margin_mm)
 
     nom_span = nominal_span_mm
     if nom_span is None and body_geometry is not None:
@@ -385,7 +393,7 @@ def detect_pair_with_body_model(
             if not (low - 3.0 <= sep_mm <= high + 3.0):
                 continue
             centre_mm = 0.5 * (f_mm + r_mm)
-            if not (-25.0 <= centre_mm[0] <= board_side_mm + 25.0 and -25.0 <= centre_mm[1] <= board_side_mm + 25.0):
+            if not inside_board(centre_mm):
                 continue
 
             balance = min(f_area, r_area) / max(f_area, r_area)
@@ -416,11 +424,49 @@ def detect_pair_with_body_model(
 
     # 片側マーカーのみ検出時または機体相関が低い場合の単一マーカー起点＋機体向き探索
     pivot_ncc_thresh = max(0.32, min_body_ncc + 0.10)
-    if not require_colour_pair and ((best_candidate is None) or (best_candidate[4] < 0.45)):
+    tracking_info = {}
+    if (not require_colour_pair and keypoint_model is not None and pred_center_mm is not None
+            and previous_heading_rad is not None
+            and (best_candidate is None or best_candidate[4] < pivot_ncc_thresh)):
+        # 直前姿勢は切り出し位置にだけ使用し、今の画像からCNNで前後点を求める。
+        direction = np.array([math.cos(previous_heading_rad), math.sin(previous_heading_rad)])
+        guess = transform_points([pred_center_mm+.5*nom_span*direction,
+            pred_center_mm-.5*nom_span*direction], H_pose_to_img)
+        front_nn, rear_nn, cnn_info = keypoint_model.refine(frame_bgr, *guess)
+        native = np.asarray([front_nn, rear_nn], dtype=np.float32)
+        if np.isfinite(native).all():
+            points_nn = transform_points(native, H_img_to_pose)
+            centre_nn = points_nn.mean(axis=0)
+            span_nn = float(np.linalg.norm(points_nn[0]-points_nn[1]))
+            angle_nn = math.atan2(*(points_nn[0]-points_nn[1])[::-1])
+            patch_nn, _ = extract_canonical_patch(frame_bgr, *native)
+            _, ncc_nn, marker_nn = model.score_patch(patch_nn)
+            spread = np.asarray(cnn_info.get('cnn_spread_canonical_px', [np.inf, np.inf]))
+            if (low <= span_nn <= high and inside_board(centre_nn)
+                    and np.linalg.norm(centre_nn-pred_center_mm) <= 20.
+                    and abs(math.degrees(angle_diff_rad(angle_nn,previous_heading_rad))) <= 60.
+                    and np.isfinite(spread).all() and (spread <= 4.5).all()
+                    and ncc_nn >= pivot_ncc_thresh):
+                best_candidate = (*native,False,False,float(ncc_nn),float(marker_nn),'cnn_body_tracking')
+                tracking_info = dict(cnn_info,keypoint_cnn_applied=True)
+    if not require_colour_pair and ((best_candidate is None) or (best_candidate[4] < pivot_ncc_thresh)):
         if previous_heading_rad is not None:
             angles = [previous_heading_rad + math.radians(d) for d in range(-36, 37, 3)]
         else:
             angles = [math.radians(d) for d in range(0, 360, 8)]
+
+        pivot_candidates = []
+        def add_pivot(front_px,rear_px,front_std,rear_std,centre_mm,angle,method):
+            if not inside_board(centre_mm):
+                return
+            penalty = 0.
+            if pred_center_mm is not None:
+                step = float(np.linalg.norm(centre_mm-pred_center_mm))
+                penalty += .12*max(0.,step-18.)+.02*step
+            if previous_heading_rad is not None:
+                turn = abs(math.degrees(angle_diff_rad(angle,previous_heading_rad)))
+                penalty += .15*max(0.,turn-18.)
+            pivot_candidates.append((front_px,rear_px,front_std,rear_std,penalty,method))
 
         for i in sorted(f_idx_list, key=lambda idx: f_cands[idx][1], reverse=True)[:4]:
             f_px, _, f_is_std = f_cands[i]
@@ -428,24 +474,8 @@ def detect_pair_with_body_model(
             for ang in angles:
                 r_mm_guess = f_mm0 - nom_span * np.array([math.cos(ang), math.sin(ang)], dtype=np.float32)
                 r_px_guess = transform_points([r_mm_guess], H_pose_to_img)[0]
-                patch, _ = extract_canonical_patch(frame_bgr, f_px, r_px_guess)
-                _, body_ncc, marker_prob = model.score_patch(patch)
-                if body_ncc < pivot_ncc_thresh:
-                    continue
                 centre_mm = 0.5 * (f_mm0 + r_mm_guess)
-                if not (-25.0 <= centre_mm[0] <= board_side_mm + 25.0 and -25.0 <= centre_mm[1] <= board_side_mm + 25.0):
-                    continue
-                motion_penalty = 0.0
-                if pred_center_mm is not None:
-                    step_mm = float(np.linalg.norm(centre_mm - pred_center_mm))
-                    motion_penalty += 0.12 * max(0.0, step_mm - 18.0) + 0.02 * step_mm
-                if previous_heading_rad is not None:
-                    dtheta_deg = abs(math.degrees(angle_diff_rad(ang, previous_heading_rad)))
-                    motion_penalty += 0.15 * max(0.0, dtheta_deg - 18.0)
-                combined = 6.0 * body_ncc + 3.0 * marker_prob + 1.0 - motion_penalty
-                if combined > best_total_score:
-                    best_total_score = combined
-                    best_candidate = (f_px, r_px_guess, f_is_std, False, body_ncc, marker_prob, "front_pivot_body_search")
+                add_pivot(f_px,r_px_guess,f_is_std,False,centre_mm,ang,'front_pivot_body_search')
 
         for j in sorted(r_idx_list, key=lambda idx: r_cands[idx][1], reverse=True)[:4]:
             r_px, _, r_is_std = r_cands[j]
@@ -453,24 +483,19 @@ def detect_pair_with_body_model(
             for ang in angles:
                 f_mm_guess = r_mm0 + nom_span * np.array([math.cos(ang), math.sin(ang)], dtype=np.float32)
                 f_px_guess = transform_points([f_mm_guess], H_pose_to_img)[0]
-                patch, _ = extract_canonical_patch(frame_bgr, f_px_guess, r_px)
-                _, body_ncc, marker_prob = model.score_patch(patch)
+                centre_mm = 0.5 * (f_mm_guess + r_mm0)
+                add_pivot(f_px_guess,r_px,False,r_is_std,centre_mm,ang,'rear_pivot_body_search')
+
+        for start in range(0,len(pivot_candidates),64):
+            chunk = pivot_candidates[start:start+64]
+            patches = [extract_canonical_patch(frame_bgr,row[0],row[1])[0] for row in chunk]
+            for row,(_,body_ncc,marker_prob) in zip(chunk,model.score_patches(patches)):
                 if body_ncc < pivot_ncc_thresh:
                     continue
-                centre_mm = 0.5 * (f_mm_guess + r_mm0)
-                if not (-25.0 <= centre_mm[0] <= board_side_mm + 25.0 and -25.0 <= centre_mm[1] <= board_side_mm + 25.0):
-                    continue
-                motion_penalty = 0.0
-                if pred_center_mm is not None:
-                    step_mm = float(np.linalg.norm(centre_mm - pred_center_mm))
-                    motion_penalty += 0.12 * max(0.0, step_mm - 18.0) + 0.02 * step_mm
-                if previous_heading_rad is not None:
-                    dtheta_deg = abs(math.degrees(angle_diff_rad(ang, previous_heading_rad)))
-                    motion_penalty += 0.15 * max(0.0, dtheta_deg - 18.0)
-                combined = 6.0 * body_ncc + 3.0 * marker_prob + 1.0 - motion_penalty
+                combined = 6.*body_ncc+3.*marker_prob+1.-row[4]
                 if combined > best_total_score:
                     best_total_score = combined
-                    best_candidate = (f_px_guess, r_px, False, r_is_std, body_ncc, marker_prob, "rear_pivot_body_search")
+                    best_candidate = (*row[:4],float(body_ncc),float(marker_prob),row[5])
 
     if best_candidate is None:
         return None
@@ -478,7 +503,7 @@ def detect_pair_with_body_model(
     f_px_init, r_px_init, f_is_std, r_is_std, body_ncc, marker_prob, method = best_candidate
     span_px = float(np.linalg.norm(f_px_init - r_px_init))
     roi_rad = max(4.0, 0.14 * span_px)
-    if f_is_std and r_is_std and method == "pair_body_scored" and not refine_standard:
+    if method=='cnn_body_tracking' or (f_is_std and r_is_std and method == "pair_body_scored" and not refine_standard):
         f_px_final, r_px_final = np.asarray(f_px_init, dtype=np.float32), np.asarray(r_px_init, dtype=np.float32)
     else:
         frame_lab = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2LAB).astype(np.float32)
@@ -495,6 +520,7 @@ def detect_pair_with_body_model(
         )
 
     neural_info = dict(keypoint_cnn_applied=False)
+    neural_info.update(tracking_info)
     if keypoint_model is not None and method=='pair_body_scored':
         neural_front,neural_rear,neural_info_extra = keypoint_model.refine(frame_bgr,f_px_init,r_px_init)
         neural_info.update(neural_info_extra)
@@ -513,7 +539,7 @@ def detect_pair_with_body_model(
         pts_mm = transform_points([corr["front_xy_mm"], corr["rear_xy_mm"]], board_to_pose)
 
     final_sep = float(np.linalg.norm(pts_mm[0]-pts_mm[1]))
-    if not np.isfinite(pts_mm).all() or not low<=final_sep<=high:
+    if not np.isfinite(pts_mm).all() or not low<=final_sep<=high or not inside_board(pts_mm.mean(axis=0)):
         return None
     final_patch,_ = extract_canonical_patch(frame_bgr,f_px_final,r_px_final)
     _,final_ncc,_ = model.score_patch(final_patch)
@@ -526,8 +552,8 @@ def detect_pair_with_body_model(
         marker_prob=float(marker_prob),
         front_px=f_px_final,
         rear_px=r_px_final,
-        front_colour_observed=method!='rear_pivot_body_search',
-        rear_colour_observed=method!='front_pivot_body_search',
+        front_colour_observed=method not in ('rear_pivot_body_search','cnn_body_tracking'),
+        rear_colour_observed=method not in ('front_pivot_body_search','cnn_body_tracking'),
         refined_body_ncc=float(final_ncc),
         **neural_info,
     )

@@ -107,6 +107,29 @@ class BodyAppearanceModelTests(unittest.TestCase):
         self.assertFalse(found[2]['keypoint_cnn_applied'])
         np.testing.assert_allclose(pose.transform_points([found[0]],np.linalg.inv(H))[0],expected,atol=2)
 
+    def test_cnn_tracking_needs_current_body_evidence_and_is_estimated(self):
+        model = self.train_synthetic_model()
+        frame = self.make_board()
+        front,rear = draw_synthetic_mouse(frame,(300,250),90,span_px=55,
+            draw_front=False,draw_rear=False)
+        class Refiner:
+            def refine(self,image,front_guess,rear_guess):
+                return front,rear,dict(cnn_visibility=[.1,.1],cnn_spread_canonical_px=[2.,2.])
+        H = cv2.getPerspectiveTransform(pose.detect_aruco_quad(frame),pose.pose_world_corners(360))
+        true_pose = pose.transform_points([front,rear],H)
+        previous = true_pose.mean(axis=0)
+        heading = np.arctan2(*(true_pose[0]-true_pose[1])[::-1])
+        options = dict(previous_center_mm=previous,previous_heading_rad=heading,
+            nominal_span_mm=50,span_limits_mm=(40,65),keypoint_model=Refiner())
+        found = detect_pair_with_body_model(frame,'green','red',None,H,np.linalg.inv(H),model,**options)
+        self.assertIsNotNone(found)
+        self.assertEqual(found[2]['method'],'cnn_body_tracking')
+        self.assertFalse(found[2]['front_colour_observed'])
+        self.assertFalse(found[2]['rear_colour_observed'])
+        # 直前位置とCNNの高い出力だけでは、現在の空白画像を検出扱いにしない。
+        blank = self.make_board()
+        self.assertIsNone(detect_pair_with_body_model(blank,'green','red',None,H,np.linalg.inv(H),model,**options))
+
     def test_inferred_keypoint_is_not_reported_as_raw_observation(self):
         model = self.train_synthetic_model(front_bgr=(25,25,235),rear_bgr=(40,220,240))
         with tempfile.TemporaryDirectory() as folder:

@@ -39,7 +39,9 @@ def evaluate(manifest,appearance_file,cnn_file,output):
     if cnn:
         for source in cnn.metadata.get('sources',[]):
             training.add(file_sha256(source['source_video']))
-    variants = ['legacy','appearance','appearance_refined']+(['cnn'] if cnn else [])
+    variants = manifest.get('variants', ['legacy','appearance','appearance_refined']+(['cnn'] if cnn else []))
+    if not variants or set(variants)-{'legacy','appearance','appearance_refined','cnn','learned_assist'}:
+        raise ValueError('unknown detector evaluation variant')
     results = []
     all_rows = []
     montage = []
@@ -59,7 +61,11 @@ def evaluate(manifest,appearance_file,cnn_file,output):
         states = {name:dict(center=None,heading=None,velocity=None) for name in variants}
         case_rows = []
         stride = case.get('stride',1)
-        for frame_index,frame,pts in iter_video_frames(Path(case['video']),True,tuple(case['window']),stride):
+        window = case['window']
+        warmup_start = case.get('warmup_start',window[0])
+        if not 0 <= warmup_start <= window[0]:
+            raise ValueError('warmup_start must precede the evaluation window')
+        for frame_index,frame,pts in iter_video_frames(Path(case['video']),True,(warmup_start,window[1]),stride):
             registration = marker_registration(frame,reference)
             quad = registration_quad(registration)
             H = cv2.getPerspectiveTransform(quad,world) if quad is not None else None
@@ -75,18 +81,19 @@ def evaluate(manifest,appearance_file,cnn_file,output):
                 pair,info = None,{}
                 state = states[variant]
                 if H is not None:
-                    if variant=='legacy':
+                    if variant in ('legacy', 'learned_assist'):
                         pair = select_marker_pair(colour_components(frame,front,geometry.get('marker_detection')),
                             colour_components(frame,rear,geometry.get('marker_detection')),H,state['center'],
                             board_side_mm=side,nominal_marker_span_mm=geometry.get('nominal_marker_span_mm'),
                             marker_span_limits_mm=geometry.get('marker_span_limits_mm'))
                         info = dict(method='colour_pair',front_colour_observed=pair is not None,rear_colour_observed=pair is not None)
-                    else:
+                    if variant != 'legacy' and pair is None:
                         found = detect_pair_with_body_model(frame,front,rear,geometry.get('marker_detection'),H,np.linalg.inv(H),
                             appearance,state['center'],state['heading'],state['velocity'],board_side_mm=side,
                             nominal_span_mm=geometry.get('nominal_marker_span_mm'),span_limits_mm=geometry.get('marker_span_limits_mm'),
-                            require_colour_pair=True,refine_standard=variant=='appearance_refined',
-                            keypoint_model=cnn if variant=='cnn' else None)
+                            require_colour_pair=variant!='learned_assist',refine_standard=variant=='appearance_refined',
+                            center_margin_mm=0. if variant=='learned_assist' else 25.,
+                            keypoint_model=cnn if variant in ('cnn','learned_assist') else None)
                         if found is not None:
                             pair,info = found[:2],found[2]
                 row['processing_ms'] = (time.perf_counter()-clock)*1000
@@ -109,14 +116,15 @@ def evaluate(manifest,appearance_file,cnn_file,output):
                         state['velocity'] = .5*velocity if state['velocity'] is None else .5*(velocity+state['velocity'])
                     state.update(center=center,heading=heading)
                     if marked is not None:
-                        colour = {'legacy':(0,0,255),'appearance':(255,255,0),'appearance_refined':(0,255,255),'cnn':(0,255,0)}[variant]
+                        colour = {'legacy':(0,0,255),'appearance':(255,255,0),'appearance_refined':(0,255,255),'cnn':(0,255,0),'learned_assist':(0,165,255)}[variant]
                         cv2.line(marked,tuple(np.rint(pixels[1]).astype(int)),tuple(np.rint(pixels[0]).astype(int)),colour,1)
                         for point in pixels:
                             cv2.circle(marked,tuple(np.rint(point).astype(int)),3,colour,1)
                         marked_points.extend(pixels.tolist())
                 else:
                     state['velocity'] = None
-                case_rows.append(row)
+                if pts >= window[0]:
+                    case_rows.append(row)
             if marked is not None and marked_points:
                 center = np.median(marked_points,axis=0)
                 x = int(np.clip(center[0]-90,0,frame.shape[1]-180))
@@ -125,7 +133,7 @@ def evaluate(manifest,appearance_file,cnn_file,output):
                 cv2.rectangle(tile,(0,0),(360,26),(0,0,0),-1)
                 cv2.putText(tile,f'{case["label"]} frame{frame_index}',(5,18),cv2.FONT_HERSHEY_SIMPLEX,.43,(255,255,255),1)
                 montage.append(tile)
-            if len(case_rows)%(len(variants)*30)==0:
+            if case_rows and len(case_rows)%(len(variants)*30)==0:
                 print(f'{case["label"]}: {len(case_rows)//len(variants)} frames',flush=True)
         table = pd.DataFrame(case_rows)
         table.to_csv(output/(case['label']+'.csv'),index=False)
@@ -133,10 +141,11 @@ def evaluate(manifest,appearance_file,cnn_file,output):
         for variant in variants:
             selected = table[table.variant==variant]
             observed = selected[selected.observed]
+            covered = selected[selected.observed | selected.estimated]
             calibration_count = int(selected.calibration_valid.sum())
-            xy = observed[['center_x_mm','center_y_mm']].to_numpy() if len(observed) else np.empty((0,2))
-            heading = np.unwrap(np.radians(observed.heading_deg.to_numpy())) if len(observed) else np.empty(0)
-            stamps = observed.time_video_s.to_numpy()
+            xy = covered[['center_x_mm','center_y_mm']].to_numpy() if len(covered) else np.empty((0,2))
+            heading = np.unwrap(np.radians(covered.heading_deg.to_numpy())) if len(covered) else np.empty(0)
+            stamps = covered.time_video_s.to_numpy()
             dt = np.diff(stamps)
             steps = np.linalg.norm(np.diff(xy,axis=0),axis=1)
             rotations = np.abs(np.degrees(np.diff(heading)))
@@ -145,13 +154,15 @@ def evaluate(manifest,appearance_file,cnn_file,output):
             result = dict(case=case['label'],kind=case['kind'],variant=variant,frames=len(selected),
                 calibrated_frames=calibration_count,observed_frames=len(observed),
                 observed_given_calibration=len(observed)/calibration_count if calibration_count else 0,
+                estimated_frames=int(selected.estimated.sum()),
+                coverage_given_calibration=len(covered)/calibration_count if calibration_count else 0,
                 maximum_step_mm=float(steps.max()) if len(steps) else None,
                 maximum_heading_step_deg=float(rotations.max()) if len(rotations) else None,
                 implausible_position_steps=int(invalid_steps.sum()),implausible_heading_steps=int(invalid_turns.sum()),
                 processing_median_ms=float(selected.processing_ms.median()),processing_p95_ms=float(selected.processing_ms.quantile(.95)),
                 cnn_applied_frames=int(selected.cnn_applied.sum()),
                 mean_xy_mm=xy.mean(axis=0).tolist() if len(xy) else None)
-            if case['kind']=='static' and len(observed):
+            if case['kind']=='static' and len(covered):
                 result.update(heading_jitter_rms_deg=float(np.sqrt(np.mean(np.degrees(heading-np.median(heading))**2))),
                     midpoint_jitter_rms_mm=float(np.sqrt(np.sum(np.var(xy,axis=0)))))
             results.append(result)

@@ -1,5 +1,9 @@
 # 解析ツール
 
+単体ターン調整GUIは`tools/turn_tuning_log.py`で本体ログ画像を自動保存します。
+`python tools/turn_tuning_log.py <trial.json>`で再作成できます。設定JSONの実際の記録周期とCSVの経過msを照合し、
+角加速度・FF・軌跡の計算にもその周期を使います。[出力ファイル](../turn_tuning_README.md)を参照してください。
+
 単体撮影の停止評価は、`pixel_camera_tuning_report.py`が同じ試行の連続`telemetry.csv`を参照し、直進指令に続く`run_brake`が終わってから0.2〜0.6秒の画像を確認する。短い`motion.csv`だけでは200 ms以上の停止記録が切れていたり、指令終了後もブレーキが動作している場合があるため。旧試行で連続CSVがない場合は従来の入力へ戻る。観測点数・静止時間・画像散らばり・ログの速度/角速度・軌跡RMSEの条件は緩めない。元の解析結果を保持し、再評価は別出力先へ保存する。
 
 周期ログの現行形式は`L8S5` / 保存magic `0xA55D`です。旧`ideal.turn_x/y`の2枠は採用姿勢・標準偏差のrad値で、無効時はNaNになります。
@@ -691,6 +695,24 @@ long180だけは始終方向が平行で連立方程式からLstart/Lendを一�
 
 ## その他の現行ツール
 
+### 動画だけで盤面上の位置を推定する
+
+`pixel_camera_position.py`は走行CSVを使わず、盤面ArUcoと機体の前後の色目印からXYを出力します。機体にArUcoを貼る必要はありませんが、盤面マーカーだけでは機体自体を検出できないため、前後の色目印も必要です。
+
+```powershell
+python tools/analysis/pixel_camera_position.py `
+  --video C:/path/to/video.mp4 --reference C:/path/to/marker_reference.json `
+  --geometry C:/path/to/body_geometry.json --output tools/logs/video_position/new_run
+```
+
+`--stride 4`は速報、既定の`1`は全フレームです。`--start`・`--end`で動画PTSの範囲を指定できます。`--trial trial.json`では保存済み試行の動画・盤面参照・目印設定だけを読み、CSVや停止判定には依存しません。出力先は新規フォルダーに限ります。
+
+`position.csv`は元フレーム番号・動画PTS・フレームごとの登録マーカー数・有効マスクと、前後目印・中点のXYを記録します。盤面参照の左上が原点、Xは右・Yは下、単位mmです。各評価フレームで実復号した登録済みArUcoが2個以上必要で、欠測に補間位置を出力しません。`position_trajectory.png`と`summary.json`に軌跡・観測率・元動画と設定のハッシュを保存します。
+
+位置は高さ未補正の見かけの目印中点です。車軸の絶対位置、高さ補正済みの機体yaw、停止合否、ターンの合格を示しません。追跡には既存の中央値フィルターを使い、欠測フレームの値は出力前にNaNへ戻します。
+
+解析前に現在の動画で盤面登録を検査します。古い探索ROIが原因で不成立の場合は、3個以上の登録があり、全登録IDを全画面で一意に実復号でき、同じ盤面・格子品質条件を満たすときだけ探索ROIを更新します。これは探索範囲の補正で、後段の各フレームのAR登録や欠測除外は省きません。重複ID、未読ID、格子品質不足を自動救済しません。`marker_reference_input.json`に入力、`marker_reference_used.json`に使用した参照、`summary.json`の`reference_search`に試行PTS・元の失敗理由・更新の有無を保存します。旧解析と入力資料は上書きしません。
+
 ### 登録済みマーカー2枚以上での盤面補正
 
 `video_marker_pose.py`へ`--marker-reference`を指定すると、基準画像と共通する任意の2枚以上のArUcoの各4頂点を照合し、射影変換で較正します。
@@ -804,6 +826,65 @@ python -m unittest discover -s tools/tests -p 'test_diagonal_*.py' -v
 ```
 
 保存データの再評価手順と前提は上記レポート末尾を参照してください。再生結果だけで補正定数を確定しないでください。
+
+## ARによる盤面の正対補正だけを保存する
+
+`pixel_camera_rectify.py`は機体の色や学習モデルを使わず、各フレームで実復号した登録済みArUco 2個以上から盤面を正方形へ射影補正します。登録基準の盤面寸法・軸・品質条件を使い、検索ROIの調整も既存と同じ検証を通した場合だけ行います。位置追跡やログ比較は呼びません。
+
+```powershell
+python tools/analysis/pixel_camera_rectify.py --trial <trial.json>
+# 録画のみで保存した動画等は参照を明示する
+python tools/analysis/pixel_camera_rectify.py --video <元動画.mp4> --reference <登録参照.json> --output <新しい出力先>
+```
+
+出力は`rectified.mp4`、最初に補正できたフレームの`rectified_preview.png`、各フレームの登録ID・元PTS・有効フラグ・失敗理由・変換行列を記録する`rectification.csv`、入力のコピーと`summary.json`です。既存の出力先や元動画を上書きしません。GUIでも「AR正対補正のみ」を選べます。
+
+既定は720×720画素です。`--size`に128〜2160の偶数、`--start`・`--end`に元動画の秒、`--stride 4`に4フレーム間引きを指定できます。動画はH.264 MP4で音声を含みません。PyAVを使い、出力先頭を0秒として元PTSの時間差を保ち、保存後に再復号して枚数・時刻を照合します。`output_pts_origin_video_s`を足すと元動画の時刻へ戻せます。[PyAVの時刻の説明](https://pyav.basswood.io/docs/stable/api/time.html)も参照してください。
+
+補正できないフレームは黒背景の`AR UNAVAILABLE`とし、フレーム自体を削除したり、前回の変換・補間で隠したりしません。全フレームが不成立なら失敗として理由と動画を残します。盤面の平面補正なので、機体の高さによる視差やレンズ歪みの校正、機体座標の精度検証とは区別してください。
+
+## 機体外観学習と小型CNNの試験
+
+`train_turn_appearance.py`は保存動画から、同フレームの盤面ARと前後の色ペアを観測できる画像を抽出し、機体外観モデル・64×64画像・前後点の擬似正解・入力動画のハッシュを保存します。A/B・前後色・盤面基準が違う試行は混ぜません。色検出から作った擬似正解なので、画像中の点が本当に目印に合っているかも確認してください。
+
+```powershell
+python tools/analysis/train_turn_appearance.py --trial <学習用trial.json> --geometry <機体JSON> --output <新しい学習フォルダー> --samples-per-trial 24
+python -m pip install --target .tools/vision_python312 --index-url https://download.pytorch.org/whl/cpu -r tools/requirements-vision-cnn.txt
+python tools/body_keypoint_cnn.py --patches <学習フォルダー> --output <新しいkeypoints.pt> --steps 400 --robust
+```
+
+CPU版PyTorchはCNNを使うときだけ必要です。上記はPython 3.12の例で、保存先末尾は実行するPythonの版に合わせます。`--robust`は回転、減光、方向の異なるブレ、片側の遮蔽を加え、隠れた点の推定も学習します。学習・解析はPC内で行い、BLEやカメラの操作はありません。モデル・既存の出力先は上書きしません。
+
+独立動画の比較には`evaluate_body_detectors.py`を使います。manifestの`variants`に`["legacy","learned_assist"]`、`cases`に`label`・`kind`（`static`/`motion`）・`video`・`geometry`・`reference`・`window: [開始秒,終了秒]`・`stride: 4`を指定します。必要なら`warmup_start`へ報告区間より前の開始秒を指定し、両方式に同じ追跡準備区間を与えます。`review_frames`は元動画のフレーム番号です。
+
+```powershell
+python tools/analysis/evaluate_body_detectors.py --manifest <比較条件.json> --appearance-model <appearance.npz> --cnn-model <keypoints.pt> --output <新しい比較フォルダー>
+```
+
+学習動画を評価へ使うとハッシュ照合で拒否します。各フレームのAR登録、色ペアの観測数、補った数、静止時の散らばり、位置・角度の飛び、処理時間、比較画像を保存します。被覆率だけでは精度を証明できません。旋回や欠測を含む別動画の目印位置と照合し、誤認があるモデルを通常用へ登録しないでください。CNN単独では盤面座標を決めず、直前姿勢は画像を切り出す位置にだけ使い、現在画像の機体外観・前後間隔・変位の条件も検査します。盤面登録の品質条件は変えません。
+
+GUI用の一覧は次の形式です。`model_sha256`等には実ファイルのSHA-256、`validation`には独立評価結果へのパスと採否理由を入れます。ファイルパスはリポジトリ相対、または絶対パスです。登録しても通常の解析方式は変わりません。
+
+```json
+{
+  "schema_version": 1,
+  "models": {
+    "B:green:red": {
+      "identity": ["B", "green", "red"],
+      "model_file": "tools/logs/pixel_camera/models/B/appearance.npz",
+      "model_sha256": "<SHA-256>",
+      "keypoint_model_file": "tools/logs/pixel_camera/models/B/keypoints.pt",
+      "keypoint_model_sha256": "<SHA-256>",
+      "require_colour_pair": false,
+      "fallback_only": true,
+      "center_margin_mm": 0,
+      "validation": {"report": "<独立動画の評価JSON>", "decision": "<判断根拠>"}
+    }
+  }
+}
+```
+
+`keypoint_model_file`とそのハッシュはCNNを使わなければ省略できます。`require_colour_pair: true`では片側や両側の欠測を補いません。測定用の実観測値と学習推定を区別し、学習点・補間点を観測率へ加算しません。機体Bは前緑・後赤の動画に後黄の設定を使うと追跡できないため、学習前に実際の色と設定を照合してください。
 
 ## Legacy
 

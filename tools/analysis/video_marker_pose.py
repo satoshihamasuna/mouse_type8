@@ -307,6 +307,7 @@ def read_video_pose(
     rear_colour: str = 'yellow',
     nominal_marker_span_mm: float | None = None,
     marker_span_limits_mm: tuple[float, float] | None = None,
+    track_only: bool = False,
 ) -> tuple[pd.DataFrame, np.ndarray, float, float]:
     if not isinstance(frame_stride, int) or not 1 <= frame_stride <= 4:
         raise ValueError('frame_stride must be an integer from1 to4')
@@ -342,6 +343,7 @@ def read_video_pose(
     body_model_cfg = (marker_detection or {}).get('body_model') if isinstance(marker_detection, dict) else None
     use_body_model = bool(isinstance(body_model_cfg, dict) and body_model_cfg.get('enabled', True))
     learned_body_model = None
+    keypoint_model = None
     auto_train_samples = []
     auto_prev_center = None
     if use_body_model and body_model_cfg.get('model_file'):
@@ -350,6 +352,14 @@ def read_video_pose(
         if not model_path.is_absolute():
             model_path = Path(__file__).resolve().parents[2] / model_path
         learned_body_model = LearnedBodyKeypointModel.load(model_path)
+        learned_body_model.validate_identity(body_model_cfg.get('expected_mouse'), front_colour, rear_colour)
+        if body_model_cfg.get('keypoint_model_file'):
+            from body_keypoint_cnn import BodyKeypointCNN
+            keypoint_model = BodyKeypointCNN.load(body_model_cfg['keypoint_model_file'])
+            for key, value in (('mouse',body_model_cfg.get('expected_mouse')),
+                               ('front_colour',front_colour),('rear_colour',rear_colour)):
+                if value is not None and keypoint_model.metadata.get(key)!=value:
+                    raise ValueError('CNNの機体・前後色が解析設定と異なります')
     need_auto_train = use_body_model and (learned_body_model is None or body_model_cfg.get('auto_adapt', False))
     index = 0
     while True:
@@ -429,7 +439,13 @@ def read_video_pose(
                 records.append(dict(frame=index, time_video_s=pts, marker_detected_raw=False, calibration_valid=False))
                 continue
             local_homography = cv2.getPerspectiveTransform(quads[offset], world_corners)
-        if learned_body_model is not None:
+        body_info = dict(method='colour_pair', front_colour_observed=True, rear_colour_observed=True)
+        pair = None
+        if learned_body_model is not None and body_model_cfg.get('fallback_only', False):
+            pair = select_marker_pair(colour_components(frame, front_colour, marker_detection),
+                colour_components(frame, rear_colour, marker_detection), local_homography, previous,
+                body_geometry, geometry_transform, board_side_mm, nominal_marker_span_mm, marker_span_limits_mm)
+        if learned_body_model is not None and pair is None:
             from body_appearance_model import detect_pair_with_body_model
             min_ncc = float(body_model_cfg.get('min_body_ncc', 0.22))
             body_res = detect_pair_with_body_model(
@@ -438,9 +454,13 @@ def read_video_pose(
                 previous, previous_heading, previous_velocity,
                 body_geometry, geometry_transform, board_side_mm,
                 nominal_marker_span_mm, marker_span_limits_mm, min_body_ncc=min_ncc,
+                require_colour_pair=body_model_cfg.get('require_colour_pair', False), keypoint_model=keypoint_model,
+                center_margin_mm=body_model_cfg.get('center_margin_mm', 25.),
             )
             pair = (body_res[0], body_res[1]) if body_res is not None else None
-        else:
+            if body_res is not None:
+                body_info = body_res[2]
+        elif learned_body_model is None:
             pair = select_marker_pair(
                 colour_components(frame, front_colour, marker_detection),
                 colour_components(frame, rear_colour, marker_detection),
@@ -478,7 +498,10 @@ def read_video_pose(
             {
                 "frame": index,
                 "time_video_s": pts,
-                "marker_detected_raw": True,
+                "marker_detected_raw": bool(body_info['front_colour_observed'] and body_info['rear_colour_observed']),
+                "marker_estimated_raw": not bool(body_info['front_colour_observed'] and body_info['rear_colour_observed']),
+                "detection_method": body_info['method'],
+                "body_ncc": body_info.get('body_ncc'),
                 "calibration_valid": True,
                 "blue_x_mm": blue[0],
                 "blue_y_mm": blue[1],
@@ -500,32 +523,42 @@ def read_video_pose(
         previous = centre
         previous_heading = heading
     pose = pd.DataFrame(records)
-    if not pose.marker_detected_raw.any():
+    if 'marker_estimated_raw' not in pose:
+        pose['marker_estimated_raw'] = False
+    pose['marker_estimated_raw'] = pose.marker_estimated_raw.eq(True)
+    if marker_reference is not None:
+        pose['registered_marker_count'] = [len(result.get('used_marker_ids', []))
+            if result.get('available') else 0 for result in registrations]
+    if not (pose.marker_detected_raw | pose.marker_estimated_raw).any():
         raise ValueError('no valid body marker pair; colour/height/calibration quality must be checked')
-    for column in ('front_floor_x_mm', 'front_floor_y_mm', 'midpoint_floor_x_mm', 'midpoint_floor_y_mm',
-                   'front_image_x_px', 'front_image_y_px', 'midpoint_image_x_px', 'midpoint_image_y_px'):
-        if column in pose:
-            pose[column] = pose[column].interpolate(limit_direction='both')
-    for column in [
-        "blue_x_mm", "blue_y_mm", "yellow_x_mm", "yellow_y_mm",
-        "center_x_mm", "center_y_mm", "marker_separation_mm",
-    ]:
-        pose[column] = pose[column].interpolate(limit_direction="both")
-    for column in ["center_x_mm", "center_y_mm", "blue_x_mm", "blue_y_mm",
-                   "yellow_x_mm", "yellow_y_mm", "marker_separation_mm"]:
-        pose[column] = pose[column].rolling(max(1, 5//frame_stride), center=True, min_periods=1).median()
-    raw_heading = pose["heading_rad"].to_numpy(float)
-    heading_cos = pd.Series(np.cos(raw_heading)).interpolate(limit_direction="both")
-    heading_sin = pd.Series(np.sin(raw_heading)).interpolate(limit_direction="both")
-    unwrapped = np.unwrap(np.arctan2(heading_sin, heading_cos))
-    pose["heading_rad"] = pd.Series(unwrapped).rolling(max(1, 5//frame_stride), center=True, min_periods=1).median()
+    if not track_only:
+        for column in ('front_floor_x_mm', 'front_floor_y_mm', 'midpoint_floor_x_mm', 'midpoint_floor_y_mm',
+                       'front_image_x_px', 'front_image_y_px', 'midpoint_image_x_px', 'midpoint_image_y_px'):
+            if column in pose:
+                pose[column] = pose[column].interpolate(limit_direction='both')
+        for column in [
+            "blue_x_mm", "blue_y_mm", "yellow_x_mm", "yellow_y_mm",
+            "center_x_mm", "center_y_mm", "marker_separation_mm",
+        ]:
+            pose[column] = pose[column].interpolate(limit_direction="both")
+        for column in ["center_x_mm", "center_y_mm", "blue_x_mm", "blue_y_mm",
+                       "yellow_x_mm", "yellow_y_mm", "marker_separation_mm"]:
+            pose[column] = pose[column].rolling(max(1, 5//frame_stride), center=True, min_periods=1).median()
+        raw_heading = pose["heading_rad"].to_numpy(float)
+        heading_cos = pd.Series(np.cos(raw_heading)).interpolate(limit_direction="both")
+        heading_sin = pd.Series(np.sin(raw_heading)).interpolate(limit_direction="both")
+        unwrapped = np.unwrap(np.arctan2(heading_sin, heading_cos))
+        pose["heading_rad"] = pd.Series(unwrapped).rolling(max(1, 5//frame_stride), center=True, min_periods=1).median()
     dx = np.gradient(pose["center_x_mm"], pose.time_video_s.to_numpy())
     dy = np.gradient(pose["center_y_mm"], pose.time_video_s.to_numpy())
     pose["speed_playback_mm_s"] = (
         pd.Series(np.hypot(dx, dy)).rolling(max(1, 9//frame_stride), center=True, min_periods=1).median()
     )
-    led_counts, led_active, led_threshold = detect_led_interval(
-        (frame for _, frame, _ in iter_video_frames(path, marker_reference is not None, video_window, frame_stride)), pose, fixed_quad, board_side_mm)
+    if track_only:
+        led_counts, led_active, led_threshold = np.zeros(len(pose), int), np.zeros(len(pose), bool), None
+    else:
+        led_counts, led_active, led_threshold = detect_led_interval(
+            (frame for _, frame, _ in iter_video_frames(path, marker_reference is not None, video_window, frame_stride)), pose, fixed_quad, board_side_mm)
     pose["turn_led_blue_pixels"] = led_counts
     pose["turn_led_active"] = led_active
     pose.attrs["turn_led_threshold"] = led_threshold
@@ -545,6 +578,11 @@ def read_video_pose(
     pose.attrs['body_geometry'] = dict(applied=body_geometry is not None,
         center_kind=('axle' if body_geometry.get('axle_offset_from_marker_midpoint_mm') is not None else 'marker_midpoint')
                     if body_geometry else 'marker_midpoint', configuration=body_geometry)
+    pose.attrs['body_detection'] = dict(enabled=learned_body_model is not None,
+        backend='learned_body_appearance' if learned_body_model is not None else 'colour_pair',
+        observed_pair_frames=int(pose.marker_detected_raw.sum()),
+        estimated_pair_frames=int(pose.marker_estimated_raw.sum()),
+        estimates_are_raw_observations=False)
     return pose, fixed_quad, fps, complete_rate
 
 

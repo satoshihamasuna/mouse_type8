@@ -34,6 +34,16 @@ class DetectionSelectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             resolve_geometry_detection(self.geometry,'auto',registry_path=self.registry)
 
+    def test_assistance_flags_are_explicit_and_keep_machine_identity(self):
+        registry=json.loads(self.registry.read_text(encoding='utf-8'))
+        registry['models']['B:green:red'].update(require_colour_pair=False,fallback_only=True)
+        self.registry.write_text(json.dumps(registry),encoding='utf-8')
+        selected=resolve_geometry_detection(self.geometry,'auto',registry_path=self.registry)
+        config=selected['marker_detection']['body_model']
+        self.assertFalse(config['require_colour_pair'])
+        self.assertTrue(config['fallback_only'])
+        self.assertEqual(config['expected_mouse'],'B')
+
     def test_frozen_trial_survives_source_retraining_and_archive_relocation(self):
         trial = self.root/'trial'
         selected = freeze_geometry_detection(self.geometry,trial,'auto',registry_path=self.registry)
