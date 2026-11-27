@@ -890,6 +890,8 @@ GUI用の一覧は次の形式です。`model_sha256`等には実ファイルの
 
 `evaluate_body_detectors.py` は `--base-dir` と `--device`（`cpu`/`cuda`/`auto`）に対応し、保存済みの `video_sha256` を使って Linux / Google Colab 環境でも学習動画と評価動画の独立分割チェックを行います。`body_keypoint_cnn.py` も `--device cuda`（保存時はローカル CPU 互換テンソル）に対応しています。
 
+Colab へ持ち出す際は `export_colab_recognition_bundle.py` で評価 manifest・動画・設定・任意モデル・学習パッチを相対パス構成（または `.zip`）へ出力できます。既存の出力先は上書きせず、機体・前後色と学習動画の独立分割を検査します。
+
 ## Legacy
 
 次のコードは旧Lstart/Lend方式との比較または回帰テストのために残している。
