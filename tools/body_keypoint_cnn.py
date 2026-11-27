@@ -25,10 +25,25 @@ def torch_runtime():
             try:
                 import torch
             except ImportError as error:
-                raise RuntimeError('CNNにはCPU版PyTorchが必要です。tools/requirements-vision-cnn.txtを確認してください') from error
-        torch.set_num_threads(1)
+                raise RuntimeError('CNNにはPyTorchが必要です。tools/requirements-vision-cnn.txtまたはColab環境を確認してください') from error
+        if not torch.cuda.is_available():
+            torch.set_num_threads(1)
         _torch = torch
     return _torch
+
+
+def resolve_device(device: str | None = None) -> str:
+    torch = torch_runtime()
+    selected = 'cpu' if device is None else str(device).strip().lower()
+    if selected == 'auto':
+        return 'cuda' if torch.cuda.is_available() else 'cpu'
+    if selected == 'cpu':
+        return 'cpu'
+    if selected == 'cuda' or selected.startswith('cuda:'):
+        if not torch.cuda.is_available():
+            raise RuntimeError('CUDAが利用できません。CPUで実行するかGPUランタイムを選択してください')
+        return selected
+    raise ValueError('deviceはcpu/cuda/autoのいずれかを指定してください: ' + str(device))
 
 
 def build_network():
@@ -60,19 +75,20 @@ def patch_features(patch):
 
 
 class BodyKeypointCNN:
-    def __init__(self,network,metadata):
-        self.network = network.eval()
+    def __init__(self,network,metadata,*,device='cpu'):
+        self.device = resolve_device(device)
+        self.network = network.to(self.device).eval()
         self.metadata = metadata
 
     @classmethod
-    def load(cls,path):
+    def load(cls,path,*,device='cpu'):
         torch = torch_runtime()
         saved = torch.load(Path(path),map_location='cpu',weights_only=True)
         if saved.get('schema_version')!=1 or saved.get('backend')!='mouse_tiny_heatmap_cnn':
             raise ValueError('未対応の機体CNNモデルです')
         network = build_network()
         network.load_state_dict(saved['state_dict'],strict=True)
-        return cls(network,json.loads(saved['metadata_json']))
+        return cls(network,json.loads(saved['metadata_json']),device=device)
 
     def save(self,path):
         torch = torch_runtime()
@@ -80,15 +96,18 @@ class BodyKeypointCNN:
         if path.exists() or path.with_suffix('.json').exists():
             raise FileExistsError('学習済みCNNを上書きしません: '+str(path))
         path.parent.mkdir(parents=True,exist_ok=True)
-        torch.save(dict(schema_version=1,backend='mouse_tiny_heatmap_cnn',state_dict=self.network.state_dict(),
+        cpu_state = {key:value.detach().cpu() for key,value in self.network.state_dict().items()}
+        torch.save(dict(schema_version=1,backend='mouse_tiny_heatmap_cnn',state_dict=cpu_state,
             metadata_json=json.dumps(self.metadata,ensure_ascii=False)),path)
         path.with_suffix('.json').write_text(json.dumps(self.metadata,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
     def predict_patch(self,patch):
         torch = torch_runtime()
         with torch.inference_mode():
-            heatmap,visible = self.network(torch.from_numpy(patch_features(patch)[None]))
-            logits = heatmap[0].reshape(2,-1)
+            tensor = torch.from_numpy(patch_features(patch)[None]).to(self.device)
+            heatmap,visible = self.network(tensor)
+            logits = heatmap[0].detach().cpu().reshape(2,-1)
+            visible_cpu = visible[0].detach().cpu()
             # 最大点近傍だけのsoft-argmaxで、遠い弱い副峰への重心の偏りを避ける。
             peak = logits.argmax(dim=1)
             yy,xx = torch.meshgrid(torch.arange(64),torch.arange(64),indexing='ij')
@@ -103,7 +122,7 @@ class BodyKeypointCNN:
                 spread = (weights*((coordinates[selected]-point)**2).sum(dim=1)).sum().sqrt()
                 points.append(point.numpy())
                 spreads.append(float(spread))
-            return np.asarray(points,np.float32),torch.sigmoid(visible[0]).numpy(),np.asarray(spreads)
+            return np.asarray(points,np.float32),torch.sigmoid(visible_cpu).numpy(),np.asarray(spreads)
 
     def refine(self,frame,front_px,rear_px):
         from body_appearance_model import extract_canonical_patch
@@ -114,17 +133,24 @@ class BodyKeypointCNN:
         return native[0],native[1],dict(cnn_visibility=visible.tolist(),cnn_spread_canonical_px=spread.tolist())
 
     @classmethod
-    def fit_from_frames(cls,samples,metadata,*,steps=400,seed=29,progress=None,robust=False):
+    def fit_from_frames(cls,samples,metadata,*,steps=400,seed=29,progress=None,robust=False,
+                        device='cpu',batch_size=16,lr=.002,max_augmented=None):
         """色ペアの擬似正解を拡張して学習。独立動画での精度検証とは区別する。"""
         from body_appearance_model import extract_canonical_patch
-        if len(samples)<3 or not 1<=steps<=10000:
-            raise ValueError('学習は3フレーム以上、stepsは1..10000が必要です')
+        if len(samples)<3 or not 1<=steps<=20000:
+            raise ValueError('学習は3フレーム以上、stepsは1..20000が必要です')
+        if not 1<=batch_size<=512:
+            raise ValueError('batch_sizeは1..512が必要です')
         torch = torch_runtime()
+        selected_device = resolve_device(device)
         torch.manual_seed(seed)
+        if selected_device.startswith('cuda'):
+            torch.cuda.manual_seed_all(seed)
         rng = np.random.default_rng(seed)
         xx,yy = np.meshgrid(np.arange(64),np.arange(64))
         features,targets,visibility = [],[],[]
-        count = max(192,min(512,len(samples)*8))
+        cap = 512 if max_augmented is None else max(192,int(max_augmented))
+        count = max(192,min(cap,len(samples)*8))
         for index in range(count):
             frame,front,rear = samples[index%len(samples)]
             true = np.array([front,rear],np.float32)
@@ -157,14 +183,14 @@ class BodyKeypointCNN:
             features.append(patch_features(patch))
             targets.append(heat)
             visibility.append(visible)
-        x = torch.from_numpy(np.asarray(features,np.float32))
-        target = torch.from_numpy(np.asarray(targets,np.float32)).flatten(2)
-        visible = torch.from_numpy(np.asarray(visibility,np.float32))
-        network = build_network().train()
-        optimizer = torch.optim.Adam(network.parameters(),lr=.002)
+        x = torch.from_numpy(np.asarray(features,np.float32)).to(selected_device)
+        target = torch.from_numpy(np.asarray(targets,np.float32)).flatten(2).to(selected_device)
+        visible = torch.from_numpy(np.asarray(visibility,np.float32)).to(selected_device)
+        network = build_network().to(selected_device).train()
+        optimizer = torch.optim.Adam(network.parameters(),lr=float(lr))
         loss_value = None
         for step in range(steps):
-            selected = torch.randint(0,count,(16,))
+            selected = torch.randint(0,count,(batch_size,),device=selected_device)
             logits,presence = network(x[selected])
             point_loss = -(target[selected]*torch.nn.functional.log_softmax(logits.flatten(2),dim=-1)).sum(dim=-1)
             point_weights=torch.ones_like(visible[selected]) if robust else visible[selected]
@@ -173,15 +199,16 @@ class BodyKeypointCNN:
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             optimizer.step()
-            loss_value = float(loss.detach())
+            loss_value = float(loss.detach().cpu())
             if progress and (step==0 or (step+1)%100==0):
                 progress(step+1,loss_value)
         meta = dict(metadata,backend='mouse_tiny_heatmap_cnn',sample_count=len(samples),
-            augmented_samples=count,steps=steps,seed=seed,training_loss=loss_value,
+            augmented_samples=count,steps=steps,batch_size=batch_size,lr=float(lr),
+            seed=seed,training_loss=loss_value,training_device=selected_device,
             torch_version=str(torch.__version__),label_type='high_confidence_colour_pair_pseudo_labels',
             independent_accuracy_verified=False)
         meta.update(robust_augmentation=robust,hidden_point_targets_supervised=robust)
-        return cls(network,meta)
+        return cls(network,meta,device=selected_device)
 
 
 def main():
@@ -192,6 +219,10 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--max-frames-per-trial',type=int,default=60)
     parser.add_argument('--steps',type=int,default=400)
+    parser.add_argument('--batch-size',type=int,default=16)
+    parser.add_argument('--lr',type=float,default=.002)
+    parser.add_argument('--max-augmented',type=int,default=None)
+    parser.add_argument('--device',default='cpu',help='cpu / cuda / auto')
     parser.add_argument('--robust',action='store_true')
     args = parser.parse_args()
     from body_appearance_model import harvest_training_samples_from_trial
@@ -216,7 +247,8 @@ def main():
             raise ValueError('機体と前後色が同じ試行だけを学習してください')
         mouse,front,rear = next(iter(identities))
     model = BodyKeypointCNN.fit_from_frames(samples,dict(mouse=mouse,front_colour=front,rear_colour=rear,sources=sources),
-        steps=args.steps,robust=args.robust,progress=lambda step,loss:print(f'train step {step}: loss={loss:.4f}',flush=True))
+        steps=args.steps,robust=args.robust,device=args.device,batch_size=args.batch_size,lr=args.lr,
+        max_augmented=args.max_augmented,progress=lambda step,loss:print(f'train step {step}: loss={loss:.4f}',flush=True))
     model.save(args.output)
     print(json.dumps(dict(saved=str(args.output),metadata=model.metadata),ensure_ascii=False))
     return 0

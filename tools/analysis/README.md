@@ -886,6 +886,10 @@ GUI用の一覧は次の形式です。`model_sha256`等には実ファイルの
 
 `keypoint_model_file`とそのハッシュはCNNを使わなければ省略できます。`require_colour_pair: true`では片側や両側の欠測を補いません。測定用の実観測値と学習推定を区別し、学習点・補間点を観測率へ加算しません。機体Bは前緑・後赤の動画に後黄の設定を使うと追跡できないため、学習前に実際の色と設定を照合してください。
 
+### Google Colab で認識率を比較・GPU 学習する
+
+`evaluate_body_detectors.py` は `--base-dir` と `--device`（`cpu`/`cuda`/`auto`）に対応し、保存済みの `video_sha256` を使って Linux / Google Colab 環境でも学習動画と評価動画の独立分割チェックを行います。`body_keypoint_cnn.py` も `--device cuda`（保存時はローカル CPU 互換テンソル）に対応しています。
+
 ## Legacy
 
 次のコードは旧Lstart/Lend方式との比較または回帰テストのために残している。

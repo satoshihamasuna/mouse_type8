@@ -614,12 +614,14 @@ def harvest_training_samples_from_trial(trial_json_path: Path, max_frames: int =
                     samples.append((frame, pts_px[0], pts_px[1]))
         idx += 1
     cap.release()
+    from pixel_camera_detection import file_sha256
     meta = dict(
         mouse=trial.get("mouse"),
         front_colour=geom.get("front_colour"),
         rear_colour=geom.get("rear_colour", "yellow"),
         source_trial=str(Path(trial_json_path).resolve()),
         source_video=str(trial["video_file"]),
+        video_sha256=file_sha256(trial["video_file"]),
     )
     return samples, meta
 
