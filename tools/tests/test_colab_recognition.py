@@ -14,6 +14,20 @@ TOOLS = ROOT / 'tools'
 sys.path[:0] = [str(TOOLS), str(TOOLS / 'analysis'), str(Path(__file__).resolve().parent)]
 
 
+class ColabNotebookSyntaxTests(unittest.TestCase):
+    def test_notebook_json_and_python_cells_are_valid(self):
+        nb_path = TOOLS / 'colab' / 'mouse_recognition_colab.ipynb'
+        self.assertTrue(nb_path.is_file())
+        data = json.loads(nb_path.read_text(encoding='utf-8'))
+        self.assertEqual(data.get('nbformat'), 4)
+        cells = data.get('cells', [])
+        code_cells = [c for c in cells if c.get('cell_type') == 'code']
+        self.assertGreaterEqual(len(code_cells), 6)
+        for idx, cell in enumerate(code_cells):
+            src = ''.join(cell.get('source', []))
+            ast.parse(src, filename=f'mouse_recognition_colab.ipynb#cell{idx}')
+
+
 def _check_vision_deps():
     import cv2
     import numpy as np
@@ -21,7 +35,6 @@ def _check_vision_deps():
     if not hasattr(cv2, 'aruco') or not hasattr(cv2.aruco, 'ArucoDetector'):
         raise ImportError('OpenCV with ArucoDetector is required')
     return cv2, np, pd
-
 
 
 def _make_synthetic_board_and_reference(cv2, np):
@@ -47,7 +60,6 @@ def _make_synthetic_board_and_reference(cv2, np):
     from pixel_camera_reference import create_marker_reference
     ref = create_marker_reference(inspection, image_size=(600, 600), board_side_mm=360.0)
     return image, ref
-
 
 
 class ColabEvaluationAndBundleTests(unittest.TestCase):
@@ -215,6 +227,121 @@ class ColabEvaluationAndBundleTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 evaluate(exported_manifest, leaked_path, None, root / 'leaked_eval', base_dir=bundle_dir)
 
+
+class ColabGpuDetectorTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.cv2, cls.np, cls.pd = _check_vision_deps()
+            from body_keypoint_cnn import torch_runtime
+            torch_runtime()
+        except (ImportError, RuntimeError) as error:
+            raise unittest.SkipTest(str(error))
+
+    def test_patch_cnn_device_options_and_board_detector_pipeline(self):
+        from body_appearance_model import extract_canonical_patch
+        from body_keypoint_cnn import BodyKeypointCNN, resolve_device
+        from colab_board_detector import BoardKeypointDetector, make_hybrid_board_detector
+        from evaluate_body_detectors import evaluate
+        from test_body_appearance_model import draw_synthetic_mouse
+
+        cv2 = self.cv2
+        np = self.np
+
+        self.assertEqual(resolve_device('cpu'), 'cpu')
+        self.assertIn(resolve_device('auto'), ('cpu', 'cuda'))
+        with self.assertRaises(ValueError):
+            resolve_device('invalid_device')
+
+        # 合成盤面とパッチ作成
+        board, ref = _make_synthetic_board_and_reference(cv2, np)
+
+        patches = []
+        frame_samples = []
+        for ang in (0.0, 60.0, 120.0, 180.0):
+            f = board.copy()
+            front, rear = draw_synthetic_mouse(f, (300, 300), ang, span_px=55.0)
+            frame_samples.append((f, front, rear))
+            p, _ = extract_canonical_patch(f, front, rear)
+            patches.append(p)
+
+        train_meta = dict(
+            mouse='B',
+            front_colour='green',
+            rear_colour='red',
+            sources=[dict(source_video='C:\\virtual\\train.mp4', video_sha256='2' * 64)],
+        )
+
+        # 1. BodyKeypointCNN の新引数 (device, batch_size, max_augmented) とCPU互換保存
+        patch_cnn = BodyKeypointCNN.fit_from_frames(
+            frame_samples,
+            train_meta,
+            steps=10,
+            batch_size=8,
+            max_augmented=192,
+            device='cpu',
+        )
+        self.assertEqual(patch_cnn.metadata['training_device'], 'cpu')
+
+        # 2. BoardKeypointDetector の軽量学習・保存・読込・評価ハーネス連携
+        board_det = BoardKeypointDetector.fit_from_patches(
+            patches,
+            train_meta,
+            board_side_mm=360.0,
+            nominal_span_mm=50.0,
+            board_px=128,
+            base_channels=8,
+            dataset_size=64,
+            steps=15,
+            batch_size=8,
+            device='cpu',
+            robust=True,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            saved_pt = root / 'board_cnn.pt'
+            board_det.save(saved_pt)
+            with self.assertRaises(FileExistsError):
+                board_det.save(saved_pt)
+            loaded_det = BoardKeypointDetector.load(saved_pt, device='cpu', min_presence=0.0, max_spread_hm_px=10.0)
+            pts, pres, spr = loaded_det.predict_rectified(board)
+            self.assertEqual(pts.shape, (2, 2))
+            self.assertEqual(pres.shape, (2,))
+            self.assertEqual(spr.shape, (2,))
+            self.assertTrue(np.isfinite(pts).all())
+
+            # 独立評価動画を作成し、appearance_file=None で legacy + board_cnn_global + hybrid_board_assist を比較
+            video = root / 'eval_board.avi'
+            writer = cv2.VideoWriter(str(video), cv2.VideoWriter_fourcc(*'MJPG'), 240.0, (600, 600))
+            for idx in range(3):
+                f = board.copy()
+                draw_synthetic_mouse(f, (300, 290 + idx * 4), 90.0, span_px=55.0)
+                writer.write(f)
+            writer.release()
+
+            geom_path = root / 'geom.json'
+            geom_path.write_text(json.dumps(dict(mouse='B', front_colour='green', rear_colour='red',
+                                                 nominal_marker_span_mm=50.0, marker_span_limits_mm=[30.0, 80.0])),
+                                 encoding='utf-8')
+            ref_path = root / 'ref.json'
+            ref_path.write_text(json.dumps(ref), encoding='utf-8')
+
+            manifest = dict(
+                variants=['legacy', 'board_cnn_global', 'hybrid_board_assist'],
+                cases=[dict(label='B_board_eval', kind='static', video=str(video),
+                            geometry=str(geom_path), reference=str(ref_path), window=[0.0, 1.0], stride=1)],
+            )
+            hybrid = make_hybrid_board_detector(loaded_det)
+            report = evaluate(
+                manifest,
+                None,
+                None,
+                root / 'board_eval_out',
+                extra_detectors={'board_cnn_global': loaded_det, 'hybrid_board_assist': hybrid},
+            )
+            by_var = {r['variant']: r for r in report['results']}
+            self.assertEqual(by_var['board_cnn_global']['observed_frames'], 0)
+            self.assertEqual(by_var['hybrid_board_assist']['observed_frames'], 3)
 
 
 if __name__ == '__main__':
